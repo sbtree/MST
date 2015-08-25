@@ -19,7 +19,7 @@ type
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-  TFlashRunner=class(TDeviceBase, IDeviceInterf)
+  TFlashRunner=class(TDeviceBase)
   protected
     t_ser: TSerial;
   protected
@@ -34,19 +34,21 @@ type
     function RecvStr(var str:string): integer;
     function IntToDMDataStr(const num: integer): string;
 
-    function ConfigDevice(const ini: TMemIniFile): Boolean;
-    function FreeDevice(): Boolean;
-    function Connect(): Boolean;
-    function Coordinate(): boolean;
-    function SendData(const data: PChar; const ans: boolean = true): Integer;
-    function RecvData(var data:PChar): Integer;
-    function Disconnect: boolean;
+    function ConfigDevice(const ini: TMemIniFile): Boolean; override;
+    function FreeDevice(): Boolean; override;
+    function Connect(): Boolean; override;
+    function Sync(): boolean; override;
+    function SendData(const data: PChar; const ans: boolean = true): Integer; override;
+    function RecvData(var data:PChar): Integer; override;
+    function Disconnect: boolean; override;
   end;
 
+var t_flashrunner: TFlashRunner;
 implementation
 const
   C_ERR_NOANSWER: integer = $7FFFFFFF; //
   C_ERR_TIMEOUT : integer = $7FFFFFFE; //
+  C_ERR_WRONG_STATE : integer = $7FFFFFFD; //
 // =============================================================================
 // Class        : --
 // Function     : Delay
@@ -220,13 +222,13 @@ begin
     result := t_ser.Active;
     PostEvent(DE_CONNECT, result);
   end;
-  ds_set := [DS_CONNECTED, DS_READY, DS_BUSY, DS_COMERROR];
+  ds_set := [DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR];
   result := (e_state in ds_set);
 end;
 
 // =============================================================================
 // Class        : TFlashRunner
-// Function     : Coordinate
+// Function     : Sync
 //                coordinate with the device
 // Parameter    : --
 // Return       : true, if the device is accesible in the time of timeout
@@ -235,7 +237,7 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TFlashRunner.Coordinate(): boolean;
+function TFlashRunner.Sync(): boolean;
 const C_STR_PING: string = 'SPING'; C_STR_PONG: string = 'PONG>'; C_TIMEOUT: cardinal = 3000;
 var s_ans: string; ds_set : set of EDeviceState; i_time: cardinal; ch: char;
 begin
@@ -264,7 +266,7 @@ begin
     //verify the received string
     s_ans := trim(s_ans);
     result := SameText(C_STR_PONG,s_ans);
-    PostEvent(DE_COORDINATE, result);
+    PostEvent(DE_SYNC, result);
   end;
 end;
 
@@ -280,14 +282,9 @@ end;
 // =============================================================================
 function TFlashRunner.SendStr(const str: string; const ans: boolean): integer;
 var ch: char; timeout: cardinal;
-    ds_set: set of EDeviceState;
 begin
   result := 0;
-  ds_set := [DS_CONNECTED, DS_COMERROR];
-  if (e_state in ds_set) then Coordinate();
-  
-  if (e_state = DS_READY) then
-    begin
+  if TryToReady() then begin
     timeout := GetTickCount() + i_timeout;
     //clear read-buffer of t_ser
     repeat if (t_ser.ReadChar(ch) <> 1) then Delay(C_DELAY_MSEC);
@@ -318,7 +315,7 @@ function TFlashRunner.RecvStr(var str: string): integer;
 var ch: char; timeout: cardinal;
 begin
   result := 0;
-  if e_state = DS_BUSY then begin
+  if e_state = DS_WAITING then begin
     timeout := GetTickCount() + i_timeout;
     //wait til any data arrives
     repeat if (t_ser.RxWaiting <= 0) then Delay(C_DELAY_MSEC);
