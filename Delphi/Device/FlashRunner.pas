@@ -84,8 +84,7 @@ var
 begin
   Result := -1;
   for I := Low(aArray) to High(aArray) do
-    if SameText(S, aArray[I]) then
-    begin
+    if SameText(S, aArray[I]) then begin
       Result := I;
       Break;
     end;
