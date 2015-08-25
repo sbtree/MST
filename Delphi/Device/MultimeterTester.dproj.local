@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2015/07/06 11:05:59.938.dproj,C:\Users\C1C65\Documents\RAD Studio\Projekte\Project1.dproj=C:\Users\C1C65\Documents\RAD Studio\Projekte\MultimeterTester.dproj</Transaction>
+    <Transaction>2015/07/06 11:06:09.140.pas,C:\Users\C1C65\Documents\RAD Studio\Projekte\Unit1.pas=C:\Users\C1C65\Documents\RAD Studio\Projekte\Main.pas</Transaction>
+    <Transaction>2015/07/06 11:06:09.140.dfm,C:\Users\C1C65\Documents\RAD Studio\Projekte\Unit1.dfm=C:\Users\C1C65\Documents\RAD Studio\Projekte\Main.dfm</Transaction>
+    <Transaction>2015/07/06 11:06:59.797.pas,C:\Users\C1C65\Documents\RAD Studio\Projekte\Main.pas=P:\DelphiSW\MultimeterTester\Main.pas</Transaction>
+    <Transaction>2015/07/06 11:06:59.797.dfm,C:\Users\C1C65\Documents\RAD Studio\Projekte\Main.dfm=P:\DelphiSW\MultimeterTester\Main.dfm</Transaction>
+    <Transaction>2015/07/06 11:07:04.752.dproj,C:\Users\C1C65\Documents\RAD Studio\Projekte\MultimeterTester.dproj=P:\DelphiSW\MultimeterTester\MultimeterTester.dproj</Transaction>
+    <Transaction>2015/08/11 10:46:36.984.pas,P:\DelphiSW\MultimeterTester\Unit1.pas=P:\DelphiSW\MultimeterTester\Multimeter.pas</Transaction>
+    <Transaction>2015.08.14 15:43:39.695.pas,C:\Users\C1C65\Google Drive\sunfive.de\BSU\MST\Delphi\Device\Main.pas=C:\Users\C1C65\Google Drive\sunfive.de\BSU\MST\Delphi\Device\MMTester.pas</Transaction>
+    <Transaction>2015.08.14 15:43:39.695.dfm,C:\Users\C1C65\Google Drive\sunfive.de\BSU\MST\Delphi\Device\Main.dfm=C:\Users\C1C65\Google Drive\sunfive.de\BSU\MST\Delphi\Device\MMTester.dfm</Transaction>
+  </Transactions>
+</BorlandProject>

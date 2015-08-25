@@ -1,0 +1,54 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{69cf2794-8d5c-4d48-8703-290c30990ddd}</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Projects Include="Device\FlashRunnerTester.dproj" />
+    <Projects Include="Device\MultimeterTester.dproj" />
+    <Projects Include="Product\ProductTester.dproj" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Default.Personality</Borland.Personality>
+    <Borland.ProjectType />
+    <BorlandProject>
+<BorlandProject xmlns=""><Default.Personality></Default.Personality></BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Target Name="ProductTester">
+    <MSBuild Projects="Product\ProductTester.dproj" Targets="" />
+  </Target>
+  <Target Name="ProductTester:Clean">
+    <MSBuild Projects="Product\ProductTester.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="ProductTester:Make">
+    <MSBuild Projects="Product\ProductTester.dproj" Targets="Make" />
+  </Target>
+  <Target Name="FlashRunnerTester">
+    <MSBuild Projects="Device\FlashRunnerTester.dproj" Targets="" />
+  </Target>
+  <Target Name="FlashRunnerTester:Clean">
+    <MSBuild Projects="Device\FlashRunnerTester.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="FlashRunnerTester:Make">
+    <MSBuild Projects="Device\FlashRunnerTester.dproj" Targets="Make" />
+  </Target>
+  <Target Name="MultimeterTester">
+    <MSBuild Projects="Device\MultimeterTester.dproj" Targets="" />
+  </Target>
+  <Target Name="MultimeterTester:Clean">
+    <MSBuild Projects="Device\MultimeterTester.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="MultimeterTester:Make">
+    <MSBuild Projects="Device\MultimeterTester.dproj" Targets="Make" />
+  </Target>
+  <Target Name="Build">
+    <CallTarget Targets="ProductTester;FlashRunnerTester;MultimeterTester" />
+  </Target>
+  <Target Name="Clean">
+    <CallTarget Targets="ProductTester:Clean;FlashRunnerTester:Clean;MultimeterTester:Clean" />
+  </Target>
+  <Target Name="Make">
+    <CallTarget Targets="ProductTester:Make;FlashRunnerTester:Make;MultimeterTester:Make" />
+  </Target>
+  <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
+</Project>

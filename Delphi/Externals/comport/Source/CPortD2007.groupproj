@@ -1,0 +1,54 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{30d9462d-dd7d-4212-9e72-464be76db3ac}</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Projects Include="..\Examples\delphi\ComExample.dproj" />
+    <Projects Include="CPortLibD2007.dproj" />
+    <Projects Include="DsgnCPortD2007.dproj" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Default.Personality</Borland.Personality>
+    <Borland.ProjectType />
+    <BorlandProject>
+  <BorlandProject xmlns=""> <Default.Personality> </Default.Personality> </BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Target Name="CPortLibD2007">
+    <MSBuild Projects="CPortLibD2007.dproj" Targets="" />
+  </Target>
+  <Target Name="CPortLibD2007:Clean">
+    <MSBuild Projects="CPortLibD2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="CPortLibD2007:Make">
+    <MSBuild Projects="CPortLibD2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="DsgnCPortD2007">
+    <MSBuild Projects="DsgnCPortD2007.dproj" Targets="" />
+  </Target>
+  <Target Name="DsgnCPortD2007:Clean">
+    <MSBuild Projects="DsgnCPortD2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="DsgnCPortD2007:Make">
+    <MSBuild Projects="DsgnCPortD2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="ComExample">
+    <MSBuild Projects="..\Examples\delphi\ComExample.dproj" Targets="" />
+  </Target>
+  <Target Name="ComExample:Clean">
+    <MSBuild Projects="..\Examples\delphi\ComExample.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="ComExample:Make">
+    <MSBuild Projects="..\Examples\delphi\ComExample.dproj" Targets="Make" />
+  </Target>
+  <Target Name="Build">
+    <CallTarget Targets="CPortLibD2007;DsgnCPortD2007;ComExample" />
+  </Target>
+  <Target Name="Clean">
+    <CallTarget Targets="CPortLibD2007:Clean;DsgnCPortD2007:Clean;ComExample:Clean" />
+  </Target>
+  <Target Name="Make">
+    <CallTarget Targets="CPortLibD2007:Make;DsgnCPortD2007:Make;ComExample:Make" />
+  </Target>
+  <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
+</Project>

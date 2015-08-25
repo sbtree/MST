@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <Transactions>
+    <Transaction>2015/07/07 14:51:20.005.groupproj,C:\Users\C1C65\Documents\RAD Studio\Projekte\ProjectGroup1.groupproj=P:\DelphiSW\lib\comport\Source\CPortLibD2007.groupproj</Transaction>
+    <Transaction>2015/07/07 14:51:50.175.groupproj,P:\DelphiSW\lib\comport\Source\CPortLibD2007.groupproj=P:\DelphiSW\lib\comport\Source\CPortD2007.groupproj</Transaction>
+  </Transactions>
+  <Default.Personality>
+    <Projects ActiveProject="ComExample.exe"/>
+  </Default.Personality>
+</BorlandProject>
