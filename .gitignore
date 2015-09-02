@@ -5,3 +5,6 @@
 *.exe
 *.~1~
 *.~2~
+*.identcache
+*.identcache
+*.local

@@ -41,11 +41,18 @@
     <DelphiCompile Include="FlashRunnerTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\General\DataBuffer.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="DeviceBase.pas" />
     <DCCReference Include="FlashRunner.pas" />
     <DCCReference Include="FRMain.pas">
       <Form>FRTester</Form>
     </DCCReference>
+    <DCCReference Include="InterpreterBase.pas" />
+    <DCCReference Include="Multimeter.pas" />
+    <DCCReference Include="Oscilloscope.pas" />
+    <None Include="ModelSupport_FlashRunnerTester\DataBuffer\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTester\DataBuffer\default.txvpck" />
     <None Include="ModelSupport_FlashRunnerTester\default.txaPackage" />
     <None Include="ModelSupport_FlashRunnerTester\default.txvpck" />
     <None Include="ModelSupport_FlashRunnerTester\DeviceBase\default.txvpck" />
@@ -53,6 +60,9 @@
     <None Include="ModelSupport_FlashRunnerTester\FlashRunner\default.txvpck" />
     <None Include="ModelSupport_FlashRunnerTester\FRMain\default.txaPackage" />
     <None Include="ModelSupport_FlashRunnerTester\FRMain\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTester\GenUtils\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTester\InterpreterBase\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTester\InterpreterBase\default.txvpck" />
     <None Include="ModelSupport_FlashRunnerTest\default.txaPackage" />
     <None Include="ModelSupport_FlashRunnerTest\default.txvpck" />
     <None Include="ModelSupport_FlashRunnerTest\FlashRunnerTest\default.txvpck" />

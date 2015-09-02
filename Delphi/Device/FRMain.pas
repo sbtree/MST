@@ -51,7 +51,7 @@ begin
       FRTester.memDisplay.Lines.Append(s_temp);
       i_len := FlashRunner.RecvStr(s_recv);
       if i_len > 0 then begin
-        i_err := FlashRunner.GetLastError();
+        i_err := FlashRunner.GetLastError(s_temp);
         if i_err = 0 then begin
           result := C_REAL_OK;
           //log message
@@ -94,7 +94,7 @@ begin
           FRTester.memDisplay.Lines.Append(s_temp);
           i_len := FlashRunner.RecvStr(s_recv);
           if i_len > 0 then begin
-            i_err := FlashRunner.GetLastError();
+            i_err := FlashRunner.GetLastError(s_temp);
             if i_err = 0 then begin
               result := C_REAL_OK;
               //log message
@@ -126,7 +126,7 @@ begin
     end;
   end else begin
     //error message
-    s_temp := '<Error in Parameter: 2 Parameter is needed.';
+    s_temp := '<Error in Parameter: 2 Parameters are needed.';
     FRTester.memDisplay.Lines.Append(s_temp);
   end;
   t_pars.Clear;
@@ -136,8 +136,6 @@ end;
 procedure TFRTester.btnRunScriptClick(Sender: TObject);
 var str_temp: string; i_ms: cardinal;
 begin
-  if not FlashRunner.Connect() then exit;
-
   str_temp := trim(txtCmd.Text);
   if lstSending.Items.IndexOf(str_temp) < 0 then lstSending.Items.Add(str_temp);
 
@@ -151,8 +149,6 @@ end;
 procedure TFRTester.btnSendClick(Sender: TObject);
 var str_temp: string; i_ms: cardinal;
 begin
-  if not FlashRunner.Connect() then exit;
-
   str_temp := trim(txtCmd.Text);
   if lstSending.Items.IndexOf(str_temp) < 0 then lstSending.Items.Add(str_temp);
 
@@ -167,8 +163,6 @@ end;
 procedure TFRTester.btnSetDMClick(Sender: TObject);
 var str_temp: string; i_ms: cardinal;
 begin
-  if not FlashRunner.Connect() then exit;
-
   str_temp := trim(txtCmd.Text);
   if lstSending.Items.IndexOf(str_temp) < 0 then lstSending.Items.Add(str_temp);
 
@@ -182,11 +176,7 @@ end;
 procedure TFRTester.btnStartClick(Sender: TObject);
 begin
   //btnStart.Caption := '&Start';
-  if FlashRunner.Connect() then begin
-    if FlashRunner.Coordinate() then begin
-      //btnStart.Caption := '&Stop';
-    end;
-  end;
+  //FlashRunner.TryToReady();
 end;
 
 procedure TFRTester.FormCreate(Sender: TObject);

@@ -6,6 +6,8 @@
   <ItemGroup>
     <Projects Include="Device\FlashRunnerTester.dproj" />
     <Projects Include="Device\MultimeterTester.dproj" />
+    <Projects Include="Function\FunctionTester.dproj" />
+    <Projects Include="General\GeneralTester.dproj" />
     <Projects Include="Product\ProductTester.dproj" />
   </ItemGroup>
   <ProjectExtensions>
@@ -41,14 +43,32 @@
   <Target Name="MultimeterTester:Make">
     <MSBuild Projects="Device\MultimeterTester.dproj" Targets="Make" />
   </Target>
+  <Target Name="GeneralTester">
+    <MSBuild Projects="General\GeneralTester.dproj" Targets="" />
+  </Target>
+  <Target Name="GeneralTester:Clean">
+    <MSBuild Projects="General\GeneralTester.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="GeneralTester:Make">
+    <MSBuild Projects="General\GeneralTester.dproj" Targets="Make" />
+  </Target>
+  <Target Name="FunctionTester">
+    <MSBuild Projects="Function\FunctionTester.dproj" Targets="" />
+  </Target>
+  <Target Name="FunctionTester:Clean">
+    <MSBuild Projects="Function\FunctionTester.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="FunctionTester:Make">
+    <MSBuild Projects="Function\FunctionTester.dproj" Targets="Make" />
+  </Target>
   <Target Name="Build">
-    <CallTarget Targets="ProductTester;FlashRunnerTester;MultimeterTester" />
+    <CallTarget Targets="ProductTester;FlashRunnerTester;MultimeterTester;GeneralTester;FunctionTester" />
   </Target>
   <Target Name="Clean">
-    <CallTarget Targets="ProductTester:Clean;FlashRunnerTester:Clean;MultimeterTester:Clean" />
+    <CallTarget Targets="ProductTester:Clean;FlashRunnerTester:Clean;MultimeterTester:Clean;GeneralTester:Clean;FunctionTester:Clean" />
   </Target>
   <Target Name="Make">
-    <CallTarget Targets="ProductTester:Make;FlashRunnerTester:Make;MultimeterTester:Make" />
+    <CallTarget Targets="ProductTester:Make;FlashRunnerTester:Make;MultimeterTester:Make;GeneralTester:Make;FunctionTester:Make" />
   </Target>
   <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
 </Project>

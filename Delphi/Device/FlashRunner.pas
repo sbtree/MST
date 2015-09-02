@@ -23,27 +23,25 @@ type
   protected
     t_ser: TSerial;
   protected
-    function ConfigConnByStr(const conf: string): boolean;
     procedure CheckAnswer(const ans: string);
+    function ConfigConnByStr(const conf: string): boolean;
+    function Sync(): boolean; override;
 
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
-
-    function SendStr(const str: string; const ans: boolean = true): integer;
-    function RecvStr(var str:string): integer;
     function IntToDMDataStr(const num: integer): string;
 
     function ConfigDevice(const ini: TMemIniFile): Boolean; override;
     function FreeDevice(): Boolean; override;
     function Connect(): Boolean; override;
-    function Sync(): boolean; override;
-    function SendData(const data: PChar; const ans: boolean = true): Integer; override;
-    function RecvData(var data:PChar): Integer; override;
     function Disconnect: boolean; override;
+    function SendStr(const data: string; const ans: boolean = true): integer; override;
+    function RecvStr(var data: string): integer; override;
   end;
 
-var t_flashrunner: TFlashRunner;
+var t_flashrunner: TFlashRunner; //a global variable of the FlashRunner instance
+
 implementation
 const
   C_ERR_NOANSWER: integer = $7FFFFFFF; //
@@ -279,7 +277,7 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TFlashRunner.SendStr(const str: string; const ans: boolean): integer;
+function TFlashRunner.SendStr(const data: string; const ans: boolean): integer;
 var ch: char; timeout: cardinal;
 begin
   result := 0;
@@ -289,11 +287,11 @@ begin
     repeat if (t_ser.ReadChar(ch) <> 1) then Delay(C_DELAY_MSEC);
     until ((t_ser.RxWaiting <= 0) or (GetTickCount() >= timeout));
 
-    t_ser.WriteString(str);
+    t_ser.WriteString(data);
     //wait til write-buffer is completely sent
     repeat if (t_ser.TxWaiting > 0) then Delay(C_DELAY_MSEC);
     until ((t_ser.TxWaiting <= 0) or (GetTickCount() >= timeout));
-    result := (length(str) - t_ser.TxWaiting);
+    result := (length(data) - t_ser.TxWaiting);
 
     PostEvent(DE_SEND, (result > 0));
     if (not ans) then PostEvent(DE_RECV, true);
@@ -310,7 +308,7 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TFlashRunner.RecvStr(var str: string): integer;
+function TFlashRunner.RecvStr(var data: string): integer;
 var ch: char; timeout: cardinal;
 begin
   result := 0;
@@ -321,17 +319,17 @@ begin
     until ((t_ser.RxWaiting > 0) or (GetTickCount() >= timeout));
 
     //prepare string for receiving
-    str := '';
+    data := '';
     //receive char and save it into the string
     repeat
     begin
       ch := chr(0);
-      if (t_ser.ReadChar(ch) = 1) then str := str + ch
+      if (t_ser.ReadChar(ch) = 1) then data := data + ch
       else Delay(C_DELAY_MSEC);
     end;
     until ((t_ser.RxWaiting <= 0) or (GetTickCount() >= timeout));
-    result := length(str);
-    CheckAnswer(str);
+    result := length(data);
+    CheckAnswer(data);
     PostEvent(DE_RECV, (i_lasterr=0));
   end;
 end;
@@ -412,38 +410,6 @@ begin
     end;
     PostEvent(DE_CONFIG, result);;
   end;
-end;
-
-// =============================================================================
-// Class        : TFlashRunner
-// Function     : SendData
-//                send data to device
-// Parameter    : data, a pointer to char buffer to send
-// Return       : integer, which counts bytes, which are sent
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TFlashRunner.SendData(const data: PChar; const ans: boolean): Integer;
-begin
-  //to do
-  result := 0;
-end;
-
-// =============================================================================
-// Class        : TFlashRunner
-// Function     : RecvData
-//                receive data from device
-// Parameter    : data, a pointer to char buffer for receiving
-// Return       : integer, which counts bytes, which are received
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TFlashRunner.RecvData(var data:PChar): Integer;
-begin
-  //to do
-  result := 0;
 end;
 
 // =============================================================================

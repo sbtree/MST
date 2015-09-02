@@ -5,6 +5,6 @@
     <Transaction>2015/08/11 11:33:17.684.groupproj,P:\DelphiSW\mst\mtxmodules.groupproj=P:\DelphiSW\mst\MetronixServoTester.groupproj</Transaction>
   </Transactions>
 	<Default.Personality>
-		<Projects ActiveProject="FlashRunnerTester.exe"/>
+		<Projects ActiveProject="FunctionTester.exe"/>
 	</Default.Personality>
 </BorlandProject>
