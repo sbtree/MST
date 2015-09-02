@@ -3,7 +3,8 @@ program FunctionTester;
 uses
   Forms,
   FTMain in 'FTMain.pas' {Form4},
-  FunctionBase in 'FunctionBase.pas';
+  FunctionBase in 'FunctionBase.pas',
+  FuncFlashRunner in 'FuncFlashRunner.pas';
 
 {$R *.res}
 
