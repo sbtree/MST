@@ -3,29 +3,26 @@ unit DataBuffer;
 interface
 uses Windows, SysUtils;
 type
-  IBufferInterf = interface
-    function BufferSize: Integer;
-    function ResetBuffer: Boolean;
-    function CountFree: Integer;
-    function CountUsed: Integer;
-    function IsEmpty: Boolean;
-    function IsFull: Boolean;
-  end;
 
-  TBufferBase = class(TInterfacedObject, IBufferInterf)
+  TBufferBase = class
   protected
-    i_length  : Integer; //length of buffer
-    p_read    : Integer; //pointer to read
-    p_write   : Integer; //pointer to write
-    b_full    : Boolean; //specifies if the buffer is full
+    i_size  : Integer; //size of buffer
+    p_read  : Integer; //pointer to read
+    p_write : Integer; //pointer to write
+    b_overlap: Boolean; //indicate if write-pointer oversteps reader-pointer
+  protected
+    function ForwardRead(): boolean;
+    function ForwardWrite(): boolean;
+
   public
-    constructor Create;overload;
-    constructor Create(len : Integer);overload;virtual;abstract;
+    property Size: integer Read i_size;
+
+  public
+    constructor Create;
     destructor Destroy;override;
 
-    function BufferSize: Integer;
-    function InitBuffer(len:Integer):Boolean;virtual;abstract;
-    function ResetBuffer: Boolean;
+    function Resize(const n: Integer):Boolean; virtual; abstract;
+    function Clear: Boolean; virtual;
     function CountFree: Integer;
     function CountUsed: Integer;
     function IsEmpty: Boolean;
@@ -35,13 +32,16 @@ type
   TCharBuffer = class(TBufferBase)
   protected
     a_chars    : array of char; //dynamic buffer
+
   protected
     function IsHexString(const str: string): boolean;
     function WriteHexStr(const str: string): integer;
+
   public
-    constructor Create(len : Integer);override;
+    constructor Create;
     destructor Destroy;override;
-    function InitBuffer(len: integer): boolean;override;
+
+    function Resize(const n: Integer):Boolean; override;
     function ReadChar(var ch: char): boolean;
     function ReadStr(const bHex: boolean = false): String;
     function WriteChar(ch: char): boolean;
@@ -53,13 +53,32 @@ const
 
 implementation
 
+function TBufferBase.ForwardRead(): boolean;
+begin
+  inc(p_read);
+  p_read := (p_read mod i_size);
+  b_overlap := false;
+  result := true;
+end;
+
+function TBufferBase.ForwardWrite(): boolean;
+begin
+  result := false;
+  if not b_overlap then begin
+    inc(p_write);
+    p_write := (p_write mod i_size);
+    b_overlap := (p_write = p_read);
+    result := true;
+  end;
+end;
+
 constructor TBufferBase.Create;
 begin
 	inherited Create;
-  i_length:= 0;
+  i_size  := C_BUFFER_SIZE;
   p_read  := 0;
   p_write := 0;
-  b_full  := false;
+  b_overlap := false;
 end;
 
 destructor TBufferBase.Destroy;
@@ -67,39 +86,32 @@ begin
 	inherited Destroy;
 end;
 
-function TBufferBase.BufferSize: integer;
+function TBufferBase.Clear(): boolean;
 begin
-  result := i_length;
-end;
-
-function TBufferBase.ResetBuffer(): boolean;
-begin
-  p_write:= 0;
   p_read := p_write;
-  b_full := false;
+  b_overlap := false;
   result := true;
 end;
 
 function TBufferBase.CountUsed(): integer;
 begin
-  if b_full then result := i_length
-  else if (p_write >= p_read) then result := p_write - p_read
-  else result := i_length + p_write - p_read;
+  if b_overlap then result := i_size
+  else result := ((i_size + p_write - p_read) mod i_size);
 end;
 
 function TBufferBase.CountFree(): integer;
 begin
-  result := i_length - CountUsed();
+  result := i_size - CountUsed();
 end;
 
 function TBufferBase.IsFull(): boolean;
 begin
-  result := (CountUsed() >= i_length);
+  result := b_overlap;
 end;
 
 function TBufferBase.IsEmpty(): boolean;
 begin
-  result := ((CountUsed() <= 0) and (i_length > 0));
+  result := (CountUsed() = 0) ;
 end;
 
 function TCharBuffer.IsHexString(const str: string): boolean;
@@ -135,10 +147,11 @@ begin
   end;
 end;
 
-constructor TCharBuffer.Create(len : Integer);
+constructor TCharBuffer.Create();
 begin
   inherited Create;
-  InitBuffer(len);
+  SetLength(a_chars, i_size);
+  ZeroMemory(a_chars, i_size);
 end;
 
 destructor TCharBuffer.Destroy;
@@ -147,15 +160,15 @@ begin
 	inherited Destroy;
 end;
 
-function TCharBuffer.InitBuffer(len: integer): boolean;
+function TCharBuffer.Resize(const n: Integer):Boolean;
 begin
   result := false;
-  if (len > 0) then
-  begin
-    i_length := len;
-    SetLength(a_chars, i_length);
-    ZeroMemory(a_chars, i_length);
-    result := ResetBuffer();
+  if (n > 0) then begin
+    i_size := n;
+    SetLength(a_chars, i_size);
+    if p_write >= i_size then p_write := i_size -1;
+    if p_read >= i_size then p_read := i_size -1;
+    result := true;
   end;
 end;
 
@@ -165,17 +178,16 @@ begin
   if result then
   begin
     ch := a_chars[p_read];
-    Inc(p_read);
-    p_read := (p_read mod i_length);
-    b_full := false;
+    result := ForwardRead();
   end;
 end;
 
 function TCharBuffer.ReadStr(const bHex: boolean): String;
 var ch: char;
 begin
+  result := '';
   if bHex then while (ReadChar(ch)) do result := result + format('%.02x',[integer(ch)])
-  else result := result + ch;
+  else while (ReadChar(ch)) do result := result + ch;
 end;
 
 function TCharBuffer.WriteChar(ch: char): boolean;
@@ -184,9 +196,7 @@ begin
   if result then
   begin
     a_chars[p_write] := ch;
-    Inc(p_write);
-    p_write := (p_write mod i_length);
-    b_full := (p_write = p_read);
+    result := ForwardWrite();
   end;
 end;
 
