@@ -1,4 +1,4 @@
-unit FRMain;
+unit FormFR;
 
 interface
 
@@ -36,7 +36,7 @@ const
   C_REAL_OK : Real = 0.0;
   C_REAL_NOK: Real = -1.0;
 var FlashRunner: TFlashRunner;
-
+{
 function FR_Run_Script(const par: string): real;
 var s_send, s_recv, s_temp: string; i_len, i_err: integer;
 begin
@@ -132,7 +132,7 @@ begin
   t_pars.Clear;
   FreeAndNil(t_pars);
 end;
-
+}
 procedure TFRTester.btnRunScriptClick(Sender: TObject);
 var str_temp: string; i_ms: cardinal;
 begin
@@ -140,7 +140,7 @@ begin
   if lstSending.Items.IndexOf(str_temp) < 0 then lstSending.Items.Add(str_temp);
 
   i_ms := GetTickCount();
-  FR_Run_Script(str_temp);
+  flashrunner.RunScript(str_temp);
   i_ms := GetTickCount() - i_ms;
   str_temp := format('elapse: %d ms', [i_ms]);
   memDisplay.Lines.Append(str_temp);
@@ -167,7 +167,7 @@ begin
   if lstSending.Items.IndexOf(str_temp) < 0 then lstSending.Items.Add(str_temp);
 
   i_ms := GetTickCount();
-  FR_Set_DM(str_temp);
+  FlashRunner.SetDynamicMem(str_temp);
   i_ms := GetTickCount() - i_ms;
   str_temp := format('elapse: %d ms', [i_ms]);
   memDisplay.Lines.Append(str_temp);

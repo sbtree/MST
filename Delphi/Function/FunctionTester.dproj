@@ -1,4 +1,5 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{277ea074-a5eb-468e-ad81-cbe3bc8e0291}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -13,10 +14,18 @@
     <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
     <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
     <DCC_Define>RELEASE</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals</DCC_IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <Version>7.0</Version>
     <DCC_Define>DEBUG</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals</DCC_IncludePath>
   </PropertyGroup>
   <ProjectExtensions>
     <Borland.Personality>Delphi.Personality</Borland.Personality>
@@ -32,8 +41,14 @@
     <DelphiCompile Include="FunctionTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
-    <DCCReference Include="FTMain.pas">
-      <Form>Form4</Form>
+    <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\ProtocolBase.pas" />
+    <DCCReference Include="..\Device\DeviceBase.pas" />
+    <DCCReference Include="..\Device\FlashRunner.pas" />
+    <DCCReference Include="..\General\DataBuffer.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
+    <DCCReference Include="FormFunctionTester.pas">
+      <Form>FormFTMain</Form>
     </DCCReference>
     <DCCReference Include="FuncFlashRunner.pas" />
     <DCCReference Include="FunctionBase.pas" />

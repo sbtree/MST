@@ -2,7 +2,7 @@ program ProductTester;
 
 uses
   Forms,
-  PRODTester in 'PRODTester.pas' {Form3},
+  FormProdTester in 'FormProdTester.pas' {FormPTMain},
   MtxDIS2 in 'MtxDIS2.pas',
   MtxProduct in 'MtxProduct.pas',
   MtxARS2000 in 'MtxARS2000.pas';
@@ -12,6 +12,6 @@ uses
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TForm3, Form3);
+  Application.CreateForm(TFormPTMain, FormPTMain);
   Application.Run;
 end.

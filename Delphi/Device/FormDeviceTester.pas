@@ -1,4 +1,4 @@
-unit FTMain;
+unit FormDeviceTester;
 
 interface
 
@@ -7,7 +7,7 @@ uses
   Dialogs;
 
 type
-  TForm4 = class(TForm)
+  TFormDTMain = class(TForm)
   private
     { Private-Deklarationen }
   public
@@ -15,7 +15,7 @@ type
   end;
 
 var
-  Form4: TForm4;
+  FormDTMain: TFormDTMain;
 
 implementation
 

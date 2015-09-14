@@ -1,4 +1,4 @@
-unit PRODTester;
+unit FormPTMain;
 
 interface
 
@@ -7,7 +7,7 @@ uses
   Dialogs, StdCtrls;
 
 type
-  TForm3 = class(TForm)
+  TFormPTMain = class(TForm)
     btnTest: TButton;
     procedure btnTestClick(Sender: TObject);
   private
@@ -17,13 +17,13 @@ type
   end;
 
 var
-  Form3: TForm3;
+  FormPTMain: TFormPTMain;
 
 implementation
 
 {$R *.dfm}
 
-procedure TForm3.btnTestClick(Sender: TObject);
+procedure TFormPTMain.btnTestClick(Sender: TObject);
 var pch: PChar; str: string; i: integer;
 begin
   str := 'ABCDE';

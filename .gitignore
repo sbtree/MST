@@ -8,4 +8,9 @@
 *.identcache
 *.identcache
 *.local
+<<<<<<< HEAD
+=======
+*.local
+*.local
+>>>>>>> origin/master
 *.local

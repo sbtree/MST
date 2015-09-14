@@ -30,10 +30,10 @@
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
     <DCCReference Include="DataBuffer.pas" />
-    <DCCReference Include="GenUtils.pas" />
-    <DCCReference Include="GTMain.pas">
+    <DCCReference Include="FormGTMain.pas">
       <Form>Form2</Form>
     </DCCReference>
+    <DCCReference Include="GenUtils.pas" />
     <None Include="ModelSupport_GeneralTester\DataBuffer\default.txvpck" />
     <None Include="ModelSupport_GeneralTester\default.txaPackage" />
     <None Include="ModelSupport_GeneralTester\default.txvpck" />

@@ -1,7 +1,7 @@
-object Form3: TForm3
+object FormCTMain: TFormCTMain
   Left = 0
   Top = 0
-  Caption = 'Form3'
+  Caption = 'CommunicationTester'
   ClientHeight = 301
   ClientWidth = 562
   Color = clBtnFace
@@ -13,13 +13,4 @@ object Form3: TForm3
   OldCreateOrder = False
   PixelsPerInch = 96
   TextHeight = 13
-  object btnTest: TButton
-    Left = 416
-    Top = 248
-    Width = 75
-    Height = 25
-    Caption = '&Test'
-    TabOrder = 0
-    OnClick = btnTestClick
-  end
 end

@@ -2,7 +2,7 @@ program GeneralTester;
 
 uses
   Forms,
-  GTMain in 'GTMain.pas' {Form2},
+  FormGTMain in 'FormGTMain.pas' {Form2},
   DataBuffer in 'DataBuffer.pas',
   GenUtils in 'GenUtils.pas';
 

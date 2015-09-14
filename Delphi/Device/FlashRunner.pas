@@ -23,30 +23,37 @@ type
   protected
     t_ser: TSerial;
   protected
-    procedure CheckAnswer(const ans: string);
+    function CheckAnswer(const ans: string): boolean;
     function ConfigConnByStr(const conf: string): boolean;
     function Sync(): boolean; override;
+    function IntToDMDataStr(const num: integer): string;
 
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
-    function IntToDMDataStr(const num: integer): string;
 
+    function GetLastError(var msg: string): Integer; override;
     function ConfigDevice(const ini: TMemIniFile): Boolean; override;
     function FreeDevice(): Boolean; override;
     function Connect(): Boolean; override;
     function Disconnect: boolean; override;
     function SendStr(const data: string; const ans: boolean = true): integer; override;
     function RecvStr(var data: string): integer; override;
+
+    function SetDynamicMem(const addr: word; const num: integer): boolean;
+    function RunScript(const script: string; const msecs: integer = -1): boolean;
   end;
 
 var t_flashrunner: TFlashRunner; //a global variable of the FlashRunner instance
 
 implementation
 const
-  C_ERR_NOANSWER: integer = $7FFFFFFF; //
-  C_ERR_TIMEOUT : integer = $7FFFFFFE; //
-  C_ERR_WRONG_STATE : integer = $7FFFFFFD; //
+  C_ERR_PORT      = $8001; //
+  C_ERR_BAUDRATE  = $8002; //
+  C_ERR_WRONG_ANS = $8003; //
+  C_ERR_WRONG_STA = $8004; //
+  C_ERR_TIMEOUT   = $8005; //
+
 // =============================================================================
 // Class        : --
 // Function     : Delay
@@ -98,7 +105,7 @@ end;
 //                false, otherwise
 // Exceptions   : --
 // First author : 2015-08-14 /bsu/
-// History      :
+// History      : 2015-09-03 /bsu/ return true, only if PORT and BAUDRATE are both configured
 // =============================================================================
 function TFlashRunner.ConfigConnByStr(const conf: string): boolean;
 const CSTR_KEYS: array[0..1] of string = ('PORT','BAUDRATE');
@@ -106,32 +113,41 @@ var
   s_in, s_key, s_val: string;
   t_keyvalues, t_keyval: TStringList;
   i, i_value, i_idx: integer;
+  ar_flags : array[LOW(CSTR_KEYS)..HIGH(CSTR_KEYS)] of boolean;
 begin
   s_in := trim(conf);
   result := false;
   t_keyvalues := TStringList.Create;
   t_keyval := TStringList.Create;
-  if (ExtractStrings(['|'], [' ', Char(9)], PChar(s_in), t_keyvalues) > 0) then
-  begin
+  for i := LOW(ar_flags) to HIGH(ar_flags) do ar_flags[i] := false;
+
+  if (ExtractStrings(['|'], [' ', Char(9)], PChar(s_in), t_keyvalues) > 0) then begin
     i := 0;
-    result := true;
     repeat
       t_keyval.Clear;
-      if (ExtractStrings([':'], [' '], PChar(t_keyvalues[i]), t_keyval) = 2) then
-      begin
+      if (ExtractStrings([':'], [' '], PChar(t_keyvalues[i]), t_keyval) = 2) then begin
         s_key := UpperCase(t_keyval[0]);
         s_val := UpperCase(t_keyval[1]);
         i_idx := IndexOfStr( CSTR_KEYS, s_key);
+        i_lasterr := C_ERR_PORT + i_idx;
         case i_idx of
-        0: //'PORT'
-        begin
-          result := TryStrToInt(s_val, i_value);
-          if result then t_ser.Port := i_value;
+        0: begin//'PORT'
+          if TryStrToInt(s_val, i_value) then begin
+            if ((i_value >= 1) and (i_value <= 256)) then begin
+              t_ser.Port := i_value;
+              ar_flags[i_idx] := true;
+              i_lasterr := C_ERR_NOERROR;
+              s_lastmsg := '';
+            end else s_lastmsg := format('serial port out of range [1..256]: %d', [i_value]);
+          end else s_lastmsg := format('invalid serial port: %s', [s_val]);
         end;
-        1: //'BAUDRATE'
-        begin
-          result := TryStrToInt(s_val, i_value);
-          if result then t_ser.Baudrate := i_value;
+        1: begin//'BAUDRATE'
+          if TryStrToInt(s_val, i_value) then begin
+            t_ser.Baudrate := i_value;
+            ar_flags[i_idx] := true;
+            i_lasterr := C_ERR_NOERROR;
+            s_lastmsg := '';
+          end else s_lastmsg := format('invalid baudrate of serial port: %s', [s_val]);
         end;
         end;
       end;
@@ -142,6 +158,15 @@ begin
   FreeAndNil(t_keyval);
   t_keyvalues.Clear;
   FreeAndNil(t_keyvalues);
+  result := true;
+  for i := LOW(ar_flags) to HIGH(ar_flags) do  begin
+    if not ar_flags[i] then begin
+      i_lasterr := C_ERR_PORT + i;
+      s_lastmsg := format('[%s] of serial port is not given.', [CSTR_KEYS[i]]);
+      result := false;
+      break;
+    end;
+  end;
 end;
 
 // =============================================================================
@@ -344,21 +369,40 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-procedure TFlashRunner.CheckAnswer(const ans: string);
+function TFlashRunner.CheckAnswer(const ans: string): boolean;
+const C_VALID_CHARS: set of char = ['>', '!'];
 var s_in: string; i_len: integer;
 begin
   s_in := trim(ans);
   i_len := length(s_in);
-  if (i_len > 0) then
-  begin
-    if (s_in[i_len] = '!') then //if command generated an error
-    begin
+  s_lastmsg := format('answer string: %s', [IfThen(i_len>0,ans,'[empty]')]);
+  if (i_len > 0) then begin
+    if (s_in[i_len] = '>') then  i_lasterr := C_ERR_NOERROR //sucessful answer
+    else if (s_in[i_len] = '!') then begin //failure answer
       delete(s_in, i_len, 1);
       TryStrToInt(s_in, i_lasterr);
-    end
-    else i_lasterr := 0;
-  end
-  else i_lasterr := C_ERR_NOANSWER;
+    end  else i_lasterr := C_ERR_UNKNOWN;
+  end else  i_lasterr := C_ERR_WRONG_ANS;
+  result := (i_lasterr = C_ERR_NOERROR);
+end;
+
+// =============================================================================
+// Class        : TFlashRunner
+// Function     : GetLastError
+//                override function
+// Parameter    : msg, output string
+// Return       : integer, last error number and set msg with the last message
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TFlashRunner.GetLastError(var msg: string): Integer;
+begin
+  result := i_lasterr;
+  case i_lasterr of
+  0: msg := 'No error exist.';
+  else msg := 'This error is not specified.';
+  end;
 end;
 
 // =============================================================================
@@ -447,4 +491,55 @@ begin
   result := Disconnect();
   PostEvent(DE_FREE, result);;
 end;
+
+// =============================================================================
+// Class        : TFlashRunner
+// Function     : SetDynamicMem
+//                builds a string for setting dynamic memory of flash runner and
+//                sends it to flash runner, then receives the answer and checks it.
+//                The dynamic memory has 512 bytes and is addressed from 0 on.
+// Parameter    : addr, address of dynamic memory in flash runner
+//                num, a integer which is being set in the dynamic memory
+// Return       : true, if the device is released successfully
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TFlashRunner.SetDynamicMem(const addr: word; const num: integer): boolean;
+var s_send, s_answer: string;
+begin
+  result := false;
+  s_send := format('DMSET $%.4x 8 %s', [addr, IntToDMDataStr(num)]) + Char(13);
+  if SendStr(s_send) = length(s_send) then begin
+    if RecvStr(s_answer) > 0 then result := CheckAnswer(s_answer);
+  end;
+end;
+
+// =============================================================================
+// Class        : TFlashRunner
+// Function     : SetDynamicMem
+//                builds a string for executing a script form SD card of flash
+//                runner, then receives the answer and checks it
+// Parameter    : script, address of dynamic memory in flash runner
+//                num, a integer which is being set in the dynamic memory
+// Return       : true, if the device is released successfully
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TFlashRunner.RunScript(const script: string; const msecs: integer): boolean;
+var s_send, s_answer: string; i_tmp: cardinal;
+begin
+  result := false;
+  i_tmp := i_timeout;
+  SetTimeout(msecs);
+  s_send := format('RUN %s', [script]) + Char(13);
+  if SendStr(s_send) = length(s_send) then begin
+    if RecvStr(s_answer) > 0 then result := CheckAnswer(s_answer);
+  end;
+  SetTimeout(i_tmp);
+end;
+
 end.

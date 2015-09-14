@@ -8,7 +8,7 @@
 unit DeviceBase;
 
 interface
-uses Classes, IniFiles;
+uses Classes, SysUtils, IniFiles, ConnBase, ProtocolBase;
 type
 // =============================================================================
 // Enumeration  : EDeviceState
@@ -17,7 +17,7 @@ type
 // History      :
 // =============================================================================
   EDeviceState = (
-                  DS_NONE, //none state, in which the device is not yet configured
+                  DS_NONE, //none state, in which the device object is just created and yet configured
                   DS_CONFIGURED, //configured state, in which the device is configured
                   DS_CONNECTED, //connected state, in which the device is connected
                   DS_READY, //ready state, in which the device is ready to communicate
@@ -40,6 +40,7 @@ type
                   DE_DISCONNECT, //event, which disconnects from device, e.g. Disconnect is called
                   DE_FREE //event, which releases device, e.g. FreeDevice is called
                   );
+  DeviceStateSet = set of EDeviceState;
 
   // =============================================================================
   // Class        : TDeviceBase
@@ -53,36 +54,63 @@ type
   TDeviceBase=class(TComponent)
   protected
   var
-    e_state:EDeviceState;  //device state
-    i_timeout: cardinal;  //timeout in millisecond
-    i_lasterr: integer;  //last error number
-    s_lastmsg: string;  //last message
+    e_state: EDeviceState;  //device state
+    i_timeout: cardinal;    //timeout in millisecond
+    i_lasterr: integer;     //last error number
+    s_lastmsg: string;      //last message
+    s_devname: string;      //name of the device
+    b_comhexa: boolean;     //hexadizcimal data in string to transfer if it is true
+
+    t_wbuffer: TCharBuffer; //a ring buffer of char for sending data to device
+    t_rbuffer: TCharBuffer; //a ring buffer of char for receiving data from device
+    t_conn: TConnBase;      //connection
+    t_prot: TProtBase;      //protocol of communication
+
+  strict private
+    function GetDeviceStateString : string;
+
   protected
     procedure PostEvent(const event: EDeviceEvent; const ok: boolean);
-    function Sync(): boolean; virtual;abstract;
-    function TryToReady: boolean;
+    function Sync(): boolean; virtual;
+    function TryToReady: boolean; virtual;
 
   public
-    property DeviceState : EDeviceState read e_state;
-
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
+    property DeviceState : EDeviceState read e_state;
+    property DeviceStateString : string read GetDeviceStateString;
     function SetTimeout(const msec: integer): integer;
-    function GetLastError(var msg: string): Integer;
+    function SetComHexa(const bhex: boolean = true): boolean;
+    function GetLastError(var msg: string): Integer; virtual; abstract;
 
     function ConfigDevice(const ini: TMemIniFile): Boolean; virtual;abstract;
     function FreeDevice(): Boolean; virtual; abstract;
     function Connect(): Boolean; virtual;abstract;
     function Disconnect: boolean; virtual; abstract;
-    function SendStr(const data: string; const ans: boolean = true): Integer; virtual;abstract;
-    function RecvStr(var data: string): Integer; virtual;abstract;
+    function SendStr(const sdata: string; const bans: boolean = true): Integer; virtual;abstract;
+    function RecvStr(var sdata: string): Integer; virtual;abstract;
   end;
+  PDeviceBase = ^TDeviceBase;
 
 const
+  C_ERR_NOERROR = $0000; // no error
+  C_ERR_UNKNOWN = $8000; // base error number as unknown
+
   C_TIMEOUT_MSEC: Cardinal = 30000;  //default timeout 30000 milli seconds for communication
   C_DELAY_MSEC: Cardinal = 20;  //delay 20 milli seconds for communication error
+  C_STR_STATE : array[LOW(EDeviceState)..HIGH(EDeviceState)] of string = ('unusable','configured','connected','communicable','waiting','device error');
 
+  //define sets of device states, which are allowed for each event
+  C_DEV_STATES: array[LOW(EDeviceEvent)..HIGH(EDeviceEvent)] of DeviceStateSet = (
+                [DS_NONE, DS_CONFIGURED], //allowed states for config
+                [DS_CONFIGURED, DS_CONNECTED], //allowed states for connect
+                [DS_CONNECTED, DS_COMERROR], //allowed states for sync
+                [DS_READY], //allowed states for send
+                [DS_WAITING], //allowed states for recv
+                [DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR], //allowed states for disconnect
+                [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR]  //allowed states for free
+                );
 implementation
 
 // =============================================================================
@@ -102,6 +130,9 @@ begin
   e_state := DS_NONE;
   i_timeout := C_TIMEOUT_MSEC;
   i_lasterr := 0;
+  b_comhexa := false;
+  t_wbuffer := TCharBuffer.Create;
+  t_rbuffer := TCharBuffer.Create;
 end;
 
 // =============================================================================
@@ -117,6 +148,8 @@ end;
 destructor TDeviceBase.Destroy;
 begin
 	inherited Destroy;
+  FreeAndNil(t_wbuffer);
+  FreeAndNil(t_rbuffer);
 end;
 
 // =============================================================================
@@ -131,9 +164,24 @@ end;
 // =============================================================================
 function TDeviceBase.SetTimeout(const msec: integer): integer;
 begin
-  if (msec < 0) then i_timeout := C_TIMEOUT_MSEC
-  else i_timeout := msec;
+  if (msec >= 0) then i_timeout := msec;
   result := i_timeout;
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : SetComHexa
+//                set
+// Parameter    : bhex, transfering string will be converted into hexadicimal if it is true
+// Return       : return current value of b_comhex
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.SetComHexa(const bhex: boolean = true): boolean;
+begin
+  b_comhexa := bhex;
+  result := b_comhexa;
 end;
 
 // =============================================================================
@@ -146,10 +194,28 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.GetLastError(var msg: string): Integer;
+{function TDeviceBase.GetLastError(var msg: string): Integer;
 begin
-  result := i_lasterr;
-  msg := s_lastmsg;
+  case i_lasterr of
+  C_ERR_NOERROR: msg := 'No error exist.';
+  else msg := 'This error is not specified.';
+  end;
+end;
+}
+
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : GetDeviceStateString
+//                return a string, which descipts current state of the device
+// Parameter    : --
+// Return       : string from C_STR_STATE
+// Exceptions   : --
+// First author : 2015-09-03 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.GetDeviceStateString: string;
+begin
+  result := C_STR_STATE[e_state];
 end;
 
 // =============================================================================
@@ -167,28 +233,39 @@ end;
 // History      :
 // =============================================================================
 procedure TDeviceBase.PostEvent(const event: EDeviceEvent; const ok: boolean);
-var ds_set: set of EDeviceState;
 begin
-  case event of
-    DE_CONFIG: if ((e_state = DS_NONE) and ok) then e_state := DS_CONFIGURED;
-    DE_CONNECT: if ((e_state = DS_CONFIGURED) and ok) then e_state := DS_CONNECTED;
-    DE_SYNC: begin
-      ds_set := [DS_CONNECTED, DS_COMERROR];
-      if ((e_state in ds_set) and ok) then e_state := DS_READY;
-    end;
-    DE_SEND: if ((e_state = DS_READY) and ok) then e_state := DS_WAITING;
-    DE_RECV: begin
-      if (e_state = DS_WAITING) then begin
+  if (e_state in C_DEV_STATES[event]) then begin
+    case event of
+      DE_CONFIG: if ok then e_state := DS_CONFIGURED;
+      DE_CONNECT: if ok then e_state := DS_CONNECTED;
+      DE_SYNC: if ok then e_state := DS_READY;
+      DE_SEND: if ok then e_state := DS_WAITING;
+      DE_RECV: begin
         if ok then e_state := DS_READY
         else e_state := DS_COMERROR;
       end;
+      DE_DISCONNECT: if ok then e_state := DS_CONFIGURED;
+      DE_FREE: if ok then e_state := DS_NONE;
     end;
-    DE_DISCONNECT: begin
-      ds_set := [DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_COMERROR];
-      if ((e_state in ds_set) and ok) then e_state := DS_CONFIGURED;
-    end;
-    DE_FREE: if ok then e_state := DS_NONE;
   end;
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : Sync
+//                test communication with device and post event SYNC
+// Parameter    : --
+// Return       : boolean, true if the communication is ok. false, otherwise
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.Sync(): boolean;
+var ds_set : set of EDeviceState;
+begin
+  ds_set := [DS_CONNECTED, DS_COMERROR];
+  result := (e_state in ds_set);
+  PostEvent(DE_SYNC, result);
 end;
 
 // =============================================================================

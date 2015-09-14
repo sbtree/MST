@@ -4,11 +4,12 @@
   </PropertyGroup>
   <ItemGroup />
   <ItemGroup>
-    <Projects Include="Device\FlashRunnerTester.dproj" />
-    <Projects Include="Device\MultimeterTester.dproj" />
+    <Projects Include="Comm\CommTester.dproj" />
+    <Projects Include="Device\DeviceTester.dproj" />
     <Projects Include="Function\FunctionTester.dproj" />
     <Projects Include="General\GeneralTester.dproj" />
     <Projects Include="Product\ProductTester.dproj" />
+    <Projects Include="Tools\ToolTester.dproj" />
   </ItemGroup>
   <ProjectExtensions>
     <Borland.Personality>Default.Personality</Borland.Personality>
@@ -24,24 +25,6 @@
   </Target>
   <Target Name="ProductTester:Make">
     <MSBuild Projects="Product\ProductTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="FlashRunnerTester">
-    <MSBuild Projects="Device\FlashRunnerTester.dproj" Targets="" />
-  </Target>
-  <Target Name="FlashRunnerTester:Clean">
-    <MSBuild Projects="Device\FlashRunnerTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="FlashRunnerTester:Make">
-    <MSBuild Projects="Device\FlashRunnerTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="MultimeterTester">
-    <MSBuild Projects="Device\MultimeterTester.dproj" Targets="" />
-  </Target>
-  <Target Name="MultimeterTester:Clean">
-    <MSBuild Projects="Device\MultimeterTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="MultimeterTester:Make">
-    <MSBuild Projects="Device\MultimeterTester.dproj" Targets="Make" />
   </Target>
   <Target Name="GeneralTester">
     <MSBuild Projects="General\GeneralTester.dproj" Targets="" />
@@ -61,14 +44,41 @@
   <Target Name="FunctionTester:Make">
     <MSBuild Projects="Function\FunctionTester.dproj" Targets="Make" />
   </Target>
+  <Target Name="CommTester">
+    <MSBuild Projects="Comm\CommTester.dproj" Targets="" />
+  </Target>
+  <Target Name="CommTester:Clean">
+    <MSBuild Projects="Comm\CommTester.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="CommTester:Make">
+    <MSBuild Projects="Comm\CommTester.dproj" Targets="Make" />
+  </Target>
+  <Target Name="DeviceTester">
+    <MSBuild Projects="Device\DeviceTester.dproj" Targets="" />
+  </Target>
+  <Target Name="DeviceTester:Clean">
+    <MSBuild Projects="Device\DeviceTester.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="DeviceTester:Make">
+    <MSBuild Projects="Device\DeviceTester.dproj" Targets="Make" />
+  </Target>
+  <Target Name="ToolTester">
+    <MSBuild Projects="Tools\ToolTester.dproj" Targets="" />
+  </Target>
+  <Target Name="ToolTester:Clean">
+    <MSBuild Projects="Tools\ToolTester.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="ToolTester:Make">
+    <MSBuild Projects="Tools\ToolTester.dproj" Targets="Make" />
+  </Target>
   <Target Name="Build">
-    <CallTarget Targets="ProductTester;FlashRunnerTester;MultimeterTester;GeneralTester;FunctionTester" />
+    <CallTarget Targets="ProductTester;GeneralTester;FunctionTester;CommTester;DeviceTester;ToolTester" />
   </Target>
   <Target Name="Clean">
-    <CallTarget Targets="ProductTester:Clean;FlashRunnerTester:Clean;MultimeterTester:Clean;GeneralTester:Clean;FunctionTester:Clean" />
+    <CallTarget Targets="ProductTester:Clean;GeneralTester:Clean;FunctionTester:Clean;CommTester:Clean;DeviceTester:Clean;ToolTester:Clean" />
   </Target>
   <Target Name="Make">
-    <CallTarget Targets="ProductTester:Make;FlashRunnerTester:Make;MultimeterTester:Make;GeneralTester:Make;FunctionTester:Make" />
+    <CallTarget Targets="ProductTester:Make;GeneralTester:Make;FunctionTester:Make;CommTester:Make;DeviceTester:Make;ToolTester:Make" />
   </Target>
   <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
 </Project>

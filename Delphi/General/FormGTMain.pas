@@ -1,4 +1,4 @@
-unit GTMain;
+unit FormGTMain;
 
 interface
 

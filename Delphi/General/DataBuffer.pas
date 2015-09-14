@@ -1,7 +1,7 @@
 unit DataBuffer;
 
 interface
-uses Windows, SysUtils;
+uses Windows, SysUtils, GenUtils;
 type
 
   TBufferBase = class
@@ -32,7 +32,7 @@ type
 
   TCharBuffer = class(TBufferBase)
   protected
-    a_chars    : array of char; //dynamic buffer
+    a_chars    : array of char; //dynamic array of char as a ring buffer
 
   protected
     function IsHexString(const str: string): boolean;
@@ -122,16 +122,8 @@ begin
 end;
 
 function TCharBuffer.IsHexString(const str: string): boolean;
-var i, iLen: integer;
-const C_HEX_CHARS: set of char = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','a','b','c','d','e','f'];
 begin
-  result := true;
-  iLen := length(str);
-  for i := 1 to iLen do
-    if not (str[i] in C_HEX_CHARS) then begin
-      result := false;
-      break;
-    end;
+  result := IsHexStr(str);
 end;
 
 constructor TCharBuffer.Create();

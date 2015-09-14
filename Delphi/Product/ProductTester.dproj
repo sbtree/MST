@@ -33,12 +33,12 @@
     <DelphiCompile Include="ProductTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="FormProdTester.pas">
+      <Form>FormPTMain</Form>
+    </DCCReference>
     <DCCReference Include="MtxARS2000.pas" />
     <DCCReference Include="MtxDIS2.pas" />
     <DCCReference Include="MtxProduct.pas" />
-    <DCCReference Include="PRODTester.pas">
-      <Form>Form3</Form>
-    </DCCReference>
     <None Include="ModelSupport_ProductTester\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\default.txvpck" />
     <None Include="ModelSupport_ProductTester\Main\default.txvpck" />
