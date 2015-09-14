@@ -34,16 +34,26 @@
 <BorlandProject><Delphi.Personality><Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">1031</VersionInfo><VersionInfo Name="CodePage">1252</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Excluded_Packages>
       <Excluded_Packages Name="$(BDS)\bin\dcloffice2k100.bpl">Microsoft Office 2000 Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
       <Excluded_Packages Name="$(BDS)\bin\dclofficexp100.bpl">Microsoft Office XP Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
-    </Excluded_Packages><Source><Source Name="MainSource">MultimeterTester.dpr</Source></Source></Delphi.Personality></BorlandProject></BorlandProject>
+    </Excluded_Packages><Source><Source Name="MainSource">MultimeterTester.dpr</Source></Source></Delphi.Personality>  <ModelSupport>True</ModelSupport>
+</BorlandProject></BorlandProject>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
   <ItemGroup>
     <DelphiCompile Include="MultimeterTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="DeviceBase.pas" />
     <DCCReference Include="MMTester.pas">
       <Form>Form1</Form>
     </DCCReference>
     <DCCReference Include="Multimeter.pas" />
+    <None Include="ModelSupport_MultimeterTester\default.txaPackage" />
+    <None Include="ModelSupport_MultimeterTester\default.txvpck" />
+    <None Include="ModelSupport_MultimeterTester\DeviceBase\default.txaPackage" />
+    <None Include="ModelSupport_MultimeterTester\DeviceBase\default.txvpck" />
+    <None Include="ModelSupport_MultimeterTester\MMTester\default.txvpck" />
+    <None Include="ModelSupport_MultimeterTester\MultimeterTester\default.txvpck" />
+    <None Include="ModelSupport_MultimeterTester\Multimeter\default.txaPackage" />
+    <None Include="ModelSupport_MultimeterTester\Multimeter\default.txvpck" />
   </ItemGroup>
 </Project>

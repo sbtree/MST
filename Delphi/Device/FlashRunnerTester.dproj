@@ -63,6 +63,7 @@
     <None Include="ModelSupport_FlashRunnerTester\GenUtils\default.txaPackage" />
     <None Include="ModelSupport_FlashRunnerTester\InterpreterBase\default.txaPackage" />
     <None Include="ModelSupport_FlashRunnerTester\InterpreterBase\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTester\Multimeter\default.txvpck" />
     <None Include="ModelSupport_FlashRunnerTest\default.txaPackage" />
     <None Include="ModelSupport_FlashRunnerTest\default.txvpck" />
     <None Include="ModelSupport_FlashRunnerTest\FlashRunnerTest\default.txvpck" />
