@@ -1,4 +1,4 @@
-unit FormTTMain;
+unit FromToolTester;
 
 interface
 
@@ -7,7 +7,7 @@ uses
   Dialogs, StdCtrls;
 
 type
-  TForm1 = class(TForm)
+  TfrmToolTester = class(TForm)
     btnTest: TButton;
     procedure btnTestClick(Sender: TObject);
   private
@@ -17,14 +17,14 @@ type
   end;
 
 var
-  Form1: TForm1;
+  frmToolTester: TfrmToolTester;
 
 implementation
 
 {$R *.dfm}
 uses RegExpr;
 
-procedure TForm1.btnTestClick(Sender: TObject);
+procedure TfrmToolTester.btnTestClick(Sender: TObject);
 var s_pattern : string; t_regexp: TRegExpr;
 begin
   t_regexp := TRegExpr.Create;

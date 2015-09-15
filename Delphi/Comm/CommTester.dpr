@@ -2,7 +2,7 @@ program CommTester;
 
 uses
   Forms,
-  FormCommTester in 'FormCommTester.pas' {FormCTMain},
+  FormCommTester in 'FormCommTester.pas' {frmCommTester},
   ConnBase in 'ConnBase.pas',
   DataBuffer in '..\General\DataBuffer.pas',
   RS232 in 'RS232.pas',
@@ -14,6 +14,6 @@ uses
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TFormCTMain, FormCTMain);
+  Application.CreateForm(TfrmCommTester, frmCommTester);
   Application.Run;
 end.

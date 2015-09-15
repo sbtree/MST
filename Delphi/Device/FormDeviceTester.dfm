@@ -1,4 +1,4 @@
-object FormDTMain: TFormDTMain
+object frmDeviceTester: TfrmDeviceTester
   Left = 0
   Top = 0
   Caption = 'DeviceTester'

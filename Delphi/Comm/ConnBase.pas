@@ -16,6 +16,7 @@ type
   EConnectionType = (
                     CT_UNKNOWN, //a undefined type of connction
                     CT_JTAG,  //jtag
+                    CT_GPIB, //GPIB/ieee 488
                     CT_RS232, //rs232
                     CT_USB,   //usb
                     CT_ETHERNET, //ethernet
@@ -23,12 +24,12 @@ type
                     CT_PROFIL //profil-bus
                     );
 
-  TConnBase = class
+  TConnBase = class(TComponent)
   protected
     e_type : EConnectionType;
     i_lasterr: integer;
   public
-    constructor Create;
+    constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
     property ConnectionType : EConnectionType read e_type;
@@ -36,19 +37,28 @@ type
     function IsConnected(): boolean; virtual; abstract;
     function Connect(): boolean;virtual;abstract;
     function Disconnect: boolean;virtual;abstract;
-    function SendData(const data: TCharBuffer): Integer;virtual;abstract;
-    function RecvData(var data: TCharBuffer): Integer;virtual;abstract;
+    function SendData(const data: array of char): Integer;virtual;abstract;
+    function RecvData(var data: array of char): Integer;virtual;abstract;
     function GetLastError(var msg: string): Integer;virtual;abstract;
   end;
   PConnBase = ^TConnBase;
 
-//const
-//  CSTR_COMM_STATES : array[LOW(ECommunicationState)..HIGH(ECommunicationState)] of string = ('unusable','configured','connected','ready','busy', 'waiting');
+const
+  CSTR_CONN_KEYS : array[LOW(EConnectionType)..HIGH(EConnectionType)] of string = (
+                    'CONN_UNKNOWN',
+                    'CONN_JTAG',
+                    'CONN_GPIB',
+                    'CONN_RS232',
+                    'CONN_USB',
+                    'CONN_ETHERNET',
+                    'CONN_CAN',
+                    'CONN_PROFIL'
+                    );
 implementation
 
-constructor TConnBase.Create;
+constructor TConnBase.Create(owner: TComponent);
 begin
-	inherited Create;
+	inherited Create(owner);
   e_type := CT_UNKNOWN;
 end;
 

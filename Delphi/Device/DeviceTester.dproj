@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{ac588241-6592-46e6-85cd-4e1bf0bedd8c}</ProjectGuid>
-    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <ProjectGuid>{9e2144a4-d384-4b73-a967-c978c978765a}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
     <DCC_DependencyCheckOutputName>DeviceTester.exe</DCC_DependencyCheckOutputName>
@@ -26,6 +26,9 @@
     <DCC_ResourcePath>..\Externals</DCC_ResourcePath>
     <DCC_ObjPath>..\Externals</DCC_ObjPath>
     <DCC_IncludePath>..\Externals</DCC_IncludePath>
+    <DCC_DebugInformation>False</DCC_DebugInformation>
+    <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
+    <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
   </PropertyGroup>
   <ProjectExtensions>
     <Borland.Personality>Delphi.Personality</Borland.Personality>
@@ -34,43 +37,49 @@
 <BorlandProject><Delphi.Personality><Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">1031</VersionInfo><VersionInfo Name="CodePage">1252</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Excluded_Packages>
       <Excluded_Packages Name="$(BDS)\bin\dcloffice2k100.bpl">Microsoft Office 2000 Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
       <Excluded_Packages Name="$(BDS)\bin\dclofficexp100.bpl">Microsoft Office XP Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
-<<<<<<< HEAD:Delphi/Device/MultimeterTester.dproj
-    </Excluded_Packages><Source><Source Name="MainSource">MultimeterTester.dpr</Source></Source></Delphi.Personality>  <ModelSupport>True</ModelSupport>
-</BorlandProject></BorlandProject>
-=======
-    </Excluded_Packages><Source><Source Name="MainSource">DeviceTester.dpr</Source></Source></Delphi.Personality></BorlandProject></BorlandProject>
->>>>>>> origin/master:Delphi/Device/DeviceTester.dproj
+    </Excluded_Packages><Source><Source Name="MainSource">DeviceTester.dpr</Source></Source></Delphi.Personality><ModelSupport>True</ModelSupport></BorlandProject></BorlandProject>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
   <ItemGroup>
     <DelphiCompile Include="DeviceTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
-<<<<<<< HEAD:Delphi/Device/MultimeterTester.dproj
-    <DCCReference Include="DeviceBase.pas" />
-    <DCCReference Include="MMTester.pas">
-      <Form>Form1</Form>
-    </DCCReference>
-    <DCCReference Include="Multimeter.pas" />
-    <None Include="ModelSupport_MultimeterTester\default.txaPackage" />
-    <None Include="ModelSupport_MultimeterTester\default.txvpck" />
-    <None Include="ModelSupport_MultimeterTester\DeviceBase\default.txaPackage" />
-    <None Include="ModelSupport_MultimeterTester\DeviceBase\default.txvpck" />
-    <None Include="ModelSupport_MultimeterTester\MMTester\default.txvpck" />
-    <None Include="ModelSupport_MultimeterTester\MultimeterTester\default.txvpck" />
-    <None Include="ModelSupport_MultimeterTester\Multimeter\default.txaPackage" />
-    <None Include="ModelSupport_MultimeterTester\Multimeter\default.txvpck" />
-=======
     <DCCReference Include="..\Comm\ConnBase.pas" />
     <DCCReference Include="..\Comm\ProtocolBase.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="DeviceBase.pas" />
     <DCCReference Include="FlashRunner.pas" />
     <DCCReference Include="FormDeviceTester.pas">
-      <Form>FormDTMain</Form>
+      <Form>frmDeviceTester</Form>
     </DCCReference>
     <DCCReference Include="Multimeter.pas" />
     <DCCReference Include="Oscilloscope.pas" />
->>>>>>> origin/master:Delphi/Device/DeviceTester.dproj
+    <None Include="ModelSupport_DeviceTester\default.txvpck" />
+    <None Include="ModelSupport_DeviceTester\DeviceTester\default.txvpck" />
+    <None Include="ModelSupport_DeviceTester\FlashRunnerTester\default.txvpck" />
+    <None Include="ModelSupport_DeviceTester\FormDeviceTester\default.txvpck" />
+    <None Include="ModelSupport_DeviceTester\FRMain\default.txvpck" />
+    <None Include="ModelSupport_DeviceTester\InterpreterBase\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTester\DataBuffer\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTester\DataBuffer\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTester\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTester\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTester\DeviceBase\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTester\FlashRunnerTester\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTester\FlashRunner\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTester\FRMain\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTester\FRMain\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTester\GenUtils\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTester\InterpreterBase\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTester\InterpreterBase\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTester\Multimeter\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTest\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTest\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTest\FlashRunnerTest\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTest\FlashRunner\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTest\FlashRunner\default.txvpck" />
+    <None Include="ModelSupport_FlashRunnerTest\Main\default.txaPackage" />
+    <None Include="ModelSupport_FlashRunnerTest\Main\default.txvpck" />
   </ItemGroup>
 </Project>

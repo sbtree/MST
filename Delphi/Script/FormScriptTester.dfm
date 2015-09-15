@@ -1,7 +1,7 @@
-object Form2: TForm2
+object frmScriptTester: TfrmScriptTester
   Left = 0
   Top = 0
-  Caption = 'Form2'
+  Caption = 'ScriptTester'
   ClientHeight = 301
   ClientWidth = 562
   Color = clBtnFace
@@ -13,13 +13,4 @@ object Form2: TForm2
   OldCreateOrder = False
   PixelsPerInch = 96
   TextHeight = 13
-  object btnTest: TButton
-    Left = 424
-    Top = 240
-    Width = 75
-    Height = 25
-    Caption = '&Test'
-    TabOrder = 0
-    OnClick = btnTestClick
-  end
 end

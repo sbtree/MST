@@ -1,4 +1,4 @@
-object FormCTMain: TFormCTMain
+object frmCommTester: TfrmCommTester
   Left = 0
   Top = 0
   Caption = 'CommunicationTester'
@@ -13,4 +13,13 @@ object FormCTMain: TFormCTMain
   OldCreateOrder = False
   PixelsPerInch = 96
   TextHeight = 13
+  object btnRS232: TButton
+    Left = 456
+    Top = 264
+    Width = 75
+    Height = 25
+    Caption = 'Test &RS232'
+    TabOrder = 0
+    OnClick = btnRS232Click
+  end
 end

@@ -9,11 +9,20 @@ type
                   SS_MTX_SRV,   //started in mode of Metronix Service
                   SS_MTX_APP ); //started in mode of Metronix Application
 
-  TProductBase = interface
-    function reset: Integer;
-    function getStatus: Integer;
-    function updateBootloader: Integer;
-    function updateFirmware: Integer;
+  TProductBase = class
+  protected
+    e_state: EShutOnState;
+    s_message: string;
+  public
+    property ShutOnState: EShutOnState read e_state;
+    property ShutOnMessage: string read s_message;
+
+    function ResetHW(): boolean; virtual; abstract;
+    function ResetSW(): boolean; virtual; abstract;
+    function ResetTo(const ss: EShutOnState): boolean; virtual; abstract;
+
+    function UpdateBootloader(): boolean; virtual; abstract;
+    function UpdateFirmware(): boolean; virtual; abstract;
   end;
 
 

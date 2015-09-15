@@ -1,4 +1,4 @@
-unit FormDeviceTester;
+unit FormScriptTester;
 
 interface
 
@@ -7,7 +7,7 @@ uses
   Dialogs;
 
 type
-  TfrmDeviceTester = class(TForm)
+  TfrmScriptTester = class(TForm)
   private
     { Private-Deklarationen }
   public
@@ -15,7 +15,7 @@ type
   end;
 
 var
-  frmDeviceTester: TfrmDeviceTester;
+  frmScriptTester: TfrmScriptTester;
 
 implementation
 

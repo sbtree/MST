@@ -13,7 +13,6 @@ type
     destructor Destroy; override;
 
     function Parameterize(const str: string): boolean; override;
-    //function Initilize(const str: string): boolean; override;
     function Execute(const str: string): boolean; override;
     function Validate(const str: string): boolean; override;
     function Finalize(const str: string): boolean; override;
@@ -25,6 +24,7 @@ uses SysUtils;
 
 const
   FE_NO_ERROR = 0;
+  FE_WRONG_STATE = $1000;
   //error parameter
   FE_PARA_COUNT = $1001;
   FE_ADDR_INVALID = $1002;
@@ -65,7 +65,7 @@ begin
     end else i_lasterr := FE_PARA_COUNT;
     t_pars.Clear;
     FreeAndNil(t_pars);
-  end;
+  end else i_lasterr := FE_WRONG_STATE;
   PostEvent(FE_PARAMETERIZE, result);
 end;
 
@@ -106,6 +106,7 @@ begin
   result := i_lasterr;
   case i_lasterr of
     FE_NO_ERROR: msg := 'No error is found.';
+    FE_WRONG_STATE: msg := 'The device stays in a wrong state.';
     FE_PARA_COUNT: msg := 'The count of parameters is invalid.';
     FE_ADDR_INVALID: msg := 'The given address in the parameters is invalid.';
     FE_ADDR_OVERFLOW: msg := 'The given address in the parameters is out of the allowed range [0..503].';

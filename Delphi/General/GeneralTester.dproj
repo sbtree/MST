@@ -1,4 +1,5 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{f6cb2364-09dd-4b56-a6e6-7cf46e19e00b}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -30,8 +31,8 @@
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
     <DCCReference Include="DataBuffer.pas" />
-    <DCCReference Include="FormGTMain.pas">
-      <Form>Form2</Form>
+    <DCCReference Include="FormGeneralTester.pas">
+      <Form>frmGeneralTester</Form>
     </DCCReference>
     <DCCReference Include="GenUtils.pas" />
     <None Include="ModelSupport_GeneralTester\DataBuffer\default.txvpck" />

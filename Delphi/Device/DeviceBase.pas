@@ -9,6 +9,7 @@ unit DeviceBase;
 
 interface
 uses Classes, SysUtils, IniFiles, ConnBase, ProtocolBase;
+
 type
 // =============================================================================
 // Enumeration  : EDeviceState
@@ -61,8 +62,6 @@ type
     s_devname: string;      //name of the device
     b_comhexa: boolean;     //hexadizcimal data in string to transfer if it is true
 
-    t_wbuffer: TCharBuffer; //a ring buffer of char for sending data to device
-    t_rbuffer: TCharBuffer; //a ring buffer of char for receiving data from device
     t_conn: TConnBase;      //connection
     t_prot: TProtBase;      //protocol of communication
 
@@ -131,8 +130,6 @@ begin
   i_timeout := C_TIMEOUT_MSEC;
   i_lasterr := 0;
   b_comhexa := false;
-  t_wbuffer := TCharBuffer.Create;
-  t_rbuffer := TCharBuffer.Create;
 end;
 
 // =============================================================================
@@ -148,8 +145,6 @@ end;
 destructor TDeviceBase.Destroy;
 begin
 	inherited Destroy;
-  FreeAndNil(t_wbuffer);
-  FreeAndNil(t_rbuffer);
 end;
 
 // =============================================================================

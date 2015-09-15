@@ -1,7 +1,7 @@
 unit RS232;
 
 interface
-uses  Serial3, ConnBase, DataBuffer, Classes, RegExpr;
+uses  Serial3, ConnBase, Classes, RegExpr;
 
 type
   ERS232Settings = (
@@ -13,25 +13,33 @@ type
                     RS_HWFLOWCONTROL,
                     RS_SWFLOWCONTROL
                     );
+  
 
   TConnRS232 = class(TConnBase)
   class function EnumSerialPort(var sports: TStringList): integer;
+  type TSetFunction = function(const sval: string): boolean;
   protected
     t_ser : TSerial;
+    C_FUNC_CALLS: array [LOW(ERS232Settings)..HIGH(ERS232Settings)] of TSetFunction;
   protected
-    function CheckPort(const sport: string; var port: integer): boolean;
-    function CheckBaudrate(const sbaud: string; var baud: integer): boolean;
+    function SetPort(const sval: string): boolean;
+    function SetBaudrate(const sval: string): boolean;
+    function SetParity(const sval: string): boolean;
+    function SetDataBits(const sval: string): boolean;
+    function SetStopBits(const sval: string): boolean;
+    function SetHWFlowControl(const sval: string): boolean;
+    function SetSWFlowControl(const sval: string): boolean;
 
   public
-    constructor Create;
+    constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
     function Config(const sconf: string): boolean;override;
     function IsConnected(): boolean; override;
     function Connect(): boolean;override;
     function Disconnect: boolean;override;
-    function SendData(const data: TCharBuffer): Integer;override;
-    function RecvData(var data: TCharBuffer): Integer;override;
+    function SendData(const data: array of char): Integer;override;
+    function RecvData(var data: array of char): Integer;override;
     function GetLastError(var msg: string): Integer;override;
   end;
   PConnRS232 = ^TConnRS232;
@@ -40,20 +48,18 @@ const
   C_VALID_BAUD: array[0..14] of string = (
                 '110','300','600','1200','2400','4800','9600','14400',
                 '19200','38400','56000','57600','115200','128000','256000');
-                
-  C_RS232_KEYS: array[LOW(ERS232Settings)..HIGH(ERS232Settings)] of string = (
-                '^PORT:(\d{1,3})$',
-                '^BAUDRATE:(\d{3,6})$',
-                '^PARITY(\d)$',
-                '^DATABITS(\d)$',
-                '^STOPBITS(\d)$',
-                '^HWFLOWCONTROL(\d)$',
-                '^SWFLOWCONTROL(\d)$'
-                );
 
+  C_RS232_KEYS: array[LOW(ERS232Settings)..HIGH(ERS232Settings)] of string = (
+                'PORT',
+                'BAUDRATE',
+                'PARITY',
+                'DATABITS',
+                'STOPBITS',
+                'HWFLOWCONTROL',
+                'SWFLOWCONTROL$'
+                );
 implementation
 uses SysUtils, StrUtils, Windows, GenUtils, Registry;
-
 // =============================================================================
 // Class        : TConnRS232
 // Function     : EnumSerialPort, class function, enumerates all serial ports
@@ -89,33 +95,63 @@ begin
   result := sports.Count;
 end;
 
-function TConnRS232.CheckPort(const sport: string; var port: integer): boolean;
-var s_portname: string; t_ports: TStringList; t_regexp: TRegExpr;
+function TConnRS232.SetPort(const sval: string): boolean;
+var t_ports: TStringList; s_in,s_portname: string; i_port: integer;
 begin
   result := false;
-  t_regexp := TRegExpr.Create;
-  t_regexp.Expression := C_RS232_KEYS[RS_PORT];
-  if t_regexp.Exec(sport) then begin
-    TryStrToInt(t_regexp.Match[1], port);
-    s_portname := 'COM' + t_regexp.Match[1];
+  s_in := trim(sval);
+  if TryStrToInt(s_in, i_port) then begin
+    s_portname := 'COM' + sval;
     t_ports := TStringList.Create;
     Self.EnumSerialPort(t_ports);
     result := (t_ports.IndexOf(s_portname) >= 0 );
+    if result then t_ser.Port := i_port;
     t_ports.Clear;
     FreeAndNil(t_ports);
   end;
-  FreeAndNil(t_regexp);
 end;
 
-function TConnRS232.CheckBaudrate(const sbaud: string; var baud: integer): boolean;
-var t_regexp: TRegExpr;
+function TConnRS232.SetBaudrate(const sval: string): boolean;
+var i_baud: integer; s_in: string;
 begin
   result := false;
-  t_regexp := TRegExpr.Create;
-  t_regexp.Expression := C_RS232_KEYS[RS_BAUDRATE];
-  if t_regexp.Exec(sbaud) then  result := (IndexOfStr(C_VALID_BAUD, t_regexp.Match[1]) >= 0 );
-  FreeAndNil(t_regexp);
+  s_in := trim(sval);
+  if TryStrToInt(sval, i_baud) then begin
+    result := (IndexOfStr(C_VALID_BAUD, sval) >= 0 );
+    if result then t_ser.Baudrate := i_baud;
+  end;
 end;
+
+function TConnRS232.SetParity(const sval: string): boolean;
+begin
+  //todo
+  result := true;
+end;
+
+function TConnRS232.SetDataBits(const sval: string): boolean; 
+begin
+  //todo
+  result := true;
+end;
+
+function TConnRS232.SetStopBits(const sval: string): boolean;
+begin
+  //todo
+  result := true;
+end;
+
+function TConnRS232.SetHWFlowControl(const sval: string): boolean;
+begin
+  //todo
+  result := true;
+end;
+
+function TConnRS232.SetSWFlowControl(const sval: string): boolean;
+begin
+  //todo
+  result := true;
+end;
+
 
 // =============================================================================
 // Class        : TConnRS232
@@ -126,10 +162,27 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-constructor TConnRS232.Create;
+constructor TConnRS232.Create(owner: TComponent);
 begin
-  inherited Create();
-  t_ser := TSerial.Create(Nil);
+  inherited Create(owner);
+  e_type := CT_RS232;
+  t_ser := TSerial.Create(self);
+
+  //default settings
+  t_ser.CheckParity := false;
+  t_ser.DataBits := d8Bit;
+  t_ser.NotifyErrors := neNone;
+  t_ser.Port := 1;
+  t_ser.Baudrate := 9600;
+
+  C_FUNC_CALLS[RS_PORT]:= @TConnRS232.SetPort;
+  C_FUNC_CALLS[RS_BAUDRATE]:= @TConnRS232.SetBaudrate;
+  C_FUNC_CALLS[RS_PARITY]:= @TConnRS232.SetParity;
+  C_FUNC_CALLS[RS_DATABITS]:= @TConnRS232.SetDataBits;
+  C_FUNC_CALLS[RS_STOPBITS]:= @TConnRS232.SetStopBits;
+  C_FUNC_CALLS[RS_HWFLOWCONTROL]:= @TConnRS232.SetHWFlowControl;
+  C_FUNC_CALLS[RS_SWFLOWCONTROL]:= @TConnRS232.SetSWFlowControl;
+
 end;
 
 // =============================================================================
@@ -176,10 +229,19 @@ end;
 // History      :
 // =============================================================================
 function TConnRS232.Config(const sconf: string): boolean;
-var s_conf: string;
+var s_conf: string; i: ERS232Settings; t_regexp: TRegExpr;
 begin
   result := false;
   s_conf := UpperCase(sconf);
+  t_regexp := TRegExpr.Create;
+  for i := LOW(ERS232Settings) to HIGH(ERS232Settings) do begin
+    t_regexp.Expression := '[\t\ ]*\b' + C_RS232_KEYS[i] + '\b[\t\ ]*:([^:\|$]*)';
+    if t_regexp.Exec(s_conf) then  begin
+      result := (C_FUNC_CALLS[i](t_regexp.Match[1]));
+      if not result then break;
+    end;
+  end;
+  FreeAndNil(t_regexp);
 end;
 
 function TConnRS232.Connect(): boolean;
@@ -194,12 +256,12 @@ begin
   result := (not IsConnected());
 end;
 
-function TConnRS232.SendData(const data: TCharBuffer): Integer;
+function TConnRS232.SendData(const data: array of char): Integer;
 begin
   result := 0;
 end;
 
-function TConnRS232.RecvData(var data: TCharBuffer): Integer;
+function TConnRS232.RecvData(var data: array of char): Integer;
 begin
   result := 0;
 end;

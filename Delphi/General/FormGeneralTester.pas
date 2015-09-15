@@ -1,4 +1,4 @@
-unit FormGTMain;
+unit FormGeneralTester;
 
 interface
 
@@ -7,7 +7,7 @@ uses
   Dialogs, DataBuffer, StdCtrls;
 
 type
-  TForm2 = class(TForm)
+  TfrmGeneralTester = class(TForm)
     btnTest: TButton;
     procedure btnTestClick(Sender: TObject);
   private
@@ -17,13 +17,13 @@ type
   end;
 
 var
-  Form2: TForm2;
+  frmGeneralTester: TfrmGeneralTester;
 
 implementation
 
 {$R *.dfm}
 
-procedure TForm2.btnTestClick(Sender: TObject);
+procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
 var chbuffer: TCharBuffer;  t: cardinal; n:integer;
 begin
   chbuffer := TCharBuffer.Create();

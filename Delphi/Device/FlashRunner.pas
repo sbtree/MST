@@ -9,7 +9,7 @@
 unit FlashRunner;
 
 interface
-uses Serial3, Classes, SysUtils, StrUtils, Windows, Forms, DeviceBase, IniFiles;
+uses Serial3, Classes, SysUtils, StrUtils, Windows, Forms, DeviceBase, IniFiles, ConnBase, RS232;
 
 type
 // =============================================================================
@@ -21,7 +21,7 @@ type
 // =============================================================================
   TFlashRunner=class(TDeviceBase)
   protected
-    t_ser: TSerial;
+    //t_ser: TSerial;
   protected
     function CheckAnswer(const ans: string): boolean;
     function ConfigConnByStr(const conf: string): boolean;
@@ -429,7 +429,6 @@ const
 //  C_STR_DESC : string = 'DESCRIPTION';
 //  C_STR_PROD : string = 'PRODUCER';
 //  C_STR_TYPE : string = 'TYPE';
-  C_STR_RS232: string = 'CONN_RS232';
   C_STR_TIMEOUT : string = 'TIMEOUT';
 var
   s_inivalue: string;
@@ -437,20 +436,13 @@ begin
   result := false;
   if (DeviceState = DS_NONE) then
   begin
-    //default settings
-    t_ser.CheckParity := false;
-    t_ser.DataBits := d8Bit;
-    t_ser.NotifyErrors := neNone;
-    t_ser.Port := 1;
-    t_ser.Baudrate := 115200;
-    t_ser.Name := C_STR_FR;
-
     //settings from ini file
     if (ini.SectionExists(C_STR_FR)) then
     begin
       SetTimeout(ini.ReadInteger(C_STR_FR, C_STR_TIMEOUT, C_TIMEOUT_MSEC));
-      s_inivalue := trim(ini.ReadString(C_STR_FR, C_STR_RS232, ''));
-      result := ConfigConnByStr(s_inivalue);
+      s_inivalue := trim(ini.ReadString(C_STR_FR, CSTR_CONN_KEYS[CT_RS232], ''));
+      if not assigned(t_conn) then t_conn := TConnRS232.Create(self);
+      result := t_conn.Config(s_inivalue);
     end;
     PostEvent(DE_CONFIG, result);;
   end;

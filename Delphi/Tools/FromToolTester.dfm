@@ -1,9 +1,9 @@
-object Form2: TForm2
+object frmToolTester: TfrmToolTester
   Left = 0
   Top = 0
-  Caption = 'Form2'
-  ClientHeight = 300
-  ClientWidth = 635
+  Caption = 'ToolTester'
+  ClientHeight = 301
+  ClientWidth = 562
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,7 +14,7 @@ object Form2: TForm2
   PixelsPerInch = 96
   TextHeight = 13
   object btnTest: TButton
-    Left = 544
+    Left = 448
     Top = 256
     Width = 75
     Height = 25

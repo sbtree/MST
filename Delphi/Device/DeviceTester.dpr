@@ -2,20 +2,21 @@ program DeviceTester;
 
 uses
   Forms,
-  FormDeviceTester in 'FormDeviceTester.pas' {FormDTMain},
   FlashRunner in 'FlashRunner.pas',
+  DeviceBase in 'DeviceBase.pas',
   Multimeter in 'Multimeter.pas',
   Oscilloscope in 'Oscilloscope.pas',
-  DataBuffer in '..\General\DataBuffer.pas',
-  DeviceBase in 'DeviceBase.pas',
+  GenUtils in '..\General\GenUtils.pas',
+  FormDeviceTester in 'FormDeviceTester.pas' {frmDeviceTester},
   ConnBase in '..\Comm\ConnBase.pas',
-  ProtocolBase in '..\Comm\ProtocolBase.pas';
+  ProtocolBase in '..\Comm\ProtocolBase.pas',
+  DataBuffer in '..\General\DataBuffer.pas';
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TFormDTMain, FormDTMain);
+  Application.CreateForm(TfrmDeviceTester, frmDeviceTester);
   Application.Run;
 end.

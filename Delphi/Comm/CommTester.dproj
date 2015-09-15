@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{8f9408a2-1730-4af9-b128-cc4c565fd8eb}</ProjectGuid>
-    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
     <DCC_DependencyCheckOutputName>CommTester.exe</DCC_DependencyCheckOutputName>
@@ -44,33 +44,8 @@
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="ConnBase.pas" />
     <DCCReference Include="FormCommTester.pas">
-      <Form>FormCTMain</Form>
+      <Form>frmCommTester</Form>
     </DCCReference>
-<<<<<<< HEAD:Delphi/Device/FlashRunnerTester.dproj
-    <DCCReference Include="InterpreterBase.pas" />
-    <DCCReference Include="Multimeter.pas" />
-    <DCCReference Include="Oscilloscope.pas" />
-    <None Include="ModelSupport_FlashRunnerTester\DataBuffer\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTester\DataBuffer\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTester\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\DeviceBase\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\FlashRunnerTester\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\FlashRunner\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\FRMain\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTester\FRMain\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\GenUtils\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTester\InterpreterBase\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTester\InterpreterBase\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\Multimeter\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTest\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTest\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTest\FlashRunnerTest\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTest\FlashRunner\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTest\FlashRunner\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTest\Main\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTest\Main\default.txvpck" />
-=======
     <DCCReference Include="ProtocolBase.pas" />
     <DCCReference Include="RS232.pas" />
     <None Include="ModelSupport_CommTester\CommTester\default.txvpck" />
@@ -84,6 +59,5 @@
     <None Include="ModelSupport_CommTester\ProtocolBase\default.txaPackage" />
     <None Include="ModelSupport_CommTester\ProtocolBase\default.txvpck" />
     <None Include="ModelSupport_CommTester\RS232\default.txvpck" />
->>>>>>> origin/master:Delphi/Comm/CommTester.dproj
   </ItemGroup>
 </Project>
