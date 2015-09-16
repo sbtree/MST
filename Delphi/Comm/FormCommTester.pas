@@ -27,8 +27,8 @@ procedure TfrmCommTester.btnRS232Click(Sender: TObject);
 var t_rs232: TConnRS232;
 begin
   t_rs232 := TConnRS232.Create(self);
-  t_rs232.Config('Port:1|baudrate:115200');
-  t_rs232.Config('Port:1|baudrate:115200|Port:2|Port:3');
+  //t_rs232.Config('Port:1|baudrate:115200');
+  t_rs232.Config('Port:8|baudrate:115200|Port:2|Port:3');
   FreeAndNil(t_rs232);
 end;
 

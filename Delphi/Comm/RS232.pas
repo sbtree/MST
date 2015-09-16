@@ -13,22 +13,11 @@ type
                     RS_HWFLOWCONTROL,
                     RS_SWFLOWCONTROL
                     );
-  
-
   TConnRS232 = class(TConnBase)
   class function EnumSerialPort(var sports: TStringList): integer;
-  type TSetFunction = function(const sval: string): boolean;
   protected
     t_ser : TSerial;
-    C_FUNC_CALLS: array [LOW(ERS232Settings)..HIGH(ERS232Settings)] of TSetFunction;
   protected
-    function SetPort(const sval: string): boolean;
-    function SetBaudrate(const sval: string): boolean;
-    function SetParity(const sval: string): boolean;
-    function SetDataBits(const sval: string): boolean;
-    function SetStopBits(const sval: string): boolean;
-    function SetHWFlowControl(const sval: string): boolean;
-    function SetSWFlowControl(const sval: string): boolean;
 
   public
     constructor Create(owner: TComponent); override;
@@ -56,10 +45,74 @@ const
                 'DATABITS',
                 'STOPBITS',
                 'HWFLOWCONTROL',
-                'SWFLOWCONTROL$'
+                'SWFLOWCONTROL'
                 );
+                
 implementation
 uses SysUtils, StrUtils, Windows, GenUtils, Registry;
+
+type
+  PSerial = ^TSerial;
+  TSetFunction = function(pser: PSerial; const sval: string): boolean;
+var C_FUNC_CALLS: array [LOW(ERS232Settings)..HIGH(ERS232Settings)] of TSetFunction;
+
+function SetPort(pser: PSerial; const sval: string): boolean;
+var t_ports: TStringList; s_in,s_portname: string; i_port: integer;
+begin
+  result := false;
+  s_in := trim(sval);
+  if TryStrToInt(s_in, i_port) then begin
+    s_portname := 'COM' + sval;
+    t_ports := TStringList.Create;
+    TConnRS232.EnumSerialPort(t_ports);
+    result := (t_ports.IndexOf(s_portname) >= 0 );
+    if result then pser^.Port := i_port;
+    t_ports.Clear;
+    FreeAndNil(t_ports);
+  end;
+end;
+
+function SetBaudrate(pser: PSerial; const sval: string): boolean;
+var i_baud: integer; s_in: string;
+begin
+  result := false;
+  s_in := trim(sval);
+  if TryStrToInt(sval, i_baud) then begin
+    result := (IndexOfStr(C_VALID_BAUD, sval) >= 0 );
+    if result then pser^.Baudrate := i_baud;
+  end;
+end;
+
+function SetParity(pser: PSerial; const sval: string): boolean;
+begin
+  //todo
+  result := true;
+end;
+
+function SetDataBits(pser: PSerial; const sval: string): boolean;
+begin
+  //todo
+  result := true;
+end;
+
+function SetStopBits(pser: PSerial; const sval: string): boolean;
+begin
+  //todo
+  result := true;
+end;
+
+function SetHWFlowControl(pser: PSerial; const sval: string): boolean;
+begin
+  //todo
+  result := true;
+end;
+
+function SetSWFlowControl(pser: PSerial; const sval: string): boolean;
+begin
+  //todo
+  result := true;
+end;
+
 // =============================================================================
 // Class        : TConnRS232
 // Function     : EnumSerialPort, class function, enumerates all serial ports
@@ -95,64 +148,6 @@ begin
   result := sports.Count;
 end;
 
-function TConnRS232.SetPort(const sval: string): boolean;
-var t_ports: TStringList; s_in,s_portname: string; i_port: integer;
-begin
-  result := false;
-  s_in := trim(sval);
-  if TryStrToInt(s_in, i_port) then begin
-    s_portname := 'COM' + sval;
-    t_ports := TStringList.Create;
-    Self.EnumSerialPort(t_ports);
-    result := (t_ports.IndexOf(s_portname) >= 0 );
-    if result then t_ser.Port := i_port;
-    t_ports.Clear;
-    FreeAndNil(t_ports);
-  end;
-end;
-
-function TConnRS232.SetBaudrate(const sval: string): boolean;
-var i_baud: integer; s_in: string;
-begin
-  result := false;
-  s_in := trim(sval);
-  if TryStrToInt(sval, i_baud) then begin
-    result := (IndexOfStr(C_VALID_BAUD, sval) >= 0 );
-    if result then t_ser.Baudrate := i_baud;
-  end;
-end;
-
-function TConnRS232.SetParity(const sval: string): boolean;
-begin
-  //todo
-  result := true;
-end;
-
-function TConnRS232.SetDataBits(const sval: string): boolean; 
-begin
-  //todo
-  result := true;
-end;
-
-function TConnRS232.SetStopBits(const sval: string): boolean;
-begin
-  //todo
-  result := true;
-end;
-
-function TConnRS232.SetHWFlowControl(const sval: string): boolean;
-begin
-  //todo
-  result := true;
-end;
-
-function TConnRS232.SetSWFlowControl(const sval: string): boolean;
-begin
-  //todo
-  result := true;
-end;
-
-
 // =============================================================================
 // Class        : TConnRS232
 // Function     : Constructor, creates t_ser
@@ -174,14 +169,6 @@ begin
   t_ser.NotifyErrors := neNone;
   t_ser.Port := 1;
   t_ser.Baudrate := 9600;
-
-  C_FUNC_CALLS[RS_PORT]:= @TConnRS232.SetPort;
-  C_FUNC_CALLS[RS_BAUDRATE]:= @TConnRS232.SetBaudrate;
-  C_FUNC_CALLS[RS_PARITY]:= @TConnRS232.SetParity;
-  C_FUNC_CALLS[RS_DATABITS]:= @TConnRS232.SetDataBits;
-  C_FUNC_CALLS[RS_STOPBITS]:= @TConnRS232.SetStopBits;
-  C_FUNC_CALLS[RS_HWFLOWCONTROL]:= @TConnRS232.SetHWFlowControl;
-  C_FUNC_CALLS[RS_SWFLOWCONTROL]:= @TConnRS232.SetSWFlowControl;
 
 end;
 
@@ -235,9 +222,9 @@ begin
   s_conf := UpperCase(sconf);
   t_regexp := TRegExpr.Create;
   for i := LOW(ERS232Settings) to HIGH(ERS232Settings) do begin
-    t_regexp.Expression := '[\t\ ]*\b' + C_RS232_KEYS[i] + '\b[\t\ ]*:([^:\|$]*)';
+    t_regexp.Expression := '(^|\|)[\t\ ]*' + C_RS232_KEYS[i] + '\b[\t\ ]*:([^\|$]*)';
     if t_regexp.Exec(s_conf) then  begin
-      result := (C_FUNC_CALLS[i](t_regexp.Match[1]));
+      result := (C_FUNC_CALLS[i](@t_ser, t_regexp.Match[2]));
       if not result then break;
     end;
   end;
@@ -252,7 +239,7 @@ end;
 
 function TConnRS232.Disconnect: boolean;
 begin
-  t_ser.Active := true;
+  t_ser.Active := false;
   result := (not IsConnected());
 end;
 
@@ -271,5 +258,13 @@ begin
   result := i_lasterr;
 end;
 
+initialization
+  C_FUNC_CALLS[RS_PORT]:= RS232.SetPort;
+  C_FUNC_CALLS[RS_BAUDRATE]:= RS232.SetBaudrate;
+  C_FUNC_CALLS[RS_PARITY]:= RS232.SetParity;
+  C_FUNC_CALLS[RS_DATABITS]:= RS232.SetDataBits;
+  C_FUNC_CALLS[RS_STOPBITS]:= RS232.SetStopBits;
+  C_FUNC_CALLS[RS_HWFLOWCONTROL]:= RS232.SetHWFlowControl;
+  C_FUNC_CALLS[RS_SWFLOWCONTROL]:= RS232.SetSWFlowControl;
 
 end.
