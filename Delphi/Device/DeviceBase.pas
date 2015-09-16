@@ -56,7 +56,7 @@ type
   protected
   var
     e_state: EDeviceState;  //device state
-    i_timeout: cardinal;    //timeout in millisecond
+    c_timeout: cardinal;    //timeout in millisecond
     i_lasterr: integer;     //last error number
     s_lastmsg: string;      //last message
     s_devname: string;      //name of the device
@@ -66,7 +66,7 @@ type
     t_prot: TProtBase;      //protocol of communication
 
   strict private
-    function GetDeviceStateString : string;
+    function GetStateString : string;
 
   protected
     procedure PostEvent(const event: EDeviceEvent; const ok: boolean);
@@ -77,13 +77,10 @@ type
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
-    property DeviceState : EDeviceState read e_state;
-    property DeviceStateString : string read GetDeviceStateString;
+    property State : EDeviceState read e_state;
+    property StateString : string read GetStateString;
     property HexComm : boolean read b_comhex write b_comhex;
-
-    function SetTimeout(const msec: integer): integer;
-    function SetComHexa(const bhex: boolean = true): boolean;
-    function GetLastError(var msg: string): Integer; virtual; abstract;
+    property Timeout : cardinal read c_timeout write c_timeout;
 
     function ConfigDevice(const ini: TMemIniFile): Boolean; virtual;abstract;
     function FreeDevice(): Boolean; virtual; abstract;
@@ -91,19 +88,20 @@ type
     function Disconnect: boolean; virtual; abstract;
     function SendStr(const sdata: string; const bans: boolean = true): Integer; virtual;abstract;
     function RecvStr(var sdata: string): Integer; virtual;abstract;
+    function GetLastError(var msg: string): Integer; virtual; abstract;
   end;
   PDeviceBase = ^TDeviceBase;
+
+implementation
 
 const
   C_ERR_NOERROR = $0000; // no error
   C_ERR_UNKNOWN = $8000; // base error number as unknown
 
-  C_TIMEOUT_MSEC: Cardinal = 30000;  //default timeout 30000 milli seconds for communication
-  C_DELAY_MSEC: Cardinal = 20;  //delay 20 milli seconds for communication error
-implementation
+  C_TIMEOUT_MSEC: Cardinal = 30000; //default timeout 30000 milli seconds to wait for response
+  C_DELAY_MSEC: Cardinal = 20;      //delay 20 milli seconds for communication in one shot
 
-const
-  C_STR_STATES : array[LOW(EDeviceState)..HIGH(EDeviceState)] of string = (
+  CSTR_DEV_STATES : array[LOW(EDeviceState)..HIGH(EDeviceState)] of string = (
                   'unusable',
                   'configured',
                   'connected',
@@ -119,7 +117,7 @@ const
                 [DS_CONNECTED, DS_COMERROR], //allowed states for sync
                 [DS_READY], //allowed states for send
                 [DS_WAITING], //allowed states for recv
-                [DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR], //allowed states for disconnect
+                [DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR], //allowed states for disconnect
                 [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR]  //allowed states for free
                 );
 
@@ -138,7 +136,7 @@ constructor TDeviceBase.Create(owner: TComponent);
 begin
 	inherited Create(owner);
   e_state := DS_NONE;
-  i_timeout := C_TIMEOUT_MSEC;
+  c_timeout := C_TIMEOUT_MSEC;
   i_lasterr := 0;
   b_comhex  := false;
 end;
@@ -156,22 +154,6 @@ end;
 destructor TDeviceBase.Destroy;
 begin
 	inherited Destroy;
-end;
-
-// =============================================================================
-// Class        : TDeviceBase
-// Function     : SetTimeout
-//                set timeout in milli seconds for communication
-// Parameter    : msec, milli seconds to be set
-// Return       : --
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TDeviceBase.SetTimeout(const msec: integer): integer;
-begin
-  if (msec >= 0) then i_timeout := msec;
-  result := i_timeout;
 end;
 
 // =============================================================================
@@ -203,7 +185,7 @@ end;
 // First author : 2015-09-03 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.GetDeviceStateString: string;
+function TDeviceBase.GetStateString: string;
 begin
   result := C_STR_STATES[e_state];
 end;

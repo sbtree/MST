@@ -44,7 +44,7 @@ type
     destructor Destroy; override;
 
     property State: EProductState read e_state;
-    property StartingMessage: string read s_message;
+    property StartMessage: string read s_message;
     property StateString : string read GetStateString;
     property HexComm : boolean read b_comhex write b_comhex;
 

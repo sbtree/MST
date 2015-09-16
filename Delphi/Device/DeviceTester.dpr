@@ -10,7 +10,8 @@ uses
   FormDeviceTester in 'FormDeviceTester.pas' {frmDeviceTester},
   ConnBase in '..\Comm\ConnBase.pas',
   ProtocolBase in '..\Comm\ProtocolBase.pas',
-  DataBuffer in '..\General\DataBuffer.pas';
+  DataBuffer in '..\General\DataBuffer.pas',
+  RS232 in '..\Comm\RS232.pas';
 
 {$R *.res}
 

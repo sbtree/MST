@@ -97,80 +97,6 @@ end;
 
 // =============================================================================
 // Class        : TFlashRunner
-// Function     : ConfigConnByStr
-//                get settings of connection from a given string and config it
-// Parameter    : conf, a string of rs232 settings, e.g.
-//                'Port:8|Baudrate:115200'
-// Return       : true, if the setting is available.
-//                false, otherwise
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      : 2015-09-03 /bsu/ return true, only if PORT and BAUDRATE are both configured
-// =============================================================================
-function TFlashRunner.ConfigConnByStr(const conf: string): boolean;
-const CSTR_KEYS: array[0..1] of string = ('PORT','BAUDRATE');
-var
-  s_in, s_key, s_val: string;
-  t_keyvalues, t_keyval: TStringList;
-  i, i_value, i_idx: integer;
-  ar_flags : array[LOW(CSTR_KEYS)..HIGH(CSTR_KEYS)] of boolean;
-begin
-  s_in := trim(conf);
-  result := false;
-  t_keyvalues := TStringList.Create;
-  t_keyval := TStringList.Create;
-  for i := LOW(ar_flags) to HIGH(ar_flags) do ar_flags[i] := false;
-
-  if (ExtractStrings(['|'], [' ', Char(9)], PChar(s_in), t_keyvalues) > 0) then begin
-    i := 0;
-    repeat
-      t_keyval.Clear;
-      if (ExtractStrings([':'], [' '], PChar(t_keyvalues[i]), t_keyval) = 2) then begin
-        s_key := UpperCase(t_keyval[0]);
-        s_val := UpperCase(t_keyval[1]);
-        i_idx := IndexOfStr( CSTR_KEYS, s_key);
-        i_lasterr := C_ERR_PORT + i_idx;
-        case i_idx of
-        0: begin//'PORT'
-          if TryStrToInt(s_val, i_value) then begin
-            if ((i_value >= 1) and (i_value <= 256)) then begin
-              t_ser.Port := i_value;
-              ar_flags[i_idx] := true;
-              i_lasterr := C_ERR_NOERROR;
-              s_lastmsg := '';
-            end else s_lastmsg := format('serial port out of range [1..256]: %d', [i_value]);
-          end else s_lastmsg := format('invalid serial port: %s', [s_val]);
-        end;
-        1: begin//'BAUDRATE'
-          if TryStrToInt(s_val, i_value) then begin
-            t_ser.Baudrate := i_value;
-            ar_flags[i_idx] := true;
-            i_lasterr := C_ERR_NOERROR;
-            s_lastmsg := '';
-          end else s_lastmsg := format('invalid baudrate of serial port: %s', [s_val]);
-        end;
-        end;
-      end;
-      inc(i);
-    until ((i>=t_keyvalues.Count) or (not (result)));
-  end;
-  t_keyval.Clear;
-  FreeAndNil(t_keyval);
-  t_keyvalues.Clear;
-  FreeAndNil(t_keyvalues);
-  result := true;
-  for i := LOW(ar_flags) to HIGH(ar_flags) do  begin
-    if not ar_flags[i] then begin
-      i_lasterr := C_ERR_PORT + i;
-      s_lastmsg := format('[%s] of serial port is not given.', [CSTR_KEYS[i]]);
-      result := false;
-      break;
-    end;
-  end;
-end;
-
-// =============================================================================
-// Class        : TFlashRunner
 // Function     : IntToDMDataStr
 //                convert an integer into a string with format of data
 //                for FlashRunner-command DMSET in word-addressing,
@@ -205,7 +131,6 @@ end;
 constructor TFlashRunner.Create(owner: TComponent);
 begin
 	inherited Create(owner);
-  t_ser := TSerial.Create(self);
 end;
 
 // =============================================================================
@@ -221,7 +146,6 @@ end;
 destructor TFlashRunner.Destroy;
 begin
   FreeDevice();
-  FreeAndNil(t_ser);
 	inherited Destroy;
 end;
 
@@ -239,13 +163,12 @@ end;
 function TFlashRunner.Connect: boolean;
 var ds_set: set of EDeviceState;
 begin
-  if e_state = DS_CONFIGURED then begin
-    if not t_ser.Active then t_ser.Active := true;
-    result := t_ser.Active;
+  result := false;
+  if ((e_state in C_DEV_STATES[DE_CONNECT]) and assigned(t_conn)) then begin
+    result := t_conn.Connect();
     PostEvent(DE_CONNECT, result);
   end;
-  ds_set := [DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR];
-  result := (e_state in ds_set);
+  result := result and (e_state in C_DEV_STATES[DE_DISCONNECT]);
 end;
 
 // =============================================================================
@@ -431,15 +354,15 @@ const
 //  C_STR_TYPE : string = 'TYPE';
   C_STR_TIMEOUT : string = 'TIMEOUT';
 var
-  s_inivalue: string;
+  s_inivalue: string; i_value: integer;
 begin
   result := false;
-  if (DeviceState = DS_NONE) then
+  if (State = DS_NONE) then
   begin
     //settings from ini file
     if (ini.SectionExists(C_STR_FR)) then
     begin
-      SetTimeout(ini.ReadInteger(C_STR_FR, C_STR_TIMEOUT, C_TIMEOUT_MSEC));
+      c_timeout := ini.ReadInteger(C_STR_FR, C_STR_TIMEOUT, C_TIMEOUT_MSEC);
       s_inivalue := trim(ini.ReadString(C_STR_FR, CSTR_CONN_KEYS[CT_RS232], ''));
       if not assigned(t_conn) then t_conn := TConnRS232.Create(self);
       result := t_conn.Config(s_inivalue);

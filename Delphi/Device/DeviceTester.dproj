@@ -46,6 +46,7 @@
     </DelphiCompile>
     <DCCReference Include="..\Comm\ConnBase.pas" />
     <DCCReference Include="..\Comm\ProtocolBase.pas" />
+    <DCCReference Include="..\Comm\RS232.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="DeviceBase.pas" />

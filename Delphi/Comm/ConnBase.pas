@@ -42,7 +42,7 @@ type
   end;
   PConnBase = ^TConnBase;
 
-implementation
+  implementation
 
 const
   CSTR_CONN_KEYS : array[LOW(EConnectionType)..HIGH(EConnectionType)] of string = (
