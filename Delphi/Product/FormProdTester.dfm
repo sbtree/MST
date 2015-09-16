@@ -1,4 +1,4 @@
-object FormPTMain: TFormPTMain
+object frmProdTester: TfrmProdTester
   Left = 0
   Top = 0
   Caption = 'ProductTester'

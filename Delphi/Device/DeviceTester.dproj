@@ -55,6 +55,7 @@
     </DCCReference>
     <DCCReference Include="Multimeter.pas" />
     <DCCReference Include="Oscilloscope.pas" />
+    <None Include="ModelSupport_DeviceTester\default.txaPackage" />
     <None Include="ModelSupport_DeviceTester\default.txvpck" />
     <None Include="ModelSupport_DeviceTester\DeviceTester\default.txvpck" />
     <None Include="ModelSupport_DeviceTester\FlashRunnerTester\default.txvpck" />

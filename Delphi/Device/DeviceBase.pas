@@ -60,7 +60,7 @@ type
     i_lasterr: integer;     //last error number
     s_lastmsg: string;      //last message
     s_devname: string;      //name of the device
-    b_comhexa: boolean;     //hexadizcimal data in string to transfer if it is true
+    b_comhex : boolean;     //hexadizcimal data in string to transfer if it is true
 
     t_conn: TConnBase;      //connection
     t_prot: TProtBase;      //protocol of communication
@@ -79,6 +79,8 @@ type
 
     property DeviceState : EDeviceState read e_state;
     property DeviceStateString : string read GetDeviceStateString;
+    property HexComm : boolean read b_comhex write b_comhex;
+
     function SetTimeout(const msec: integer): integer;
     function SetComHexa(const bhex: boolean = true): boolean;
     function GetLastError(var msg: string): Integer; virtual; abstract;
@@ -98,7 +100,17 @@ const
 
   C_TIMEOUT_MSEC: Cardinal = 30000;  //default timeout 30000 milli seconds for communication
   C_DELAY_MSEC: Cardinal = 20;  //delay 20 milli seconds for communication error
-  C_STR_STATE : array[LOW(EDeviceState)..HIGH(EDeviceState)] of string = ('unusable','configured','connected','communicable','waiting','device error');
+implementation
+
+const
+  C_STR_STATES : array[LOW(EDeviceState)..HIGH(EDeviceState)] of string = (
+                  'unusable',
+                  'configured',
+                  'connected',
+                  'communicable',
+                  'waiting',
+                  'device error'
+                  );
 
   //define sets of device states, which are allowed for each event
   C_DEV_STATES: array[LOW(EDeviceEvent)..HIGH(EDeviceEvent)] of DeviceStateSet = (
@@ -110,7 +122,6 @@ const
                 [DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR], //allowed states for disconnect
                 [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR]  //allowed states for free
                 );
-implementation
 
 // =============================================================================
 // Class        : TDeviceBase
@@ -129,7 +140,7 @@ begin
   e_state := DS_NONE;
   i_timeout := C_TIMEOUT_MSEC;
   i_lasterr := 0;
-  b_comhexa := false;
+  b_comhex  := false;
 end;
 
 // =============================================================================
@@ -165,22 +176,6 @@ end;
 
 // =============================================================================
 // Class        : TDeviceBase
-// Function     : SetComHexa
-//                set
-// Parameter    : bhex, transfering string will be converted into hexadicimal if it is true
-// Return       : return current value of b_comhex
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TDeviceBase.SetComHexa(const bhex: boolean = true): boolean;
-begin
-  b_comhexa := bhex;
-  result := b_comhexa;
-end;
-
-// =============================================================================
-// Class        : TDeviceBase
 // Function     : GetLastError
 //                return last error number
 // Parameter    : msg, output string
@@ -210,7 +205,7 @@ end;
 // =============================================================================
 function TDeviceBase.GetDeviceStateString: string;
 begin
-  result := C_STR_STATE[e_state];
+  result := C_STR_STATES[e_state];
 end;
 
 // =============================================================================

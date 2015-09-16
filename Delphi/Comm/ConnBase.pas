@@ -10,11 +10,10 @@
 unit ConnBase;
 
 interface
-uses  Classes, DataBuffer;
+uses  Classes;
 type
 
   EConnectionType = (
-                    CT_UNKNOWN, //a undefined type of connction
                     CT_JTAG,  //jtag
                     CT_GPIB, //GPIB/ieee 488
                     CT_RS232, //rs232
@@ -43,9 +42,10 @@ type
   end;
   PConnBase = ^TConnBase;
 
+implementation
+
 const
   CSTR_CONN_KEYS : array[LOW(EConnectionType)..HIGH(EConnectionType)] of string = (
-                    'CONN_UNKNOWN',
                     'CONN_JTAG',
                     'CONN_GPIB',
                     'CONN_RS232',
@@ -54,12 +54,10 @@ const
                     'CONN_CAN',
                     'CONN_PROFIL'
                     );
-implementation
-
+                    
 constructor TConnBase.Create(owner: TComponent);
 begin
 	inherited Create(owner);
-  e_type := CT_UNKNOWN;
 end;
 
 destructor TConnBase.Destroy;

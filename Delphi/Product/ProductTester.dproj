@@ -33,8 +33,11 @@
     <DelphiCompile Include="ProductTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\ProtocolBase.pas" />
+    <DCCReference Include="..\Comm\RS232.pas" />
     <DCCReference Include="FormProdTester.pas">
-      <Form>FormPTMain</Form>
+      <Form>frmProdTester</Form>
     </DCCReference>
     <DCCReference Include="MtxARS2000.pas" />
     <DCCReference Include="MtxDIS2.pas" />
