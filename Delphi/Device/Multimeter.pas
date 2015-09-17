@@ -11,16 +11,11 @@ type
 
   TMultimeter = class(TDeviceBase)
   public
-    constructor Create(owner: TComponent);
+    constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
-    function GetLastError(var msg: string): Integer; override;
+    //function GetLastError(var msg: string): Integer; override;
     function ConfigDevice(const ini: TMemIniFile): Boolean; override;
-    function FreeDevice(): Boolean; override;
-    function Connect(): Boolean; override;
-    function Disconnect: boolean; override;
-    function SendStr(const sdata: string; const bans: boolean = true): Integer; override;
-    function RecvStr(var sdata: string): Integer; override;
 
     function CloseRelays(const relays: string): boolean;
     function OpenRelays(const relays: string): boolean;
@@ -41,61 +36,46 @@ begin
 	inherited Destroy;
 end;
 
-function TMultimeter.GetLastError(var msg: string): Integer;
-begin
-
-end;
-
 function TMultimeter.ConfigDevice(const ini: TMemIniFile): Boolean;
 begin
-
-end;
-
-function TMultimeter.FreeDevice(): Boolean;
-begin
-
-end;
-
-function TMultimeter.Connect(): Boolean; 
-begin
-
-end;
-function TMultimeter.Disconnect: boolean; 
-begin
-
-end;
-function TMultimeter.SendStr(const sdata: string; const bans: boolean = true): Integer; 
-begin
-
-end;
-function TMultimeter.RecvStr(var sdata: string): Integer; 
-begin
-
+  //todo
+  result := false;
 end;
 
 function TMultimeter.CloseRelays(const relays: string): boolean;
 begin
-
+  //todo
+  result := false;
 end;
+
 function TMultimeter.OpenRelays(const relays: string): boolean;   
 begin
-
+  //todo
+  result := false;
 end;
+
 function TMultimeter.MeasureR(): real; 
 begin
-
+  //todo
+  result := 0.0;
 end;
+
 function TMultimeter.MeasureI(const cf: ECurrentFlow): real;
 begin
-
+  //todo
+  result := 0.0;
 end;
+
 function TMultimeter.MeasureU(const cf: ECurrentFlow): real; 
 begin
-
+  //todo
+  result := 0.0;
 end;
+
 function TMultimeter.MeasureF(): real;
 begin
-
+  //todo
+  result := 0.0;
 end;
 
 end.

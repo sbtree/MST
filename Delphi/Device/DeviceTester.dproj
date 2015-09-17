@@ -14,21 +14,20 @@
     <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
     <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
     <DCC_Define>RELEASE</DCC_Define>
-    <DCC_UnitSearchPath>..\Externals</DCC_UnitSearchPath>
-    <DCC_ResourcePath>..\Externals</DCC_ResourcePath>
-    <DCC_ObjPath>..\Externals</DCC_ObjPath>
-    <DCC_IncludePath>..\Externals</DCC_IncludePath>
+    <DCC_UnitSearchPath>..\Externals;..\Comm;..\General</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals;..\Comm;..\General</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals;..\Comm;..\General</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals;..\Comm;..\General</DCC_IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <Version>7.0</Version>
     <DCC_Define>DEBUG</DCC_Define>
-    <DCC_UnitSearchPath>..\Externals</DCC_UnitSearchPath>
-    <DCC_ResourcePath>..\Externals</DCC_ResourcePath>
-    <DCC_ObjPath>..\Externals</DCC_ObjPath>
-    <DCC_IncludePath>..\Externals</DCC_IncludePath>
-    <DCC_DebugInformation>False</DCC_DebugInformation>
-    <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
-    <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+    <DCC_UnitSearchPath>..\Externals;..\Comm;..\General</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals;..\Comm;..\General</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals;..\Comm;..\General</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals;..\Comm;..\General</DCC_IncludePath>
+    <DCC_SymbolReferenceInfo>2</DCC_SymbolReferenceInfo>
+    <DCC_Optimize>False</DCC_Optimize>
   </PropertyGroup>
   <ProjectExtensions>
     <Borland.Personality>Delphi.Personality</Borland.Personality>

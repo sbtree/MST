@@ -23,8 +23,7 @@ type
   protected
     //t_ser: TSerial;
   protected
-    function CheckAnswer(const ans: string): boolean;
-    function ConfigConnByStr(const conf: string): boolean;
+    function CheckAnswer(): boolean; override;
     function Sync(): boolean; override;
     function IntToDMDataStr(const num: integer): string;
 
@@ -34,11 +33,6 @@ type
 
     function GetLastError(var msg: string): Integer; override;
     function ConfigDevice(const ini: TMemIniFile): Boolean; override;
-    function FreeDevice(): Boolean; override;
-    function Connect(): Boolean; override;
-    function Disconnect: boolean; override;
-    function SendStr(const data: string; const ans: boolean = true): integer; override;
-    function RecvStr(var data: string): integer; override;
 
     function SetDynamicMem(const addr: word; const num: integer): boolean;
     function RunScript(const script: string; const msecs: integer = -1): boolean;
@@ -149,27 +143,6 @@ begin
 	inherited Destroy;
 end;
 
-// =============================================================================
-// Class        : TFlashRunner
-// Function     : Connect
-//                connects to the device (FlashRunner)
-// Parameter    : --
-// Return       : true, if the device is accesible in the time of timeout
-//                false, otherwise
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TFlashRunner.Connect: boolean;
-var ds_set: set of EDeviceState;
-begin
-  result := false;
-  if ((e_state in C_DEV_STATES[DE_CONNECT]) and assigned(t_conn)) then begin
-    result := t_conn.Connect();
-    PostEvent(DE_CONNECT, result);
-  end;
-  result := result and (e_state in C_DEV_STATES[DE_DISCONNECT]);
-end;
 
 // =============================================================================
 // Class        : TFlashRunner
@@ -183,104 +156,32 @@ end;
 // History      :
 // =============================================================================
 function TFlashRunner.Sync(): boolean;
-const C_STR_PING: string = 'SPING'; C_STR_PONG: string = 'PONG>'; C_TIMEOUT: cardinal = 3000;
-var s_ans: string; ds_set : set of EDeviceState; i_time: cardinal; ch: char;
+const C_STR_PING: string = 'SPING'; C_STR_PONG: string = 'PONG>';
+var s_ans: string; ds_set : set of EDeviceState; i_len: integer;
 begin
   result := false;
   ds_set := [DS_CONNECTED, DS_COMERROR];
   if (e_state in ds_set) then
   begin
-    i_time := GetTickCount() + C_TIMEOUT;
-
-    //clear buffer of t_ser
-    Delay(C_DELAY_MSEC);
-    while ((t_ser.RxWaiting > 0) and ( GetTickCount() < i_time)) do t_ser.ReadChar(ch);
+    //clear receiving-buffer of t_ser
+    t_conn.RecvData(t_rbuf, C_TIMEOUT_ONCE);
+    t_rbuf.Clear;
 
     //send string and wait til write-buffer is completely sent
-    t_ser.WriteString(C_STR_PING + Char(13));
-    repeat if (t_ser.TxWaiting > 0) then Delay(C_DELAY_MSEC);
-    until ((t_ser.TxWaiting <= 0) or (GetTickCount() >= i_time));
-
-    //receive string til read-buffer is empty or timeout
-    repeat begin
-      ch := chr(0);
-      if (t_ser.ReadChar(ch) = 1) then s_ans := s_ans + ch
-      else Delay(C_DELAY_MSEC);
-    end; until ((t_ser.RxWaiting <= 0) or (GetTickCount() >= i_time));
-
-    //verify the received string
-    s_ans := trim(s_ans);
-    result := SameText(C_STR_PONG,s_ans);
+    i_len := t_wbuf.WriteStr(C_STR_PING + Char(13));
+    if(t_conn.SendData(t_wbuf, C_TIMEOUT_ONCE) = i_len) then begin
+      //receive string til read-buffer is empty or timeout
+      i_len := t_conn.RecvData(t_rbuf, C_TIMEOUT_ONCE);
+      if (i_len > 0) then begin
+        //verify the received string
+        s_ans := trim(t_rbuf.ReadStr());
+        result := SameText(C_STR_PONG, s_ans);
+      end;
+    end;
     PostEvent(DE_SYNC, result);
   end;
 end;
 
-// =============================================================================
-// Class        : TFlashRunner
-// Function     : SendStr
-//                send string to device
-// Parameter    : str, a string to send
-// Return       : integer, which counts char, which are sent
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TFlashRunner.SendStr(const data: string; const ans: boolean): integer;
-var ch: char; timeout: cardinal;
-begin
-  result := 0;
-  if TryToReady() then begin
-    timeout := GetTickCount() + i_timeout;
-    //clear read-buffer of t_ser
-    repeat if (t_ser.ReadChar(ch) <> 1) then Delay(C_DELAY_MSEC);
-    until ((t_ser.RxWaiting <= 0) or (GetTickCount() >= timeout));
-
-    t_ser.WriteString(data);
-    //wait til write-buffer is completely sent
-    repeat if (t_ser.TxWaiting > 0) then Delay(C_DELAY_MSEC);
-    until ((t_ser.TxWaiting <= 0) or (GetTickCount() >= timeout));
-    result := (length(data) - t_ser.TxWaiting);
-
-    PostEvent(DE_SEND, (result > 0));
-    if (not ans) then PostEvent(DE_RECV, true);
-  end;
-end;
-
-// =============================================================================
-// Class        : TFlashRunner
-// Function     : RecvStr
-//                receiv string from device
-// Parameter    : str, a string for receiving
-// Return       : integer, which counts char, which are received
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TFlashRunner.RecvStr(var data: string): integer;
-var ch: char; timeout: cardinal;
-begin
-  result := 0;
-  if e_state = DS_WAITING then begin
-    timeout := GetTickCount() + i_timeout;
-    //wait til any data arrives
-    repeat if (t_ser.RxWaiting <= 0) then Delay(C_DELAY_MSEC);
-    until ((t_ser.RxWaiting > 0) or (GetTickCount() >= timeout));
-
-    //prepare string for receiving
-    data := '';
-    //receive char and save it into the string
-    repeat
-    begin
-      ch := chr(0);
-      if (t_ser.ReadChar(ch) = 1) then data := data + ch
-      else Delay(C_DELAY_MSEC);
-    end;
-    until ((t_ser.RxWaiting <= 0) or (GetTickCount() >= timeout));
-    result := length(data);
-    CheckAnswer(data);
-    PostEvent(DE_RECV, (i_lasterr=0));
-  end;
-end;
 
 // =============================================================================
 // Class        : TFlashRunner
@@ -292,18 +193,18 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TFlashRunner.CheckAnswer(const ans: string): boolean;
+function TFlashRunner.CheckAnswer(): boolean;
 const C_VALID_CHARS: set of char = ['>', '!'];
-var s_in: string; i_len: integer;
+var s_ans: string; i_len: integer;
 begin
-  s_in := trim(ans);
-  i_len := length(s_in);
-  s_lastmsg := format('answer string: %s', [IfThen(i_len>0,ans,'[empty]')]);
+  s_ans := trim(t_rbuf.ReadStr());
+  i_len := length(s_ans);
+  s_lastmsg := format('answer string: %s', [IfThen(i_len>0, s_ans, '[empty]')]);
   if (i_len > 0) then begin
-    if (s_in[i_len] = '>') then  i_lasterr := C_ERR_NOERROR //sucessful answer
-    else if (s_in[i_len] = '!') then begin //failure answer
-      delete(s_in, i_len, 1);
-      TryStrToInt(s_in, i_lasterr);
+    if (s_ans[i_len] = '>') then  i_lasterr := C_ERR_NOERROR //sucessful answer
+    else if (s_ans[i_len] = '!') then begin //failure answer
+      delete(s_ans, i_len, 1);
+      TryStrToInt(s_ans, i_lasterr);
     end  else i_lasterr := C_ERR_UNKNOWN;
   end else  i_lasterr := C_ERR_WRONG_ANS;
   result := (i_lasterr = C_ERR_NOERROR);
@@ -321,6 +222,7 @@ end;
 // =============================================================================
 function TFlashRunner.GetLastError(var msg: string): Integer;
 begin
+  //todo
   result := i_lasterr;
   case i_lasterr of
   0: msg := 'No error exist.';
@@ -348,63 +250,22 @@ end;
 // =============================================================================
 function TFlashRunner.ConfigDevice(const ini: TMemIniFile): boolean;
 const
-  C_STR_FR   : string = 'FlashRunner';
-//  C_STR_DESC : string = 'DESCRIPTION';
-//  C_STR_PROD : string = 'PRODUCER';
-//  C_STR_TYPE : string = 'TYPE';
-  C_STR_TIMEOUT : string = 'TIMEOUT';
-var
-  s_inivalue: string; i_value: integer;
+  CSTR_FR_SEC   : string = 'FlashRunner';
+var s_inivalue: string;
 begin
   result := false;
-  if (State = DS_NONE) then
+  if (e_state in C_DEV_STATES[DE_CONFIG]) then
   begin
     //settings from ini file
-    if (ini.SectionExists(C_STR_FR)) then
+    if (ini.SectionExists(CSTR_FR_SEC)) then
     begin
-      c_timeout := ini.ReadInteger(C_STR_FR, C_STR_TIMEOUT, C_TIMEOUT_MSEC);
-      s_inivalue := trim(ini.ReadString(C_STR_FR, CSTR_CONN_KEYS[CT_RS232], ''));
+      c_timeout := ini.ReadInteger(CSTR_FR_SEC, CSTR_DEV_TIMEOUT, C_TIMEOUT_MSEC);
+      s_inivalue := trim(ini.ReadString(CSTR_FR_SEC, CSTR_CONN_KEYS[CT_RS232], ''));
       if not assigned(t_conn) then t_conn := TConnRS232.Create(self);
       result := t_conn.Config(s_inivalue);
     end;
     PostEvent(DE_CONFIG, result);;
   end;
-end;
-
-// =============================================================================
-// Class        : TFlashRunner
-// Function     : Disconnect
-//                disconnect from the device
-// Parameter    : --
-// Return       : true, if the device is disconnected successfully
-//                false, otherwise
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TFlashRunner.Disconnect(): boolean;
-begin
-  t_ser.Active := false;
-  result := (t_ser.Active = false);
-  PostEvent(DE_DISCONNECT, result);
-end;
-
-
-// =============================================================================
-// Class        : TFlashRunner
-// Function     : FreeDevice
-//                release device, undo what is done in ConfigDevice
-// Parameter    : --
-// Return       : true, if the device is released successfully
-//                false, otherwise
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TFlashRunner.FreeDevice(): boolean;
-begin
-  result := Disconnect();
-  PostEvent(DE_FREE, result);;
 end;
 
 // =============================================================================
@@ -422,12 +283,14 @@ end;
 // History      :
 // =============================================================================
 function TFlashRunner.SetDynamicMem(const addr: word; const num: integer): boolean;
-var s_send, s_answer: string;
+var s_send, s_answer: string; i_len: integer;
 begin
   result := false;
   s_send := format('DMSET $%.4x 8 %s', [addr, IntToDMDataStr(num)]) + Char(13);
-  if SendStr(s_send) = length(s_send) then begin
-    if RecvStr(s_answer) > 0 then result := CheckAnswer(s_answer);
+  i_len := SendStr(s_send);
+  if (i_len = length(s_send)) then begin
+    RecvStr(s_answer);
+    result := (State = DS_READY);
   end;
 end;
 
@@ -445,16 +308,16 @@ end;
 // History      :
 // =============================================================================
 function TFlashRunner.RunScript(const script: string; const msecs: integer): boolean;
-var s_send, s_answer: string; i_tmp: cardinal;
+var s_send, s_answer: string; c_tmp: cardinal; i_len: integer;
 begin
-  result := false;
-  i_tmp := i_timeout;
-  SetTimeout(msecs);
+  result := false; c_tmp := Timeout;
   s_send := format('RUN %s', [script]) + Char(13);
-  if SendStr(s_send) = length(s_send) then begin
-    if RecvStr(s_answer) > 0 then result := CheckAnswer(s_answer);
+  i_len := SendStr(s_send);
+  if (i_len = length(s_send)) then begin
+    RecvStr(s_answer);
+    result := (State = DS_READY);
   end;
-  SetTimeout(i_tmp);
+  Timeout := c_tmp;
 end;
 
 end.

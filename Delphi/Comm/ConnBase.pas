@@ -10,7 +10,7 @@
 unit ConnBase;
 
 interface
-uses  Classes;
+uses  Classes, Windows, DataBuffer;
 type
 
   EConnectionType = (
@@ -27,6 +27,8 @@ type
   protected
     e_type : EConnectionType;
     i_lasterr: integer;
+  protected
+
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
@@ -36,13 +38,11 @@ type
     function IsConnected(): boolean; virtual; abstract;
     function Connect(): boolean;virtual;abstract;
     function Disconnect: boolean;virtual;abstract;
-    function SendData(const data: array of char): Integer;virtual;abstract;
-    function RecvData(var data: array of char): Integer;virtual;abstract;
+    function SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer;virtual;abstract;
+    function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer;virtual;abstract;
     function GetLastError(var msg: string): Integer;virtual;abstract;
   end;
   PConnBase = ^TConnBase;
-
-  implementation
 
 const
   CSTR_CONN_KEYS : array[LOW(EConnectionType)..HIGH(EConnectionType)] of string = (
@@ -54,7 +54,9 @@ const
                     'CONN_CAN',
                     'CONN_PROFIL'
                     );
-                    
+
+implementation
+
 constructor TConnBase.Create(owner: TComponent);
 begin
 	inherited Create(owner);

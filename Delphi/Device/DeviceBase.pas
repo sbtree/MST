@@ -8,7 +8,7 @@
 unit DeviceBase;
 
 interface
-uses Classes, SysUtils, IniFiles, ConnBase, ProtocolBase;
+uses Classes, SysUtils, IniFiles, ConnBase, DataBuffer, ProtocolBase;
 
 type
 // =============================================================================
@@ -65,6 +65,7 @@ type
     t_conn: TConnBase;      //connection
     t_prot: TProtBase;      //protocol of communication
 
+    t_rbuf, t_wbuf: TCharBuffer;
   strict private
     function GetStateString : string;
 
@@ -72,6 +73,7 @@ type
     procedure PostEvent(const event: EDeviceEvent; const ok: boolean);
     function Sync(): boolean; virtual;
     function TryToReady: boolean; virtual;
+    function CheckAnswer(): boolean; virtual; abstract;
 
   public
     constructor Create(owner: TComponent); override;
@@ -83,32 +85,21 @@ type
     property Timeout : cardinal read c_timeout write c_timeout;
 
     function ConfigDevice(const ini: TMemIniFile): Boolean; virtual;abstract;
-    function FreeDevice(): Boolean; virtual; abstract;
-    function Connect(): Boolean; virtual;abstract;
-    function Disconnect: boolean; virtual; abstract;
-    function SendStr(const sdata: string; const bans: boolean = true): Integer; virtual;abstract;
-    function RecvStr(var sdata: string): Integer; virtual;abstract;
+    function FreeDevice(): Boolean; virtual;
+    function Connect(): Boolean; virtual;
+    function Disconnect: boolean; virtual;
+    function SendStr(const sData: string; const bAns: boolean = true): Integer; virtual;
+    function RecvStr(var sdata: string): Integer; virtual;
     function GetLastError(var msg: string): Integer; virtual; abstract;
   end;
   PDeviceBase = ^TDeviceBase;
 
-implementation
-
 const
+  C_TIMEOUT_MSEC: Cardinal = 30000; //default timeout 30000 milli seconds to wait for response
+  C_TIMEOUT_ONCE = 2000; //
+
   C_ERR_NOERROR = $0000; // no error
   C_ERR_UNKNOWN = $8000; // base error number as unknown
-
-  C_TIMEOUT_MSEC: Cardinal = 30000; //default timeout 30000 milli seconds to wait for response
-  C_DELAY_MSEC: Cardinal = 20;      //delay 20 milli seconds for communication in one shot
-
-  CSTR_DEV_STATES : array[LOW(EDeviceState)..HIGH(EDeviceState)] of string = (
-                  'unusable',
-                  'configured',
-                  'connected',
-                  'communicable',
-                  'waiting',
-                  'device error'
-                  );
 
   //define sets of device states, which are allowed for each event
   C_DEV_STATES: array[LOW(EDeviceEvent)..HIGH(EDeviceEvent)] of DeviceStateSet = (
@@ -120,6 +111,23 @@ const
                 [DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR], //allowed states for disconnect
                 [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR]  //allowed states for free
                 );
+
+  CSTR_DEV_TIMEOUT    : string = 'TIMEOUT';
+  CSTR_DEV_DESCRIPTION: string = 'DESCRIPTION';
+  CSTR_DEV_PRODUCER   : string = 'PRODUCER';
+  CSTR_DEV_TYPE       : string = 'TYPE';
+
+implementation
+
+const
+  CSTR_DEV_STATES : array[LOW(EDeviceState)..HIGH(EDeviceState)] of string = (
+                  'unusable',
+                  'configured',
+                  'connected',
+                  'communicable',
+                  'waiting',
+                  'device error'
+                  );
 
 // =============================================================================
 // Class        : TDeviceBase
@@ -139,6 +147,9 @@ begin
   c_timeout := C_TIMEOUT_MSEC;
   i_lasterr := 0;
   b_comhex  := false;
+
+  t_rbuf := TCharBuffer.Create;
+  t_wbuf := TCharBuffer.Create;
 end;
 
 // =============================================================================
@@ -153,6 +164,8 @@ end;
 // =============================================================================
 destructor TDeviceBase.Destroy;
 begin
+  FreeAndNil(t_rbuf);
+  FreeAndNil(t_wbuf);
 	inherited Destroy;
 end;
 
@@ -187,7 +200,7 @@ end;
 // =============================================================================
 function TDeviceBase.GetStateString: string;
 begin
-  result := C_STR_STATES[e_state];
+  result := CSTR_DEV_STATES[e_state];
 end;
 
 // =============================================================================
@@ -260,6 +273,112 @@ begin
     DS_WAITING: ;//not possible because the answer is expected.
   end;
   result := (e_state = DS_READY);
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : FreeDevice
+//                release device, undo what is done in ConfigDevice
+// Parameter    : --
+// Return       : true, if the device is released successfully
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.FreeDevice(): boolean;
+begin
+  result := Disconnect();
+  PostEvent(DE_FREE, result);;
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : Connect
+//                connects to the device (FlashRunner)
+// Parameter    : --
+// Return       : true, if the device is accesible in the time of timeout
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.Connect: boolean;
+begin
+  result := false;
+  if ((e_state in C_DEV_STATES[DE_CONNECT]) and assigned(t_conn)) then begin
+    result := t_conn.Connect();
+    PostEvent(DE_CONNECT, result);
+  end;
+  result := result and (e_state in C_DEV_STATES[DE_DISCONNECT]);
+end;
+
+// =============================================================================
+// Class        : TFlashRunner
+// Function     : Disconnect
+//                disconnect from the device
+// Parameter    : --
+// Return       : true, if the device is disconnected successfully
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.Disconnect(): boolean;
+begin
+  result := t_conn.Disconnect();
+  PostEvent(DE_DISCONNECT, result);
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : SendStr
+//                send string to device
+// Parameter    : str, a string to send
+// Return       : integer, which counts char, which are sent
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.SendStr(const sData: string; const bAns: boolean): integer;
+var i_len: integer;
+begin
+  result := 0;
+  if TryToReady() then begin
+    //clear read-buffer of t_ser
+    t_conn.RecvData(t_rbuf, C_TIMEOUT_ONCE);
+    t_rbuf.Clear;
+
+    //send string and wait til write-buffer is completely sent
+    i_len := t_wbuf.WriteStr(sData);
+    result := t_conn.SendData(t_wbuf, c_timeout);
+
+    PostEvent(DE_SEND, (result = i_len));
+    if (not bAns) then PostEvent(DE_RECV, true);
+  end;
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : RecvStr
+//                receiv string from device
+// Parameter    : str, a string for receiving
+// Return       : integer, which counts char, which are received
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.RecvStr(var sdata: string): integer;
+var b_ok: boolean;
+begin
+  result := 0;
+  if (e_state in C_DEV_STATES[DE_RECV]) then begin
+    t_rbuf.Clear;
+    result := t_conn.RecvData(t_rbuf, c_timeout);
+    sdata := t_rbuf.ReadStr(false);
+    b_ok := CheckAnswer();
+    PostEvent(DE_RECV, b_ok);
+  end;
 end;
 
 end.

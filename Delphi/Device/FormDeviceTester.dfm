@@ -13,4 +13,13 @@ object frmDeviceTester: TfrmDeviceTester
   OldCreateOrder = False
   PixelsPerInch = 96
   TextHeight = 13
+  object btnFR: TButton
+    Left = 472
+    Top = 24
+    Width = 75
+    Height = 25
+    Caption = '&Flash Runner'
+    TabOrder = 0
+    OnClick = btnFRClick
+  end
 end

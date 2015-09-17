@@ -23,7 +23,10 @@ uses Forms, Windows, IniFiles, Contnrs;
   function HexStrFromCharArray(const aData: array of char; const len: integer = -1): string;
 
   //process, thread and windows message
-  procedure Delay(const msec: Cardinal);
+  procedure Delay(const msec: Cardinal = 10);
+
+const
+  C_DELAY_MSEC: Cardinal = 20;      //delay 20 milli seconds for communication in one shot
 
 implementation
 uses SysUtils, StrUtils, Math;
@@ -68,7 +71,7 @@ end;
 // Class        : --
 // Function     : Delay
 //                calls ProcessMessages in a loop till the give milliseconds escapes
-// Parameter    : msec, count of milli seconds
+// Parameter    : msec, count of milli seconds. Defaut is 10 milli seconds
 // Return       : --
 // Exceptions   : --
 // First author : 2015-09-14 /bsu/

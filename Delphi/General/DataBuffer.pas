@@ -32,8 +32,8 @@ type
 
   TCharBuffer = class(TBufferBase)
   protected
-    a_chars    : array of char; //dynamic array of char as a ring buffer
-
+    a_chars   : array of char; //dynamic array of char as a ring buffer
+    p_reread  : integer;
   protected
     function IsHexString(const str: string): boolean;
 
@@ -43,7 +43,7 @@ type
 
     function Resize(const n: Integer):Boolean; override;
     function ReadChar(var ch: char): boolean;
-    function ReadStr(): string;
+    function ReadStr(const bClear: boolean = true): string;
     function ReadHex(): string;
     function HistoryChar(var ch: char; const idx: integer): boolean;
     function HistoryStr(): string;
@@ -161,12 +161,20 @@ begin
   end;
 end;
 
-function TCharBuffer.ReadStr(): string;
+function TCharBuffer.ReadStr(const bClear: boolean): string;
+var ch: char; i_start: integer;
+begin
+  result := ''; i_start := p_read;
+  while (ReadChar(ch)) do result := result + ch;
+  if (not bClear) then p_read := i_start;
+end;
+
+{function TCharBuffer.RereadStr(): string;
 var ch: char;
 begin
-  result := '';
+  result := ''; p_read := p_reread;
   while (ReadChar(ch)) do result := result + ch;
-end;
+end;}
 
 function TCharBuffer.ReadHex(): string;
 var ch: char;

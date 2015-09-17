@@ -1,7 +1,7 @@
 unit RS232;
 
 interface
-uses  Serial3, ConnBase, Classes, RegExpr;
+uses  Serial3, ConnBase, Classes, RegExpr, DataBuffer;
 
 type
   ERS232Settings = (
@@ -18,6 +18,7 @@ type
   protected
     t_ser : TSerial;
   protected
+    procedure ReadAll(var rbuf: TCharBuffer); virtual;
 
   public
     constructor Create(owner: TComponent); override;
@@ -27,8 +28,8 @@ type
     function IsConnected(): boolean; override;
     function Connect(): boolean;override;
     function Disconnect: boolean;override;
-    function SendData(const data: array of char): Integer;override;
-    function RecvData(var data: array of char): Integer;override;
+    function SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer; override;
+    function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer; override;
     function GetLastError(var msg: string): Integer;override;
   end;
   PConnRS232 = ^TConnRS232;
@@ -38,7 +39,7 @@ const
                 '110','300','600','1200','2400','4800','9600','14400',
                 '19200','38400','56000','57600','115200','128000','256000');
 
-  C_RS232_KEYS: array[LOW(ERS232Settings)..HIGH(ERS232Settings)] of string = (
+  CSTR_RS232_KEYS: array[LOW(ERS232Settings)..HIGH(ERS232Settings)] of string = (
                 'PORT',
                 'BAUDRATE',
                 'PARITY',
@@ -56,6 +57,18 @@ type
   TSetFunction = function(pser: PSerial; const sval: string): boolean;
 var C_FUNC_CALLS: array [LOW(ERS232Settings)..HIGH(ERS232Settings)] of TSetFunction;
 
+// =============================================================================
+// Class        : --
+// Function     : checks the given string and sets the port of pser with this string
+//                if it is valid. This function is only used inside of this unit.
+// Parameter    : pser, pointer of a TSerial to be set
+//                sval, string for port to be set
+// Return       : true, if the string is a valid number of the port on this comuputer
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
 function SetPort(pser: PSerial; const sval: string): boolean;
 var t_ports: TStringList; s_in,s_portname: string; i_port: integer;
 begin
@@ -72,6 +85,18 @@ begin
   end;
 end;
 
+// =============================================================================
+// Class        : --
+// Function     : checks the given string and sets the baudrate of pser with this string
+//                if it is valid. This function is only used inside of this unit.
+// Parameter    : pser, pointer of a TSerial to be set
+//                sval, string for baudrate to be set
+// Return       : true, if the string is a number of the valid baudrate (C_VALID_BAUD)
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
 function SetBaudrate(pser: PSerial; const sval: string): boolean;
 var i_baud: integer; s_in: string;
 begin
@@ -83,30 +108,90 @@ begin
   end;
 end;
 
+// =============================================================================
+// Class        : --
+// Function     : checks the given string and sets the parity of pser with this string
+//                if it is valid. This function is only used inside of this unit.
+// Parameter    : pser, pointer of a TSerial to be set
+//                sval, string for parity to be set
+// Return       : true, if the string is a valid value for parity of TSerial
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
 function SetParity(pser: PSerial; const sval: string): boolean;
 begin
   //todo
   result := true;
 end;
 
+// =============================================================================
+// Class        : --
+// Function     : checks the given string and sets the data bits of pser with this string
+//                if it is valid. This function is only used inside of this unit.
+// Parameter    : pser, pointer of a TSerial to be set
+//                sval, string for data bits to be set
+// Return       : true, if the string is a valid value for data bits of TSerial
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
 function SetDataBits(pser: PSerial; const sval: string): boolean;
 begin
   //todo
   result := true;
 end;
 
+// =============================================================================
+// Class        : --
+// Function     : checks the given string and sets the stop bits of pser with this string
+//                if it is valid. This function is only used inside of this unit.
+// Parameter    : pser, pointer of a TSerial to be set
+//                sval, string for stop bits to be set
+// Return       : true, if the string is a valid value for stop bits of TSerial
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
 function SetStopBits(pser: PSerial; const sval: string): boolean;
 begin
   //todo
   result := true;
 end;
 
+// =============================================================================
+// Class        : --
+// Function     : checks the given string and sets the hardware flow control of
+//                pser with this string if it is valid. This function is only used inside of this unit.
+// Parameter    : pser, pointer of a TSerial to be set
+//                sval, string for hardware flow control to be set
+// Return       : true, if the string is a valid value for hardware flow control of TSerial
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
 function SetHWFlowControl(pser: PSerial; const sval: string): boolean;
 begin
   //todo
   result := true;
 end;
 
+// =============================================================================
+// Class        : --
+// Function     : checks the given string and sets the software flow control of
+//                pser with this string if it is valid. This function is only used inside of this unit.
+// Parameter    : pser, pointer of a TSerial to be set
+//                sval, string for software flow control to be set
+// Return       : true, if the string is a valid value for software flow control of TSerial
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
 function SetSWFlowControl(pser: PSerial; const sval: string): boolean;
 begin
   //todo
@@ -148,6 +233,13 @@ begin
   result := sports.Count;
 end;
 
+procedure TConnRS232.ReadAll(var rbuf: TCharBuffer);
+var ch: char;
+begin
+  while (t_ser.RxWaiting > 0) do
+    if t_ser.ReadChar(ch) = 1 then rbuf.WriteChar(ch);
+end;
+
 // =============================================================================
 // Class        : TConnRS232
 // Function     : Constructor, creates t_ser
@@ -169,7 +261,6 @@ begin
   t_ser.NotifyErrors := neNone;
   t_ser.Port := 1;
   t_ser.Baudrate := 9600;
-
 end;
 
 // =============================================================================
@@ -217,40 +308,87 @@ end;
 // =============================================================================
 function TConnRS232.Config(const sconf: string): boolean;
 var s_conf: string; i: ERS232Settings; t_regexp: TRegExpr;
+    b_settings: array[LOW(ERS232Settings)..HIGH(ERS232Settings)] of boolean;
 begin
   result := false;
   s_conf := UpperCase(sconf);
   t_regexp := TRegExpr.Create;
   for i := LOW(ERS232Settings) to HIGH(ERS232Settings) do begin
-    t_regexp.Expression := '(^|\|)[\t\ ]*' + C_RS232_KEYS[i] + '\b[\t\ ]*:([^\|$]*)';
+    t_regexp.Expression := '(^|\|)[\t\ ]*' + CSTR_RS232_KEYS[i] + '\b[\t\ ]*:([^\|$]*)';
+    b_settings[i]:=false;
     if t_regexp.Exec(s_conf) then  begin
       result := (C_FUNC_CALLS[i](@t_ser, t_regexp.Match[2]));
+      b_settings[i]:= result;
       if not result then break;
     end;
   end;
   FreeAndNil(t_regexp);
+  result := (result and b_settings[RS_PORT] and b_settings[RS_BAUDRATE]);
 end;
 
+// =============================================================================
+// Class        : TConnRS232
+// Function     : Connect
+//                activate t_ser
+// Parameter    : --
+// Return       : true, if t_ser is activated
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
 function TConnRS232.Connect(): boolean;
 begin
   t_ser.Active := true;
   result := IsConnected();
 end;
 
+// =============================================================================
+// Class        : TConnRS232
+// Function     : Disconnect
+//                deactive t_ser
+// Parameter    : --
+// Return       : true, if t_ser is deactivated
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
 function TConnRS232.Disconnect: boolean;
 begin
   t_ser.Active := false;
   result := (not IsConnected());
 end;
 
-function TConnRS232.SendData(const data: array of char): Integer;
+function TConnRS232.SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer;
+var i_len: integer; c_time: cardinal; ch: char;
 begin
-  result := 0;
+  result := 0; i_len := sbuf.CountUsed();
+  c_time := GetTickCount() + timeout;
+  while ((result < i_len) and (GetTickCount() < c_time)) do begin //send data
+    if sbuf.ReadChar(ch) then begin
+      t_ser.WriteChar(ch);
+      inc(result);
+    end else break;
+  end;
+  while ((t_ser.TxWaiting > 0) and (GetTickCount() < c_time)) do Delay(C_DELAY_MSEC);//wait for finishing to send data
 end;
 
-function TConnRS232.RecvData(var data: array of char): Integer;
+function TConnRS232.RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer;
+var ch: char; c_time: cardinal;
 begin
-  result := 0;
+  result := 0; c_time := GetTickCount() + timeout;
+  if (t_ser.RxWaiting <= 0) then Delay(C_DELAY_MSEC * 5 );//wait a moment (100 ms) if there is no data, maybe it comes later
+
+  rbuf.Clear();
+  while ((t_ser.RxWaiting > 0) and (GetTickCount() < c_time)) do begin
+    if (not rbuf.IsFull()) then begin
+      if (t_ser.ReadChar(ch) = 1) then begin
+        rbuf.WriteChar(ch);
+        inc(result);
+      end else Delay();
+    end;
+  end;
 end;
 
 function TConnRS232.GetLastError(var msg: string): Integer;
