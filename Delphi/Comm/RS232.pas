@@ -380,7 +380,6 @@ begin
   result := 0; c_time := GetTickCount() + timeout;
   if (t_ser.RxWaiting <= 0) then Delay(C_DELAY_MSEC * 5 );//wait a moment (100 ms) if there is no data, maybe it comes later
 
-  rbuf.Clear();
   while ((t_ser.RxWaiting > 0) and (GetTickCount() < c_time)) do begin
     if (not rbuf.IsFull()) then begin
       if (t_ser.ReadChar(ch) = 1) then begin

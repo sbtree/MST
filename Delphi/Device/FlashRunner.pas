@@ -296,11 +296,10 @@ end;
 
 // =============================================================================
 // Class        : TFlashRunner
-// Function     : SetDynamicMem
-//                builds a string for executing a script form SD card of flash
-//                runner, then receives the answer and checks it
-// Parameter    : script, address of dynamic memory in flash runner
-//                num, a integer which is being set in the dynamic memory
+// Function     : RunScript
+//                executs a script file from the sd card of FlashRunner
+// Parameter    : script, name of the script file on sd card
+//                msecs, t
 // Return       : true, if the device is released successfully
 //                false, otherwise
 // Exceptions   : --
@@ -311,6 +310,8 @@ function TFlashRunner.RunScript(const script: string; const msecs: integer): boo
 var s_send, s_answer: string; c_tmp: cardinal; i_len: integer;
 begin
   result := false; c_tmp := Timeout;
+  if (msecs > 0) then Timeout := msecs;
+  
   s_send := format('RUN %s', [script]) + Char(13);
   i_len := SendStr(s_send);
   if (i_len = length(s_send)) then begin

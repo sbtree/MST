@@ -66,6 +66,7 @@ type
     t_prot: TProtBase;      //protocol of communication
 
     t_rbuf, t_wbuf: TCharBuffer;
+
   strict private
     function GetStateString : string;
 
@@ -121,13 +122,13 @@ implementation
 
 const
   CSTR_DEV_STATES : array[LOW(EDeviceState)..HIGH(EDeviceState)] of string = (
-                  'unusable',
-                  'configured',
-                  'connected',
-                  'communicable',
-                  'waiting',
-                  'device error'
-                  );
+                    'unusable',
+                    'configured',
+                    'connected',
+                    'communicable',
+                    'waiting',
+                    'device error'
+                    );
 
 // =============================================================================
 // Class        : TDeviceBase
@@ -190,10 +191,10 @@ end;
 
 // =============================================================================
 // Class        : TDeviceBase
-// Function     : GetDeviceStateString
+// Function     : GetStateString
 //                return a string, which descipts current state of the device
 // Parameter    : --
-// Return       : string from C_STR_STATE
+// Return       : string from CSTR_DEV_STATES
 // Exceptions   : --
 // First author : 2015-09-03 /bsu/
 // History      :
@@ -208,7 +209,7 @@ end;
 // Function     : PostEvent
 //                change device state, state machine
 // Parameter    : event, in which this function is called
-//                ok, if the event is successfully executed
+//                ok, indicates if the event is successfully executed
 //                NOTE: this function has to be called at end of the following
 //                functions, if they are overrided in sub class :
 //                ConfigDevice, FreeDevice, Connect, Disconnect, Sync, SendStr, RecvStr
@@ -246,10 +247,8 @@ end;
 // History      :
 // =============================================================================
 function TDeviceBase.Sync(): boolean;
-var ds_set : set of EDeviceState;
 begin
-  ds_set := [DS_CONNECTED, DS_COMERROR];
-  result := (e_state in ds_set);
+  result := (e_state in C_DEV_STATES[DE_SYNC]);
   PostEvent(DE_SYNC, result);
 end;
 
@@ -335,7 +334,8 @@ end;
 // Function     : SendStr
 //                send string to device
 // Parameter    : str, a string to send
-// Return       : integer, which counts char, which are sent
+//                bAns, indicates if an answer is expected
+// Return       : integer, count of sent chars
 // Exceptions   : --
 // First author : 2015-08-14 /bsu/
 // History      :
@@ -363,7 +363,7 @@ end;
 // Function     : RecvStr
 //                receiv string from device
 // Parameter    : str, a string for receiving
-// Return       : integer, which counts char, which are received
+// Return       : integer, count of the received char
 // Exceptions   : --
 // First author : 2015-08-14 /bsu/
 // History      :

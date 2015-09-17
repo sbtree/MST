@@ -31,6 +31,7 @@ begin
   bOk := fr.ConfigDevice(fIni);
   bOk := fr.Connect();
   bOk := fr.SetDynamicMem(0,12345);
+  bOk := fr.RunScript('bt_24v.frs', 30000);
   FreeAndNil(fr);
   FreeAndNil(fIni);
 end;

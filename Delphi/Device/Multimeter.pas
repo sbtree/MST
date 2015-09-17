@@ -14,8 +14,8 @@ type
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
-    //function GetLastError(var msg: string): Integer; override;
     function ConfigDevice(const ini: TMemIniFile): Boolean; override;
+    function GetLastError(var msg: string): Integer; override;
 
     function CloseRelays(const relays: string): boolean;
     function OpenRelays(const relays: string): boolean;
@@ -40,6 +40,12 @@ function TMultimeter.ConfigDevice(const ini: TMemIniFile): Boolean;
 begin
   //todo
   result := false;
+end;
+
+function TMultimeter.GetLastError(var msg: string): Integer;
+begin
+  //todo
+  result := 0;
 end;
 
 function TMultimeter.CloseRelays(const relays: string): boolean;

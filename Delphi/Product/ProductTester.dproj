@@ -14,10 +14,18 @@
     <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
     <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
     <DCC_Define>RELEASE</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <Version>7.0</Version>
     <DCC_Define>DEBUG</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_IncludePath>
   </PropertyGroup>
   <ProjectExtensions>
     <Borland.Personality>Delphi.Personality</Borland.Personality>
@@ -36,6 +44,9 @@
     <DCCReference Include="..\Comm\ConnBase.pas" />
     <DCCReference Include="..\Comm\ProtocolBase.pas" />
     <DCCReference Include="..\Comm\RS232.pas" />
+    <DCCReference Include="..\Device\DeviceBase.pas" />
+    <DCCReference Include="..\General\DataBuffer.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="FormProdTester.pas">
       <Form>frmProdTester</Form>
     </DCCReference>

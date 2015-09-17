@@ -8,7 +8,10 @@ uses
   MtxARS2000 in 'MtxARS2000.pas',
   ConnBase in '..\Comm\ConnBase.pas',
   RS232 in '..\Comm\RS232.pas',
-  ProtocolBase in '..\Comm\ProtocolBase.pas';
+  ProtocolBase in '..\Comm\ProtocolBase.pas',
+  DeviceBase in '..\Device\DeviceBase.pas',
+  DataBuffer in '..\General\DataBuffer.pas',
+  GenUtils in '..\General\GenUtils.pas';
 
 {$R *.res}
 

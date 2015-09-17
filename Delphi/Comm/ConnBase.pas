@@ -34,6 +34,7 @@ type
     destructor Destroy; override;
 
     property ConnectionType : EConnectionType read e_type;
+
     function Config(const sconf: string): boolean;virtual;abstract;
     function IsConnected(): boolean; virtual; abstract;
     function Connect(): boolean;virtual;abstract;
