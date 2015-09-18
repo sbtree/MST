@@ -5,8 +5,8 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-    <DCC_DependencyCheckOutputName>DeviceTester.exe</DCC_DependencyCheckOutputName>
-    <MainSource>DeviceTester.dpr</MainSource>
+    <DCC_DependencyCheckOutputName>DeviceManager.exe</DCC_DependencyCheckOutputName>
+    <MainSource>DeviceManager.dpr</MainSource>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Version>7.0</Version>
@@ -22,10 +22,10 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <Version>7.0</Version>
     <DCC_Define>DEBUG</DCC_Define>
-    <DCC_UnitSearchPath>..\Externals;..\Comm;..\General</DCC_UnitSearchPath>
-    <DCC_ResourcePath>..\Externals;..\Comm;..\General</DCC_ResourcePath>
-    <DCC_ObjPath>..\Externals;..\Comm;..\General</DCC_ObjPath>
-    <DCC_IncludePath>..\Externals;..\Comm;..\General</DCC_IncludePath>
+    <DCC_UnitSearchPath>..\Externals;..\Comm;..\General;$(BDS)\Source\DUnit\src</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals;..\Comm;..\General;$(BDS)\Source\DUnit\src</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals;..\Comm;..\General;$(BDS)\Source\DUnit\src</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals;..\Comm;..\General;$(BDS)\Source\DUnit\src</DCC_IncludePath>
     <DCC_SymbolReferenceInfo>2</DCC_SymbolReferenceInfo>
     <DCC_Optimize>False</DCC_Optimize>
   </PropertyGroup>
@@ -36,11 +36,11 @@
 <BorlandProject><Delphi.Personality><Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">1031</VersionInfo><VersionInfo Name="CodePage">1252</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Excluded_Packages>
       <Excluded_Packages Name="$(BDS)\bin\dcloffice2k100.bpl">Microsoft Office 2000 Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
       <Excluded_Packages Name="$(BDS)\bin\dclofficexp100.bpl">Microsoft Office XP Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
-    </Excluded_Packages><Source><Source Name="MainSource">DeviceTester.dpr</Source></Source></Delphi.Personality><ModelSupport>True</ModelSupport></BorlandProject></BorlandProject>
+    </Excluded_Packages><Source><Source Name="MainSource">DeviceManager.dpr</Source></Source></Delphi.Personality><ModelSupport>True</ModelSupport></BorlandProject></BorlandProject>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
   <ItemGroup>
-    <DelphiCompile Include="DeviceTester.dpr">
+    <DelphiCompile Include="DeviceManager.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
     <DCCReference Include="..\Comm\ConnBase.pas" />
@@ -50,14 +50,26 @@
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="DeviceBase.pas" />
     <DCCReference Include="FlashRunner.pas" />
-    <DCCReference Include="FormDeviceTester.pas">
+    <DCCReference Include="FormDeviceManager.pas">
       <Form>frmDeviceTester</Form>
     </DCCReference>
     <DCCReference Include="Multimeter.pas" />
     <DCCReference Include="Oscilloscope.pas" />
-    <None Include="ModelSupport_DeviceTester\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManager\ConnBase\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\DataBuffer\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManager\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\DeviceBase\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\DeviceManager\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\DeviceTester\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\FlashRunner\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\FormDeviceTester\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\GenUtils\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\Multimeter\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\Oscilloscope\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\ProtocolBase\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\RS232\default.txvpck" />
     <None Include="ModelSupport_DeviceTester\default.txvpck" />
-    <None Include="ModelSupport_DeviceTester\DeviceTester\default.txvpck" />
     <None Include="ModelSupport_DeviceTester\FlashRunnerTester\default.txvpck" />
     <None Include="ModelSupport_DeviceTester\FormDeviceTester\default.txvpck" />
     <None Include="ModelSupport_DeviceTester\FRMain\default.txvpck" />

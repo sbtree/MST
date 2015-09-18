@@ -24,15 +24,11 @@ type
     e_mode: EStartMode;
     s_startmsg: string;
 
-    t_conns: array[LOW(EConnectionType)..HIGH(EConnectionType)] of TConnBase; //array of all possible connections
-    e_actconn: EConnectionType; //type of currently active connection
-
   strict private
     function GetModeString(): string;
 
   protected
     function RecvExpectedStr(const str: string; const timeout: cardinal): boolean; virtual;
-    function ConfigConnections(const ini: TMemIniFile): integer; virtual;
 
   public
     constructor Create(owner: TComponent); override;
@@ -81,30 +77,10 @@ begin
     t_rbuf.Clear;
 
     while ((GetTickCount() < c_time) and (not result)) do begin
-      i_len := t_conn.RecvData(t_rbuf, c_timeout);
+      i_len := t_conns[e_actconn].RecvData(t_rbuf, c_timeout);
       s_recv := s_recv + t_rbuf.ReadStr();
       result := (Pos(str, s_recv) > 0);
       if (i_len <= 0) then Delay(C_DELAY_MSEC * 5); //wait a moment if no data is arrived
-    end;
-  end;
-end;
-
-function TProductBase.ConfigConnections(const ini: TMemIniFile): integer;
-var i: EConnectionType; s_inivalue: string;
-begin
-  result := 0;
-  for i := LOW(EConnectionType) to HIGH(EConnectionType) do begin
-    if ini.ValueExists(CSTR_PROD_SEC, CSTR_CONN_KEYS[i]) then begin
-      s_inivalue := trim(ini.ReadString(CSTR_PROD_SEC, CSTR_CONN_KEYS[CT_RS232], ''));
-      if not assigned(t_conns[i]) then begin
-        case i of
-          CT_RS232: begin
-            t_conns[i] := TConnRS232.Create(self);
-            if (t_conns[i].Config(s_inivalue)) then inc(result);
-          end;
-          CT_JTAG, CT_GPIB, CT_USB, CT_ETHERNET, CT_CAN, CT_PROFIL: ; //todo
-        end;
-      end;
     end;
   end;
 end;
@@ -145,7 +121,6 @@ end;
 // History      :
 // =============================================================================
 function TProductBase.ConfigDevice(const ini: TMemIniFile): boolean;
-//var s_inivalue: string;
 begin
   result := false;
   if (e_state in C_DEV_STATES[DE_CONFIG]) then

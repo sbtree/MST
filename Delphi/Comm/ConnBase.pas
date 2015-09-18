@@ -14,13 +14,13 @@ uses  Classes, Windows, DataBuffer;
 type
 
   EConnectionType = (
-                    CT_JTAG,  //jtag
-                    CT_GPIB, //GPIB/ieee 488
-                    CT_RS232, //rs232
-                    CT_USB,   //usb
-                    CT_ETHERNET, //ethernet
-                    CT_CAN,   //can-bus
-                    CT_PROFIL //profil-bus
+                    CT_RS232,   //rs232
+                    CT_USB,     //usb
+                    CT_GPIB,    //GPIB/ieee 488
+                    CT_ETHERNET,//ethernet
+                    CT_JTAG,    //jtag
+                    CT_CAN,     //can-bus
+                    CT_PROFIL   //profil-bus
                     );
 
   TConnBase = class(TComponent)
@@ -47,11 +47,11 @@ type
 
 const
   CSTR_CONN_KEYS : array[LOW(EConnectionType)..HIGH(EConnectionType)] of string = (
-                    'CONN_JTAG',
-                    'CONN_GPIB',
                     'CONN_RS232',
                     'CONN_USB',
+                    'CONN_GPIB',
                     'CONN_ETHERNET',
+                    'CONN_JTAG',
                     'CONN_CAN',
                     'CONN_PROFIL'
                     );

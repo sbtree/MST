@@ -8,7 +8,7 @@
 unit DeviceBase;
 
 interface
-uses Classes, SysUtils, IniFiles, ConnBase, DataBuffer, ProtocolBase;
+uses Classes, IniFiles, ConnBase, DataBuffer, ProtocolBase;
 
 type
 // =============================================================================
@@ -39,6 +39,7 @@ type
                   DE_SEND, //event, which sends data to device, e.g. SendData is called
                   DE_RECV, //event, which receives data from device, e.g. RecvData is called
                   DE_DISCONNECT, //event, which disconnects from device, e.g. Disconnect is called
+                  DE_RESET, //event to reset device
                   DE_FREE //event, which releases device, e.g. FreeDevice is called
                   );
   DeviceStateSet = set of EDeviceState;
@@ -62,7 +63,8 @@ type
     s_devname: string;      //name of the device
     b_comhex : boolean;     //hexadizcimal data in string to transfer if it is true
 
-    t_conn: TConnBase;      //connection
+    t_conns: array[LOW(EConnectionType)..HIGH(EConnectionType)] of TConnBase; //array of all possible connections
+    e_actconn: EConnectionType; //type of currently active connection
     t_prot: TProtBase;      //protocol of communication
 
     t_rbuf, t_wbuf: TCharBuffer;
@@ -71,10 +73,11 @@ type
     function GetStateString : string;
 
   protected
-    procedure PostEvent(const event: EDeviceEvent; const ok: boolean);
+    //procedure PostEvent(const event: EDeviceEvent; const ok: boolean);
     function Sync(): boolean; virtual;
     function TryToReady: boolean; virtual;
     function CheckAnswer(): boolean; virtual; abstract;
+    function ConfigConnections(const ini: TMemIniFile; const secname: string): integer; virtual;
 
   public
     constructor Create(owner: TComponent); override;
@@ -86,9 +89,11 @@ type
     property Timeout : cardinal read c_timeout write c_timeout;
 
     function ConfigDevice(const ini: TMemIniFile): Boolean; virtual;abstract;
-    function FreeDevice(): Boolean; virtual;
+    function ReleaseDevice(): Boolean; virtual;
     function Connect(): Boolean; virtual;
     function Disconnect: boolean; virtual;
+    function ActiveConn(const ct: EConnectionType): boolean; virtual;
+    function Reset(): boolean; virtual;
     function SendStr(const sData: string; const bAns: boolean = true): Integer; virtual;
     function RecvStr(var sdata: string): Integer; virtual;
     function GetLastError(var msg: string): Integer; virtual; abstract;
@@ -98,6 +103,7 @@ type
 const
   C_TIMEOUT_MSEC: Cardinal = 30000; //default timeout 30000 milli seconds to wait for response
   C_TIMEOUT_ONCE = 2000; //
+  C_RESET_MSEC: Cardinal = 600000; //default timeout 600000 milli seconds (10 minutes) to wait for resetting
 
   C_ERR_NOERROR = $0000; // no error
   C_ERR_UNKNOWN = $8000; // base error number as unknown
@@ -110,6 +116,7 @@ const
                 [DS_READY], //allowed states for send
                 [DS_WAITING], //allowed states for recv
                 [DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR], //allowed states for disconnect
+                [DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR],
                 [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR]  //allowed states for free
                 );
 
@@ -119,6 +126,7 @@ const
   CSTR_DEV_TYPE       : string = 'TYPE';
 
 implementation
+uses Windows, SysUtils, GenUtils, RS232;
 
 const
   CSTR_DEV_STATES : array[LOW(EDeviceState)..HIGH(EDeviceState)] of string = (
@@ -148,6 +156,7 @@ begin
   c_timeout := C_TIMEOUT_MSEC;
   i_lasterr := 0;
   b_comhex  := false;
+  e_actconn := CT_RS232;
 
   t_rbuf := TCharBuffer.Create;
   t_wbuf := TCharBuffer.Create;
@@ -218,7 +227,7 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-procedure TDeviceBase.PostEvent(const event: EDeviceEvent; const ok: boolean);
+{procedure TDeviceBase.PostEvent(const event: EDeviceEvent; const ok: boolean);
 begin
   if (e_state in C_DEV_STATES[event]) then begin
     case event of
@@ -234,7 +243,7 @@ begin
       DE_FREE: if ok then e_state := DS_NONE;
     end;
   end;
-end;
+end;  }
 
 // =============================================================================
 // Class        : TDeviceBase
@@ -249,7 +258,7 @@ end;
 function TDeviceBase.Sync(): boolean;
 begin
   result := (e_state in C_DEV_STATES[DE_SYNC]);
-  PostEvent(DE_SYNC, result);
+  if result then e_state := DS_READY;
 end;
 
 // =============================================================================
@@ -276,6 +285,42 @@ end;
 
 // =============================================================================
 // Class        : TDeviceBase
+// Function     : ConfigConnections
+//                read configurations from the section secname of ini and instance
+//                appropriate connection, e.g.: rs232, usb, ethernet, and so on if
+//                they are configurated in ini
+// Parameter    : ini, TMemIniFile of configuration
+//                secname, name of the section for this device
+// Return       : integer, count of the configurated connections
+// Exceptions   : --
+// First author : 2015-09-18 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.ConfigConnections(const ini: TMemIniFile; const secname: string): integer;
+var i: EConnectionType; s_inivalue: string;
+begin
+  result := 0;
+  for i := LOW(EConnectionType) to HIGH(EConnectionType) do begin
+    if ini.ValueExists(secname, CSTR_CONN_KEYS[i]) then begin
+      s_inivalue := trim(ini.ReadString(secname, CSTR_CONN_KEYS[CT_RS232], ''));
+      if not assigned(t_conns[i]) then begin
+        case i of
+          CT_RS232: begin
+            t_conns[i] := TConnRS232.Create(self);
+            if (t_conns[i].Config(s_inivalue)) then begin
+              inc(result);
+              e_actconn := CT_RS232;
+            end;
+          end;
+          CT_JTAG, CT_GPIB, CT_USB, CT_ETHERNET, CT_CAN, CT_PROFIL: ; //todo
+        end;
+      end;
+    end;
+  end;
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
 // Function     : FreeDevice
 //                release device, undo what is done in ConfigDevice
 // Parameter    : --
@@ -285,10 +330,10 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.FreeDevice(): boolean;
+function TDeviceBase.ReleaseDevice(): boolean;
 begin
   result := Disconnect();
-  PostEvent(DE_FREE, result);;
+  if result then e_state := DS_NONE;
 end;
 
 // =============================================================================
@@ -305,9 +350,9 @@ end;
 function TDeviceBase.Connect: boolean;
 begin
   result := false;
-  if ((e_state in C_DEV_STATES[DE_CONNECT]) and assigned(t_conn)) then begin
-    result := t_conn.Connect();
-    PostEvent(DE_CONNECT, result);
+  if ((e_state in C_DEV_STATES[DE_CONNECT]) and assigned(t_conns[e_actconn])) then begin
+    result := t_conns[e_actconn].Connect();
+    e_state := DS_CONNECTED;
   end;
   result := result and (e_state in C_DEV_STATES[DE_DISCONNECT]);
 end;
@@ -324,11 +369,62 @@ end;
 // History      :
 // =============================================================================
 function TDeviceBase.Disconnect(): boolean;
+var i: EConnectionType;
 begin
-  result := t_conn.Disconnect();
-  PostEvent(DE_DISCONNECT, result);
+  result := true;
+  for i := LOW(EConnectionType) to HIGH(EConnectionType) do begin
+    if assigned(t_conns[i]) then result := (result and t_conns[i].Disconnect)
+  end;
+  if result then e_state := DS_CONFIGURED;
 end;
 
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : ActiveConn
+//                activate connection of the given type
+// Parameter    : ct, connection type to be activated
+// Return       : true, if the connection is available und can be connected
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.ActiveConn(const ct: EConnectionType): boolean;
+begin
+  result := false;
+  if assigned(t_conns[ct])  then begin
+    result := t_conns[ct].Connect();
+    if result then begin
+      e_actconn := ct;
+      e_state := DS_CONNECTED;
+    end;
+  end;
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : Reset
+//                activate connection of the given type
+// Parameter    : ct, connection type to be activated
+// Return       : true, if the connection is available und can be connected
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.Reset(): boolean;
+var c_time: cardinal;
+begin
+  result := false;
+  if ((e_state in C_DEV_STATES[DE_RESET]) and assigned(t_conns[e_actconn])) then begin
+    c_time := GetTickCount() + C_RESET_MSEC;
+    t_conns[e_actconn].Disconnect();
+    repeat
+      Delay();
+      result := t_conns[e_actconn].Connect();
+    until ((GetTickCount() > c_time) or result);
+  end;
+end;
 // =============================================================================
 // Class        : TDeviceBase
 // Function     : SendStr
@@ -346,15 +442,17 @@ begin
   result := 0;
   if TryToReady() then begin
     //clear read-buffer of t_ser
-    t_conn.RecvData(t_rbuf, C_TIMEOUT_ONCE);
+    t_conns[e_actconn].RecvData(t_rbuf, C_TIMEOUT_ONCE);
     t_rbuf.Clear;
 
     //send string and wait til write-buffer is completely sent
     i_len := t_wbuf.WriteStr(sData);
-    result := t_conn.SendData(t_wbuf, c_timeout);
+    result := t_conns[e_actconn].SendData(t_wbuf, c_timeout);
 
-    PostEvent(DE_SEND, (result = i_len));
-    if (not bAns) then PostEvent(DE_RECV, true);
+    if (result = i_len) then begin
+      if bAns then e_state := DS_WAITING
+      else e_state := DS_READY;
+    end;
   end;
 end;
 
@@ -374,10 +472,11 @@ begin
   result := 0;
   if (e_state in C_DEV_STATES[DE_RECV]) then begin
     t_rbuf.Clear;
-    result := t_conn.RecvData(t_rbuf, c_timeout);
+    result := t_conns[e_actconn].RecvData(t_rbuf, c_timeout);
     sdata := t_rbuf.ReadStr(false);
     b_ok := CheckAnswer();
-    PostEvent(DE_RECV, b_ok);
+    if b_ok then e_state := DS_READY
+    else e_state := DS_COMERROR;
   end;
 end;
 

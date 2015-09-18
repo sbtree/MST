@@ -1,4 +1,4 @@
-unit FormDeviceTester;
+unit FormDeviceManager;
 
 interface
 
@@ -28,6 +28,7 @@ var fIni: TMemIniFile; fr: TFlashRunner; bOk: boolean; sTmp: string;
 begin
   fIni := TMemIniFile.Create('FlashRunner.ini');
   fr := TFlashRunner.Create(self);
+  
   bOk := fr.ConfigDevice(fIni);
   bOk := fr.Connect();
   bOk := fr.SetDynamicMem(0,12345);

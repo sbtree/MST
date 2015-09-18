@@ -48,6 +48,8 @@ const
   C_ERR_WRONG_STA = $8004; //
   C_ERR_TIMEOUT   = $8005; //
 
+  CSTR_FR_SEC   : string = 'FlashRunner';
+
 // =============================================================================
 // Class        : --
 // Function     : Delay
@@ -139,7 +141,7 @@ end;
 // =============================================================================
 destructor TFlashRunner.Destroy;
 begin
-  FreeDevice();
+  ReleaseDevice();
 	inherited Destroy;
 end;
 
@@ -164,21 +166,21 @@ begin
   if (e_state in ds_set) then
   begin
     //clear receiving-buffer of t_ser
-    t_conn.RecvData(t_rbuf, C_TIMEOUT_ONCE);
+    t_conns[e_actconn].RecvData(t_rbuf, C_TIMEOUT_ONCE);
     t_rbuf.Clear;
 
     //send string and wait til write-buffer is completely sent
     i_len := t_wbuf.WriteStr(C_STR_PING + Char(13));
-    if(t_conn.SendData(t_wbuf, C_TIMEOUT_ONCE) = i_len) then begin
+    if(t_conns[e_actconn].SendData(t_wbuf, C_TIMEOUT_ONCE) = i_len) then begin
       //receive string til read-buffer is empty or timeout
-      i_len := t_conn.RecvData(t_rbuf, C_TIMEOUT_ONCE);
+      i_len := t_conns[e_actconn].RecvData(t_rbuf, C_TIMEOUT_ONCE);
       if (i_len > 0) then begin
         //verify the received string
         s_ans := trim(t_rbuf.ReadStr());
         result := SameText(C_STR_PONG, s_ans);
+        if result then e_state := DS_READY;
       end;
     end;
-    PostEvent(DE_SYNC, result);
   end;
 end;
 
@@ -249,9 +251,6 @@ end;
 // History      :
 // =============================================================================
 function TFlashRunner.ConfigDevice(const ini: TMemIniFile): boolean;
-const
-  CSTR_FR_SEC   : string = 'FlashRunner';
-var s_inivalue: string;
 begin
   result := false;
   if (e_state in C_DEV_STATES[DE_CONFIG]) then
@@ -260,11 +259,9 @@ begin
     if (ini.SectionExists(CSTR_FR_SEC)) then
     begin
       c_timeout := ini.ReadInteger(CSTR_FR_SEC, CSTR_DEV_TIMEOUT, C_TIMEOUT_MSEC);
-      s_inivalue := trim(ini.ReadString(CSTR_FR_SEC, CSTR_CONN_KEYS[CT_RS232], ''));
-      if not assigned(t_conn) then t_conn := TConnRS232.Create(self);
-      result := t_conn.Config(s_inivalue);
+      result := (ConfigConnections(ini, CSTR_FR_SEC) > 0);
+      if result then e_state := DS_CONFIGURED;
     end;
-    PostEvent(DE_CONFIG, result);;
   end;
 end;
 

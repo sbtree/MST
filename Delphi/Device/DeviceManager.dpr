@@ -1,4 +1,4 @@
-program DeviceTester;
+program DeviceManager;
 
 uses
   Forms,
@@ -7,7 +7,7 @@ uses
   Multimeter in 'Multimeter.pas',
   Oscilloscope in 'Oscilloscope.pas',
   GenUtils in '..\General\GenUtils.pas',
-  FormDeviceTester in 'FormDeviceTester.pas' {frmDeviceTester},
+  FormDeviceManager in 'FormDeviceManager.pas' {frmDeviceTester},
   ConnBase in '..\Comm\ConnBase.pas',
   ProtocolBase in '..\Comm\ProtocolBase.pas',
   DataBuffer in '..\General\DataBuffer.pas',
