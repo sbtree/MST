@@ -51,10 +51,12 @@
     <DCCReference Include="DeviceBase.pas" />
     <DCCReference Include="FlashRunner.pas" />
     <DCCReference Include="FormDeviceManager.pas">
-      <Form>frmDeviceTester</Form>
+      <Form>frmDeviceManager</Form>
     </DCCReference>
     <DCCReference Include="Multimeter.pas" />
     <DCCReference Include="Oscilloscope.pas" />
+    <DCCReference Include="PowerSupply.pas" />
+    <DCCReference Include="Thermometer.pas" />
     <None Include="ModelSupport_DeviceManager\ConnBase\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\DataBuffer\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\default.txaPackage" />
@@ -62,7 +64,9 @@
     <None Include="ModelSupport_DeviceManager\DeviceBase\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\DeviceManager\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\DeviceTester\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\FlashRunner\default.txaPackage" />
     <None Include="ModelSupport_DeviceManager\FlashRunner\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\FormDeviceManager\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\FormDeviceTester\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\GenUtils\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\Multimeter\default.txvpck" />

@@ -7,7 +7,7 @@ uses
   Dialogs, FlashRunner, IniFiles, StdCtrls;
 
 type
-  TfrmDeviceTester = class(TForm)
+  TfrmDeviceManager = class(TForm)
     btnFR: TButton;
     procedure btnFRClick(Sender: TObject);
   private
@@ -17,13 +17,13 @@ type
   end;
 
 var
-  frmDeviceTester: TfrmDeviceTester;
+  frmDeviceManager: TfrmDeviceManager;
 
 implementation
 
 {$R *.dfm}
 
-procedure TfrmDeviceTester.btnFRClick(Sender: TObject);
+procedure TfrmDeviceManager.btnFRClick(Sender: TObject);
 var fIni: TMemIniFile; fr: TFlashRunner; bOk: boolean; sTmp: string;
 begin
   fIni := TMemIniFile.Create('FlashRunner.ini');

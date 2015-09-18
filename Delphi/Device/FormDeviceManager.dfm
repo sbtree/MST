@@ -1,4 +1,4 @@
-object frmDeviceTester: TfrmDeviceTester
+object frmDeviceManager: TfrmDeviceManager
   Left = 0
   Top = 0
   Caption = 'DeviceTester'

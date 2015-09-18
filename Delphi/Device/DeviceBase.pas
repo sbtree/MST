@@ -61,13 +61,13 @@ type
     i_lasterr: integer;     //last error number
     s_lastmsg: string;      //last message
     s_devname: string;      //name of the device
-    b_comhex : boolean;     //hexadizcimal data in string to transfer if it is true
+    b_comhex : boolean;     //convert string, in which the hexadicimal data are presented, into hexadicimal value, if it is true
 
     t_conns: array[LOW(EConnectionType)..HIGH(EConnectionType)] of TConnBase; //array of all possible connections
     e_actconn: EConnectionType; //type of currently active connection
     t_prot: TProtBase;      //protocol of communication
 
-    t_rbuf, t_wbuf: TCharBuffer;
+    t_rbuf, t_wbuf: TCharBuffer; //buffer for receiving and sending data
 
   strict private
     function GetStateString : string;
