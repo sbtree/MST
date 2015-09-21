@@ -133,4 +133,16 @@ begin
   result := 0.0;
 end;
 
+function TMultimeter.MeasureP(): real;
+begin
+  //todo
+  result := 0.0;
+end;
+
+function TMultimeter.MeasureT(): real;
+begin
+  //todo
+  result := 0.0;
+end;
+
 end.

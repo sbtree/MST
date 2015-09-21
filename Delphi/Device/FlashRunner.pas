@@ -9,7 +9,7 @@
 unit FlashRunner;
 
 interface
-uses Serial3, Classes, SysUtils, StrUtils, Windows, Forms, DeviceBase, IniFiles, ConnBase, RS232;
+uses Serial3, Classes, SysUtils, StrUtils, Windows, Forms,  IniFiles, ConnBase, RS232, DeviceBase;
 
 type
 // =============================================================================
@@ -19,7 +19,7 @@ type
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-  TFlashRunner=class(TDeviceBase)
+  TFlashRunner = class(TDeviceBase)
   protected
     //t_ser: TSerial;
   protected
@@ -171,7 +171,7 @@ begin
 
     //send string and wait til write-buffer is completely sent
     i_len := t_wbuf.WriteStr(C_STR_PING + Char(13));
-    if(t_conns[e_actconn].SendData(t_wbuf, C_TIMEOUT_ONCE) = i_len) then begin
+    if t_conns[e_actconn].SendData(t_wbuf, C_TIMEOUT_ONCE) then begin
       //receive string til read-buffer is empty or timeout
       i_len := t_conns[e_actconn].RecvData(t_rbuf, C_TIMEOUT_ONCE);
       if (i_len > 0) then begin
@@ -280,12 +280,11 @@ end;
 // History      :
 // =============================================================================
 function TFlashRunner.SetDynamicMem(const addr: word; const num: integer): boolean;
-var s_send, s_answer: string; i_len: integer;
+var s_send, s_answer: string;
 begin
   result := false;
   s_send := format('DMSET $%.4x 8 %s', [addr, IntToDMDataStr(num)]) + Char(13);
-  i_len := SendStr(s_send);
-  if (i_len = length(s_send)) then begin
+  if SendStr(s_send) then begin
     RecvStr(s_answer);
     result := (State = DS_READY);
   end;
@@ -304,14 +303,13 @@ end;
 // History      :
 // =============================================================================
 function TFlashRunner.RunScript(const script: string; const msecs: integer): boolean;
-var s_send, s_answer: string; c_tmp: cardinal; i_len: integer;
+var s_send, s_answer: string; c_tmp: cardinal; 
 begin
   result := false; c_tmp := Timeout;
   if (msecs > 0) then Timeout := msecs;
   
   s_send := format('RUN %s', [script]) + Char(13);
-  i_len := SendStr(s_send);
-  if (i_len = length(s_send)) then begin
+  if SendStr(s_send) then begin
     RecvStr(s_answer);
     result := (State = DS_READY);
   end;

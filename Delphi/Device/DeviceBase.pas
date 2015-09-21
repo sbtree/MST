@@ -77,6 +77,8 @@ type
     function Sync(): boolean; virtual;
     function TryToReady: boolean; virtual;
     function CheckAnswer(): boolean; virtual; abstract;
+    function VerifySendingData(): boolean; virtual; abstract;
+    function VerifyReceivedData(): boolean; virtual; abstract;
     function ConfigConnections(const ini: TMemIniFile; const secname: string): integer; virtual;
 
   public

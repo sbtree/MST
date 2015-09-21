@@ -28,7 +28,7 @@ type
     function IsConnected(): boolean; override;
     function Connect(): boolean;override;
     function Disconnect: boolean;override;
-    function SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer; override;
+    function SendData(const sbuf: TCharBuffer; const timeout: cardinal): boolean; override;
     function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer; override;
     function GetLastError(var msg: string): Integer;override;
   end;
@@ -360,18 +360,19 @@ begin
   result := (not IsConnected());
 end;
 
-function TConnRS232.SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer;
-var i_len: integer; c_time: cardinal; ch: char;
+function TConnRS232.SendData(const sbuf: TCharBuffer; const timeout: cardinal): boolean;
+var i_len, i_sent: integer; c_time: cardinal; ch: char;
 begin
-  result := 0; i_len := sbuf.CountUsed();
+  i_sent := 0; i_len := sbuf.CountUsed();
   c_time := GetTickCount() + timeout;
-  while ((result < i_len) and (GetTickCount() < c_time)) do begin //send data
+  while ((i_sent < i_len) and (GetTickCount() < c_time)) do begin //send data
     if sbuf.ReadChar(ch) then begin
       t_ser.WriteChar(ch);
-      inc(result);
+      inc(i_sent);
     end else break;
   end;
   while ((t_ser.TxWaiting > 0) and (GetTickCount() < c_time)) do Delay(C_DELAY_MSEC);//wait for finishing to send data
+  result := ((t_ser.TxWaiting <= 0) and (i_sent = i_len));
 end;
 
 function TConnRS232.RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer;
