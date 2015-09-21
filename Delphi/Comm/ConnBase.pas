@@ -39,14 +39,14 @@ type
     function IsConnected(): boolean; virtual; abstract;
     function Connect(): boolean;virtual;abstract;
     function Disconnect: boolean;virtual;abstract;
-    function SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer;virtual;abstract;
+    function SendData(const sbuf: TCharBuffer; const timeout: cardinal): boolean; virtual;abstract;
     function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer;virtual;abstract;
     function GetLastError(var msg: string): Integer;virtual;abstract;
   end;
   PConnBase = ^TConnBase;
 
 const
-  CSTR_CONN_KEYS : array[LOW(EConnectionType)..HIGH(EConnectionType)] of string = (
+  CSTR_CONN_KEYS : array[EConnectionType] of string = (
                     'CONN_RS232',
                     'CONN_USB',
                     'CONN_GPIB',

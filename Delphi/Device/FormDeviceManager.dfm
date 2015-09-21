@@ -22,4 +22,13 @@ object frmDeviceManager: TfrmDeviceManager
     TabOrder = 0
     OnClick = btnFRClick
   end
+  object trvDevices: TTreeView
+    Left = 8
+    Top = 8
+    Width = 441
+    Height = 285
+    Indent = 19
+    ReadOnly = True
+    TabOrder = 1
+  end
 end

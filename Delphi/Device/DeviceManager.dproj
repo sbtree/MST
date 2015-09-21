@@ -73,30 +73,5 @@
     <None Include="ModelSupport_DeviceManager\Oscilloscope\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\ProtocolBase\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\RS232\default.txvpck" />
-    <None Include="ModelSupport_DeviceTester\default.txvpck" />
-    <None Include="ModelSupport_DeviceTester\FlashRunnerTester\default.txvpck" />
-    <None Include="ModelSupport_DeviceTester\FormDeviceTester\default.txvpck" />
-    <None Include="ModelSupport_DeviceTester\FRMain\default.txvpck" />
-    <None Include="ModelSupport_DeviceTester\InterpreterBase\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\DataBuffer\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTester\DataBuffer\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTester\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\DeviceBase\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\FlashRunnerTester\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\FlashRunner\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\FRMain\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTester\FRMain\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\GenUtils\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTester\InterpreterBase\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTester\InterpreterBase\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTester\Multimeter\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTest\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTest\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTest\FlashRunnerTest\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTest\FlashRunner\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTest\FlashRunner\default.txvpck" />
-    <None Include="ModelSupport_FlashRunnerTest\Main\default.txaPackage" />
-    <None Include="ModelSupport_FlashRunnerTest\Main\default.txvpck" />
   </ItemGroup>
 </Project>

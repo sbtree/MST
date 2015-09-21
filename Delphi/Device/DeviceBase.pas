@@ -22,7 +22,7 @@ type
                   DS_CONFIGURED, //configured state, in which the device is configured
                   DS_CONNECTED, //connected state, in which the device is connected
                   DS_READY, //ready state, in which the device is ready to communicate
-                  DS_WAITING, //waiting state, in which the device is waiting for answer
+                  DS_BUSY, //busy state, in which the device is transfering data or waiting for answer
                   DS_COMERROR //communication error state, in which an error exists in the last communication
                   );
 
@@ -94,7 +94,7 @@ type
     function Disconnect: boolean; virtual;
     function ActiveConn(const ct: EConnectionType): boolean; virtual;
     function Reset(): boolean; virtual;
-    function SendStr(const sData: string; const bAns: boolean = true): Integer; virtual;
+    function SendStr(const sData: string; const bAns: boolean = true): boolean; virtual;
     function RecvStr(var sdata: string): Integer; virtual;
     function GetLastError(var msg: string): Integer; virtual; abstract;
   end;
@@ -109,15 +109,15 @@ const
   C_ERR_UNKNOWN = $8000; // base error number as unknown
 
   //define sets of device states, which are allowed for each event
-  C_DEV_STATES: array[LOW(EDeviceEvent)..HIGH(EDeviceEvent)] of DeviceStateSet = (
+  C_DEV_STATES: array[EDeviceEvent] of DeviceStateSet = (
                 [DS_NONE, DS_CONFIGURED], //allowed states for config
                 [DS_CONFIGURED, DS_CONNECTED], //allowed states for connect
                 [DS_CONNECTED, DS_COMERROR], //allowed states for sync
                 [DS_READY], //allowed states for send
-                [DS_WAITING], //allowed states for recv
-                [DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR], //allowed states for disconnect
-                [DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR],
-                [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_WAITING, DS_COMERROR]  //allowed states for free
+                [DS_READY, DS_BUSY], //allowed states for recv
+                [DS_CONNECTED, DS_READY, DS_BUSY, DS_COMERROR], //allowed states for disconnect
+                [DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_BUSY, DS_COMERROR],
+                [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_BUSY, DS_COMERROR]  //allowed states for free
                 );
 
   CSTR_DEV_TIMEOUT    : string = 'TIMEOUT';
@@ -129,13 +129,13 @@ implementation
 uses Windows, SysUtils, GenUtils, RS232;
 
 const
-  CSTR_DEV_STATES : array[LOW(EDeviceState)..HIGH(EDeviceState)] of string = (
+  CSTR_DEV_STATES : array[EDeviceState] of string = (
                     'unusable',
                     'configured',
                     'connected',
                     'communicable',
                     'waiting',
-                    'device error'
+                    'error'
                     );
 
 // =============================================================================
@@ -278,7 +278,7 @@ begin
     DS_CONFIGURED: if Connect() then Sync();
     DS_CONNECTED, DS_COMERROR: Sync();
     DS_READY: ; //do nothing
-    DS_WAITING: ;//not possible because the answer is expected.
+    DS_BUSY: ;//not possible because the answer is expected.
   end;
   result := (e_state = DS_READY);
 end;
@@ -436,10 +436,10 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.SendStr(const sData: string; const bAns: boolean): integer;
+function TDeviceBase.SendStr(const sData: string; const bAns: boolean): boolean;
 var i_len: integer;
 begin
-  result := 0;
+  result := false;
   if TryToReady() then begin
     //clear read-buffer of t_ser
     t_conns[e_actconn].RecvData(t_rbuf, C_TIMEOUT_ONCE);
@@ -449,8 +449,8 @@ begin
     i_len := t_wbuf.WriteStr(sData);
     result := t_conns[e_actconn].SendData(t_wbuf, c_timeout);
 
-    if (result = i_len) then begin
-      if bAns then e_state := DS_WAITING
+    if (result) then begin
+      if bAns then e_state := DS_BUSY
       else e_state := DS_READY;
     end;
   end;

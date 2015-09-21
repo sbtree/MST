@@ -4,11 +4,12 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, FlashRunner, IniFiles, StdCtrls;
+  Dialogs, FlashRunner, IniFiles, StdCtrls, ComCtrls;
 
 type
   TfrmDeviceManager = class(TForm)
     btnFR: TButton;
+    trvDevices: TTreeView;
     procedure btnFRClick(Sender: TObject);
   private
     { Private-Deklarationen }

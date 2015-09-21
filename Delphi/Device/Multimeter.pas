@@ -16,10 +16,10 @@ type
 
   EMeasureAction = (
                     MA_RES,     //measure resistance
-                    MA_CURR_DC, //measure direct current
-                    MA_CURR_AC, //measure alternating current
-                    MA_VOLT_DC, //measure direct voltage
-                    MA_VOLT_AC, //measure alternating voltage
+                    MA_DCV,     //measure direct voltage
+                    MA_ACV,     //measure alternating voltage
+                    MA_DCI,     //measure direct current
+                    MA_ACI,     //measure alternating current
                     MA_FREQ,    //measure frequence
                     MA_PERI,    //measure period
                     MA_TEMP     //measure temperature
@@ -46,11 +46,13 @@ type
     function CloseRelays(const relays: string): boolean; virtual;
     function OpenRelays(const relays: string): boolean; virtual;
     function MeasureR(): real; virtual;
-    function MeasureIDC(): real; virtual;
-    function MeasureIAC(): real; virtual;
-    function MeasureUDC(): real; virtual;
-    function MeasureUAC(): real; virtual;
+    function MeasureDCV(): real; virtual;
+    function MeasureACV(): real; virtual;
+    function MeasureDCI(): real; virtual;
+    function MeasureACI(): real; virtual;
     function MeasureF(): real; virtual;
+    function MeasureP(): real; virtual;
+    function MeasureT(): real; virtual;
   end;
 implementation
 
@@ -101,25 +103,25 @@ begin
   result := 0.0;
 end;
 
-function TMultimeter.MeasureIDC(): real;
+function TMultimeter.MeasureDCV(): real;
 begin
   //todo
   result := 0.0;
 end;
 
-function TMultimeter.MeasureIAC(): real;
+function TMultimeter.MeasureACV(): real;
 begin
   //todo
   result := 0.0;
 end;
 
-function TMultimeter.MeasureUDC(): real;
+function TMultimeter.MeasureDCI(): real;
 begin
   //todo
   result := 0.0;
 end;
 
-function TMultimeter.MeasureUAC(): real;
+function TMultimeter.MeasureACI(): real;
 begin
   //todo
   result := 0.0;
