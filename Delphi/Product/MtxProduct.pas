@@ -9,7 +9,14 @@ type
                 PS_MTX_SRV,   //started in mode of Metronix Service
                 PS_MTX_APP   //started in mode of Metronix Application
                 );
-                  
+
+  EBootPhase = (
+                BP_STARTBL,
+                BP_WAITING,
+                BP_STARTFW,
+                BP_END
+                );
+
   EProductEvent = (
                     PE_RESET,
                     PE_SWITCH,
@@ -29,6 +36,10 @@ type
 
   protected
     function RecvExpectedStr(const str: string; const timeout: cardinal): boolean; virtual;
+    function PowerOn(): boolean; virtual; abstract;
+    function PowerOff(): boolean; virtual; abstract;
+    function ResetHW(): boolean; virtual; abstract;
+    function ResetSW(): boolean; virtual; abstract;
 
   public
     constructor Create(owner: TComponent); override;
@@ -39,13 +50,10 @@ type
     property StartMessage: string read s_startmsg;
     function ConfigDevice(const ini: TMemIniFile): boolean; override;
 
-    function PowerOn(): boolean; virtual; abstract;
-    function PowerOff(): boolean; virtual; abstract;
-    function ResetHW(): boolean; virtual; abstract;
-    function ResetSW(): boolean; virtual; abstract;
+    function Reset(const spar: string): boolean; virtual;
     function SwitchTo(const mode: EStartMode): boolean; virtual; abstract;
-    function UpdateBootloader(): boolean; virtual; abstract;
-    function UpdateFirmware(): boolean; virtual; abstract;
+    function UpdateBootloader(const sfile: string): boolean; virtual; abstract;
+    function UpdateFirmware(const sfile: string): boolean; virtual; abstract;
     function UpdateParameter(): boolean; virtual; abstract;
   end;
   PProductBase = ^TProductBase;
@@ -129,8 +137,8 @@ begin
     begin
       c_timeout := ini.ReadInteger(CSTR_PROD_SEC, CSTR_DEV_TIMEOUT, C_TIMEOUT_MSEC);
       result := (ConfigConnections(ini) > 0);
+      if result then e_state := DS_CONFIGURED;
     end;
-    PostEvent(DE_CONFIG, result);;
   end;
 end;
 

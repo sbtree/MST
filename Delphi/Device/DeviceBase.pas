@@ -96,7 +96,7 @@ type
     function Disconnect: boolean; virtual;
     function ActiveConn(const ct: EConnectionType): boolean; virtual;
     function Reset(): boolean; virtual;
-    function SendStr(const sData: string; const bAns: boolean = true): boolean; virtual;
+    function SendStr(const sData: string; const bAns: boolean = true): Integer; virtual;
     function RecvStr(var sdata: string): Integer; virtual;
     function GetLastError(var msg: string): Integer; virtual; abstract;
   end;
@@ -438,10 +438,10 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.SendStr(const sData: string; const bAns: boolean): boolean;
+function TDeviceBase.SendStr(const sData: string; const bAns: boolean): Integer;
 var i_len: integer;
 begin
-  result := false;
+  result := 0;
   if TryToReady() then begin
     //clear read-buffer of t_ser
     t_conns[e_actconn].RecvData(t_rbuf, C_TIMEOUT_ONCE);
@@ -451,7 +451,7 @@ begin
     i_len := t_wbuf.WriteStr(sData);
     result := t_conns[e_actconn].SendData(t_wbuf, c_timeout);
 
-    if (result) then begin
+    if (result=i_len) then begin
       if bAns then e_state := DS_BUSY
       else e_state := DS_READY;
     end;

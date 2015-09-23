@@ -53,6 +53,7 @@ type
     function SendStr(const str: string): integer;
     function RecvStr(var str:string): integer;
     function BootState(): EBootState;
+    function ExpectStr(const str: string; var sRecv: string; const msecs: cardinal): boolean;
 
   private
     { Private-Deklarationen }
@@ -69,7 +70,7 @@ implementation
 
 {$R *.dfm}
 const
-  C_DELAY_MSEC: Cardinal = 10;
+  C_DELAY_MSEC: Cardinal = 50;
   CSTR_FORMAT_TO : string = '%0.3f--------- ---------- ---------- ---------->';
   CSTR_FORMAT_FROM : string = '%0.3f<--------- ---------- ---------- ----------';
 
@@ -194,10 +195,11 @@ begin
 
       tStart := GetTickCount(); sRecv := '';
       while ((t_ser.RxWaiting <= 0) and (GetTickCount() < cTimeout)) do Delay(C_DELAY_MSEC);
-      while ((t_ser.RxWaiting > 0) and (GetTickCount() < cTimeout)) do begin
-        if (t_ser.ReadString(sTemp) > 0) then sRecv := sRecv + sTemp
-        else Delay(C_DELAY_MSEC);
-      end;
+      repeat
+        ch := chr(0);
+        if (t_ser.ReadChar(ch) = 1) then if (not (ch = char(0))) then sRecv := sRecv + ch;
+        if (t_ser.RxWaiting <= 0) then Delay(C_DELAY_MSEC);
+      until ((t_ser.RxWaiting <= 0) or (GetTickCount() >= cTimeout));
       tEnd := GetTickCount();
       sTemp := UpperCase(trim(sRecv));
       memRecv.Lines.Add(format(CSTR_FORMAT_FROM,[(tEnd - tStart)/1000.0]));
@@ -214,16 +216,35 @@ begin
   end;
 end;
 
+function TFrmBootTester.ExpectStr(const str: string; var sRecv: string; const msecs: cardinal): boolean;
+var cTimeout: cardinal; ch: char; sTemp, sIn: string;
+begin
+  result := false;
+  if t_ser.Active then begin
+    cTimeout := GetTickCount() + msecs;
+    sIn := UpperCase(str);
+    while ((t_ser.RxWaiting <= 0) and (GetTickCount() < cTimeout)) do Delay(C_DELAY_MSEC);
+    repeat
+      ch := chr(0);
+      if (t_ser.ReadChar(ch) = 1) then if (not (ch = char(0))) then sRecv := sRecv + ch;
+      sTemp := UpperCase(sRecv);
+      if (t_ser.RxWaiting <= 0) then Delay(C_DELAY_MSEC);
+    until ((Pos(sIn, sTemp) > 0) or (GetTickCount() >= cTimeout));
+  end;
+
+end;
+
 procedure TFrmBootTester.btnResetClick(Sender: TObject);
 const
-  CSTR_WAITING : string = 'WAITING.';
+  CSTR_WAITING : string = 'WAITING...';
+  CSTR_CHECKSUM : string = 'CHECKSUM';
   CSTR_STARTING : string = 'STARTING APPLICATION...';
   CSTR_RESET: string = 'RESET!';
-  CSTR_SERVICE: string = 'SERVICE';
   CSTR_RUN: string = 'RUN!';
+  CSTR_SERVICE: string = 'SERVICE';
   CSTR_BOOT: string = 'BOOT?';
-  CSTR_CHECKSUM : string = 'CHECKSUM';
   C_TIMEOUT:cardinal = 30000;
+  CSTR_POWER_ONOFF: string = 'Please reset the unit using power off/on...';
 var ch: char; sRecv, sSend, sTemp, sReset: string;
     bWait, bApp, bService, bReset, bResetSW: boolean;
     cTimeout, tStart, tEnd: cardinal;
@@ -240,7 +261,7 @@ begin
     case eBoot of
       BS_UNKNOWN: begin
         bResetSW := false;
-        memRecv.Lines.Add('Please reset the unit using power off/on.');
+        memRecv.Lines.Add(CSTR_POWER_ONOFF);
       end;
       BS_ORIGIN: begin
         bReset := false;
@@ -270,28 +291,32 @@ begin
       //wait for the anwser from the unit
       tStart := GetTickCount(); sRecv := ''; bWait := false; bApp := false; bService := false;
       while ((t_ser.RxWaiting <= 0) and (GetTickCount() < cTimeout)) do begin
-        sTemp := memRecv.Lines[memRecv.Lines.count - 1];
-        sTemp := sTemp + '.';
-        memRecv.Lines[memRecv.Lines.count - 1] := sTemp;
+        if not bResetSW then begin
+          tEnd := Round((cTimeout - GetTickCount()) / 1000);
+          sTemp := format('%s %ds', [CSTR_POWER_ONOFF, tEnd]);
+          memRecv.Lines[memRecv.Lines.count - 1] := sTemp;
+        end;
         Delay(C_DELAY_MSEC);
       end;
-      repeat
+      {repeat
         ch := chr(0);
         if (t_ser.ReadChar(ch) = 1) then  if (not (ch = char(0))) then sRecv := sRecv + ch;
         sTemp := UpperCase(sRecv);
         if (Pos(CSTR_WAITING, sTemp) > 0) then begin
-          break;
+          Delay(C_DELAY_MSEC);
           bWait := true;
+          break;
         end;
         if (t_ser.RxWaiting <= 0) then Delay(C_DELAY_MSEC);
-      until ((t_ser.RxWaiting <= 0) or (GetTickCount() >= cTimeout));
-      //if (t_ser.ReadString(sTemp) > 0) then sRecv := sRecv + Stemp;
+      until ((t_ser.RxWaiting <= 0) or (GetTickCount() >= cTimeout));}
+      bWait := ExpectStr(CSTR_WAITING, sRecv, cTimeout - GetTickCount());
+      if (t_ser.ReadString(sTemp) > 0) then sRecv := sRecv + Stemp;
       tEnd := GetTickCount();
       memRecv.Lines.Add(format(CSTR_FORMAT_FROM,[(tEnd - tStart)/1000.0]));
       memRecv.Lines.Add(sRecv);
 
       if (self.cmbTo.ItemIndex = 1) then begin //service mode
-        Delay(200);
+        Delay(100);
         if (t_ser.ReadString(sTemp) > 0) then memRecv.Lines.Add(sTemp);
 
         tStart := GetTickCount(); sRecv := '';

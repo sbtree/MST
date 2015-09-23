@@ -39,7 +39,7 @@ type
     function IsConnected(): boolean; virtual; abstract;
     function Connect(): boolean;virtual;abstract;
     function Disconnect: boolean;virtual;abstract;
-    function SendData(const sbuf: TCharBuffer; const timeout: cardinal): boolean; virtual;abstract;
+    function SendData(const sbuf: TCharBuffer; const timeout: cardinal): integer; virtual;abstract;
     function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer;virtual;abstract;
     function GetLastError(var msg: string): Integer;virtual;abstract;
   end;
