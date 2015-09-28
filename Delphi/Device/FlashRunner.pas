@@ -23,7 +23,7 @@ type
   protected
     //t_ser: TSerial;
   protected
-    function CheckAnswer(): boolean; override;
+    function CheckAnswer(const ans: string): boolean; override;
     function Sync(): boolean; override;
     function IntToDMDataStr(const num: integer): string;
 
@@ -159,7 +159,7 @@ end;
 // =============================================================================
 function TFlashRunner.Sync(): boolean;
 const C_STR_PING: string = 'SPING'; C_STR_PONG: string = 'PONG>';
-var s_ans: string; ds_set : set of EDeviceState; i_len: integer;
+var s_ans, s_que: string; ds_set : set of EDeviceState; i_len: integer;
 begin
   result := false;
   ds_set := [DS_CONNECTED, DS_COMERROR];
@@ -167,16 +167,23 @@ begin
   begin
     //clear receiving-buffer of t_ser
     t_conns[e_actconn].RecvData(t_rbuf, C_TIMEOUT_ONCE);
-    t_rbuf.Clear;
+    //t_rbuf.Clear;
+    ZeroMemory(@t_rbuf, length(t_rbuf));
+    ZeroMemory(@t_wbuf, length(t_wbuf));
 
     //send string and wait til write-buffer is completely sent
-    i_len := t_wbuf.WriteStr(C_STR_PING + Char(13));
-    if (t_conns[e_actconn].SendData(t_wbuf, C_TIMEOUT_ONCE) = i_len) then begin
+    s_que := C_STR_PING + Char(13);
+    //i_len := t_wbuf.WriteStr(s_que);
+    i_len := length(s_que);
+    StrCopy(@t_wbuf, PChar(@s_que));
+    if t_conns[e_actconn].SendData(t_wbuf, i_len, C_TIMEOUT_ONCE) then begin
       //receive string til read-buffer is empty or timeout
       i_len := t_conns[e_actconn].RecvData(t_rbuf, C_TIMEOUT_ONCE);
       if (i_len > 0) then begin
         //verify the received string
-        s_ans := trim(t_rbuf.ReadStr());
+        //s_ans := trim(t_rbuf.ReadStr());
+        s_ans := Copy(t_rbuf, Low(t_rbuf), i_len);
+        s_ans := trim(s_ans);
         result := SameText(C_STR_PONG, s_ans);
         if result then e_state := DS_READY;
       end;
@@ -195,19 +202,18 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TFlashRunner.CheckAnswer(): boolean;
+function TFlashRunner.CheckAnswer(const ans: string): boolean;
 const C_VALID_CHARS: set of char = ['>', '!'];
-var s_ans: string; i_len: integer;
+var i_len: integer;
 begin
-  s_ans := trim(t_rbuf.ReadStr());
-  i_len := length(s_ans);
-  s_lastmsg := format('answer string: %s', [IfThen(i_len>0, s_ans, '[empty]')]);
+  //ans := trim(t_rbuf.ReadStr());
+  i_len := length(ans);
+  s_lastmsg := format('answer string: %s', [IfThen(i_len>0, ans, '[empty]')]);
   if (i_len > 0) then begin
-    if (s_ans[i_len] = '>') then  i_lasterr := C_ERR_NOERROR //sucessful answer
-    else if (s_ans[i_len] = '!') then begin //failure answer
-      delete(s_ans, i_len, 1);
-      TryStrToInt(s_ans, i_lasterr);
-    end  else i_lasterr := C_ERR_UNKNOWN;
+    if (ans[i_len] = '>') then  i_lasterr := C_ERR_NOERROR //sucessful answer
+    else if (ans[i_len] = '!') then
+      if (not TryStrToInt(MidStr(ans, 1, i_len - 1), i_lasterr)) then i_lasterr := C_ERR_WRONG_ANS//failure answer
+    else i_lasterr := C_ERR_UNKNOWN;
   end else  i_lasterr := C_ERR_WRONG_ANS;
   result := (i_lasterr = C_ERR_NOERROR);
 end;
@@ -284,7 +290,7 @@ var s_send, s_answer: string;
 begin
   result := false;
   s_send := format('DMSET $%.4x 8 %s', [addr, IntToDMDataStr(num)]) + Char(13);
-  if (SendStr(s_send) = length(s_send)) then begin
+  if SendStr(s_send) then begin
     RecvStr(s_answer);
     result := (State = DS_READY);
   end;
@@ -309,7 +315,7 @@ begin
   if (msecs > 0) then Timeout := msecs;
   
   s_send := format('RUN %s', [script]) + Char(13);
-  if (SendStr(s_send) = length(s_send)) then begin
+  if SendStr(s_send) then begin
     RecvStr(s_answer);
     result := (State = DS_READY);
   end;

@@ -67,7 +67,8 @@ type
     e_actconn: EConnectionType; //type of currently active connection
     t_prot: TProtBase;      //protocol of communication
 
-    t_rbuf, t_wbuf: TCharBuffer; //buffer for receiving and sending data
+    //t_rbuf, t_wbuf: TCharBuffer; //buffer for receiving and sending data
+    t_rbuf, t_wbuf: array [0..1023] of char; //buffer for receiving and sending data
 
   strict private
     function GetStateString : string;
@@ -76,9 +77,9 @@ type
     //procedure PostEvent(const event: EDeviceEvent; const ok: boolean);
     function Sync(): boolean; virtual;
     function TryToReady: boolean; virtual;
-    function CheckAnswer(): boolean; virtual; abstract;
-    function VerifySendingData(): boolean; virtual; abstract;
-    function VerifyReceivedData(): boolean; virtual; abstract;
+    function CheckAnswer(const ans: string): boolean; virtual; abstract;
+    //function VerifySendingData(): boolean; virtual; abstract;
+    //function VerifyReceivedData(): boolean; virtual; abstract;
     function ConfigConnections(const ini: TMemIniFile; const secname: string): integer; virtual;
 
   public
@@ -96,7 +97,7 @@ type
     function Disconnect: boolean; virtual;
     function ActiveConn(const ct: EConnectionType): boolean; virtual;
     function Reset(): boolean; virtual;
-    function SendStr(const sData: string; const bAns: boolean = true): Integer; virtual;
+    function SendStr(const sData: string; const bAns: boolean = true): boolean; virtual;
     function RecvStr(var sdata: string): Integer; virtual;
     function GetLastError(var msg: string): Integer; virtual; abstract;
   end;
@@ -160,8 +161,10 @@ begin
   b_comhex  := false;
   e_actconn := CT_RS232;
 
-  t_rbuf := TCharBuffer.Create;
-  t_wbuf := TCharBuffer.Create;
+  //t_rbuf := TCharBuffer.Create;
+  //t_wbuf := TCharBuffer.Create;
+  ZeroMemory(@t_rbuf, length(t_rbuf));
+  ZeroMemory(@t_wbuf, length(t_wbuf));
 end;
 
 // =============================================================================
@@ -438,20 +441,22 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.SendStr(const sData: string; const bAns: boolean): Integer;
+function TDeviceBase.SendStr(const sData: string; const bAns: boolean): boolean;
 var i_len: integer;
 begin
-  result := 0;
+  result := false;
   if TryToReady() then begin
     //clear read-buffer of t_ser
     t_conns[e_actconn].RecvData(t_rbuf, C_TIMEOUT_ONCE);
-    t_rbuf.Clear;
+    //t_rbuf.Clear;
 
     //send string and wait til write-buffer is completely sent
-    i_len := t_wbuf.WriteStr(sData);
-    result := t_conns[e_actconn].SendData(t_wbuf, c_timeout);
+    //i_len := t_wbuf.WriteStr(sData);
+    i_len := length(sData);
+    StrCopy(PChar(@t_wbuf), PChar(@sData));
+    result := t_conns[e_actconn].SendData(t_wbuf, i_len, c_timeout);
 
-    if (result=i_len) then begin
+    if result then begin
       if bAns then e_state := DS_BUSY
       else e_state := DS_READY;
     end;
@@ -473,10 +478,12 @@ var b_ok: boolean;
 begin
   result := 0;
   if (e_state in C_DEV_STATES[DE_RECV]) then begin
-    t_rbuf.Clear;
+    //t_rbuf.Clear;
+    ZeroMemory(@t_rbuf, length(t_rbuf));
     result := t_conns[e_actconn].RecvData(t_rbuf, c_timeout);
-    sdata := t_rbuf.ReadStr(false);
-    b_ok := CheckAnswer();
+    //sdata := t_rbuf.ReadStr(false);
+    sdata := Copy(t_rbuf, Low(t_rbuf), result);
+    b_ok := CheckAnswer(sdata);
     if b_ok then e_state := DS_READY
     else e_state := DS_COMERROR;
   end;

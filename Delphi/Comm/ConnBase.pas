@@ -10,7 +10,7 @@
 unit ConnBase;
 
 interface
-uses  Classes, Windows, DataBuffer;
+uses  Classes, Windows{, DataBuffer};
 type
 
   EConnectionType = (
@@ -39,8 +39,11 @@ type
     function IsConnected(): boolean; virtual; abstract;
     function Connect(): boolean;virtual;abstract;
     function Disconnect: boolean;virtual;abstract;
-    function SendData(const sbuf: TCharBuffer; const timeout: cardinal): integer; virtual;abstract;
-    function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer;virtual;abstract;
+    function SendData(const sbuf: array of char; const len: longword; const timeout: cardinal): boolean; virtual;abstract;
+    function RecvData(var rbuf: array of char; const timeout: cardinal): longword;virtual;abstract;
+    function RecvTill(var rbuf: array of char; const expects: array of const; const timeout: cardinal): longword; virtual;abstract;
+    //function SendData(const sbuf: TCharBuffer; const timeout: cardinal): integer; virtual;abstract;
+    //function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer;virtual;abstract;
     function GetLastError(var msg: string): Integer;virtual;abstract;
   end;
   PConnBase = ^TConnBase;

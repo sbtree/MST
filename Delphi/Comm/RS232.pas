@@ -18,7 +18,8 @@ type
   protected
     t_ser : TSerial;
   protected
-    procedure ReadAll(var rbuf: TCharBuffer); virtual;
+    function ReadAll(var rbuf: array of char): longword; virtual;
+    //procedure ReadAll(var rbuf: TCharBuffer); virtual;
 
   public
     constructor Create(owner: TComponent); override;
@@ -28,8 +29,11 @@ type
     function IsConnected(): boolean; override;
     function Connect(): boolean;override;
     function Disconnect: boolean;override;
-    function SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer; override;
-    function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer; override;
+    function SendData(const sbuf: array of char; const len: longword; const timeout: cardinal): boolean; override;
+    function RecvData(var rbuf: array of char; const timeout: cardinal): longword; override;
+    function RecvTill(var rbuf: array of char; const expects: array of const; const timeout: cardinal): longword; virtual;abstract;
+    //function SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer; override;
+    //function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer; override;
     function GetLastError(var msg: string): Integer;override;
   end;
   PConnRS232 = ^TConnRS232;
@@ -233,12 +237,24 @@ begin
   result := sports.Count;
 end;
 
-procedure TConnRS232.ReadAll(var rbuf: TCharBuffer);
+function TConnRS232.ReadAll(var rbuf: array of char): longword;
+var idx: integer; len: longword; ch: char;
+begin
+  result := 0;
+  len := length(rbuf); idx := LOW(rbuf);
+  while ((t_ser.RxWaiting > 0) and (result < len)) do 
+    if t_ser.ReadChar(ch) = 1 then begin
+      rbuf[idx] := ch;
+      inc(result);
+    end;
+end;
+
+{procedure TConnRS232.ReadAll(var rbuf: TCharBuffer);
 var ch: char;
 begin
   while (t_ser.RxWaiting > 0) do
     if t_ser.ReadChar(ch) = 1 then rbuf.WriteChar(ch);
-end;
+end; }
 
 // =============================================================================
 // Class        : TConnRS232
@@ -360,7 +376,24 @@ begin
   result := (not IsConnected());
 end;
 
-function TConnRS232.SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer;
+function TConnRS232.SendData(const sbuf: array of char; const len: longword; const timeout: cardinal): boolean;
+begin
+  //todo
+  result := false;
+end;
+
+function TConnRS232.RecvData(var rbuf: array of char; const timeout: cardinal): longword;
+begin
+  //todo
+  result := false;
+end;
+
+function TConnRS232.RecvTill(var rbuf: array of char; const expects: array of const; const timeout: cardinal): longword;
+begin
+  result := 0;
+end;
+
+{function TConnRS232.SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer;
 var i_len, i_sent: integer; c_time: cardinal; ch: char;
 begin
   i_sent := 0; i_len := sbuf.CountUsed();
@@ -389,7 +422,7 @@ begin
       end else Delay();
     end;
   end;
-end;
+end; }
 
 function TConnRS232.GetLastError(var msg: string): Integer;
 begin

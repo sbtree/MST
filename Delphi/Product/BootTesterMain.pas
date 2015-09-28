@@ -98,6 +98,7 @@ begin
 end;
 
 procedure TFrmBootTester.btnCloseClick(Sender: TObject);
+var a: array[-1..5] of char;
 begin
   t_ser.Active := false;
 end;
@@ -241,7 +242,7 @@ const
   CSTR_STARTING : string = 'STARTING APPLICATION...';
   CSTR_RESET: string = 'RESET!';
   CSTR_RUN: string = 'RUN!';
-  CSTR_SERVICE: string = 'SERVICE';
+  CSTR_SERVICE: string = 'service';
   CSTR_BOOT: string = 'BOOT?';
   C_TIMEOUT:cardinal = 30000;
   CSTR_POWER_ONOFF: string = 'Please reset the unit using power off/on...';
