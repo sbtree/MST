@@ -21,9 +21,9 @@ type
                   DS_NONE, //none state, in which the device object is just created and yet configured
                   DS_CONFIGURED, //configured state, in which the device is configured
                   DS_CONNECTED, //connected state, in which the device is connected
-                  DS_READY, //ready state, in which the device is ready to communicate
+                  DS_COMMOK, //communication ok state, in which the device is ready to communicate
                   DS_BUSY, //busy state, in which the device is transfering data or waiting for answer
-                  DS_COMERROR //communication error state, in which an error exists in the last communication
+                  DS_COMMERR //communication error state, in which an error exists in the last communication
                   );
 
 // =============================================================================
@@ -63,7 +63,7 @@ type
     s_devname: string;      //name of the device
     b_comhex : boolean;     //convert string, in which the hexadicimal data are presented, into hexadicimal value, if it is true
 
-    t_conns: array[LOW(EConnectionType)..HIGH(EConnectionType)] of TConnBase; //array of all possible connections
+    t_conns: array[EConnectionType] of TConnBase; //array of all possible connections
     e_actconn: EConnectionType; //type of currently active connection
     t_prot: TProtBase;      //protocol of communication
 
@@ -75,8 +75,7 @@ type
 
   protected
     //procedure PostEvent(const event: EDeviceEvent; const ok: boolean);
-    function Sync(): boolean; virtual;
-    function TryToReady: boolean; virtual;
+    function CheckComm(): boolean; virtual;
     function CheckAnswer(const ans: string): boolean; virtual; abstract;
     //function VerifySendingData(): boolean; virtual; abstract;
     //function VerifyReceivedData(): boolean; virtual; abstract;
@@ -93,6 +92,7 @@ type
 
     function ConfigDevice(const ini: TMemIniFile): Boolean; virtual;abstract;
     function ReleaseDevice(): Boolean; virtual;
+    function TryToReady: boolean; virtual;
     function Connect(): Boolean; virtual;
     function Disconnect: boolean; virtual;
     function ActiveConn(const ct: EConnectionType): boolean; virtual;
@@ -115,12 +115,12 @@ const
   C_DEV_STATES: array[EDeviceEvent] of DeviceStateSet = (
                 [DS_NONE, DS_CONFIGURED], //allowed states for config
                 [DS_CONFIGURED, DS_CONNECTED], //allowed states for connect
-                [DS_CONNECTED, DS_COMERROR], //allowed states for sync
-                [DS_READY], //allowed states for send
-                [DS_READY, DS_BUSY], //allowed states for recv
-                [DS_CONNECTED, DS_READY, DS_BUSY, DS_COMERROR], //allowed states for disconnect
-                [DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_BUSY, DS_COMERROR],
-                [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_READY, DS_BUSY, DS_COMERROR]  //allowed states for free
+                [DS_CONNECTED, DS_COMMERR], //allowed states for sync
+                [DS_COMMOK], //allowed states for send
+                [DS_COMMOK, DS_BUSY], //allowed states for recv
+                [DS_CONNECTED, DS_COMMOK, DS_BUSY, DS_COMMERR], //allowed states for disconnect
+                [DS_CONFIGURED, DS_CONNECTED, DS_COMMOK, DS_BUSY, DS_COMMERR],
+                [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_COMMOK, DS_BUSY, DS_COMMERR]  //allowed states for free
                 );
 
   CSTR_DEV_TIMEOUT    : string = 'TIMEOUT';
@@ -252,7 +252,7 @@ end;  }
 
 // =============================================================================
 // Class        : TDeviceBase
-// Function     : Sync
+// Function     : CheckComm
 //                test communication with device and post event SYNC
 // Parameter    : --
 // Return       : boolean, true if the communication is ok. false, otherwise
@@ -260,10 +260,10 @@ end;  }
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.Sync(): boolean;
+function TDeviceBase.CheckComm(): boolean;
 begin
   result := (e_state in C_DEV_STATES[DE_SYNC]);
-  if result then e_state := DS_READY;
+  if result then e_state := DS_COMMOK;
 end;
 
 // =============================================================================
@@ -280,12 +280,12 @@ function TDeviceBase.TryToReady: boolean;
 begin
   case e_state of
     DS_NONE: ; //not possible. ConfigDevice has firstly to be called with ini outside of this class
-    DS_CONFIGURED: if Connect() then Sync();
-    DS_CONNECTED, DS_COMERROR: Sync();
-    DS_READY: ; //do nothing
+    DS_CONFIGURED: if Connect() then CheckComm();
+    DS_CONNECTED, DS_COMMERR: CheckComm();
+    DS_COMMOK: ; //do nothing
     DS_BUSY: ;//not possible because the answer is expected.
   end;
-  result := (e_state = DS_READY);
+  result := (e_state = DS_COMMOK);
 end;
 
 // =============================================================================
@@ -458,7 +458,7 @@ begin
 
     if result then begin
       if bAns then e_state := DS_BUSY
-      else e_state := DS_READY;
+      else e_state := DS_COMMOK;
     end;
   end;
 end;
@@ -484,8 +484,8 @@ begin
     //sdata := t_rbuf.ReadStr(false);
     sdata := Copy(t_rbuf, Low(t_rbuf), result);
     b_ok := CheckAnswer(sdata);
-    if b_ok then e_state := DS_READY
-    else e_state := DS_COMERROR;
+    if b_ok then e_state := DS_COMMOK
+    else e_state := DS_COMMERR;
   end;
 end;
 
