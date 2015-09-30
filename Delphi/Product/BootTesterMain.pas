@@ -402,7 +402,7 @@ begin
   t_ser.CheckParity := false;
   t_ser.DataBits := d8Bit;
   t_ser.NotifyErrors := neNone;
-  t_ser.Name := 'Multimeter';
+  //t_ser.Name := 'Multimeter';
   t_ser.Baudrate := StrToInt(cmbBaudrate.Items[cmbBaudrate.ItemIndex]);
   t_ser.Port := StrToInt(cmbPort.Items[cmbPort.ItemIndex]);
   c_timeout := 5000;

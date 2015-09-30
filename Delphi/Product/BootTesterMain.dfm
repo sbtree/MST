@@ -76,7 +76,7 @@ object FrmBootTester: TFrmBootTester
   object cmbBaudrate: TComboBox
     Left = 530
     Top = 203
-    Width = 55
+    Width = 64
     Height = 21
     ItemHeight = 13
     ItemIndex = 0
@@ -85,7 +85,8 @@ object FrmBootTester: TFrmBootTester
     OnChange = cmbBaudrateChange
     Items.Strings = (
       '9600'
-      '19200')
+      '19200'
+      '115200')
   end
   object txtSend: TEdit
     Left = 8
@@ -182,9 +183,9 @@ object FrmBootTester: TFrmBootTester
       'Service')
   end
   object btnClose: TButton
-    Left = 591
+    Left = 600
     Top = 200
-    Width = 75
+    Width = 66
     Height = 25
     Caption = '&Close'
     TabOrder = 14
