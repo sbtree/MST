@@ -39,7 +39,7 @@ type
   PConnRS232 = ^TConnRS232;
 
 const
-  C_VALID_BAUD: array[0..14] of string = (
+  CSTR_VALID_BAUD: array[0..14] of string = (
                 '110','300','600','1200','2400','4800','9600','14400',
                 '19200','38400','56000','57600','115200','128000','256000');
 
@@ -59,7 +59,7 @@ uses SysUtils, StrUtils, Windows, GenUtils, Registry;
 type
   PSerial = ^TSerial;
   TSetFunction = function(pser: PSerial; const sval: string): boolean;
-var C_FUNC_CALLS: array [LOW(ERS232Settings)..HIGH(ERS232Settings)] of TSetFunction;
+var C_FUNC_CALLS: array [ERS232Settings] of TSetFunction;
 
 // =============================================================================
 // Class        : --
@@ -107,7 +107,7 @@ begin
   result := false;
   s_in := trim(sval);
   if TryStrToInt(sval, i_baud) then begin
-    result := (IndexOfStr(C_VALID_BAUD, sval) >= 0 );
+    result := (IndexOfStr(CSTR_VALID_BAUD, sval) >= 0 );
     if result then pser^.Baudrate := i_baud;
   end;
 end;
