@@ -324,7 +324,7 @@ end;
 // =============================================================================
 function TConnRS232.Config(const sconf: string): boolean;
 var s_conf: string; i: ERS232Settings; t_regexp: TRegExpr;
-    b_settings: array[LOW(ERS232Settings)..HIGH(ERS232Settings)] of boolean;
+    b_settings: array[ERS232Settings] of boolean;
 begin
   result := false;
   s_conf := UpperCase(sconf);
