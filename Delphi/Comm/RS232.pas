@@ -1,10 +1,10 @@
 unit RS232;
 
 interface
-uses  Serial3, ConnBase, Classes, RegExpr, DataBuffer;
+uses  Classes, Serial3, ConnBase, RegExpr, DataBuffer;
 
 type
-  ERS232Settings = (
+  ESerialProperty = (
                     RS_PORT,
                     RS_BAUDRATE,
                     RS_PARITY,
@@ -31,7 +31,7 @@ type
     function Disconnect: boolean;override;
     function SendData(const sbuf: array of char; const len: longword; const timeout: cardinal): boolean; override;
     function RecvData(var rbuf: array of char; const timeout: cardinal): longword; override;
-    function RecvTill(var rbuf: array of char; const expects: array of const; const timeout: cardinal): longword; virtual;abstract;
+    function RecvTill(var rbuf: array of char; const expects: array of const; const timeout: cardinal): longword; override;
     //function SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer; override;
     //function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer; override;
     function GetLastError(var msg: string): Integer;override;
@@ -43,7 +43,7 @@ const
                 '110','300','600','1200','2400','4800','9600','14400',
                 '19200','38400','56000','57600','115200','128000','256000');
 
-  CSTR_RS232_KEYS: array[ERS232Settings] of string = (
+  CSTR_RS232_KEYS: array[ESerialProperty] of string = (
                 'PORT',
                 'BAUDRATE',
                 'PARITY',
@@ -58,8 +58,8 @@ uses SysUtils, StrUtils, Windows, GenUtils, Registry;
 
 type
   PSerial = ^TSerial;
-  TSetFunction = function(pser: PSerial; const sval: string): boolean;
-var C_FUNC_CALLS: array [ERS232Settings] of TSetFunction;
+  SetSerialProperty = function(pser: PSerial; const sval: string): boolean;
+var C_FUNC_CALLS: array [ESerialProperty] of SetSerialProperty;
 
 // =============================================================================
 // Class        : --
@@ -323,13 +323,13 @@ end;
 // History      :
 // =============================================================================
 function TConnRS232.Config(const sconf: string): boolean;
-var s_conf: string; i: ERS232Settings; t_regexp: TRegExpr;
-    b_settings: array[ERS232Settings] of boolean;
+var s_conf: string; i: ESerialProperty; t_regexp: TRegExpr;
+    b_settings: array[ESerialProperty] of boolean;
 begin
   result := false;
   s_conf := UpperCase(sconf);
   t_regexp := TRegExpr.Create;
-  for i := LOW(ERS232Settings) to HIGH(ERS232Settings) do begin
+  for i := LOW(ESerialProperty) to HIGH(ESerialProperty) do begin
     t_regexp.Expression := '(^|\|)[\t\ ]*' + CSTR_RS232_KEYS[i] + '\b[\t\ ]*:([^\|$]*)';
     b_settings[i]:=false;
     if t_regexp.Exec(s_conf) then  begin
@@ -385,7 +385,7 @@ end;
 function TConnRS232.RecvData(var rbuf: array of char; const timeout: cardinal): longword;
 begin
   //todo
-  result := false;
+  result := 0;
 end;
 
 function TConnRS232.RecvTill(var rbuf: array of char; const expects: array of const; const timeout: cardinal): longword;
