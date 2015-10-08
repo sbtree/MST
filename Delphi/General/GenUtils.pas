@@ -26,7 +26,7 @@ uses Forms, Windows, IniFiles, Contnrs;
   procedure Delay(const msec: Cardinal = 10);
 
 const
-  C_DELAY_MSEC: Cardinal = 20;      //delay 20 milli seconds for communication in one shot
+  C_DELAY_ONCE: Cardinal = 20;      //delay 20 milli seconds for communication in oneshot
 
 implementation
 uses SysUtils, StrUtils, Math;

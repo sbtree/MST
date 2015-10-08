@@ -5,13 +5,12 @@ uses  Classes, Serial3, ConnBase, RegExpr, DataBuffer;
 
 type
   ESerialProperty = (
-                    RS_PORT,
-                    RS_BAUDRATE,
-                    RS_PARITY,
-                    RS_DATABITS,
-                    RS_STOPBITS,
-                    RS_HWFLOWCONTROL,
-                    RS_SWFLOWCONTROL
+                    SP_PORT,
+                    SP_BAUDRATE,
+                    SP_PARITY,
+                    SP_DATABITS,
+                    SP_STOPBITS,
+                    SP_FLOWCONTROL
                     );
   TConnRS232 = class(TConnBase)
   class function EnumSerialPort(var sports: TStringList): integer;
@@ -29,37 +28,25 @@ type
     function IsConnected(): boolean; override;
     function Connect(): boolean;override;
     function Disconnect: boolean;override;
-    function SendData(const sbuf: array of char; const len: longword; const timeout: cardinal): boolean; override;
-    function RecvData(var rbuf: array of char; const timeout: cardinal): longword; override;
-    function RecvTill(var rbuf: array of char; const expects: array of const; const timeout: cardinal): longword; override;
+    function SendData(const sbuf: array of char; const len: longword; const tend: cardinal): boolean; override;
+    function RecvData(var rbuf: array of char; const tend: cardinal): longword; override;
+    function RecvExpect(var rbuf: array of char; const expects: TStringList; const tend: cardinal): longword; override;
     //function SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer; override;
     //function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer; override;
-    function GetLastError(var msg: string): Integer;override;
   end;
   PConnRS232 = ^TConnRS232;
 
-const
-  CSTR_VALID_BAUD: array[0..14] of string = (
-                '110','300','600','1200','2400','4800','9600','14400',
-                '19200','38400','56000','57600','115200','128000','256000');
-
-  CSTR_RS232_KEYS: array[ESerialProperty] of string = (
-                'PORT',
-                'BAUDRATE',
-                'PARITY',
-                'DATABITS',
-                'STOPBITS',
-                'HWFLOWCONTROL',
-                'SWFLOWCONTROL'
-                );
-                
 implementation
 uses SysUtils, StrUtils, Windows, GenUtils, Registry;
 
 type
   PSerial = ^TSerial;
   SetSerialProperty = function(pser: PSerial; const sval: string): boolean;
-var C_FUNC_CALLS: array [ESerialProperty] of SetSerialProperty;
+
+const CSTR_RS232_KEYS: array[ESerialProperty] of string =
+                  ('PORT', 'BAUDRATE', 'PARITY', 'DATABITS', 'STOPBITS', 'FLOWCONTROL');
+
+var PSerialPropertyCalls: array [ESerialProperty] of SetSerialProperty;
 
 // =============================================================================
 // Class        : --
@@ -102,12 +89,16 @@ end;
 // History      :
 // =============================================================================
 function SetBaudrate(pser: PSerial; const sval: string): boolean;
-var i_baud: integer; s_in: string;
+const  CSTR_BAUD_VALUES: array[Low(aBaudrates)..High(aBaudrates)] of string = (
+                          '110','300','600','1200','2400','4800','9600','14400',
+                          '19200','38400','56000','57600','115200','128000','256000');
+var i_baud: integer; s_in: string; i_idx: integer;
 begin
   result := false;
   s_in := trim(sval);
-  if TryStrToInt(sval, i_baud) then begin
-    result := (IndexOfStr(CSTR_VALID_BAUD, sval) >= 0 );
+  i_idx := IndexOfStr(CSTR_BAUD_VALUES, sval);
+  if ((i_idx >= Low(aBaudrates)) and (i_idx <= High(aBaudrates))) then begin
+    result := TryStrToInt(sval, i_baud);
     if result then pser^.Baudrate := i_baud;
   end;
 end;
@@ -125,9 +116,17 @@ end;
 // History      :
 // =============================================================================
 function SetParity(pser: PSerial; const sval: string): boolean;
+const
+  CSTR_PA_VALUES: array[eParity] of string = ('NONE', 'ODD', 'EVEN', 'MARK', 'SPACE');
+var i_idx: integer; s_in: string;
 begin
-  //todo
-  result := true;
+  result := false;
+  s_in := UpperCase(sval);
+  i_idx := IndexOfStr(CSTR_PA_VALUES, s_in);
+  if ((i_idx >= Ord(paNone)) and (i_idx <= Ord(paSpace))) then begin
+    pser^.Parity := eParity(i_idx);
+    result := true;
+  end;
 end;
 
 // =============================================================================
@@ -143,9 +142,17 @@ end;
 // History      :
 // =============================================================================
 function SetDataBits(pser: PSerial; const sval: string): boolean;
+const
+  CSTR_DB_VALUES: array[eDataBits] of string = ('7', '8');
+var i_idx: integer; s_in: string;
 begin
-  //todo
-  result := true;
+  result := false;
+  s_in := UpperCase(sval);
+  i_idx := IndexOfStr(CSTR_DB_VALUES, s_in);
+  if ((i_idx >= Ord(d7bit)) and (i_idx <= Ord(d8bit))) then begin
+    pser^.DataBits := eDataBits(i_idx);
+    result := true;
+  end;
 end;
 
 // =============================================================================
@@ -161,15 +168,24 @@ end;
 // History      :
 // =============================================================================
 function SetStopBits(pser: PSerial; const sval: string): boolean;
+const
+  CSTR_SB_VALUES: array[eStopBits] of string = ('1', '2');
+var i_idx: integer; s_in: string;
 begin
-  //todo
-  result := true;
+  result := false;
+  s_in := UpperCase(sval);
+  i_idx := IndexOfStr(CSTR_SB_VALUES, s_in);
+  if ((i_idx >= Ord(st1bit)) and (i_idx <= Ord(st2bit))) then begin
+    pser^.StopBits := eStopBits(i_idx);
+    result := true;
+  end;
 end;
 
 // =============================================================================
 // Class        : --
-// Function     : checks the given string and sets the hardware flow control of
-//                pser with this string if it is valid. This function is only used inside of this unit.
+// Function     : checks the given string and sets the flow control of pser with
+//                this string if it is valid. This function is only used inside
+//                of this unit.
 // Parameter    : pser, pointer of a TSerial to be set
 //                sval, string for hardware flow control to be set
 // Return       : true, if the string is a valid value for hardware flow control of TSerial
@@ -178,28 +194,18 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function SetHWFlowControl(pser: PSerial; const sval: string): boolean;
+function SetFlowControl(pser: PSerial; const sval: string): boolean;
+const
+  CSTR_FC_VALUES: array[eFlowControl] of string = ('NONE', 'RTS_CTS', 'DTR_DSR', 'XON_XOF');
+var i_idx: integer; s_in: string;
 begin
-  //todo
-  result := true;
-end;
-
-// =============================================================================
-// Class        : --
-// Function     : checks the given string and sets the software flow control of
-//                pser with this string if it is valid. This function is only used inside of this unit.
-// Parameter    : pser, pointer of a TSerial to be set
-//                sval, string for software flow control to be set
-// Return       : true, if the string is a valid value for software flow control of TSerial
-//                false, otherwise
-// Exceptions   : --
-// First author : 2015-09-11 /bsu/
-// History      :
-// =============================================================================
-function SetSWFlowControl(pser: PSerial; const sval: string): boolean;
-begin
-  //todo
-  result := true;
+  result := false;
+  s_in := UpperCase(sval);
+  i_idx := IndexOfStr(CSTR_FC_VALUES, s_in);
+  if ((i_idx >= Ord(fcNone)) and (i_idx <= Ord(fcXON_XOF))) then begin
+    pser^.FlowMode := eFlowControl(i_idx);
+    result := true;
+  end;
 end;
 
 // =============================================================================
@@ -237,6 +243,16 @@ begin
   result := sports.Count;
 end;
 
+// =============================================================================
+// Class        : TConnRS232
+// Function     : ReadAll, read all chars from buffer of TSerial and save them in rbuf
+// Parameter    : sports, an ouput string list in which all ports are found, e.g.
+//                ('COM1', 'COM2' ...)
+// Return       : integer, count of the found ports
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
 function TConnRS232.ReadAll(var rbuf: array of char): longword;
 var idx: integer; len: longword; ch: char;
 begin
@@ -258,6 +274,21 @@ end; }
 
 // =============================================================================
 // Class        : TConnRS232
+// Function     : IsConnected
+//                request if the object of TSerial is actived
+// Parameter    : --
+// Return       : value of s_ser.active (true or false)
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
+function TConnRS232.IsConnected(): boolean;
+begin
+  result := t_ser.Active;
+end;
+
+// =============================================================================
+// Class        : TConnRS232
 // Function     : Constructor, creates t_ser
 // Parameter    :
 // Return       :
@@ -275,8 +306,6 @@ begin
   t_ser.CheckParity := false;
   t_ser.DataBits := d8Bit;
   t_ser.NotifyErrors := neNone;
-  t_ser.Port := 1;
-  t_ser.Baudrate := 9600;
 end;
 
 // =============================================================================
@@ -292,21 +321,6 @@ destructor TConnRS232.Destroy;
 begin
   FreeAndNil(t_ser);
   inherited Destroy();
-end;
-
-// =============================================================================
-// Class        : TConnRS232
-// Function     : IsConnected
-//                request, if the object of TSerial is actived
-// Parameter    :
-// Return       : value of s_ser.active (true or false)
-// Exceptions   : --
-// First author : 2015-09-11 /bsu/
-// History      :
-// =============================================================================
-function TConnRS232.IsConnected(): boolean;
-begin
-  result := t_ser.Active;
 end;
 
 // =============================================================================
@@ -333,13 +347,13 @@ begin
     t_regexp.Expression := '(^|\|)[\t\ ]*' + CSTR_RS232_KEYS[i] + '\b[\t\ ]*:([^\|$]*)';
     b_settings[i]:=false;
     if t_regexp.Exec(s_conf) then  begin
-      result := (C_FUNC_CALLS[i](@t_ser, t_regexp.Match[2]));
+      result := (PSerialPropertyCalls[i](@t_ser, t_regexp.Match[2]));
       b_settings[i]:= result;
       if not result then break;
     end;
   end;
   FreeAndNil(t_regexp);
-  result := (result and b_settings[RS_PORT] and b_settings[RS_BAUDRATE]);
+  result := (result and b_settings[SP_PORT] and b_settings[SP_BAUDRATE]);
 end;
 
 // =============================================================================
@@ -356,7 +370,7 @@ end;
 function TConnRS232.Connect(): boolean;
 begin
   t_ser.Active := true;
-  result := IsConnected();
+  result := Connected;
 end;
 
 // =============================================================================
@@ -373,24 +387,25 @@ end;
 function TConnRS232.Disconnect: boolean;
 begin
   t_ser.Active := false;
-  result := (not IsConnected());
+  result := (not Connected);
 end;
 
-function TConnRS232.SendData(const sbuf: array of char; const len: longword; const timeout: cardinal): boolean;
+function TConnRS232.SendData(const sbuf: array of char; const len: longword; const tend: cardinal): boolean;
 begin
-  //todo
   result := false;
-end;
-
-function TConnRS232.RecvData(var rbuf: array of char; const timeout: cardinal): longword;
-begin
   //todo
-  result := 0;
 end;
 
-function TConnRS232.RecvTill(var rbuf: array of char; const expects: array of const; const timeout: cardinal): longword;
+function TConnRS232.RecvData(var rbuf: array of char; const tend: cardinal): longword;
 begin
   result := 0;
+  //todo
+end;
+
+function TConnRS232.RecvExpect(var rbuf: array of char; const expects: TStringList; const tend: cardinal): longword;
+begin
+  result := 0;
+  //todo
 end;
 
 {function TConnRS232.SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer;
@@ -424,18 +439,14 @@ begin
   end;
 end; }
 
-function TConnRS232.GetLastError(var msg: string): Integer;
-begin
-  result := i_lasterr;
-end;
 
 initialization
-  C_FUNC_CALLS[RS_PORT]:= RS232.SetPort;
-  C_FUNC_CALLS[RS_BAUDRATE]:= RS232.SetBaudrate;
-  C_FUNC_CALLS[RS_PARITY]:= RS232.SetParity;
-  C_FUNC_CALLS[RS_DATABITS]:= RS232.SetDataBits;
-  C_FUNC_CALLS[RS_STOPBITS]:= RS232.SetStopBits;
-  C_FUNC_CALLS[RS_HWFLOWCONTROL]:= RS232.SetHWFlowControl;
-  C_FUNC_CALLS[RS_SWFLOWCONTROL]:= RS232.SetSWFlowControl;
+  PSerialPropertyCalls[SP_PORT]:= RS232.SetPort;
+  PSerialPropertyCalls[SP_BAUDRATE]:= RS232.SetBaudrate;
+  PSerialPropertyCalls[SP_PARITY]:= RS232.SetParity;
+  PSerialPropertyCalls[SP_DATABITS]:= RS232.SetDataBits;
+  PSerialPropertyCalls[SP_STOPBITS]:= RS232.SetStopBits;
+  PSerialPropertyCalls[SP_FLOWCONTROL]:= RS232.SetFlowControl;
 
 end.
+
