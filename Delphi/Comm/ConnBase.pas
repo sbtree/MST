@@ -29,8 +29,10 @@ type
     i_lasterr : integer;
     s_lastmsg : string;
 
-  protected
+  strict private
     function GetLastErrorText(): string; virtual;
+    
+  protected
     function IsConnected(): boolean; virtual; abstract;
 
   public

@@ -17,6 +17,7 @@ type
   protected
     t_ser : TSerial;
   protected
+    function IsConnected(): boolean; override;
     function ReadAll(var rbuf: array of char): longword; virtual;
     //procedure ReadAll(var rbuf: TCharBuffer); virtual;
 
@@ -25,7 +26,6 @@ type
     destructor Destroy; override;
 
     function Config(const sconf: string): boolean;override;
-    function IsConnected(): boolean; override;
     function Connect(): boolean;override;
     function Disconnect: boolean;override;
     function SendData(const sbuf: array of char; const len: longword; const tend: cardinal): boolean; override;
@@ -441,11 +441,11 @@ end; }
 
 
 initialization
-  PSerialPropertyCalls[SP_PORT]:= RS232.SetPort;
-  PSerialPropertyCalls[SP_BAUDRATE]:= RS232.SetBaudrate;
-  PSerialPropertyCalls[SP_PARITY]:= RS232.SetParity;
-  PSerialPropertyCalls[SP_DATABITS]:= RS232.SetDataBits;
-  PSerialPropertyCalls[SP_STOPBITS]:= RS232.SetStopBits;
+  PSerialPropertyCalls[SP_PORT]       := RS232.SetPort;
+  PSerialPropertyCalls[SP_BAUDRATE]   := RS232.SetBaudrate;
+  PSerialPropertyCalls[SP_PARITY]     := RS232.SetParity;
+  PSerialPropertyCalls[SP_DATABITS]   := RS232.SetDataBits;
+  PSerialPropertyCalls[SP_STOPBITS]   := RS232.SetStopBits;
   PSerialPropertyCalls[SP_FLOWCONTROL]:= RS232.SetFlowControl;
 
 end.
