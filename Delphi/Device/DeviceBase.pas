@@ -71,7 +71,7 @@ type
     t_rbuf, t_wbuf: array [0..1023] of char; //buffer for receiving and sending data
 
   strict private
-    function GetStateString : string;
+    function GetStateText : string;
 
   protected
     //procedure PostEvent(const event: EDeviceEvent; const ok: boolean);
@@ -86,7 +86,7 @@ type
     destructor Destroy; override;
 
     property State : EDeviceState read e_state;
-    property StateString : string read GetStateString;
+    property StateText : string read GetStateText;
     property HexComm : boolean read b_comhex write b_comhex;
     property Timeout : cardinal read c_timeout write c_timeout;
 
@@ -112,16 +112,16 @@ const
   C_ERR_UNKNOWN = $8000; // base error number as unknown
 
   //define sets of device states, which are allowed for each event
-  C_DEV_STATES: array[EDeviceEvent] of DeviceStateSet = (
-                [DS_NONE, DS_CONFIGURED], //allowed states for config
-                [DS_CONFIGURED, DS_CONNECTED], //allowed states for connect
-                [DS_CONNECTED, DS_COMMERR], //allowed states for sync
-                [DS_COMMOK], //allowed states for send
-                [DS_COMMOK, DS_BUSY], //allowed states for recv
-                [DS_CONNECTED, DS_COMMOK, DS_BUSY, DS_COMMERR], //allowed states for disconnect
-                [DS_CONFIGURED, DS_CONNECTED, DS_COMMOK, DS_BUSY, DS_COMMERR],
-                [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_COMMOK, DS_BUSY, DS_COMMERR]  //allowed states for free
-                );
+  C_DEV_INSTATES: array[EDeviceEvent] of DeviceStateSet = (
+                  [DS_NONE], //states, in which config is allowed
+                  [DS_CONFIGURED], //allowed states for connect
+                  [DS_CONNECTED, DS_COMMERR], //allowed states for sync
+                  [DS_COMMOK], //allowed states for send
+                  [DS_COMMOK, DS_BUSY], //allowed states for recv
+                  [DS_CONNECTED, DS_COMMOK, DS_BUSY, DS_COMMERR], //allowed states for disconnect
+                  [DS_CONFIGURED, DS_CONNECTED, DS_COMMOK, DS_BUSY, DS_COMMERR],
+                  [DS_NONE, DS_CONFIGURED, DS_CONNECTED, DS_COMMOK, DS_BUSY, DS_COMMERR]  //allowed states for free
+                  );
 
   CSTR_DEV_TIMEOUT    : string = 'TIMEOUT';
   CSTR_DEV_DESCRIPTION: string = 'DESCRIPTION';
@@ -213,7 +213,7 @@ end;
 // First author : 2015-09-03 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.GetStateString: string;
+function TDeviceBase.GetStateText: string;
 begin
   result := CSTR_DEV_STATES[e_state];
 end;
@@ -262,7 +262,7 @@ end;  }
 // =============================================================================
 function TDeviceBase.CheckComm(): boolean;
 begin
-  result := (e_state in C_DEV_STATES[DE_SYNC]);
+  result := (e_state in C_DEV_INSTATES[DE_SYNC]);
   if result then e_state := DS_COMMOK;
 end;
 
@@ -355,11 +355,11 @@ end;
 function TDeviceBase.Connect: boolean;
 begin
   result := false;
-  if ((e_state in C_DEV_STATES[DE_CONNECT]) and assigned(t_conns[e_actconn])) then begin
+  if ((e_state in C_DEV_INSTATES[DE_CONNECT]) and assigned(t_conns[e_actconn])) then begin
     result := t_conns[e_actconn].Connect();
     e_state := DS_CONNECTED;
   end;
-  result := result and (e_state in C_DEV_STATES[DE_DISCONNECT]);
+  result := result and (e_state in C_DEV_INSTATES[DE_DISCONNECT]);
 end;
 
 // =============================================================================
@@ -421,7 +421,7 @@ function TDeviceBase.Reset(): boolean;
 var c_time: cardinal;
 begin
   result := false;
-  if ((e_state in C_DEV_STATES[DE_RESET]) and assigned(t_conns[e_actconn])) then begin
+  if ((e_state in C_DEV_INSTATES[DE_RESET]) and assigned(t_conns[e_actconn])) then begin
     c_time := GetTickCount() + C_RESET_MSEC;
     t_conns[e_actconn].Disconnect();
     repeat
@@ -477,7 +477,7 @@ function TDeviceBase.RecvStr(var sdata: string): integer;
 var b_ok: boolean;
 begin
   result := 0;
-  if (e_state in C_DEV_STATES[DE_RECV]) then begin
+  if (e_state in C_DEV_INSTATES[DE_RECV]) then begin
     //t_rbuf.Clear;
     ZeroMemory(@t_rbuf, length(t_rbuf));
     result := t_conns[e_actconn].RecvData(t_rbuf, c_timeout);

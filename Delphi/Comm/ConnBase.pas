@@ -2,7 +2,7 @@
 // Module name  : $RCSfile: ConnectBase.pas,v $
 // description  : This unit implements a basis methodes and properties of a class
 //                for connection FlashRunner. The types of connection includes Jtag
-//                RS232, USB, CAN-bus and Profil-Bus.
+//                RS232, USB, GPIB, CAN-bus and Profil-Bus.
 // Compiler     : Delphi 2007
 // Author       : 2015-09-08 /bsu/
 // History      :
