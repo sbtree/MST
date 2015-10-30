@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Serial3,ExtCtrls, {CPort, CPortCtl,} RegExpr;
+  Dialogs, StdCtrls, Serial3,ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls;
 
 type
   EBootState = (
@@ -16,30 +16,40 @@ type
 
   TFrmBootTester = class(TForm)
     memRecv: TMemo;
-    btnStart: TButton;
-    lblPort: TLabel;
-    lblBaudrate: TLabel;
-    cmbBaudrate: TComboBox;
-    cmbPort: TComboBox;
-    txtSend: TEdit;
-    chbRecv: TCheckBox;
     btnClear: TButton;
     btnExport: TButton;
+    grpRS232: TGroupBox;
+    lblPort: TLabel;
+    cmbPort: TComboBox;
+    lblBaudrate: TLabel;
+    cmbBaudrate: TComboBox;
+    btnClose: TButton;
+    chkXonXoff: TCheckBox;
+    Label1: TLabel;
+    grpSendCommand: TGroupBox;
     lblLoop: TLabel;
+    btnSend: TButton;
+    txtSend: TEdit;
+    chbRecv: TCheckBox;
     txtLoop: TEdit;
     lstSending: TListBox;
-    //t_comport: TComPort;
     chbVerify: TCheckBox;
     txtVerify: TEdit;
+    grpService: TGroupBox;
     btnReset: TButton;
     cmbTo: TComboBox;
-    btnClose: TButton;
+    btnSendFile: TButton;
+    txtFile: TEdit;
+    btnFile: TButton;
+    pgbSendFile: TProgressBar;
+    lblSendFile: TLabel;
+    chkMetronix: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     //procedure ComPortRxChar(Sender: TObject; Count: Integer);
     procedure cmbPortChange(Sender: TObject);
     procedure cmbBaudrateChange(Sender: TObject);
-    procedure btnStartClick(Sender: TObject);
+    procedure btnSendClick(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
     procedure btnExportClick(Sender: TObject);
     procedure lstSendingDblClick(Sender: TObject);
@@ -48,6 +58,9 @@ type
     procedure txtVerifyEnter(Sender: TObject);
     procedure btnResetClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
+    procedure btnFileClick(Sender: TObject);
+    procedure btnSendFileClick(Sender: TObject);
+    procedure chkXonXoffClick(Sender: TObject);
   protected
     procedure Transmit();
     function SendStr(const str: string): integer;
@@ -69,6 +82,7 @@ var
 implementation
 
 {$R *.dfm}
+uses StrUtils;
 const
   C_DELAY_MSEC: Cardinal = 50;
   CSTR_FORMAT_TO : string = '%0.3f--------- ---------- ---------- ---------->';
@@ -172,6 +186,15 @@ begin
   // Free up the dialog
   saveDialog.Free;
 end;
+procedure TFrmBootTester.btnFileClick(Sender: TObject);
+var t_fopen: TOpenDialog;
+begin
+  t_fopen := TOpenDialog.Create(self);
+  t_fopen.Filter := 'S-Record Files (*.s, *.mot)|*.s;*.mot';
+  if t_fopen.Execute then txtFile.Text := trim(t_fopen.FileName);
+  FreeAndNil(t_fopen);
+end;
+
 function TFrmBootTester.BootState(): EBootState;
 const
   CSTR_BOOT: string = 'BOOT?';
@@ -244,7 +267,6 @@ const
   CSTR_RUN: string = 'RUN!';
   CSTR_SERVICE: string = 'service';
   CSTR_BOOT: string = 'BOOT?';
-  C_TIMEOUT:cardinal = 30000;
   CSTR_POWER_ONOFF: string = 'Please reset the unit using power off/on...';
 var ch: char; sRecv, sSend, sTemp, sReset: string;
     bWait, bApp, bService, bReset, bResetSW: boolean;
@@ -253,7 +275,7 @@ var ch: char; sRecv, sSend, sTemp, sReset: string;
 begin
   if not t_ser.Active then  t_ser.Active := true;
   if t_ser.Active then begin
-    cTimeout := GetTickCount() + C_TIMEOUT;
+    cTimeout := GetTickCount() + 30000;
     if (t_ser.ReadString(sRecv) > 0) then memRecv.Lines.Add(sRecv);;
 
     //check boot mode
@@ -348,7 +370,7 @@ begin
   end;
 end;
 
-procedure TFrmBootTester.btnStartClick(Sender: TObject);
+procedure TFrmBootTester.btnSendClick(Sender: TObject);
 var i, n: integer; s_text: String;
 begin
   if not t_ser.Active then  t_ser.Active := true;
@@ -366,6 +388,44 @@ begin
 
 end;
 
+procedure TFrmBootTester.btnSendFileClick(Sender: TObject);
+var s_file, s_line, s_recv: string; i: integer; t_lines: TStringList; b_repeat: boolean;
+begin
+  if RecvStr(s_recv) > 0 then memRecv.Lines.Add(s_recv);
+  s_file := trim(txtFile.Text);
+  if FileExists(s_file) then begin
+    t_lines := TStringList.Create;
+    t_lines.LoadFromFile(s_file);
+    pgbSendFile.Max := t_lines.Count;
+    pgbSendFile.Position := 0;
+    lblSendFile.Caption := '0%';
+    if chkMetronix.Checked then begin
+      for i := 0 to t_lines.Count - 1 do begin
+        b_repeat := true;
+        while b_repeat do begin
+          t_ser.WriteString(t_lines[i] + Char(13));
+          while t_ser.TxWaiting > 0 do Delay(C_DELAY_MSEC);
+          pgbSendFile.Position := i + 1;
+          lblSendFile.Caption := format('%d', [Round((pgbSendFile.Position / pgbSendFile.Max) * 100.0)]) + '%';
+          Application.ProcessMessages();
+          if (RecvStr(s_recv) > 0) then b_repeat := (RightStr(s_recv, 1) = '#')
+          else b_repeat := false;
+        end;
+      end;
+    end else begin
+      for i := 0 to t_lines.Count - 1 do begin
+        t_ser.WriteString(t_lines[i] + Char(13));
+        while t_ser.TxWaiting > 0 do Delay(C_DELAY_MSEC);
+        pgbSendFile.Position := i + 1;
+        lblSendFile.Caption := format('%d', [Round((pgbSendFile.Position / pgbSendFile.Max) * 100.0)]) + '%';
+        Application.ProcessMessages();
+      end;
+    end;
+    t_lines.Clear;
+    FreeAndNil(t_lines);
+  end;
+end;
+
 procedure TFrmBootTester.chbRecvClick(Sender: TObject);
 begin
   chbVerify.Enabled := chbRecv.Checked;
@@ -376,6 +436,18 @@ procedure TFrmBootTester.chbVerifyClick(Sender: TObject);
 begin
   txtVerify.Enabled := chbVerify.Checked;
   if chbVerify.Checked then txtVerify.SetFocus;
+end;
+
+
+
+procedure TFrmBootTester.chkXonXoffClick(Sender: TObject);
+var b_active: boolean;
+begin
+  b_active := t_ser.Active;
+  t_ser.Active := False;
+  if chkXonXoff.Checked then t_ser.FlowMode := fcXON_XOF
+  else t_ser.FlowMode := fcNone;
+  t_ser.Active := b_active;
 end;
 
 procedure TFrmBootTester.cmbBaudrateChange(Sender: TObject);
@@ -405,7 +477,7 @@ begin
   //t_ser.Name := 'Multimeter';
   t_ser.Baudrate := StrToInt(cmbBaudrate.Items[cmbBaudrate.ItemIndex]);
   t_ser.Port := StrToInt(cmbPort.Items[cmbPort.ItemIndex]);
-  c_timeout := 5000;
+  c_timeout := 3000;
 end;
 
 procedure TFrmBootTester.FormDestroy(Sender: TObject);
