@@ -2,7 +2,7 @@ object FrmBootTester: TFrmBootTester
   Left = 0
   Top = 0
   Caption = 'BootTester'
-  ClientHeight = 472
+  ClientHeight = 455
   ClientWidth = 772
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -18,33 +18,26 @@ object FrmBootTester: TFrmBootTester
   object grpRS232: TGroupBox
     Left = 8
     Top = 8
-    Width = 337
-    Height = 89
+    Width = 400
+    Height = 65
     Caption = 'RS232 Settings'
     TabOrder = 3
     object lblPort: TLabel
-      Left = 43
+      Left = 19
       Top = 27
       Width = 24
       Height = 13
       Caption = 'Port:'
     end
     object lblBaudrate: TLabel
-      Left = 166
+      Left = 107
       Top = 26
       Width = 48
       Height = 13
       Caption = 'Baudrate:'
     end
-    object Label1: TLabel
-      Left = 43
-      Top = 62
-      Width = 64
-      Height = 13
-      Caption = 'Flow Control:'
-    end
     object cmbPort: TComboBox
-      Left = 73
+      Left = 49
       Top = 23
       Width = 48
       Height = 21
@@ -64,7 +57,7 @@ object FrmBootTester: TFrmBootTester
         '8')
     end
     object cmbBaudrate: TComboBox
-      Left = 220
+      Left = 161
       Top = 24
       Width = 66
       Height = 21
@@ -79,17 +72,17 @@ object FrmBootTester: TFrmBootTester
         '115200')
     end
     object btnClose: TButton
-      Left = 220
-      Top = 57
-      Width = 66
+      Left = 325
+      Top = 22
+      Width = 57
       Height = 24
       Caption = '&Close'
       TabOrder = 2
       OnClick = btnCloseClick
     end
     object chkXonXoff: TCheckBox
-      Left = 113
-      Top = 61
+      Left = 240
+      Top = 25
       Width = 59
       Height = 17
       Caption = 'Xon/Xoff'
@@ -98,16 +91,16 @@ object FrmBootTester: TFrmBootTester
     end
   end
   object memRecv: TMemo
-    Left = 360
+    Left = 416
     Top = 8
-    Width = 401
-    Height = 426
+    Width = 345
+    Height = 393
     ScrollBars = ssVertical
     TabOrder = 0
   end
   object btnClear: TButton
-    Left = 557
-    Top = 440
+    Left = 565
+    Top = 418
     Width = 75
     Height = 25
     Caption = '&Clear'
@@ -115,8 +108,8 @@ object FrmBootTester: TFrmBootTester
     OnClick = btnClearClick
   end
   object btnExport: TButton
-    Left = 678
-    Top = 440
+    Left = 686
+    Top = 418
     Width = 75
     Height = 25
     Caption = 'E&xport...'
@@ -125,9 +118,9 @@ object FrmBootTester: TFrmBootTester
   end
   object grpSendCommand: TGroupBox
     Left = 8
-    Top = 103
-    Width = 337
-    Height = 257
+    Top = 79
+    Width = 400
+    Height = 258
     Caption = 'Send Command'
     TabOrder = 4
     object lblLoop: TLabel
@@ -138,7 +131,7 @@ object FrmBootTester: TFrmBootTester
       Caption = 'Loop:'
     end
     object btnSend: TButton
-      Left = 256
+      Left = 325
       Top = 191
       Width = 57
       Height = 25
@@ -149,8 +142,8 @@ object FrmBootTester: TFrmBootTester
     object txtSend: TEdit
       Left = 17
       Top = 193
-      Width = 233
-      Height = 22
+      Width = 302
+      Height = 21
       TabOrder = 1
       Text = 'BOOT?'
     end
@@ -176,7 +169,7 @@ object FrmBootTester: TFrmBootTester
     object lstSending: TListBox
       Left = 17
       Top = 24
-      Width = 296
+      Width = 365
       Height = 161
       ItemHeight = 13
       TabOrder = 4
@@ -194,7 +187,7 @@ object FrmBootTester: TFrmBootTester
     object txtVerify: TEdit
       Left = 232
       Top = 222
-      Width = 81
+      Width = 150
       Height = 21
       Enabled = False
       TabOrder = 6
@@ -203,15 +196,15 @@ object FrmBootTester: TFrmBootTester
   end
   object grpService: TGroupBox
     Left = 8
-    Top = 366
-    Width = 337
-    Height = 99
+    Top = 343
+    Width = 400
+    Height = 100
     Caption = 'Service'
     TabOrder = 5
     object lblSendFile: TLabel
-      Left = 288
-      Top = 80
-      Width = 25
+      Left = 357
+      Top = 47
+      Width = 15
       Height = 11
       Caption = '0%'
       Font.Charset = DEFAULT_CHARSET
@@ -221,67 +214,46 @@ object FrmBootTester: TFrmBootTester
       Font.Style = []
       ParentFont = False
     end
-    object btnReset: TButton
-      Left = 17
-      Top = 24
-      Width = 50
-      Height = 25
-      Caption = '&Reset To'
-      TabOrder = 0
-      OnClick = btnResetClick
-    end
-    object cmbTo: TComboBox
-      Left = 71
-      Top = 26
-      Width = 79
-      Height = 21
-      ItemHeight = 13
-      ItemIndex = 0
-      TabOrder = 1
-      Text = 'Application'
-      Items.Strings = (
-        'Application'
-        'Service')
-    end
-    object btnSendFile: TButton
-      Left = 177
-      Top = 24
-      Width = 51
-      Height = 25
-      Caption = 'Send &File'
-      TabOrder = 2
-      OnClick = btnSendFileClick
-    end
     object txtFile: TEdit
       Left = 16
-      Top = 57
-      Width = 266
-      Height = 22
-      TabOrder = 3
+      Top = 24
+      Width = 335
+      Height = 21
+      TabOrder = 0
     end
     object btnFile: TButton
-      Left = 288
-      Top = 57
+      Left = 357
+      Top = 24
       Width = 25
       Height = 22
       Caption = '...'
-      TabOrder = 4
+      TabOrder = 1
       OnClick = btnFileClick
     end
     object pgbSendFile: TProgressBar
       Left = 16
-      Top = 80
-      Width = 266
-      Height = 9
-      TabOrder = 5
+      Top = 47
+      Width = 335
+      Height = 10
+      TabOrder = 2
     end
-    object chkMetronix: TCheckBox
-      Left = 232
-      Top = 28
-      Width = 83
-      Height = 17
-      Caption = 'MTX Protocol'
-      TabOrder = 6
+    object btnStateQue: TButton
+      Left = 243
+      Top = 64
+      Width = 56
+      Height = 25
+      Caption = 'State?'
+      TabOrder = 3
+      OnClick = btnStateQueClick
+    end
+    object btnDownload: TButton
+      Left = 325
+      Top = 64
+      Width = 57
+      Height = 25
+      Caption = '&Download'
+      TabOrder = 4
+      OnClick = btnDownloadClick
     end
   end
 end
