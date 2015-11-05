@@ -467,12 +467,8 @@ begin
               c_endtime := GetTickCount() + 1000;
               if WaitForReading(c_endtime) then begin
                 RecvStr(s_recv, false);
-                t_ser.Active := false;
                 t_ser.Baudrate := 115200;
-                t_ser.Active := true;
-                result := t_ser.Active;
               end;
-              result := (result and t_ser.Active);
             end;
           end;
         end;
@@ -605,7 +601,7 @@ begin
   result := true; RecvStr(s_recv, false);
 
   c_start := GetTickCount();
-  timeout := c_start + c_timeout;
+  //timeout := c_start + c_timeout;
   t_ser.WriteString(str);
   //while ((t_ser.TxWaiting > 0) and (GetTickCount() < timeout)) do Delay(C_DELAY_MSEC);
   //result := length(str);
