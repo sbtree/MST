@@ -347,7 +347,6 @@ begin
   end;
 end;
 
-
 function TFrmBootTester.GetSwitchOnMessage(var blmsg, fwmsg:string; const elapse: cardinal): integer;
 const C_BL_FW_INTERVAL: cardinal = 6000; C_ANSWER_INTERVAL: cardinal = 100;
 var c_endtime: cardinal; b_reset: boolean;

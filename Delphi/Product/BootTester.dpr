@@ -3,7 +3,8 @@ program BootTester;
 uses
   Forms,
   BootTesterMain in 'BootTesterMain.pas' {FrmBootTester},
-  Serial3 in '..\Externals\Serial3.pas';
+  Serial3 in '..\Externals\Serial3.pas',
+  MtxDownloader in 'MtxDownloader.pas';
 
 {$R *.res}
 

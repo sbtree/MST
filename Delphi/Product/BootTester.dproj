@@ -45,5 +45,6 @@
     <DCCReference Include="BootTesterMain.pas">
       <Form>FrmBootTester</Form>
     </DCCReference>
+    <DCCReference Include="MtxDownloader.pas" />
   </ItemGroup>
 </Project>

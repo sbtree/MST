@@ -21,6 +21,7 @@ uses Forms, Windows, IniFiles, Contnrs;
   function IsHexStr(const sData: string): boolean;
   function HexStrToCharArray(const sData: string; var aData: array of char): integer;
   function HexStrFromCharArray(const aData: array of char; const len: integer = -1): string;
+  function IsValidAscii(const str: string): boolean;
 
   //process, thread and windows message
   procedure Delay(const msec: Cardinal = 10);
@@ -225,6 +226,29 @@ begin
   iLen := length(aData);
   if (len >= 0) then iLen := IfThen(len > iLen, iLen, len);
   for i := LOW(aData) to iLen - 1 do result := result + format('%.02x', [integer(aData[i])]);
+end;
+
+// =============================================================================
+// Class        : --
+// Function     : IsValidAscii
+//                exames if all chars of the given string are valid ascii char
+// Parameter    : str, string to be examed
+// Return       : true, if all chars are ascii char.
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-11-06 /bsu/
+// History      :
+// =============================================================================
+function IsValidAscii(const str: string): boolean;
+var i: integer;
+begin
+  result := true;
+  for i := 1 to Length(str) do begin
+    if (Char(str[i]) > Char($7F)) then begin
+      result := false;
+      break;
+    end;
+  end;
 end;
 
 end.
