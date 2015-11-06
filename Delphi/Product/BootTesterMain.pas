@@ -14,7 +14,8 @@ type
                 BS_MTLBL_APP,  //Motorola S-Record Loader + Metronix FW
                 BS_MTXBL_ONLY, //only Metronix Boot Loader exists on the board
                 BS_MTXBL_UPD,  //Metronix Boot Loader + Metronix BL_Updater
-                BS_MTXBL_APP   //Metronix Boot Loader + Metronix FW
+                BS_MTXBL_APP,  //Metronix Boot Loader + Metronix FW
+                BS_XBL_UPD //one Boot Loader (of s-record loader and metronix boot loader) is just updated through BL-Updater
                 );
 
   TFrmBootTester = class(TForm)
@@ -74,7 +75,7 @@ type
     function GetBootMessageMTL(var msg: string): integer;
     function GetSwitchOnMessage(var blmsg, fwmsg:string; const elapse: cardinal): integer;
     function GetBootState(const blmsg, fwmsg: string): EBootState;
-    function BootToService(const bs: EBootState; const initfw: string = ''): boolean;
+    function EnterService(const bs: EBootState; const initfw: string = ''): boolean;
     function ExpectStr(const str: string; var sRecv: string; const msecs: cardinal): boolean;
 
   private
@@ -100,7 +101,7 @@ const
   CSTR_POWER_ONOFF: string = 'Please reset the unit using power off/on...';
 
   CSTR_BOOTQUE: string = 'BOOT?';
-  CSTR_SERVICE: string = 'SERVICE';
+  CSTR_SERVICE: string = 'service';
   CSTR_APPLICATION: string = 'APPLICATION';
   CSTR_ERROR: string = 'ERROR!';
   CSTR_UNKNOWNCMD: string = 'UNKNOWN COMMAND';
@@ -108,10 +109,13 @@ const
   CSTR_DONE: string = 'DONE.';
   CSTR_WAITING: string = 'WAITING...';
   CSTR_MOTOROLA: string = 'MOTOROLA INC. S-RECORD LOADER';
+  CSTR_METRONIX: string = 'BOOTLOADER (C) METRONIX';
+  CSTR_BLUPDATER: string = 'BOOTLOADER UPDATER';
+
   CSTR_B115200: string = 'B115200';
   CINT_B115200: integer = 115200;
   C_REBOOT_TIME: cardinal = 10000;  //10 seconds for reboot
-  C_MANUAL_RESTART: cardinal = 20000;
+  C_MANUAL_RESTART: cardinal = 30000;
 
   C_MTXSET: set of EBootState = [BS_MTXBL_ONLY, BS_MTXBL_UPD, BS_MTXBL_APP];
 
@@ -153,11 +157,10 @@ begin
     exit;
   end;
 
-  i_baud := t_ser.Baudrate;
-  e_flowctrl := t_ser.FlowMode;
-  s_file := trim(txtFile.Text);
+  i_baud := t_ser.Baudrate; e_flowctrl := t_ser.FlowMode;
+  b_break := true; s_file := trim(txtFile.Text);
   if FileExists(s_file) then begin
-    if BootToService(e_bootstate) then begin
+    if EnterService(e_bootstate) then begin
       lblSendFile.Caption := 'loading...';
       t_lines := TStringList.Create;
       t_lines.LoadFromFile(s_file);
@@ -165,9 +168,10 @@ begin
       pgbSendFile.Position := 0;
       lblSendFile.Caption := '0%';
       c_start := GetTickCount();
+      b_break := false;
       if (e_bootstate in C_MTXSET) then begin
         for i := 0 to t_lines.Count - 1 do begin
-          i_trial := 0; b_break := false; b_ok := false;
+          i_trial := 0; b_ok := false;
           s_line := t_lines[i] + Char(13);
           repeat
             //SendStr(s_line, false);
@@ -202,14 +206,14 @@ begin
       end;
       c_end := GetTickCount();
       self.memRecv.Lines.Add(format('prog[%0.3f]: downloaded %d lines of totle %d from file "%s"', [(c_end - c_start)/1000.0, pgbSendFile.Position, pgbSendFile.Max, s_file]));
+      lblSendFile.Caption := 'over';
       t_lines.Clear;
       FreeAndNil(t_lines);
-      lblSendFile.Caption := 'over';
     end;
   end;
   t_ser.Baudrate := i_baud;
   t_ser.FlowMode := e_flowctrl;
-  Delay(C_DELAY_MSEC);
+  self.memRecv.Lines.Add(format('prog: download is finished with [%s]; port=%d; baudrate=%d; flow control=%s',[BoolToStr(not b_break), t_ser.Port, t_ser.Baudrate, GetEnumName(TypeInfo(eFlowControl), Ord(t_ser.FlowMode))]));
 end;
 
 procedure TFrmBootTester.Transmit();
@@ -251,28 +255,22 @@ var
 begin
   // Create the save dialog object - assign to our save dialog variable
   saveDialog := TSaveDialog.Create(self);
-
   // Give the dialog a title
   saveDialog.Title := 'Export Result';
-
   // Set up the starting directory to be the current one
   saveDialog.InitialDir := GetCurrentDir;
-
   // Allow only .txt and .doc file types to be saved
   saveDialog.Filter := 'Text file|*.txt|All files|*.*';
-
   // Set the default extension
   saveDialog.DefaultExt := 'txt';
-
   // Select text files as the starting filter type
   saveDialog.FilterIndex := 1;
-
   // Display the open file dialog
   if saveDialog.Execute then memRecv.Lines.SaveToFile(saveDialog.FileName);
-
   // Free up the dialog
   saveDialog.Free;
 end;
+
 procedure TFrmBootTester.btnFileClick(Sender: TObject);
 var t_fopen: TOpenDialog;
 begin
@@ -295,10 +293,12 @@ begin
 end;
 
 function TFrmBootTester.SwitchOn(const cmd: string; const tend: cardinal): boolean;
-var c_time: cardinal;  b_timeout: boolean;
+var c_time: cardinal;  b_timeout: boolean; s_recv: string;
 begin
   result := false;
   if t_ser.Active then begin
+    //clear buffers of the serial interface
+    if (t_ser.ReadString(s_recv) > 0) then self.memRecv.Lines.Add('prog:<' + s_recv);
     if ((cmd = '-1') or (cmd = '')) then begin //manually reset
       c_time := GetTickCount() + C_MANUAL_RESTART; //set timeout
       //wait for the anwser from the unit
@@ -308,13 +308,13 @@ begin
         Delay(C_DELAY_MSEC);
         b_timeout := (GetTickCount() >= c_time);
       until (b_timeout or (t_ser.RxWaiting > 0));
-      result := ((not b_timeout) and (t_ser.RxWaiting > 0));
     end else begin
       //todo: reset by relay (automatically hard reset)
       //todo: reset through command (soft rest)
       // wait for that the first char arrives in C_RESET_TIMEOUT milliseconds after resetting
-      result := WaitForReading(tend);
+      WaitForReading(tend);
     end;
+    result := (t_ser.RxWaiting > 0);
   end;
 end;
 
@@ -338,26 +338,23 @@ begin
   if t_ser.Active then begin
     i_baud := t_ser.Baudrate;
     t_ser.Baudrate := CINT_B115200;
-    Delay(C_DELAY_MSEC);
+    //Delay(C_DELAY_MSEC);
     SendStr(CSTR_TEST_CMD + Char(13));
     c_endtime := GetTickCount() + 1000;
     result := RecvStrInterval(msg, c_endtime, 100);
     t_ser.Baudrate := i_baud;
-    Delay(C_DELAY_MSEC);
+    //Delay(C_DELAY_MSEC);
   end;
 end;
 
 
 function TFrmBootTester.GetSwitchOnMessage(var blmsg, fwmsg:string; const elapse: cardinal): integer;
-const C_BL_FW_INTERVAL: cardinal = 5000; C_ANSWER_INTERVAL: cardinal = 100;
-var c_endtime: cardinal; b_reset: boolean; s_recv: string;
+const C_BL_FW_INTERVAL: cardinal = 6000; C_ANSWER_INTERVAL: cardinal = 100;
+var c_endtime: cardinal; b_reset: boolean;
 begin
   result := 0; blmsg := ''; fwmsg := '';
   if t_ser.Active then begin
     c_endtime := GetTickCount() + elapse;
-    //clear buffers of the serial interface
-    RecvStr(s_recv, false);
-
     //restart the unit manually
     b_reset := SwitchOn('', c_endtime);
     //receive the message
@@ -365,7 +362,7 @@ begin
       result := RecvStrInterval(blmsg, c_endtime, C_ANSWER_INTERVAL);
       if HasInvalidAscii(blmsg) then result := GetBootMessageMTL(blmsg);
       c_endtime := GetTickCount() + C_BL_FW_INTERVAL;
-      if WaitForReading(c_endtime) then result := result + RecvStrInterval(fwmsg, c_endtime, 1000);
+      if WaitForReading(c_endtime) then result := result + RecvStrInterval(fwmsg, c_endtime, 1500);
     end;
   end;
 end;
@@ -376,34 +373,35 @@ const
   C_MTXBL = $00020000;
   C_MTXUPD = $00000001;
   C_MTXAPP = $00000002;
-var sSend, sRecv, sTemp, s_inblmsg, s_infwmsg: string; cTimeout: cardinal; bRepeat: boolean;
+var sSend, s_recv, sTemp, s_inblmsg, s_infwmsg: string; cTimeout: cardinal; bRepeat: boolean;
     t_lines: TStringList; lw_blfw: longword;
 begin
   result := BS_UNKNOWN; lw_blfw := 0;
   s_inblmsg := UpperCase(trim(blmsg));
   s_infwmsg := UpperCase(trim(fwmsg));
   if (Pos(CSTR_MOTOROLA, s_inblmsg) > 0) then lw_blfw := (lw_blfw or C_MTLBL);
-  if (Pos(CSTR_WAITING, s_inblmsg) > 0) then lw_blfw := (lw_blfw or C_MTXBL);
+  if ((Pos(CSTR_WAITING, s_inblmsg) > 0) or (Pos(CSTR_METRONIX, s_inblmsg) > 0)) then lw_blfw := (lw_blfw or C_MTXBL);
 
   if (fwmsg <> '') then begin
+    if (Pos(CSTR_BLUPDATER, s_infwmsg) > 0)  then lw_blfw := (lw_blfw or C_MTXUPD);
     t_lines := TStringList.Create;
     ExtractStrings([Char(10)], [Char(13)], PChar(s_infwmsg), t_lines);
-    if ((Pos(CSTR_DONE, t_lines[t_lines.Count - 1]) > 0) or (Pos(CSTR_CHECKSUM, t_lines[t_lines.Count - 1]) > 0))  then lw_blfw := (lw_blfw or C_MTXUPD)
+    if ((Pos(CSTR_DONE, t_lines[t_lines.Count - 1]) > 0))  then lw_blfw := C_MTXUPD
     else if t_ser.Active then begin
       repeat
         cTimeout := GetTickCount() + c_timeout;
-        RecvStr(sTemp, false);
+        if (t_ser.ReadString(s_recv) > 0) then self.memRecv.Lines.Add('prog:<' + s_recv);
 
         sSend := CSTR_BOOTQUE + Char(13);
         SendStr(sSend);
 
         WaitForReading(cTimeout);
-        sRecv := ''; RecvStrInterval(sRecv, cTimeout, 100);
-        sTemp := UpperCase(trim(sRecv));
+        s_recv := ''; RecvStrInterval(s_recv, cTimeout, 100);
+        sTemp := UpperCase(trim(s_recv));
 
         bRepeat := false;
         if (Pos(CSTR_APPLICATION, sTemp) > 0) then lw_blfw := (lw_blfw or C_MTXAPP)
-        else if (Pos(CSTR_SERVICE, sTemp) > 0) then lw_blfw := (lw_blfw or C_MTXBL)
+        else if (Pos(UpperCase(CSTR_SERVICE), sTemp) > 0) then lw_blfw := (lw_blfw or C_MTXBL)
         else if ((Pos(CSTR_ERROR, sTemp) > 0) or (Pos(CSTR_UNKNOWNCMD, sTemp) > 0)) then bRepeat := true;
       until ((not bRepeat) or (GetTickCount() >= cTimeout));
     end;
@@ -416,12 +414,13 @@ begin
     $00010002: result := BS_MTLBL_APP;
     $00020000: result := BS_MTXBL_ONLY;
     $00020001: result := BS_MTXBL_UPD;
+    $00000001: result := BS_XBL_UPD;
     $00020002: result := BS_MTXBL_APP;
   end;
 end;
 
-function TFrmBootTester.BootToService(const bs: EBootState; const initfw: string): boolean;
-var s_recv: string; c_endtime, c_start, c_end: cardinal; t_exstrs: TStringList;
+function TFrmBootTester.EnterService(const bs: EBootState; const initfw: string): boolean;
+var s_recv, s_temp: string; c_endtime, c_start, c_end: cardinal; t_exstrs: TStringList; i_trials: integer;
 begin
   result := false;
   t_exstrs := TStringList.Create;
@@ -430,55 +429,119 @@ begin
     case bs of
       BS_UNKNOWN: self.memRecv.Lines.Add('prog: found unknown boot loader on this unit');
       BS_MTLBL_ONLY:begin
-        t_ser.Active := false;
-        t_ser.Baudrate := 115200;
+        t_ser.Baudrate := CINT_B115200;
         t_ser.FlowMode := fcXON_XOF;
-        t_ser.Active := true;
+        //Delay(C_DELAY_MSEC);
         result := t_ser.Active;
       end;
       BS_MTLBL_UPD, BS_MTLBL_APP: begin
-        t_ser.Active := false;
-        t_ser.Baudrate := 115200;
+        t_ser.Baudrate := CINT_B115200;
         t_ser.FlowMode := fcXON_XOF;
-        t_ser.Active := true;
-        Delay(C_DELAY_MSEC);
+        //Delay(C_DELAY_MSEC);
         c_endtime := GetTickCount() + C_REBOOT_TIME;
         if SwitchOn('', c_endtime) then begin
-          t_exstrs.Clear;
-          t_exstrs.Add(CSTR_MOTOROLA);
+          t_exstrs.Clear; t_exstrs.Add(CSTR_MOTOROLA);
           result := (RecvStrExpected(t_exstrs, c_endtime) >= 0);
         end;
       end;
-      BS_MTXBL_ONLY, BS_MTXBL_UPD, BS_MTXBL_APP: begin
+      BS_MTXBL_ONLY: begin
         c_endtime := GetTickCount() + C_MANUAL_RESTART;
-        t_exstrs := TStringList.Create;
-        t_exstrs.Add(CSTR_WAITING);
+        repeat
+          t_exstrs.Clear; t_exstrs.Add('>');
+          SendStr(CSTR_SERVICE + Char(13));
+          result := (RecvStrExpected(t_exstrs, GetTickCount() + 1000) >= 0);
+          if (not result) then begin
+            t_exstrs.Clear; t_exstrs.Add(CSTR_WAITING);
+            RecvStrExpected(t_exstrs, c_endtime);
+          end;
+        until (result or (GetTickCount() >= c_endtime));
+        if result then begin
+          SendStr(CSTR_B115200 + Char(13));
+          if WaitForReading(GetTickCount() + 1000) then begin
+            if (t_ser.ReadString(s_recv) > 0) then begin
+              self.memRecv.Lines.Add('prog:<' + s_recv);
+              t_ser.Baudrate := CINT_B115200;
+              //Delay(C_DELAY_MSEC);
+            end;
+          end;
+        end;
+      end;
+      BS_MTXBL_UPD, BS_MTXBL_APP: begin
+        c_endtime := GetTickCount() + C_MANUAL_RESTART;
+        t_exstrs.Clear; t_exstrs.Add(CSTR_WAITING);
         if SwitchOn('', c_endtime) then begin
           if (RecvStrExpected(t_exstrs, c_endtime) >= 0) then begin
             SendStr(CSTR_SERVICE + Char(13));
-            //WaitForReading(c_endtime);
-            t_exstrs.Clear;
-            t_exstrs.Add(CSTR_SERVICE);
-            c_endtime := GetTickCount() + 1000;
-            SendStr(CSTR_BOOTQUE + Char(13));
-            result := (RecvStrExpected(t_exstrs, c_endtime) >= 0);
-            if result then begin
-              SendStr(CSTR_B115200 + Char(13));
-              c_endtime := GetTickCount() + 1000;
-              if WaitForReading(c_endtime) then begin
-                RecvStr(s_recv, false);
-                t_ser.Baudrate := 115200;
+            Delay(C_DELAY_MSEC); //wait till the service mode is reached
+            t_exstrs.Clear; t_exstrs.Add(CSTR_SERVICE);
+            i_trials := 0;
+            repeat
+              SendStr(CSTR_BOOTQUE + Char(13));
+              result := (RecvStrExpected(t_exstrs, GetTickCount() + 1000) >= 0);
+              if result then begin
+                SendStr(CSTR_B115200 + Char(13));
+                if WaitForReading(GetTickCount() + 1000) then begin
+                  if (t_ser.ReadString(s_recv) > 0) then begin
+                    self.memRecv.Lines.Add('prog:<' + s_recv);
+                    t_ser.Baudrate := CINT_B115200;
+                    //Delay(C_DELAY_MSEC);
+                  end;
+                end;
+              end else Delay(C_DELAY_MSEC);
+              Inc(i_trials);
+            until (result or (i_trials > 5));
+          end;
+        end;
+      end;
+      BS_XBL_UPD: begin
+        c_endtime := GetTickCount() + C_MANUAL_RESTART;
+        t_exstrs.Clear; t_exstrs.Add(CSTR_WAITING);
+        s_recv := '';
+        if SwitchOn('', c_endtime) then begin
+          c_endtime := GetTickCount() + C_REBOOT_TIME;
+          while (GetTickCount() < c_endtime) do begin
+            s_temp := ''; RecvStrInterval(s_temp, c_endtime, 100);
+            s_recv := s_recv + s_temp;
+            if HasInvalidAscii(s_recv) then begin //s-record loader, baudrate=115200
+              t_ser.Baudrate := CINT_B115200;
+              t_ser.FlowMode := fcXON_XOF;
+              //Delay(C_DELAY_MSEC);
+              result := t_ser.Active;
+              break;
+            end else begin
+              s_temp := UpperCase(s_recv);
+              if (Pos(CSTR_WAITING, s_temp) > 0) then begin
+                SendStr(CSTR_SERVICE + Char(13));
+                Delay(C_DELAY_MSEC); //wait till the service mode is reached
+                t_exstrs.Clear; t_exstrs.Add(CSTR_SERVICE);
+                i_trials := 0;
+                repeat
+                  SendStr(CSTR_BOOTQUE + Char(13));
+                  result := (RecvStrExpected(t_exstrs, GetTickCount() + 1000) >= 0);
+                  if result then begin
+                    SendStr(CSTR_B115200 + Char(13));
+                    if WaitForReading(GetTickCount() + 1000) then begin
+                      if (t_ser.ReadString(s_recv) > 0) then begin
+                        self.memRecv.Lines.Add('prog:<' + s_recv);
+                        t_ser.Baudrate := CINT_B115200;
+                        //Delay(C_DELAY_MSEC);
+                      end;
+                    end;
+                  end else Delay(C_DELAY_MSEC);
+                  Inc(i_trials);
+                until (result or (i_trials > 5));
+                break;
               end;
             end;
           end;
         end;
-        t_exstrs.Clear;
-        FreeAndNil(t_exstrs);
       end;
     end;
   end;
   c_end := GetTickCount();
-  self.memRecv.Lines.Add(format('prog[%0.3f]: boot to service [%s]; port=%d; baudrate=%d; flow control=%s',[(c_end - c_start)/1000.0, BoolToStr(result), t_ser.Port, t_ser.Baudrate, GetEnumName(TypeInfo(eFlowControl), Ord(t_ser.FlowMode))]));
+  self.memRecv.Lines.Add(format('prog[%0.3f]: enter service [%s]; port=%d; baudrate=%d; flow control=%s',[(c_end - c_start)/1000.0, BoolToStr(result), t_ser.Port, t_ser.Baudrate, GetEnumName(TypeInfo(eFlowControl), Ord(t_ser.FlowMode))]));
+  t_exstrs.Clear;
+  FreeAndNil(t_exstrs);
 end;
 
 function TFrmBootTester.ExpectStr(const str: string; var sRecv: string; const msecs: cardinal): boolean;
@@ -598,13 +661,14 @@ end;
 function TFrmBootTester.SendStr(const str: string; const bprint: boolean): boolean;
 var timeout, c_start, c_end: cardinal; s_recv: string;
 begin
-  result := true; RecvStr(s_recv, false);
+  //result := false;
+  if (t_ser.ReadString(s_recv) > 0) then self.memRecv.Lines.Add('prog:<' + s_recv);
 
   c_start := GetTickCount();
-  //timeout := c_start + c_timeout;
+  timeout := c_start + c_timeout;
   t_ser.WriteString(str);
-  //while ((t_ser.TxWaiting > 0) and (GetTickCount() < timeout)) do Delay(C_DELAY_MSEC);
-  //result := length(str);
+  while ((t_ser.TxWaiting > 0) and (GetTickCount() < timeout)) do Delay(C_DELAY_MSEC);
+  result := (t_ser.TxWaiting <= 0);
   {result := t_comport.WriteStr(str);}
   c_end := GetTickCount();
   if bprint then self.memRecv.Lines.Add(format('prog[%0.3f]:>%s', [(c_end - c_start) /1000.0, str]));
@@ -617,9 +681,9 @@ begin
   c_time := c_start + c_timeout;
   if bwait then WaitForReading(c_time);
   result := t_ser.ReadString(str);
-  if ((str<>'') and bprint) then begin
+  if (bprint) then begin
     c_end := GetTickCount();
-    self.memRecv.Lines.Add(format('prog[%0.3f]:<%s', [(c_end - c_start) /1000.0, str]));
+    self.memRecv.Lines.Add(format('prog[%0.3f]:<%s', [(c_end - c_start) /1000.0, IfThen(str='', '[empty]', str)]));
   end;
 end;
 
@@ -667,14 +731,15 @@ begin
 end;
 
 function TFrmBootTester.RecvStrExpected(const exstr: TStringList; tend: cardinal; const bcase: boolean): integer;
-var s_recv, s_input, s_temp: string; b_found: boolean; i, i_len: integer; b_timeout: boolean; c_start, c_end: cardinal;
+var s_recv, s_input, s_temp: string; b_found: boolean; i, i_len: integer; b_timeout: boolean; //c_start, c_end: cardinal;
 begin
   result := -1;
   s_recv := '';  b_found := false;
-  c_start := GetTickCount();
+//  c_start := GetTickCount();
   repeat
-    s_temp := ''; WaitForReading(tend);
-    i_len := t_ser.ReadString(s_temp);
+    s_temp := ''; //WaitForReading(tend);
+    //i_len := t_ser.ReadString(s_temp);
+    i_len := RecvStrInterval(s_temp, tend, 50);
     if (i_len > 0) then begin
       if bcase then s_recv := s_recv + s_temp
       else  s_recv := s_recv + UpperCase(s_temp);
@@ -690,10 +755,10 @@ begin
     end;
     b_timeout := (tend <= GetTickCount());
   until (b_timeout or b_found);
-  if (s_recv <> '') then begin
-    c_end := GetTickCount();
-    self.memRecv.Lines.Add(format('prog[%0.3f]:<%s', [(c_end - c_start) /1000.0, s_recv]));
-  end;
+//  if (s_recv <> '') then begin
+//    c_end := GetTickCount();
+//    self.memRecv.Lines.Add(format('prog[%0.3f]:<%s', [(c_end - c_start) /1000.0, s_recv]));
+//  end;
 end;
 
 end.
