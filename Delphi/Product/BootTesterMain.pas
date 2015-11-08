@@ -18,6 +18,11 @@ type
                 BS_XBL_UPD //one Boot Loader (of s-record loader and metronix boot loader) is just updated through BL-Updater
                 );
 
+  EDownloadProtocol = (
+                DP_MTL, //download protocol of Motorola S-Record loader
+                DP_MTX  //download protocol of metronix boot loader
+                );
+
   TFrmBootTester = class(TForm)
     memRecv: TMemo;
     btnClear: TButton;
@@ -83,6 +88,7 @@ type
     t_ser: TSerial;
     c_timeout: cardinal;
     e_bootstate: EBootState;
+    e_dlprotocol: EDownloadProtocol;
   public
     { Public-Deklarationen }
   end;
@@ -116,8 +122,6 @@ const
   CINT_B115200: integer = 115200;
   C_REBOOT_TIME: cardinal = 10000;  //10 seconds for reboot
   C_MANUAL_RESTART: cardinal = 30000;
-
-  C_MTXSET: set of EBootState = [BS_MTXBL_ONLY, BS_MTXBL_UPD, BS_MTXBL_APP];
 
 procedure Delay(const msec: cardinal);
 var i_timeout: cardinal;
@@ -169,7 +173,7 @@ begin
       lblSendFile.Caption := '0%';
       c_start := GetTickCount();
       b_break := false;
-      if (e_bootstate in C_MTXSET) then begin
+      if (e_dlprotocol = DP_MTX) then begin
         for i := 0 to t_lines.Count - 1 do begin
           i_trial := 0; b_ok := false;
           s_line := t_lines[i] + Char(13);
@@ -425,6 +429,7 @@ begin
   t_exstrs := TStringList.Create;
   c_start := GetTickCount();
   if t_ser.Active then begin
+    e_dlprotocol := DP_MTL;
     case bs of
       BS_UNKNOWN: self.memRecv.Lines.Add('prog: found unknown boot loader on this unit');
       BS_MTLBL_ONLY:begin
@@ -445,6 +450,7 @@ begin
       end;
       BS_MTXBL_ONLY: begin
         c_endtime := GetTickCount() + C_MANUAL_RESTART;
+        e_dlprotocol := DP_MTX;
         repeat
           t_exstrs.Clear; t_exstrs.Add('>');
           SendStr(CSTR_SERVICE + Char(13));
@@ -491,6 +497,7 @@ begin
             until (result or (i_trials > 5));
           end;
         end;
+        e_dlprotocol := DP_MTX;
       end;
       BS_XBL_UPD: begin
         c_endtime := GetTickCount() + C_MANUAL_RESTART;
@@ -506,6 +513,7 @@ begin
               t_ser.FlowMode := fcXON_XOF;
               //Delay(C_DELAY_MSEC);
               result := t_ser.Active;
+              e_dlprotocol := DP_MTX;
               break;
             end else begin
               s_temp := UpperCase(s_recv);
@@ -529,6 +537,7 @@ begin
                   end else Delay(C_DELAY_MSEC);
                   Inc(i_trials);
                 until (result or (i_trials > 5));
+                e_dlprotocol := DP_MTX;
                 break;
               end;
             end;
@@ -645,6 +654,7 @@ begin
   t_ser.Port := StrToInt(cmbPort.Items[cmbPort.ItemIndex]);
   c_timeout := 3000;
   e_bootstate := BS_UNKNOWN;
+  e_dlprotocol := DP_MTL;
 end;
 
 procedure TFrmBootTester.FormDestroy(Sender: TObject);
