@@ -28,17 +28,15 @@ type
     t_srecords: TStringList; //to save s-records, which is loaded last time;
   protected
     procedure LoadFile(const sfile: string); virtual; abstract;
-    procedure GetStartMessage(const tend: cardinal); virtual; abstract;
-    function  ResetDevice(const cmd: string; const tend: cardinal): boolean; virtual; abstract;
-    function  GetBootState(): EBootState; virtual; abstract;
+    procedure UpdateStartMessage(); virtual; abstract;
+    function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
     function  EnterService(const cmd: string): boolean; virtual; abstract;
-  public
-    property BootState: EBootState read GetBootState;
   public
     constructor Create();
     destructor Destroy; override;
-    
-    function Download(const fname: string): boolean; virtual; abstract;
+
+    function  GetBootState(const cmd: string): EBootState; virtual; abstract;
+    function Download(const cmd, fname: string): boolean; virtual; abstract;
   end;
 
   TComDownloader = class(TDownloader)
@@ -52,12 +50,15 @@ type
     function  RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
     function  WaitForReading(const tend: cardinal): boolean;
 
-    procedure GetStartMessage(const tend: cardinal); override;
-    function  ResetDevice(const cmd: string; const tend: cardinal): boolean; override;
-    function  GetBootState(): EBootState; override;
+    procedure UpdateStartMessage(); override;
+    function  TryBootMessageMTL(var msg: string): integer;
+    function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; override;
     function  EnterService(const cmd: string): boolean; override;
   public
-    function Download(const fname: string): boolean; override;
+    property ComObj: TSerial read t_ser write t_ser;
+  public
+    function GetBootState(const cmd: string): EBootState; override;
+    function Download(const cmd, fname: string): boolean; override;
   end;
 
 implementation
@@ -78,7 +79,9 @@ const
   CSTR_BOOTCODE: string = 'BOOTCODE';
   CSTR_B115200: string = 'B115200';
 
+  CCHR_RETURN: Char = Char(VK_RETURN);
   CINT_B115200: integer = 115200;
+  CINT_TRIALS_MAX: integer = 5;
 
   C_REBOOT_TIME: cardinal = 10000;
   C_ANSWER_WAIT: cardinal = 1000;
@@ -88,6 +91,10 @@ constructor TDownloader.Create;
 begin
 	inherited Create;
   e_dlprotocol := DP_UNDEFINED;
+  s_blmessage := '';
+  s_fwmessage := '';
+  s_lastmsg := '';
+  s_lastfile := '';
   t_srecords := TStringList.Create();
 end;
 
@@ -157,8 +164,9 @@ begin
   if bcase then s_input := exstr
   else s_input := UpperCase(exstr);
   repeat
-    s_temp := ''; result := result + RecvStrInterval(s_temp, tend, C_SHORT_INTERVAL);
+    s_temp := ''; i_len := RecvStrInterval(s_temp, tend, C_SHORT_INTERVAL);
     if (i_len > 0) then begin
+      result := result + i_len;
       if bcase then str := str + s_temp
       else  str := str + UpperCase(s_temp);
       b_found := (Pos(s_input, str) > 0);
@@ -178,12 +186,31 @@ begin
   result := (t_ser.RxWaiting > 0);
 end;
 
-procedure TComDownloader.GetStartMessage(const tend: cardinal);
+function  TComDownloader.TryBootMessageMTL(var msg: string): integer;
+const CSTR_TEST_CMD: string= 'abcdefg';
+var i_baud: integer; c_endtime: cardinal;
 begin
-
+  i_baud := t_ser.Baudrate;
+  t_ser.Baudrate := CINT_B115200;
+  SendStr(CSTR_TEST_CMD + CCHR_RETURN);
+  c_endtime := GetTickCount() + C_ANSWER_WAIT;
+  result := RecvStrInterval(msg, c_endtime, C_RECV_INTERVAL);
+  t_ser.Baudrate := i_baud;
 end;
 
-function  TComDownloader.ResetDevice(const cmd: string; const tend: cardinal): boolean;
+procedure TComDownloader.UpdateStartMessage();
+const C_BL_FW_INTERVAL: cardinal = 6000; C_FW_OUTPUT_INTERVAL: cardinal = 1500;
+var c_time: cardinal;
+begin
+  s_blmessage := ''; s_fwmessage := '';
+  c_time := GetTickCount() + C_REBOOT_TIME;
+  RecvStrInterval(s_blmessage, c_time, C_RECV_INTERVAL);
+  if (not IsValidAscii(s_blmessage)) then TryBootMessageMTL(s_blmessage);
+  c_time := GetTickCount() + C_BL_FW_INTERVAL;
+  if WaitForReading(c_time) then RecvStrInterval(s_fwmessage, c_time, C_FW_OUTPUT_INTERVAL);
+end;
+
+function  TComDownloader.ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean): boolean;
 const C_MANUAL_RESET: cardinal = 30000;
 var c_time: cardinal;  b_timeout: boolean; s_recv: string;
 begin
@@ -203,20 +230,15 @@ begin
     WaitForReading(tend);
   end;
   result := (t_ser.RxWaiting > 0);
-end;
-
-function  TComDownloader.GetBootState(): EBootState;
-begin
-
+  //receive the message
+  if (bmsg and result) then UpdateStartMessage();
 end;
 
 function TComDownloader.EnterService(const cmd: string): boolean;
-const CINT_MAX_TRIALS: integer = 5; CCHR_RETURN: Char = Char(VK_RETURN);
-var s_recv, s_temp: string; c_endtime, c_start, c_end: cardinal; t_exstrs: TStringList; i_trials: integer;
+var s_recv, s_temp: string; c_endtime: cardinal; i_trials: integer;
 begin
   result := false;
-  c_start := GetTickCount();
-  c_endtime := c_start + C_REBOOT_TIME;
+  c_endtime := GetTickCount() + C_REBOOT_TIME;
   s_recv := ''; i_trials := 0;
   if ResetDevice(cmd, c_endtime) then begin
     c_endtime := GetTickCount() + C_REBOOT_TIME;
@@ -235,7 +257,7 @@ begin
             t_ser.FlowMode := fcXON_XOF;
             e_dlprotocol := DP_MOTOROLA;
           end;
-        until (result or (i_trials > CINT_MAX_TRIALS));
+        until (result or (i_trials > CINT_TRIALS_MAX));
         break;
       end else begin
         s_temp := UpperCase(s_recv);
@@ -253,14 +275,119 @@ begin
               end;
             end else Delay(C_DELAY_ONCE);
             Inc(i_trials);
-          until (result or (i_trials > CINT_MAX_TRIALS));
+          until (result or (i_trials > CINT_TRIALS_MAX));
           e_dlprotocol := DP_METRONIX;
           break;
         end;
       end;
     end;
   end;
-  c_end := GetTickCount();
+end;
+
+function  TComDownloader.GetBootState(const cmd: string): EBootState;
+const
+  C_MTLBL   = $00010000;
+  C_MTXBL   = $00020000;
+  C_MTXUPD  = $00000001;
+  C_MTXAPP  = $00000002;
+var s_recv, s_temp, s_inblmsg, s_infwmsg: string; c_time: cardinal; b_repeat: boolean; lw_blfw: longword; t_lines: TStringList;
+begin
+  result := BS_UNKNOWN; lw_blfw := 0;
+  c_time := GetTickCount() + C_REBOOT_TIME;
+  if assigned(t_ser) then begin
+    if (not t_ser.Active) then t_ser.Active := true;
+    if (t_ser.Active and ResetDevice(cmd, c_time)) then begin
+      s_inblmsg := UpperCase(trim(s_blmessage));
+      s_infwmsg := UpperCase(trim(s_fwmessage));
+      if (Pos(CSTR_MOTOROLA, s_inblmsg) > 0) then lw_blfw := (lw_blfw or C_MTLBL);
+      if ((Pos(CSTR_WAITING, s_inblmsg) > 0) or (Pos(CSTR_BOOTCODE, s_inblmsg) > 0) or (Pos(CSTR_METRONIX, s_inblmsg) > 0))  then lw_blfw := (lw_blfw or C_MTXBL);
+
+      if (s_fwmessage <> '') then begin
+        if (Pos(CSTR_BLUPDATER, s_infwmsg) > 0)  then lw_blfw := (lw_blfw or C_MTXUPD);
+        t_lines := TStringList.Create;
+        ExtractStrings([Char(10)], [Char(13)], PChar(s_infwmsg), t_lines);
+        if ((Pos(CSTR_DONE, t_lines[t_lines.Count - 1]) > 0))  then lw_blfw := C_MTXUPD
+        else begin
+          repeat
+            c_time := GetTickCount() + C_ANSWER_WAIT;
+            t_ser.ReadString(s_recv);
+            SendStr(CSTR_BOOTQUE + CCHR_RETURN);
+            WaitForReading(c_time);
+            s_recv := ''; RecvStrInterval(s_recv, c_time, C_RECV_INTERVAL);
+            s_temp := UpperCase(trim(s_recv));
+            b_repeat := false;
+            if (Pos(CSTR_APPLICATION, s_temp) > 0) then lw_blfw := (lw_blfw or C_MTXAPP)
+            else if (Pos(UpperCase(CSTR_SERVICE), s_temp) > 0) then lw_blfw := (lw_blfw or C_MTXBL)
+            else if ((Pos(CSTR_ERROR, s_temp) > 0) or (Pos(CSTR_UNKNOWNCMD, s_temp) > 0)) then b_repeat := true;
+          until ((not b_repeat) or (GetTickCount() >= c_time));
+        end;
+        t_lines.Clear;
+        FreeAndNil(t_lines);
+      end;
+    end;
+  end;
+  case lw_blfw of
+    $00010000: result := BS_MTLBL_ONLY;
+    $00010001: result := BS_MTLBL_UPD;
+    $00010002: result := BS_MTLBL_APP;
+    $00020000: result := BS_MTXBL_ONLY;
+    $00020001: result := BS_MTXBL_UPD;
+    $00000001: result := BS_XBL_UPD;
+    $00020002: result := BS_MTXBL_APP;
+  end;
+end;
+
+function TComDownloader.Download(const cmd, fname: string): boolean;
+const C_DOWNLOAD_INTERVAL: cardinal = 6000;
+var s_line, s_file, s_recv: string; i, i_trial: integer; b_break, b_ok: boolean;
+    i_baud: integer; e_flowctrl: eFlowControl;
+begin
+  result := false;
+  if assigned(t_ser) then begin
+    if (not t_ser.Active) then t_ser.Active := true;
+    if t_ser.Active then begin
+      i_baud := t_ser.Baudrate; e_flowctrl := t_ser.FlowMode;
+      s_file := trim(fname);
+      if ((s_file <> s_lastfile) and FileExists(s_file)) then begin
+        s_lastfile := s_file;
+        t_srecords.Clear;
+        t_srecords.LoadFromFile(s_lastfile);
+      end;
+      if (t_srecords.Count > 0) then begin
+        if EnterService(cmd) then begin
+          b_break := false;
+          if (e_dlprotocol = DP_METRONIX) then begin
+            for i := 0 to t_srecords.Count - 1 do begin
+              i_trial := 0; b_ok := false;
+              s_line := t_srecords[i] + Char(13);
+              repeat
+                t_ser.WriteString(s_line);
+                s_recv := '';
+                if WaitForReading(GetTickCount() + C_DOWNLOAD_INTERVAL) then begin
+                  t_ser.ReadString(s_recv);
+                  if SameText(s_recv, '*') then b_ok := true
+                  else if SameText(s_recv, '#') then begin //repeat sending the same line
+                    Inc(i_trial);
+                    b_break := (i_trial > 20);
+                  end else b_break := true; //'@' or other char
+                end else b_break := true;  //received no data
+              until (b_break or b_ok);
+              if b_break then break;
+            end;
+          end else if (e_dlprotocol = DP_MOTOROLA) then begin
+            for i := 0 to t_srecords.Count - 1 do begin
+              t_ser.WriteString(t_srecords[i] + CCHR_RETURN);
+              while t_ser.TxWaiting > 0 do Delay(C_DELAY_ONCE);
+              Application.ProcessMessages();
+            end;
+          end else b_break := true;
+          result := (not b_break);
+        end;
+      end;
+      t_ser.Baudrate := i_baud;
+      t_ser.FlowMode := e_flowctrl;
+    end;
+  end;
 end;
 
 end.
