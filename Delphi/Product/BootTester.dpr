@@ -4,7 +4,8 @@ uses
   Forms,
   BootTesterMain in 'BootTesterMain.pas' {FrmBootTester},
   Serial3 in '..\Externals\Serial3.pas',
-  MtxDownloader in 'MtxDownloader.pas';
+  MtxDownloader in 'MtxDownloader.pas',
+  GenUtils in '..\General\GenUtils.pas';
 
 {$R *.res}
 

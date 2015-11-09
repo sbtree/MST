@@ -20,7 +20,7 @@ type
 
   EDownloadProtocol = (
                 DP_MTL, //download protocol of Motorola S-Record loader
-                DP_MTX  //download protocol of metronix boot loader
+                DP_MTX //download protocol of metronix DIS-2 boot loader
                 );
 
   TFrmBootTester = class(TForm)
@@ -80,7 +80,8 @@ type
     function GetBootMessageMTL(var msg: string): integer;
     function GetSwitchOnMessage(var blmsg, fwmsg:string; const elapse: cardinal): integer;
     function GetBootState(const blmsg, fwmsg: string): EBootState;
-    function EnterService(const bs: EBootState; const initfw: string = ''): boolean;
+    function EnterService(const cmd: string): boolean;
+    function EnterServiceMode(const bs: EBootState): boolean;
     function ExpectStr(const str: string; var sRecv: string; const msecs: cardinal): boolean;
 
   private
@@ -117,6 +118,7 @@ const
   CSTR_MOTOROLA: string = 'MOTOROLA INC. S-RECORD LOADER';
   CSTR_METRONIX: string = 'BOOTLOADER (C) METRONIX';
   CSTR_BLUPDATER: string = 'BOOTLOADER UPDATER';
+  CSTR_BOOTCODE: string = 'BOOTCODE';
 
   CSTR_B115200: string = 'B115200';
   CINT_B115200: integer = 115200;
@@ -157,14 +159,17 @@ var s_file, s_line, s_recv: string; i, i_trial: integer; t_lines: TStringList; b
     i_baud: integer; e_flowctrl: eFlowControl; c_start, c_end: cardinal;
 begin
   if not t_ser.Active then begin
-    memRecv.Lines.Add(format('prog: serial interface is deaktived: port=%d; baud=%d', [t_ser.Port, t_ser.Baudrate]));
-    exit;
+    t_ser.Active := true;
+    if not t_ser.Active then begin
+      memRecv.Lines.Add(format('prog: serial interface is deaktived: port=%d; baud=%d', [t_ser.Port, t_ser.Baudrate]));
+      exit;
+    end;
   end;
 
   i_baud := t_ser.Baudrate; e_flowctrl := t_ser.FlowMode;
   b_break := true; s_file := trim(txtFile.Text);
   if FileExists(s_file) then begin
-    if EnterService(e_bootstate) then begin
+    if EnterService('') then begin
       lblSendFile.Caption := 'loading...';
       t_lines := TStringList.Create;
       t_lines.LoadFromFile(s_file);
@@ -383,7 +388,7 @@ begin
   s_inblmsg := UpperCase(trim(blmsg));
   s_infwmsg := UpperCase(trim(fwmsg));
   if (Pos(CSTR_MOTOROLA, s_inblmsg) > 0) then lw_blfw := (lw_blfw or C_MTLBL);
-  if ((Pos(CSTR_WAITING, s_inblmsg) > 0) or (Pos(CSTR_METRONIX, s_inblmsg) > 0)) then lw_blfw := (lw_blfw or C_MTXBL);
+  if ((Pos(CSTR_WAITING, s_inblmsg) > 0) or (Pos(CSTR_BOOTCODE, s_inblmsg) > 0) or (Pos(CSTR_METRONIX, s_inblmsg) > 0))  then lw_blfw := (lw_blfw or C_MTXBL);
 
   if (fwmsg <> '') then begin
     if (Pos(CSTR_BLUPDATER, s_infwmsg) > 0)  then lw_blfw := (lw_blfw or C_MTXUPD);
@@ -422,7 +427,66 @@ begin
   end;
 end;
 
-function TFrmBootTester.EnterService(const bs: EBootState; const initfw: string): boolean;
+function TFrmBootTester.EnterService(const cmd: string): boolean;
+var s_recv, s_temp: string; c_endtime, c_start, c_end: cardinal; t_exstrs: TStringList; i_trials: integer;
+begin
+  result := false;
+  c_start := GetTickCount();
+  c_endtime := c_start + C_MANUAL_RESTART;
+  t_exstrs := TStringList.Create;
+  t_exstrs.Add(CSTR_WAITING);
+  s_recv := ''; i_trials := 0;
+  if SwitchOn(cmd, c_endtime) then begin
+    c_endtime := GetTickCount() + C_REBOOT_TIME;
+    while (GetTickCount() < c_endtime) do begin
+      s_temp := ''; RecvStrInterval(s_temp, c_endtime, 100);
+      s_recv := s_recv + s_temp;
+      if HasInvalidAscii(s_recv) then begin //s-record loader, baudrate=115200
+        t_ser.Baudrate := CINT_B115200;
+        repeat
+          SendStr(CSTR_BOOTQUE + Char(13));
+          WaitForReading(c_endtime);
+          s_recv := ''; RecvStrInterval(s_recv, c_endtime, 100);
+          s_temp := UpperCase(trim(s_recv));
+          result := (Pos(CSTR_MOTOROLA, s_temp) > 0);
+          if result then begin
+            t_ser.FlowMode := fcXON_XOF;
+            e_dlprotocol := DP_MTL;
+          end;
+        until (result or (i_trials > 5));
+        break;
+      end else begin
+        s_temp := UpperCase(s_recv);
+        if (Pos(CSTR_WAITING, s_temp) > 0) then begin
+          SendStr(CSTR_SERVICE + Char(13));
+          Delay(C_DELAY_MSEC); //wait till the service mode is reached
+          t_exstrs.Clear; t_exstrs.Add(CSTR_SERVICE);
+          i_trials := 0;
+          repeat
+            SendStr(CSTR_BOOTQUE + Char(13));
+            result := (RecvStrExpected(t_exstrs, GetTickCount() + 1000) >= 0);
+            if result then begin
+              SendStr(CSTR_B115200 + Char(13));
+              if WaitForReading(GetTickCount() + 1000) then begin
+                if (t_ser.ReadString(s_recv) > 0) then begin
+                  self.memRecv.Lines.Add('prog:<' + s_recv);
+                  t_ser.Baudrate := CINT_B115200;
+                end;
+              end;
+            end else Delay(C_DELAY_MSEC);
+            Inc(i_trials);
+          until (result or (i_trials > 5));
+          e_dlprotocol := DP_MTX;
+          break;
+        end;
+      end;
+    end;
+  end;
+  c_end := GetTickCount();
+  self.memRecv.Lines.Add(format('prog[%0.3f]: enter service [%s]; port=%d; baudrate=%d; flow control=%s',[(c_end - c_start)/1000.0, BoolToStr(result), t_ser.Port, t_ser.Baudrate, GetEnumName(TypeInfo(eFlowControl), Ord(t_ser.FlowMode))]));
+end;
+
+function TFrmBootTester.EnterServiceMode(const bs: EBootState): boolean;
 var s_recv, s_temp: string; c_endtime, c_start, c_end: cardinal; t_exstrs: TStringList; i_trials: integer;
 begin
   result := false;
@@ -510,10 +574,19 @@ begin
             s_recv := s_recv + s_temp;
             if HasInvalidAscii(s_recv) then begin //s-record loader, baudrate=115200
               t_ser.Baudrate := CINT_B115200;
-              t_ser.FlowMode := fcXON_XOF;
-              //Delay(C_DELAY_MSEC);
-              result := t_ser.Active;
-              e_dlprotocol := DP_MTX;
+              i_trials := 0;
+              repeat
+                SendStr(CSTR_BOOTQUE + Char(13));
+                WaitForReading(c_endtime);
+                s_recv := ''; RecvStrInterval(s_recv, c_endtime, 100);
+                s_temp := UpperCase(trim(s_recv));
+                result := (Pos(CSTR_MOTOROLA, s_temp) > 0);
+                if result then begin
+                  t_ser.FlowMode := fcXON_XOF;
+                  e_dlprotocol := DP_MTL;
+                end;
+                Inc(i_trials);
+              until (result or (i_trials > 5));
               break;
             end else begin
               s_temp := UpperCase(s_recv);
