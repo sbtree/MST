@@ -27,7 +27,6 @@ type
     s_lastfile: string; //to save file path (an s-record file), which is given in function Download last time;
     t_srecords: TStringList; //to save s-records, which is loaded last time;
   protected
-    procedure LoadFile(const sfile: string); virtual; abstract;
     procedure UpdateStartMessage(); virtual; abstract;
     function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
     function  EnterService(const cmd: string): boolean; virtual; abstract;
@@ -240,7 +239,7 @@ begin
   result := false;
   c_endtime := GetTickCount() + C_REBOOT_TIME;
   s_recv := ''; i_trials := 0;
-  if ResetDevice(cmd, c_endtime) then begin
+  if ResetDevice(cmd, c_endtime, false) then begin
     c_endtime := GetTickCount() + C_REBOOT_TIME;
     while (GetTickCount() < c_endtime) do begin
       s_temp := ''; RecvStrInterval(s_temp, c_endtime, C_RECV_INTERVAL);
@@ -368,7 +367,7 @@ begin
                   if SameText(s_recv, '*') then b_ok := true
                   else if SameText(s_recv, '#') then begin //repeat sending the same line
                     Inc(i_trial);
-                    b_break := (i_trial > 20);
+                    b_break := (i_trial > CINT_TRIALS_MAX);
                   end else b_break := true; //'@' or other char
                 end else b_break := true;  //received no data
               until (b_break or b_ok);

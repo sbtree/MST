@@ -4,9 +4,10 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Serial3,ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls;
+  Dialogs, StdCtrls, Serial3,ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls, MtxDownloader;
 
 type
+{
   EBootState = (
                 BS_UNKNOWN,
                 BS_MTLBL_ONLY, //only Motorola S-Record Loader exists on the board (virginal board)
@@ -22,7 +23,7 @@ type
                 DP_MTL, //download protocol of Motorola S-Record loader
                 DP_MTX //download protocol of metronix DIS-2 boot loader
                 );
-
+  }
   TFrmBootTester = class(TForm)
     memRecv: TMemo;
     btnClear: TButton;
@@ -90,6 +91,8 @@ type
     c_timeout: cardinal;
     e_bootstate: EBootState;
     e_dlprotocol: EDownloadProtocol;
+    t_downloader: TDownloader;
+    t_dlcom: TComDownloader;
   public
     { Public-Deklarationen }
   end;
@@ -100,7 +103,7 @@ var
 implementation
 
 {$R *.dfm}
-uses StrUtils, TypInfo;
+uses StrUtils, TypInfo, GenUtils;
 const
   C_DELAY_MSEC: Cardinal = 50;
   CSTR_FORMAT_TO : string = '%0.3f--------- ---------- ---------- ---------->';
@@ -125,7 +128,7 @@ const
   C_REBOOT_TIME: cardinal = 10000;  //10 seconds for reboot
   C_MANUAL_RESTART: cardinal = 30000;
 
-procedure Delay(const msec: cardinal);
+{procedure Delay(const msec: cardinal);
 var i_timeout: cardinal;
 begin
   i_timeout := GetTickCount() + msec;
@@ -133,7 +136,7 @@ begin
   until (GetTickCount() >= i_timeout);
 end;
 
-{procedure TForm1.ComPortRxChar(Sender: TObject; Count: Integer);
+procedure TForm1.ComPortRxChar(Sender: TObject; Count: Integer);
 var
   Str: String;
 begin
@@ -158,7 +161,13 @@ const C_DOWNLOAD_INTERVAL: cardinal = 6000;
 var s_file, s_line, s_recv: string; i, i_trial: integer; t_lines: TStringList; b_break, b_ok: boolean;
     i_baud: integer; e_flowctrl: eFlowControl; c_start, c_end: cardinal;
 begin
-  if not t_ser.Active then begin
+  c_start := GetTickCount();
+  memRecv.Lines.Add('prog: start downloading, please reset the unit in 10 seconds');
+  s_file := trim(txtFile.Text);
+  b_ok := t_downloader.Download('', s_file);
+  c_end := GetTickCount();
+  memRecv.Lines.Add(format('prog[%0.3f]: download is done with [result=%s]',[(c_end - c_start)/1000.0, BoolToStr(b_ok)]));
+{  if not t_ser.Active then begin
     t_ser.Active := true;
     if not t_ser.Active then begin
       memRecv.Lines.Add(format('prog: serial interface is deaktived: port=%d; baud=%d', [t_ser.Port, t_ser.Baudrate]));
@@ -178,7 +187,7 @@ begin
       lblSendFile.Caption := '0%';
       c_start := GetTickCount();
       b_break := false;
-      if (e_dlprotocol = DP_MTX) then begin
+      if (e_dlprotocol = DP_METRONIX) then begin
         for i := 0 to t_lines.Count - 1 do begin
           i_trial := 0; b_ok := false;
           s_line := t_lines[i] + Char(13);
@@ -222,7 +231,7 @@ begin
   end;
   t_ser.Baudrate := i_baud;
   t_ser.FlowMode := e_flowctrl;
-  self.memRecv.Lines.Add(format('prog: download is finished with [%s]; port=%d; baudrate=%d; flow control=%s',[BoolToStr(not b_break), t_ser.Port, t_ser.Baudrate, GetEnumName(TypeInfo(eFlowControl), Ord(t_ser.FlowMode))]));
+  self.memRecv.Lines.Add(format('prog: download is finished with [%s]; port=%d; baudrate=%d; flow control=%s',[BoolToStr(not b_break), t_ser.Port, t_ser.Baudrate, GetEnumName(TypeInfo(eFlowControl), Ord(t_ser.FlowMode))]));}
 end;
 
 procedure TFrmBootTester.Transmit();
@@ -451,7 +460,7 @@ begin
           result := (Pos(CSTR_MOTOROLA, s_temp) > 0);
           if result then begin
             t_ser.FlowMode := fcXON_XOF;
-            e_dlprotocol := DP_MTL;
+            e_dlprotocol := DP_MOTOROLA;
           end;
         until (result or (i_trials > 5));
         break;
@@ -476,7 +485,7 @@ begin
             end else Delay(C_DELAY_MSEC);
             Inc(i_trials);
           until (result or (i_trials > 5));
-          e_dlprotocol := DP_MTX;
+          e_dlprotocol := DP_METRONIX;
           break;
         end;
       end;
@@ -493,7 +502,7 @@ begin
   t_exstrs := TStringList.Create;
   c_start := GetTickCount();
   if t_ser.Active then begin
-    e_dlprotocol := DP_MTL;
+    e_dlprotocol := DP_MOTOROLA;
     case bs of
       BS_UNKNOWN: self.memRecv.Lines.Add('prog: found unknown boot loader on this unit');
       BS_MTLBL_ONLY:begin
@@ -514,7 +523,7 @@ begin
       end;
       BS_MTXBL_ONLY: begin
         c_endtime := GetTickCount() + C_MANUAL_RESTART;
-        e_dlprotocol := DP_MTX;
+        e_dlprotocol := DP_METRONIX;
         repeat
           t_exstrs.Clear; t_exstrs.Add('>');
           SendStr(CSTR_SERVICE + Char(13));
@@ -561,7 +570,7 @@ begin
             until (result or (i_trials > 5));
           end;
         end;
-        e_dlprotocol := DP_MTX;
+        e_dlprotocol := DP_METRONIX;
       end;
       BS_XBL_UPD: begin
         c_endtime := GetTickCount() + C_MANUAL_RESTART;
@@ -583,7 +592,7 @@ begin
                 result := (Pos(CSTR_MOTOROLA, s_temp) > 0);
                 if result then begin
                   t_ser.FlowMode := fcXON_XOF;
-                  e_dlprotocol := DP_MTL;
+                  e_dlprotocol := DP_MOTOROLA;
                 end;
                 Inc(i_trials);
               until (result or (i_trials > 5));
@@ -610,7 +619,7 @@ begin
                   end else Delay(C_DELAY_MSEC);
                   Inc(i_trials);
                 until (result or (i_trials > 5));
-                e_dlprotocol := DP_MTX;
+                e_dlprotocol := DP_METRONIX;
                 break;
               end;
             end;
@@ -664,14 +673,20 @@ end;
 procedure TFrmBootTester.btnStateQueClick(Sender: TObject);
 var s_blmsg, s_fwmsg: string; t_start, t_end: cardinal;
 begin
-  if not t_ser.Active then  t_ser.Active := true;
+  t_start := GetTickCount();
+  memRecv.Lines.Add('prog: query boot state, please reset the unit in 10 seconds');
+  e_bootstate := t_downloader.GetBootState('');
+  t_end := GetTickCount();
+  memRecv.Lines.Add(format('prog[%0.3f]: boot state is %s',[(t_end - t_start)/1000.0, GetEnumName(TypeInfo(EBootState), Ord(e_bootstate))]));
+
+{  if not t_ser.Active then  t_ser.Active := true;
   if t_ser.Active then begin
     t_start := GetTickCount();
     GetSwitchOnMessage(s_blmsg, s_fwmsg, C_MANUAL_RESTART);
     e_bootstate := GetBootState(s_blmsg, s_fwmsg);
     t_end := GetTickCount();
     memRecv.Lines.Add(format('prog[%0.3f]: boot state is %s',[(t_end - t_start)/1000.0, GetEnumName(TypeInfo(EBootState), Ord(e_bootstate))]));
-  end;
+  end; }
 end;
 
 procedure TFrmBootTester.chbRecvClick(Sender: TObject);
@@ -727,12 +742,16 @@ begin
   t_ser.Port := StrToInt(cmbPort.Items[cmbPort.ItemIndex]);
   c_timeout := 3000;
   e_bootstate := BS_UNKNOWN;
-  e_dlprotocol := DP_MTL;
+  e_dlprotocol := DP_MOTOROLA;
+  t_dlcom := TComDownloader.Create;
+  t_downloader := t_dlcom;
+  t_dlcom.ComObj := t_ser;
 end;
 
 procedure TFrmBootTester.FormDestroy(Sender: TObject);
 begin
   FreeAndNil(t_ser);
+  FreeAndNil(t_downloader);
 end;
 
 procedure TFrmBootTester.lstSendingDblClick(Sender: TObject);
