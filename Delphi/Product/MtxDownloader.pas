@@ -26,7 +26,8 @@ type
     s_lastmsg: string; //to save information in the last action
     s_lastfile: string; //to save file path (an s-record file), which is given in function Download last time;
     t_srecords: TStringList; //to save s-records, which is loaded last time;
-    t_progress: TProgressBar;
+    t_progress: TProgressBar; //to illustrate the progress of the download
+    t_messages: TStrings; //to output messages
   protected
     procedure UpdateStartMessage(); virtual; abstract;
     function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
@@ -35,6 +36,7 @@ type
     constructor Create();
     destructor Destroy; override;
 
+    property Messages: TStrings write t_messages;
     property ProgressBar: TProgressBar write t_progress;
     function GetBootState(const cmd: string): EBootState; virtual; abstract;
     function Download(const cmd, fname: string): boolean; virtual; abstract;
@@ -63,7 +65,7 @@ type
   end;
 
 implementation
-uses Windows, SysUtils, GenUtils, Forms;
+uses Windows, SysUtils, GenUtils, Forms, TypInfo;
 
 const
   CSTR_BOOTQUE: string = 'BOOT?';
@@ -79,6 +81,7 @@ const
   CSTR_BLUPDATER: string = 'BOOTLOADER UPDATER';
   CSTR_BOOTCODE: string = 'BOOTCODE';
   CSTR_B115200: string = 'B115200';
+  CSTR_POWER_ONOFF: string = 'Please manually reset the unit using power off/on...';
 
   CCHR_RETURN: Char = Char(VK_RETURN);
   CINT_B115200: integer = 115200;
@@ -114,6 +117,7 @@ begin
   t_ser.WriteString(str);
   while ((t_ser.TxWaiting > 0) and (GetTickCount() < c_time)) do Delay(C_DELAY_ONCE);
   result := (t_ser.TxWaiting <= 0);
+  if assigned(t_messages) then t_messages.Add(format('[%s]:>%s', [DateTimeToStr(Now()), str]));
 end;
 
 function  TComDownloader.RecvStr(var str: string; const bwait: boolean): integer;
@@ -123,6 +127,7 @@ begin
   c_time := GetTickCount() + C_ANSWER_WAIT;
   if bwait then WaitForReading(c_time);
   result := t_ser.ReadString(str);
+  if assigned(t_messages) then t_messages.Add(format('[%s]:<%s', [DateTimeToStr(Now()), str]));
 end;
 
 function  TComDownloader.RecvStrTimeout(var str: string; const tend: cardinal): integer;
@@ -137,6 +142,7 @@ begin
       result := result + i_len;
     end;
   until (tend <= GetTickCount());
+  if assigned(t_messages) then t_messages.Add(format('[%s]:<%s', [DateTimeToStr(Now()), str]));
 end;
 
 function  TComDownloader.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
@@ -155,6 +161,7 @@ begin
     end;
     b_timeout := (tend <= GetTickCount());
   until (b_timeout or b_break);
+  if assigned(t_messages) then t_messages.Add(format('[%s]:<%s', [DateTimeToStr(Now()), str]));
 end;
 
 function  TComDownloader.RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
@@ -220,12 +227,14 @@ begin
   if ((cmd = '-1') or (cmd = '')) then begin //manually reset
     c_time := GetTickCount() + C_MANUAL_RESET; //set timeout
     //wait for the anwser from the unit
+    if assigned(t_messages) then t_messages.Add(format('%s %ds', [CSTR_POWER_ONOFF, Round(C_MANUAL_RESET/1000)]));
     repeat
+      if assigned(t_messages) then t_messages[t_messages.Count - 1] := format('%s %ds', [CSTR_POWER_ONOFF, Round((c_time - GetTickCount())/1000)]);
       Delay(C_DELAY_ONCE);
       b_timeout := (GetTickCount() >= c_time);
     until (b_timeout or (t_ser.RxWaiting > 0));
   end else begin
-    
+    if assigned(t_messages) then t_messages.Add(format('[%s]: unit is starting...', [DateTimeToStr(Now())]));
     if TryStrToInt(cmd, i_relay) then begin
       //todo: reset by relay (automatically hard reset)
     end else SendStr(cmd + Char(VK_RETURN)); //reset through command (soft rest)
@@ -338,6 +347,7 @@ begin
     $00000001: result := BS_XBL_UPD;
     $00020002: result := BS_MTXBL_APP;
   end;
+  if assigned(t_messages) then t_messages.Add(format('[%s]: boot state is %s', [DateTimeToStr(Now()), GetEnumName(TypeInfo(EBootState), Ord(result))]));
 end;
 
 function TComDownloader.Download(const cmd, fname: string): boolean;
@@ -352,6 +362,7 @@ begin
       i_baud := t_ser.Baudrate; e_flowctrl := t_ser.FlowMode;
       s_file := trim(fname);
       if ((s_file <> s_lastfile) and FileExists(s_file)) then begin
+        if assigned(t_messages) then t_messages.Add(format('[%s]: loading file ''%s''', [DateTimeToStr(Now()), s_file]));
         s_lastfile := s_file;
         t_srecords.Clear;
         t_srecords.LoadFromFile(s_lastfile);
@@ -366,6 +377,8 @@ begin
 
         if EnterService(cmd) then begin
           b_break := false;
+          if assigned(t_messages) then t_messages.Add(format('[%s]: download started', [DateTimeToStr(Now())]));
+
           if (e_dlprotocol = DP_METRONIX) then begin
             for i := 0 to t_srecords.Count - 1 do begin
               i_trial := 0; b_ok := false;
@@ -394,6 +407,7 @@ begin
             end;
           end else b_break := true;
           result := (not b_break);
+          if assigned(t_messages) then t_messages.Add(format('[%s]: download is over with %d s-records', [DateTimeToStr(Now()), t_srecords.Count]));
         end;
       end;
       t_ser.Baudrate := i_baud;

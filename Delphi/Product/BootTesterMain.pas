@@ -162,11 +162,11 @@ var s_file, s_line, s_recv: string; i, i_trial: integer; t_lines: TStringList; b
     i_baud: integer; e_flowctrl: eFlowControl; c_start, c_end: cardinal;
 begin
   c_start := GetTickCount();
-  memRecv.Lines.Add('prog: start downloading, please reset the unit in 10 seconds');
+  //memRecv.Lines.Add('prog: start downloading, please reset the unit in 10 seconds');
   s_file := trim(txtFile.Text);
   b_ok := t_downloader.Download('Reset!', s_file);
   c_end := GetTickCount();
-  memRecv.Lines.Add(format('prog[%0.3f]: download is done with [result=%s]',[(c_end - c_start)/1000.0, BoolToStr(b_ok)]));
+  //memRecv.Lines.Add(format('prog[%0.3f]: download is done with [result=%s]',[(c_end - c_start)/1000.0, BoolToStr(b_ok)]));
 {  if not t_ser.Active then begin
     t_ser.Active := true;
     if not t_ser.Active then begin
@@ -674,10 +674,8 @@ procedure TFrmBootTester.btnStateQueClick(Sender: TObject);
 var s_blmsg, s_fwmsg: string; t_start, t_end: cardinal;
 begin
   t_start := GetTickCount();
-  memRecv.Lines.Add('prog: query boot state, please reset the unit in 10 seconds');
   e_bootstate := t_downloader.GetBootState('');
   t_end := GetTickCount();
-  memRecv.Lines.Add(format('prog[%0.3f]: boot state is %s',[(t_end - t_start)/1000.0, GetEnumName(TypeInfo(EBootState), Ord(e_bootstate))]));
 
 {  if not t_ser.Active then  t_ser.Active := true;
   if t_ser.Active then begin
@@ -747,6 +745,7 @@ begin
   t_downloader := t_dlcom;
   t_dlcom.ComObj := t_ser;
   t_dlcom.ProgressBar := pgbSendFile;
+  t_dlcom.Messages := memRecv.Lines;
 end;
 
 procedure TFrmBootTester.FormDestroy(Sender: TObject);
