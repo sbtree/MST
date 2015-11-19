@@ -1,7 +1,7 @@
 unit MtxDownloader;
 
 interface
-uses Serial3, Classes;
+uses Serial3, Classes, ComCtrls;
 type
   EBootState = (
                 BS_UNKNOWN,
@@ -26,6 +26,7 @@ type
     s_lastmsg: string; //to save information in the last action
     s_lastfile: string; //to save file path (an s-record file), which is given in function Download last time;
     t_srecords: TStringList; //to save s-records, which is loaded last time;
+    t_progress: TProgressBar;
   protected
     procedure UpdateStartMessage(); virtual; abstract;
     function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
@@ -34,7 +35,8 @@ type
     constructor Create();
     destructor Destroy; override;
 
-    function  GetBootState(const cmd: string): EBootState; virtual; abstract;
+    property ProgressBar: TProgressBar write t_progress;
+    function GetBootState(const cmd: string): EBootState; virtual; abstract;
     function Download(const cmd, fname: string): boolean; virtual; abstract;
   end;
 
@@ -211,7 +213,7 @@ end;
 
 function  TComDownloader.ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean): boolean;
 const C_MANUAL_RESET: cardinal = 30000;
-var c_time: cardinal;  b_timeout: boolean; s_recv: string;
+var c_time: cardinal;  b_timeout: boolean; s_recv: string; i_relay: integer;
 begin
   //clear buffers of the serial interface
   t_ser.ReadString(s_recv);
@@ -223,8 +225,10 @@ begin
       b_timeout := (GetTickCount() >= c_time);
     until (b_timeout or (t_ser.RxWaiting > 0));
   end else begin
-    //todo: reset by relay (automatically hard reset)
-    //todo: reset through command (soft rest)
+    
+    if TryStrToInt(cmd, i_relay) then begin
+      //todo: reset by relay (automatically hard reset)
+    end else SendStr(cmd + Char(VK_RETURN)); //reset through command (soft rest)
     // wait for that the first char arrives in C_RESET_TIMEOUT milliseconds after resetting
     WaitForReading(tend);
   end;
@@ -352,7 +356,14 @@ begin
         t_srecords.Clear;
         t_srecords.LoadFromFile(s_lastfile);
       end;
+
       if (t_srecords.Count > 0) then begin
+        if assigned(t_progress) then begin
+          t_progress.Min := 0;
+          t_progress.Position := 0;
+          t_progress.Max := t_srecords.Count;
+        end;
+
         if EnterService(cmd) then begin
           b_break := false;
           if (e_dlprotocol = DP_METRONIX) then begin
@@ -372,12 +383,14 @@ begin
                 end else b_break := true;  //received no data
               until (b_break or b_ok);
               if b_break then break;
+              if assigned(t_progress) then t_progress.Position := i + 1;
             end;
           end else if (e_dlprotocol = DP_MOTOROLA) then begin
             for i := 0 to t_srecords.Count - 1 do begin
               t_ser.WriteString(t_srecords[i] + CCHR_RETURN);
               while t_ser.TxWaiting > 0 do Delay(C_DELAY_ONCE);
               Application.ProcessMessages();
+              if assigned(t_progress) then t_progress.Position := i + 1;
             end;
           end else b_break := true;
           result := (not b_break);

@@ -164,7 +164,7 @@ begin
   c_start := GetTickCount();
   memRecv.Lines.Add('prog: start downloading, please reset the unit in 10 seconds');
   s_file := trim(txtFile.Text);
-  b_ok := t_downloader.Download('', s_file);
+  b_ok := t_downloader.Download('Reset!', s_file);
   c_end := GetTickCount();
   memRecv.Lines.Add(format('prog[%0.3f]: download is done with [result=%s]',[(c_end - c_start)/1000.0, BoolToStr(b_ok)]));
 {  if not t_ser.Active then begin
@@ -746,6 +746,7 @@ begin
   t_dlcom := TComDownloader.Create;
   t_downloader := t_dlcom;
   t_dlcom.ComObj := t_ser;
+  t_dlcom.ProgressBar := pgbSendFile;
 end;
 
 procedure TFrmBootTester.FormDestroy(Sender: TObject);
