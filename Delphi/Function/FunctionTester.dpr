@@ -10,7 +10,8 @@ uses
   DataBuffer in '..\General\DataBuffer.pas',
   ConnBase in '..\Comm\ConnBase.pas',
   ProtocolBase in '..\Comm\ProtocolBase.pas',
-  GenUtils in '..\General\GenUtils.pas';
+  GenUtils in '..\General\GenUtils.pas',
+  FunctionCaller in 'FunctionCaller.pas';
 
 {$R *.res}
 

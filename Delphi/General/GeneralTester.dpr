@@ -4,7 +4,8 @@ uses
   Forms,
   DataBuffer in 'DataBuffer.pas',
   GenUtils in 'GenUtils.pas',
-  FormGeneralTester in 'FormGeneralTester.pas' {frmGeneralTester};
+  FormGeneralTester in 'FormGeneralTester.pas' {frmGeneralTester},
+  TextMessage in 'TextMessage.pas';
 
 {$R *.res}
 

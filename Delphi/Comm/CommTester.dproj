@@ -42,7 +42,9 @@
     </DelphiCompile>
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
+    <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="ConnBase.pas" />
+    <DCCReference Include="ConnectorBase.pas" />
     <DCCReference Include="FormCommTester.pas">
       <Form>frmCommTester</Form>
     </DCCReference>
