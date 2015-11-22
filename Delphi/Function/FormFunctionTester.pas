@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, FuncFlashRunner, StdCtrls;
+  Dialogs, StdCtrls, FunctionCaller;
 
 type
   TFormFTMain = class(TForm)
@@ -24,14 +24,18 @@ implementation
 {$R *.dfm}
 
 procedure TFormFTMain.btnTestClick(Sender: TObject);
-var t_fr_set_dm: FR_Set_DM;
+//var t_fr_set_dm: FR_Set_DM;
+var t_fcaller: TFunctionCaller;
 begin
-  t_fr_set_dm := FR_Set_DM.Create;
+  t_fcaller := TFunctionCaller.Create;
+  t_fcaller.CallFunction('TestFunc', 'abc');
+  t_fcaller.Free;
+{  t_fr_set_dm := FR_Set_DM.Create;
 
   t_fr_set_dm.Parameterize('0 12345');
   t_fr_set_dm.Initilize('');
   t_fr_set_dm.Execute('');
-  FreeAndNil(t_fr_set_dm);
+  FreeAndNil(t_fr_set_dm);  }
 end;
 
 end.
