@@ -28,7 +28,7 @@ procedure TFormFTMain.btnTestClick(Sender: TObject);
 var t_fcaller: TFunctionCaller;
 begin
   t_fcaller := TFunctionCaller.Create;
-  t_fcaller.CallFunction('TestFunc', 'abc');
+  t_fcaller.CallFunction('TestFunc1', 'abc');
   t_fcaller.Free;
 {  t_fr_set_dm := FR_Set_DM.Create;
 

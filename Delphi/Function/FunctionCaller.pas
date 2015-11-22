@@ -29,7 +29,7 @@ begin
   if (self.MethodAddress(func) <> Nil) then begin
     t_method.Code := self.MethodAddress(func);
     result := ScriptFunction(t_method)(par);
-  end else AddMessage('function ''' + func + ''' is not found', ML_ERROR);
+  end else AddMessage('script function "' + func + '" is not found.', ML_ERROR);
 end;
 
 function TFunctionCaller.TestFunc(const par: string): boolean;

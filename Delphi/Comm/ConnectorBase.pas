@@ -108,6 +108,4 @@ begin
   AddMessage('Virtual function ''WaitForReading'' should be reimplemented.', ML_WARNING);
 end;
 
-
-
 end.
