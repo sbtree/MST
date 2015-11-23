@@ -1,7 +1,7 @@
 unit FunctionBase;
 
 interface
-uses Classes;
+uses Classes, TextMessage;
 type
   TStepResult = class
   protected
@@ -39,6 +39,7 @@ type
     t_result: TStepResult;
     b_toexit: boolean;
     i_lasterr:integer;
+    t_messager: TTextMessager;
 
     s_para, s_init, s_exec, s_vali, s_fina: string;
   protected
