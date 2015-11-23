@@ -7,7 +7,7 @@
 // History      :
 //==============================================================================
 unit TextMessage;
-
+{$M+}
 interface
 uses Classes;
 type
@@ -21,8 +21,7 @@ type
 
   TTextMessager = class
   protected
-    t_messages: TStrings; //saves messages. it is created in constructor and replaced by SetMessages
-    b_msgdel: boolean; //indicates if t_messages should be freed in destructor
+    t_msgextern, t_msgintern: TStrings; //saves messages. it is created in constructor and replaced by SetMessages
     e_threshold: EMessageLevel; //indicates threshold of message level. The message which has greater level than this value, can be appended to t_messages
   protected
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
@@ -31,13 +30,14 @@ type
     constructor Create();
     destructor  Destroy(); override;
 
-    property Messages: TStrings read t_messages write SetMessages;
+    property Messages: TStrings read t_msgextern write SetMessages;
     property MessageThreshold: EMessageLevel read e_threshold write e_threshold;
   end;
 
 implementation
 uses SysUtils;
 
+//define constant strings for EMessageLevel
 const CSTR_MLKEYS: array[EMessageLevel] of string = (
                    'info',
                    'warning',
@@ -48,34 +48,28 @@ const CSTR_MLKEYS: array[EMessageLevel] of string = (
 constructor TTextMessager.Create();
 begin
   inherited Create();
-  t_messages := TStringList.Create;
-  b_msgdel := true;
+  t_msgintern := TStringList.Create;
+  t_msgextern := t_msgintern;
   e_threshold := ML_INFO;
 end;
 
 destructor TTextMessager.Destroy();
 begin
-  if b_msgdel then begin
-    t_messages.Clear;
-    FreeAndNil(t_messages);
-  end;
+  t_msgintern.Clear;
+  t_msgintern.Free;
   inherited Destroy;
 end;
 
 procedure TTextMessager.AddMessage(const text: string; const level: EMessageLevel);
 begin
   if ((level >= e_threshold) and (text <> '')) then
-    t_messages.Add(format('[%s]:[%s]%s', [DateTimeToStr(Now()),CSTR_MLKEYS[level], text]));
+    t_msgextern.Add(format('[%s]:[%s]%s', [DateTimeToStr(Now()),CSTR_MLKEYS[level], text]));
 end;
 
 procedure TTextMessager.SetMessages(const msg: TStrings);
 begin
-  if (assigned(msg) and (msg <> t_messages)) then begin
-    msg.AddStrings(t_messages);
-    t_messages.Clear;
-    FreeAndNil(t_messages);
-    b_msgdel := false;
-  end;
+  if assigned(msg) then t_msgextern := msg
+  else t_msgextern := t_msgintern;
 end;
 
 end.

@@ -3,14 +3,7 @@
 *.tvsconfig
 *.dcu
 *.exe
-*.~1~
-*.~2~
 *.identcache
 *.identcache
 *.local
-<<<<<<< HEAD
-=======
-*.local
-*.local
->>>>>>> origin/master
-*.local
+**/_history

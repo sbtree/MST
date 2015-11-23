@@ -46,6 +46,8 @@
     <DCCReference Include="FormFunctionTester.pas">
       <Form>FormFTMain</Form>
     </DCCReference>
+    <DCCReference Include="FuncFlashRunner.pas" />
+    <DCCReference Include="FunctionBase.pas" />
     <DCCReference Include="FunctionCaller.pas" />
     <None Include="ModelSupport_FunctionTester\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\default.txvpck" />

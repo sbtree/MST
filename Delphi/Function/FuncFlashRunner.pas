@@ -1,7 +1,7 @@
 unit FuncFlashRunner;
 
 interface
-uses Classes;
+uses Classes, FunctionBase;
 
 type
   FR_Set_DM = class(TFunctionBase)

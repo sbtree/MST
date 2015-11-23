@@ -3,7 +3,18 @@ unit FunctionCaller;
 interface
 uses TextMessage;
 type
+  //define prototype of script functions
   ScriptFunction = function(const par: string): boolean of object;
+
+  //define options for calling script function
+  ECallOption = (
+                CO_NORMAL,
+                CO_DIAGNOSE,
+                CO_SYNTAX,
+                CO_SIMULATE
+                );
+
+  //define class of function caller, which calls script functions
   TFunctionCaller = class(TTextMessager)
   protected
     t_method: TMethod;
@@ -11,6 +22,7 @@ type
     constructor Create;
     function CallFunction(const func, par: string): boolean;
 
+  //all script functions have to be written as publisched function
   published
     function TestFunc(const par: string): boolean;
   end;
