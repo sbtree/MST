@@ -54,6 +54,7 @@ type
     function  WaitForReading(const tend: cardinal): boolean;
 
     procedure UpdateStartMessage(); override;
+    procedure ResetSerial();
     function  TryBootMessageMTL(var msg: string): integer;
     function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; override;
     function  EnterService(const cmd: string): boolean; override;
@@ -85,6 +86,7 @@ const
 
   CCHR_RETURN: Char = Char(VK_RETURN);
   CINT_B115200: integer = 115200;
+  CINT_B9600:   integer = 9600;
   CINT_TRIALS_MAX: integer = 5;
 
   C_REBOOT_TIME: cardinal = 10000;
@@ -218,6 +220,12 @@ begin
   if WaitForReading(c_time) then RecvStrInterval(s_fwmessage, c_time, C_FW_OUTPUT_INTERVAL);
 end;
 
+procedure TComDownloader.ResetSerial();
+begin
+  t_ser.Baudrate := CINT_B9600;
+  t_ser.FlowMode := fcNone;
+end;
+
 function  TComDownloader.ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean): boolean;
 const C_MANUAL_RESET: cardinal = 30000;
 var c_time: cardinal;  b_timeout: boolean; s_recv: string; i_relay: integer;
@@ -226,6 +234,7 @@ begin
   t_ser.ReadString(s_recv);
   if ((cmd = '-1') or (cmd = '')) then begin //manually reset
     c_time := GetTickCount() + C_MANUAL_RESET; //set timeout
+    ResetSerial();
     //wait for the anwser from the unit
     if assigned(t_messages) then t_messages.Add(format('%s %ds', [CSTR_POWER_ONOFF, Round(C_MANUAL_RESET/1000)]));
     repeat
@@ -238,6 +247,7 @@ begin
     if TryStrToInt(cmd, i_relay) then begin
       //todo: reset by relay (automatically hard reset)
     end else SendStr(cmd + Char(VK_RETURN)); //reset through command (soft rest)
+    ResetSerial();
     // wait for that the first char arrives in C_RESET_TIMEOUT milliseconds after resetting
     WaitForReading(tend);
   end;
@@ -359,7 +369,7 @@ begin
   if assigned(t_ser) then begin
     if (not t_ser.Active) then t_ser.Active := true;
     if t_ser.Active then begin
-      i_baud := t_ser.Baudrate; e_flowctrl := t_ser.FlowMode;
+      //i_baud := t_ser.Baudrate; e_flowctrl := t_ser.FlowMode;
       s_file := trim(fname);
       if ((s_file <> s_lastfile) and FileExists(s_file)) then begin
         if assigned(t_messages) then t_messages.Add(format('[%s]: loading file ''%s''', [DateTimeToStr(Now()), s_file]));
@@ -410,9 +420,9 @@ begin
           if assigned(t_messages) then t_messages.Add(format('[%s]: download is over with %d s-records', [DateTimeToStr(Now()), t_srecords.Count]));
         end;
       end;
-      t_ser.Baudrate := i_baud;
-      t_ser.FlowMode := e_flowctrl;
-    end;
+      //t_ser.Baudrate := i_baud;
+      //t_ser.FlowMode := e_flowctrl;
+    end else ;
   end;
 end;
 
