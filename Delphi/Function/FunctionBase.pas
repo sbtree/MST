@@ -61,7 +61,7 @@ type
 
   StateSet= set of EFunctionState;
 const
-  C_FUNC_STATES: array[LOW(EFunctionEvent)..HIGH(EFunctionEvent)] of StateSet = (
+  C_FUNC_STATES: array[EFunctionEvent] of StateSet = (
                 [FS_UNDEFINED, FS_PARAMETERIZED, FS_INITIALIZED, FS_FINISHED, FS_VALIDATED, FS_FINALIZED],
                 [FS_PARAMETERIZED, FS_INITIALIZED, FS_FINISHED, FS_VALIDATED, FS_FINALIZED],
                 [FS_INITIALIZED, FS_FINISHED, FS_VALIDATED],
