@@ -52,9 +52,9 @@ type
     function  RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer;
     function  RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
     function  WaitForReading(const tend: cardinal): boolean;
+    procedure ResetSerial();
 
     procedure UpdateStartMessage(); override;
-    procedure ResetSerial();
     function  TryBootMessageMTL(var msg: string): integer;
     function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; override;
     function  EnterService(const cmd: string): boolean; override;
@@ -208,6 +208,12 @@ begin
   t_ser.Baudrate := i_baud;
 end;
 
+procedure TComDownloader.ResetSerial();
+begin
+  t_ser.Baudrate := CINT_B9600;
+  t_ser.FlowMode := fcNone;
+end;
+
 procedure TComDownloader.UpdateStartMessage();
 const C_BL_FW_INTERVAL: cardinal = 6000; C_FW_OUTPUT_INTERVAL: cardinal = 1500;
 var c_time: cardinal;
@@ -218,12 +224,6 @@ begin
   if (not IsValidAscii(s_blmessage)) then TryBootMessageMTL(s_blmessage);
   c_time := GetTickCount() + C_BL_FW_INTERVAL;
   if WaitForReading(c_time) then RecvStrInterval(s_fwmessage, c_time, C_FW_OUTPUT_INTERVAL);
-end;
-
-procedure TComDownloader.ResetSerial();
-begin
-  t_ser.Baudrate := CINT_B9600;
-  t_ser.FlowMode := fcNone;
 end;
 
 function  TComDownloader.ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean): boolean;
