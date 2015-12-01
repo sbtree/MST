@@ -50,7 +50,7 @@ type
     procedure SetToExit();
 
     function Parameterize(const str: string): boolean; virtual;
-    function Initilize(const str: string): boolean; virtual;
+    function Initialize(const str: string): boolean; virtual;
     function Execute(const str: string): boolean; virtual;
     function Validate(const str: string): boolean; virtual;
     function Finalize(const str: string): boolean; virtual;
@@ -121,7 +121,7 @@ begin
   PostEvent(FE_PARAMETERIZE, result);
 end;
 
-function TFunctionBase.Initilize(const str: string): boolean;
+function TFunctionBase.Initialize(const str: string): boolean;
 begin
   result := (e_fstate in C_FUNC_STATES[FE_INITIALIZE]);
   PostEvent(FE_INITIALIZE, result);

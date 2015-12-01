@@ -247,7 +247,7 @@ begin
     if TryStrToInt(cmd, i_relay) then begin
       //todo: reset by relay (automatically hard reset)
     end else SendStr(cmd + Char(VK_RETURN)); //reset through command (soft rest)
-    ResetSerial();
+    //ResetSerial();
     // wait for that the first char arrives in C_RESET_TIMEOUT milliseconds after resetting
     WaitForReading(tend);
   end;
@@ -279,6 +279,7 @@ begin
             t_ser.FlowMode := fcXON_XOF;
             e_dlprotocol := DP_MOTOROLA;
           end;
+          Inc(i_trials);
         until (result or (i_trials > CINT_TRIALS_MAX));
         break;
       end else begin
@@ -363,13 +364,11 @@ end;
 function TComDownloader.Download(const cmd, fname: string): boolean;
 const C_DOWNLOAD_INTERVAL: cardinal = 6000;
 var s_line, s_file, s_recv: string; i, i_trial: integer; b_break, b_ok: boolean;
-    i_baud: integer; e_flowctrl: eFlowControl;
 begin
   result := false;
   if assigned(t_ser) then begin
     if (not t_ser.Active) then t_ser.Active := true;
     if t_ser.Active then begin
-      //i_baud := t_ser.Baudrate; e_flowctrl := t_ser.FlowMode;
       s_file := trim(fname);
       if ((s_file <> s_lastfile) and FileExists(s_file)) then begin
         if assigned(t_messages) then t_messages.Add(format('[%s]: loading file ''%s''', [DateTimeToStr(Now()), s_file]));
@@ -420,8 +419,6 @@ begin
           if assigned(t_messages) then t_messages.Add(format('[%s]: download is over with %d s-records', [DateTimeToStr(Now()), t_srecords.Count]));
         end;
       end;
-      //t_ser.Baudrate := i_baud;
-      //t_ser.FlowMode := e_flowctrl;
     end else ;
   end;
 end;

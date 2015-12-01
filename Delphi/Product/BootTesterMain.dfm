@@ -36,7 +36,7 @@ object FrmBootTester: TFrmBootTester
       Height = 13
       Caption = 'Baudrate:'
     end
-    object cmbPort: TComboBox
+    object cmbPortTest: TComboBox
       Left = 49
       Top = 23
       Width = 48
@@ -45,7 +45,7 @@ object FrmBootTester: TFrmBootTester
       ItemIndex = 0
       TabOrder = 0
       Text = '1'
-      OnChange = cmbPortChange
+      OnChange = cmbPortTestChange
       Items.Strings = (
         '1'
         '2'
@@ -214,6 +214,13 @@ object FrmBootTester: TFrmBootTester
       Font.Style = []
       ParentFont = False
     end
+    object lblBootCmd: TLabel
+      Left = 16
+      Top = 66
+      Width = 76
+      Height = 13
+      Caption = 'Boot Command:'
+    end
     object txtFile: TEdit
       Left = 16
       Top = 24
@@ -254,6 +261,34 @@ object FrmBootTester: TFrmBootTester
       Caption = '&Download'
       TabOrder = 4
       OnClick = btnDownloadClick
+    end
+    object txtBootCmd: TEdit
+      Left = 98
+      Top = 63
+      Width = 63
+      Height = 21
+      TabOrder = 5
+      Text = 'Reset!'
+    end
+    object cmbPortProd: TComboBox
+      Left = 167
+      Top = 63
+      Width = 48
+      Height = 21
+      ItemHeight = 13
+      ItemIndex = 0
+      TabOrder = 6
+      Text = '1'
+      OnChange = cmbPortProdChange
+      Items.Strings = (
+        '1'
+        '2'
+        '3'
+        '4'
+        '5'
+        '6'
+        '7'
+        '8')
     end
   end
 end

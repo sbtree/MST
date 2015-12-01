@@ -30,7 +30,7 @@ type
     btnExport: TButton;
     grpRS232: TGroupBox;
     lblPort: TLabel;
-    cmbPort: TComboBox;
+    cmbPortTest: TComboBox;
     lblBaudrate: TLabel;
     cmbBaudrate: TComboBox;
     btnClose: TButton;
@@ -51,10 +51,13 @@ type
     lblSendFile: TLabel;
     btnStateQue: TButton;
     btnDownload: TButton;
+    txtBootCmd: TEdit;
+    lblBootCmd: TLabel;
+    cmbPortProd: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     //procedure ComPortRxChar(Sender: TObject; Count: Integer);
-    procedure cmbPortChange(Sender: TObject);
+    procedure cmbPortTestChange(Sender: TObject);
     procedure cmbBaudrateChange(Sender: TObject);
     procedure btnSendClick(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
@@ -68,6 +71,7 @@ type
     procedure chkXonXoffClick(Sender: TObject);
     procedure btnStateQueClick(Sender: TObject);
     procedure btnDownloadClick(Sender: TObject);
+    procedure cmbPortProdChange(Sender: TObject);
   protected
     procedure Transmit();
     function SendStr(const str: string; const bprint: boolean = true): boolean;
@@ -87,7 +91,7 @@ type
 
   private
     { Private-Deklarationen }
-    t_ser: TSerial;
+    t_ser, t_ctrl: TSerial;
     c_timeout: cardinal;
     e_bootstate: EBootState;
     e_dlprotocol: EDownloadProtocol;
@@ -164,10 +168,10 @@ begin
   c_start := GetTickCount();
   //memRecv.Lines.Add('prog: start downloading, please reset the unit in 10 seconds');
   s_file := trim(txtFile.Text);
-  b_ok := t_downloader.Download('Reset!', s_file);
-  c_end := GetTickCount();
+  b_ok := t_downloader.Download(trim(txtBootCmd.Text), s_file);
+{  c_end := GetTickCount();
   //memRecv.Lines.Add(format('prog[%0.3f]: download is done with [result=%s]',[(c_end - c_start)/1000.0, BoolToStr(b_ok)]));
-{  if not t_ser.Active then begin
+  if not t_ser.Active then begin
     t_ser.Active := true;
     if not t_ser.Active then begin
       memRecv.Lines.Add(format('prog: serial interface is deaktived: port=%d; baud=%d', [t_ser.Port, t_ser.Baudrate]));
@@ -674,7 +678,7 @@ procedure TFrmBootTester.btnStateQueClick(Sender: TObject);
 var s_blmsg, s_fwmsg: string; t_start, t_end: cardinal;
 begin
   t_start := GetTickCount();
-  e_bootstate := t_downloader.GetBootState('');
+  e_bootstate := t_downloader.GetBootState(trim(txtBootCmd.Text));
   t_end := GetTickCount();
 
 {  if not t_ser.Active then  t_ser.Active := true;
@@ -720,12 +724,21 @@ begin
   t_ser.Active := b_active;
 end;
 
-procedure TFrmBootTester.cmbPortChange(Sender: TObject);
+procedure TFrmBootTester.cmbPortProdChange(Sender: TObject);
+var b_active: boolean;
+begin
+  b_active := t_ser.Active;
+  t_ctrl.Active := False;
+  t_ctrl.Port := StrToInt(cmbPortTest.Text);
+  t_ser.Active := b_active;
+end;
+
+procedure TFrmBootTester.cmbPortTestChange(Sender: TObject);
 var b_active: boolean;
 begin
   b_active := t_ser.Active;
   t_ser.Active := False;
-  t_ser.Port := StrToInt(cmbPort.Text);
+  t_ser.Port := StrToInt(cmbPortTest.Text);
   t_ser.Active := b_active;
 end;
 
@@ -735,15 +748,23 @@ begin
   t_ser.CheckParity := false;
   t_ser.DataBits := d8Bit;
   t_ser.NotifyErrors := neNone;
-  //t_ser.Name := 'Multimeter';
+  t_ser.Port := StrToInt(cmbPortTest.Items[cmbPortTest.ItemIndex]);
   t_ser.Baudrate := StrToInt(cmbBaudrate.Items[cmbBaudrate.ItemIndex]);
-  t_ser.Port := StrToInt(cmbPort.Items[cmbPort.ItemIndex]);
+  //t_ser.Name := 'Multimeter';
+
+  t_ctrl := TSerial.Create(self);
+  t_ctrl.CheckParity := false;
+  t_ctrl.DataBits := d8Bit;
+  t_ctrl.NotifyErrors := neNone;
+  t_ctrl.Port := StrToInt(cmbPortProd.Items[cmbPortProd.ItemIndex]);
+  t_ser.Baudrate := 9600;
+
   c_timeout := 3000;
   e_bootstate := BS_UNKNOWN;
   e_dlprotocol := DP_MOTOROLA;
   t_dlcom := TComDownloader.Create;
   t_downloader := t_dlcom;
-  t_dlcom.ComObj := t_ser;
+  t_dlcom.ComObj := t_ctrl;//t_ser;
   t_dlcom.ProgressBar := pgbSendFile;
   t_dlcom.Messages := memRecv.Lines;
 end;
@@ -751,6 +772,7 @@ end;
 procedure TFrmBootTester.FormDestroy(Sender: TObject);
 begin
   FreeAndNil(t_ser);
+  FreeAndNil(t_ctrl);
   FreeAndNil(t_downloader);
 end;
 
