@@ -4,7 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Serial3,ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls, MtxDownloader;
+  Dialogs, StdCtrls, Serial3,ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls, MtxDownloader,
+  NewProgressbar;
 
 type
 {
@@ -28,13 +29,6 @@ type
     memRecv: TMemo;
     btnClear: TButton;
     btnExport: TButton;
-    grpRS232: TGroupBox;
-    lblPort: TLabel;
-    cmbPortTest: TComboBox;
-    lblBaudrate: TLabel;
-    cmbBaudrate: TComboBox;
-    btnClose: TButton;
-    chkXonXoff: TCheckBox;
     grpSendCommand: TGroupBox;
     lblLoop: TLabel;
     btnSend: TButton;
@@ -47,18 +41,28 @@ type
     grpService: TGroupBox;
     txtFile: TEdit;
     btnFile: TButton;
-    pgbSendFile: TProgressBar;
-    lblSendFile: TLabel;
     btnStateQue: TButton;
     btnDownload: TButton;
     txtBootCmd: TEdit;
     lblBootCmd: TLabel;
     cmbPortProd: TComboBox;
+    btnCloseTest: TButton;
+    chkXonXoffTest: TCheckBox;
+    cmbBaudTest: TComboBox;
+    lblBaudTest: TLabel;
+    cmbPortTest: TComboBox;
+    lblPortTest: TLabel;
+    chkXonXoffProd: TCheckBox;
+    cmbBaudProd: TComboBox;
+    lblPortProd: TLabel;
+    lblBaudProd: TLabel;
+    btnCloseProd: TButton;
+    pgbSendFile: tCustomProgressbar;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     //procedure ComPortRxChar(Sender: TObject; Count: Integer);
     procedure cmbPortTestChange(Sender: TObject);
-    procedure cmbBaudrateChange(Sender: TObject);
+    procedure cmbBaudTestChange(Sender: TObject);
     procedure btnSendClick(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
     procedure btnExportClick(Sender: TObject);
@@ -66,12 +70,15 @@ type
     procedure chbRecvClick(Sender: TObject);
     procedure chbVerifyClick(Sender: TObject);
     procedure txtVerifyEnter(Sender: TObject);
-    procedure btnCloseClick(Sender: TObject);
+    procedure btnCloseTestClick(Sender: TObject);
     procedure btnFileClick(Sender: TObject);
-    procedure chkXonXoffClick(Sender: TObject);
+    procedure chkXonXoffTestClick(Sender: TObject);
     procedure btnStateQueClick(Sender: TObject);
     procedure btnDownloadClick(Sender: TObject);
     procedure cmbPortProdChange(Sender: TObject);
+    procedure cmbBaudProdChange(Sender: TObject);
+    procedure chkXonXoffProdClick(Sender: TObject);
+    procedure btnCloseProdClick(Sender: TObject);
   protected
     procedure Transmit();
     function SendStr(const str: string; const bprint: boolean = true): boolean;
@@ -96,7 +103,6 @@ type
     e_bootstate: EBootState;
     e_dlprotocol: EDownloadProtocol;
     t_downloader: TDownloader;
-    t_dlcom: TComDownloader;
   public
     { Public-Deklarationen }
   end;
@@ -155,7 +161,12 @@ begin
   memRecv.Lines.Clear();
 end;
 
-procedure TFrmBootTester.btnCloseClick(Sender: TObject);
+procedure TFrmBootTester.btnCloseProdClick(Sender: TObject);
+begin
+  t_ctrl.Active := false;
+end;
+
+procedure TFrmBootTester.btnCloseTestClick(Sender: TObject);
 begin
   t_ser.Active := false;
 end;
@@ -703,34 +714,51 @@ begin
   if chbVerify.Checked then txtVerify.SetFocus;
 end;
 
+procedure TFrmBootTester.chkXonXoffProdClick(Sender: TObject);
+var b_active: boolean;
+begin
+  b_active := t_ctrl.Active;
+  t_ctrl.Active := False;
+  if chkXonXoffProd.Checked then t_ctrl.FlowMode := fcXON_XOF
+  else t_ctrl.FlowMode := fcNone;
+  t_ctrl.Active := b_active;
+end;
 
-
-procedure TFrmBootTester.chkXonXoffClick(Sender: TObject);
+procedure TFrmBootTester.chkXonXoffTestClick(Sender: TObject);
 var b_active: boolean;
 begin
   b_active := t_ser.Active;
   t_ser.Active := False;
-  if chkXonXoff.Checked then t_ser.FlowMode := fcXON_XOF
+  if chkXonXoffTest.Checked then t_ser.FlowMode := fcXON_XOF
   else t_ser.FlowMode := fcNone;
   t_ser.Active := b_active;
 end;
 
-procedure TFrmBootTester.cmbBaudrateChange(Sender: TObject);
+procedure TFrmBootTester.cmbBaudProdChange(Sender: TObject);
+var b_active: boolean;
+begin
+  b_active := t_ctrl.Active;
+  t_ctrl.Active := False;
+  t_ctrl.Baudrate := StrToInt(cmbBaudProd.Text);
+  t_ctrl.Active := b_active;
+end;
+
+procedure TFrmBootTester.cmbBaudTestChange(Sender: TObject);
 var b_active: boolean;
 begin
   b_active := t_ser.Active;
   t_ser.Active := False;
-  t_ser.Baudrate := StrToInt(cmbBaudrate.Text);
+  t_ser.Baudrate := StrToInt(cmbBaudTest.Text);
   t_ser.Active := b_active;
 end;
 
 procedure TFrmBootTester.cmbPortProdChange(Sender: TObject);
 var b_active: boolean;
 begin
-  b_active := t_ser.Active;
+  b_active := t_ctrl.Active;
   t_ctrl.Active := False;
-  t_ctrl.Port := StrToInt(cmbPortTest.Text);
-  t_ser.Active := b_active;
+  t_ctrl.Port := StrToInt(cmbPortProd.Text);
+  t_ctrl.Active := b_active;
 end;
 
 procedure TFrmBootTester.cmbPortTestChange(Sender: TObject);
@@ -749,7 +777,7 @@ begin
   t_ser.DataBits := d8Bit;
   t_ser.NotifyErrors := neNone;
   t_ser.Port := StrToInt(cmbPortTest.Items[cmbPortTest.ItemIndex]);
-  t_ser.Baudrate := StrToInt(cmbBaudrate.Items[cmbBaudrate.ItemIndex]);
+  t_ser.Baudrate := StrToInt(cmbBaudTest.Items[cmbBaudTest.ItemIndex]);
   //t_ser.Name := 'Multimeter';
 
   t_ctrl := TSerial.Create(self);
@@ -757,16 +785,15 @@ begin
   t_ctrl.DataBits := d8Bit;
   t_ctrl.NotifyErrors := neNone;
   t_ctrl.Port := StrToInt(cmbPortProd.Items[cmbPortProd.ItemIndex]);
-  t_ser.Baudrate := 9600;
+  t_ctrl.Baudrate := StrToInt(cmbBaudProd.Items[cmbBaudProd.ItemIndex]);
 
   c_timeout := 3000;
   e_bootstate := BS_UNKNOWN;
   e_dlprotocol := DP_MOTOROLA;
-  t_dlcom := TComDownloader.Create;
-  t_downloader := t_dlcom;
-  t_dlcom.ComObj := t_ctrl;//t_ser;
-  t_dlcom.ProgressBar := pgbSendFile;
-  t_dlcom.Messages := memRecv.Lines;
+  t_comdownloader.ComObj := t_ctrl;//t_ser;
+  t_downloader := t_comdownloader;
+  t_downloader.ProgressBar := pgbSendFile;
+  t_downloader.Messager := memRecv.Lines;
 end;
 
 procedure TFrmBootTester.FormDestroy(Sender: TObject);

@@ -5,7 +5,8 @@ uses
   BootTesterMain in 'BootTesterMain.pas' {FrmBootTester},
   Serial3 in '..\Externals\Serial3.pas',
   MtxDownloader in 'MtxDownloader.pas',
-  GenUtils in '..\General\GenUtils.pas';
+  GenUtils in '..\General\GenUtils.pas',
+  NewProgressbar in '..\General\NewProgressbar.pas';
 
 {$R *.res}
 
