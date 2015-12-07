@@ -500,7 +500,7 @@ begin
             end else Delay(C_DELAY_MSEC);
             Inc(i_trials);
           until (result or (i_trials > 5));
-          e_dlprotocol := DP_METRONIX;
+          e_dlprotocol := DP_METRONIX1;
           break;
         end;
       end;
@@ -538,7 +538,7 @@ begin
       end;
       BS_MTXBL_ONLY: begin
         c_endtime := GetTickCount() + C_MANUAL_RESTART;
-        e_dlprotocol := DP_METRONIX;
+        e_dlprotocol := DP_METRONIX1;
         repeat
           t_exstrs.Clear; t_exstrs.Add('>');
           SendStr(CSTR_SERVICE + Char(13));
@@ -585,7 +585,7 @@ begin
             until (result or (i_trials > 5));
           end;
         end;
-        e_dlprotocol := DP_METRONIX;
+        e_dlprotocol := DP_METRONIX1;
       end;
       BS_XBL_UPD: begin
         c_endtime := GetTickCount() + C_MANUAL_RESTART;
@@ -634,7 +634,7 @@ begin
                   end else Delay(C_DELAY_MSEC);
                   Inc(i_trials);
                 until (result or (i_trials > 5));
-                e_dlprotocol := DP_METRONIX;
+                e_dlprotocol := DP_METRONIX1;
                 break;
               end;
             end;

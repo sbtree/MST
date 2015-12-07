@@ -16,7 +16,8 @@ type
   EDownloadProtocol = (
                 DP_UNDEFINED,//undefined download protocol 
                 DP_MOTOROLA, //download protocol of Motorola S-Record loader
-                DP_METRONIX  //download protocol of metronix boot loader
+                DP_METRONIX1,//download protocol of metronix boot loader, z.B. DIS2
+                DP_METRONIX2 //download protocol of metronix boot loader, z.B. ARS2000
                 );
 
   TDownloader = class
@@ -26,6 +27,7 @@ type
     s_lastmsg: string; //to save information in the last action
     s_lastfile: string; //to save file path (an s-record file), which is given in function Download last time;
     t_srecords: TStringList; //to save s-records, which is loaded last time;
+    i_curline: integer; //to save the current index of t_srecords which is downloaded, internal variable
     t_progress: TControl; //TProgressBar; //to illustrate the progress of the download
     t_messager: TStrings; //to output messages
     b_dlcancel: boolean;  //to cancel downloading manually
@@ -35,7 +37,6 @@ type
     function  EnterService(const cmd: string): boolean; virtual; abstract;
     procedure InitProgressBar(); virtual;
     procedure UpdateProgressBar(const val: integer); virtual;
-
   public
     constructor Create();
     destructor Destroy; override;
@@ -52,18 +53,22 @@ type
   protected
     t_ser: TSerial;
   protected
+    procedure ResetSerial();
     function  SendStr(const str: string; const bprint: boolean = true): boolean;
     function  RecvStr(var str: string; const bwait: boolean = true): integer;
     function  RecvStrTimeout(var str: string; const tend: cardinal): integer;
     function  RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer;
     function  RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
     function  WaitForReading(const tend: cardinal): boolean;
-    procedure ResetSerial();
+    function  StartWithMTL(): boolean;
+    function  StartWithMTX1(): boolean;
+    function  StartWithMTX2(): boolean;
 
     procedure UpdateStartMessage(); override;
     function  TryBootMessageMTL(var msg: string): integer;
     function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; override;
     function  EnterService(const cmd: string): boolean; override;
+    function  StartDownload(): boolean; virtual;
   public
     property ComObj: TSerial read t_ser write t_ser;
   public
@@ -74,7 +79,7 @@ type
 
   var t_comdownloader: TComDownloader;
 implementation
-uses Windows, SysUtils, GenUtils, Forms, TypInfo, ComCtrls, NewProgressBar;
+uses Windows, SysUtils, StrUtils, GenUtils, Forms, TypInfo, ComCtrls, NewProgressBar;
 
 const
   CSTR_BOOTQUE: string = 'BOOT?';
@@ -85,12 +90,14 @@ const
   CSTR_CHECKSUM: string = 'CHECKSUM';
   CSTR_DONE: string = 'DONE.';
   CSTR_WAITING: string = 'WAITING...';
+  CSTR_SERVICE_MENU: string = 'SERVICE-MENUE';
+  CSTR_START_APP: string = 'STARTING APPLICATION...';
   CSTR_MOTOROLA: string = 'MOTOROLA INC. S-RECORD LOADER';
   CSTR_METRONIX: string = 'BOOTLOADER (C) METRONIX';
   CSTR_BLUPDATER: string = 'BOOTLOADER UPDATER';
   CSTR_BOOTCODE: string = 'BOOTCODE';
   CSTR_B115200: string = 'B115200';
-  CSTR_POWER_ONOFF: string = 'Please manually reset the unit...';
+  CSTR_POWER_ONOFF: string = 'please manually reset the device...';
 
   CCHR_RETURN: Char = Char(VK_RETURN);
   CINT_B115200: integer = 115200;
@@ -99,7 +106,8 @@ const
 
   C_REBOOT_TIME: cardinal = 10000;
   C_ANSWER_WAIT: cardinal = 1000;
-  C_RECV_INTERVAL: cardinal = 100;
+  C_RECV_INTERVAL: cardinal = 50;
+  C_DOWNLOAD_INTERVAL: cardinal = 6000;
 
 procedure TDownloader.InitProgressBar();
 begin
@@ -142,10 +150,16 @@ begin
 	inherited Destroy;
 end;
 
+procedure TComDownloader.ResetSerial();
+begin
+  t_ser.Baudrate := CINT_B9600;
+  t_ser.FlowMode := fcNone;
+end;
+
 function  TComDownloader.SendStr(const str: string; const bprint: boolean = true): boolean;
 var c_time: cardinal; s_recv: string;
 begin
-  t_ser.ReadString(s_recv); //clear reading buffer of the serial interface
+  RecvStr(s_recv, false); //clear reading buffer of the serial interface
   c_time := GetTickCount() + C_ANSWER_WAIT;
   t_ser.WriteString(str);
   while ((t_ser.TxWaiting > 0) and (GetTickCount() < c_time)) do Delay(C_DELAY_ONCE);
@@ -157,8 +171,10 @@ function  TComDownloader.RecvStr(var str: string; const bwait: boolean): integer
 var c_time: cardinal;
 begin
   str := '';
-  c_time := GetTickCount() + C_ANSWER_WAIT;
-  if bwait then WaitForReading(c_time);
+  if bwait then begin 
+    c_time := GetTickCount() + C_ANSWER_WAIT;
+    WaitForReading(c_time);
+  end;
   result := t_ser.ReadString(str);
   if assigned(t_messager) then t_messager.Add(format('[%s]:<%s', [DateTimeToStr(Now()), str]));
 end;
@@ -234,6 +250,57 @@ begin
   result := (t_ser.RxWaiting > 0);
 end;
 
+function  TComDownloader.StartWithMTL(): boolean;
+var i: integer;
+begin
+  for i := 0 to t_srecords.Count - 1 do begin
+    t_ser.WriteString(t_srecords[i] + CCHR_RETURN);
+    while t_ser.TxWaiting > 0 do Delay(C_DELAY_ONCE);
+    Application.ProcessMessages();
+    UpdateProgressBar(i + 1);
+    if b_dlcancel then break;
+  end;
+  i_curline := i;          
+  result := (i_curline = t_srecords.Count);
+end;
+
+function  TComDownloader.StartWithMTX1(): boolean;
+var i, i_trial: integer; b_break: boolean; s_line, s_recv: string;
+begin
+  for i := 0 to t_srecords.Count - 1 do begin
+    i_trial := 0;
+    s_line := t_srecords[i] + Char(13);
+    repeat
+      t_ser.WriteString(s_line);
+      s_recv := '';
+      if WaitForReading(GetTickCount() + C_DOWNLOAD_INTERVAL) then begin
+        t_ser.ReadString(s_recv);
+        if SameText(s_recv, '*') then b_break := true
+        else if SameText(s_recv, '#') then begin //repeat sending the same line
+          Inc(i_trial);
+          b_break := (i_trial > CINT_TRIALS_MAX);
+        end else b_break := true; //'@' or other char
+      end else b_break := true;  //received no data
+      Application.ProcessMessages();
+    until (b_break);
+    if (b_break or b_dlcancel) then break;
+    UpdateProgressBar(i + 1);
+  end;          
+  i_curline := i;          
+  result := (i_curline = t_srecords.Count);
+end;
+
+function  TComDownloader.StartWithMTX2(): boolean;
+var i: integer; 
+begin
+  //todo: download with protocol DP_METRONIX2
+  for i := 0 to t_srecords.Count - 1 do begin
+    break;  
+  end;
+  i_curline := i;          
+  result := (i_curline = t_srecords.Count);
+end;
+
 function  TComDownloader.TryBootMessageMTL(var msg: string): integer;
 const CSTR_TEST_CMD: string= 'abcdefg';
 var i_baud: integer; c_endtime: cardinal;
@@ -246,22 +313,30 @@ begin
   t_ser.Baudrate := i_baud;
 end;
 
-procedure TComDownloader.ResetSerial();
-begin
-  t_ser.Baudrate := CINT_B9600;
-  t_ser.FlowMode := fcNone;
-end;
-
 procedure TComDownloader.UpdateStartMessage();
 const C_BL_FW_INTERVAL: cardinal = 6000; C_FW_OUTPUT_INTERVAL: cardinal = 1500;
-var c_time: cardinal;
+var c_time: cardinal; s_temp: string; i_pos: integer;
 begin
   s_blmessage := ''; s_fwmessage := '';
   c_time := GetTickCount() + C_REBOOT_TIME;
   RecvStrInterval(s_blmessage, c_time, C_RECV_INTERVAL);
-  if (not IsValidAscii(s_blmessage)) then TryBootMessageMTL(s_blmessage);
-  c_time := GetTickCount() + C_BL_FW_INTERVAL;
-  if WaitForReading(c_time) then RecvStrInterval(s_fwmessage, c_time, C_FW_OUTPUT_INTERVAL);
+  if (not IsValidAscii(s_blmessage)) then TryBootMessageMTL(s_blmessage)
+  else begin
+    s_temp := UpperCase(s_blmessage);
+    if (Pos(CSTR_UNKNOWNCMD, s_temp) > 0) then begin
+      if assigned(t_messager) then t_messager.Add(format('[%s]: device received an unknown command', [DateTimeToStr(Now())]))
+    end else begin
+      c_time := GetTickCount() + C_BL_FW_INTERVAL;
+      if WaitForReading(c_time) then RecvStrInterval(s_fwmessage, c_time, C_FW_OUTPUT_INTERVAL);
+    end;
+    i_pos := Pos(CSTR_START_APP, s_temp);
+    if (i_pos > 0) then begin
+      s_temp := MidStr(s_blmessage, i_pos, length(s_blmessage));
+      s_blmessage := LeftStr(s_blmessage, i_pos - 1);
+      s_fwmessage := s_temp + s_fwmessage;
+    end;
+
+  end;
 end;
 
 function  TComDownloader.ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean): boolean;
@@ -270,13 +345,13 @@ var c_time, c_tcurr, c_tlast: cardinal;  b_timeout: boolean; i_relay: integer;
     s_recv, s_cmd, s_last: string;
 begin
   //clear buffers of the serial interface
-  t_ser.ReadString(s_recv);
+  RecvStr(s_recv, false);
   ResetSerial();
   s_cmd := trim(cmd);
   if ((s_cmd = '-1') or (s_cmd = '')) then begin //manually reset
     c_tcurr := GetTickCount(); c_tlast := c_tcurr;
     c_time := c_tcurr + C_MANUAL_RESET; //set timeout
-    //wait for the anwser from the unit
+    //wait for the anwser from the device
     if assigned(t_messager) then begin
       s_last := format('[%s]:%s', [DateTimeToStr(Now()), CSTR_POWER_ONOFF]);
       t_messager.Add(format('%s %ds', [s_last, Round(C_MANUAL_RESET/1000)]));
@@ -293,7 +368,7 @@ begin
       b_timeout := (c_tcurr >= c_time);
     until (b_timeout or (t_ser.RxWaiting > 0));
   end else begin
-    if assigned(t_messager) then t_messager.Add(format('[%s]: the unit is resetting...', [DateTimeToStr(Now())]));
+    if assigned(t_messager) then t_messager.Add(format('[%s]: device is resetting...', [DateTimeToStr(Now())]));
     if TryStrToInt(s_cmd, i_relay) then //DMM.Control_Relais(s_cmd, 500) //reset by relay (automatically hard reset)
     else SendStr(s_cmd + Char(VK_RETURN)); //reset through command (soft rest)
     // wait for that the first char arrives in C_RESET_TIMEOUT milliseconds after resetting
@@ -301,7 +376,7 @@ begin
   end;
   result := (t_ser.RxWaiting > 0);
   if (not result) then
-    if assigned(t_messager) then t_messager.Add(format('[%s]: failed to reset the unit.', [DateTimeToStr(Now())]));
+    if assigned(t_messager) then t_messager.Add(format('[%s]: failed to reset the device.', [DateTimeToStr(Now())]));
     
   //receive the message
   if (bmsg and result) then UpdateStartMessage();
@@ -312,7 +387,7 @@ var s_recv, s_temp: string; c_endtime: cardinal; i_trials: integer;
 begin
   result := false;
   c_endtime := GetTickCount() + C_REBOOT_TIME;
-  s_recv := ''; i_trials := 0;
+  s_recv := ''; i_trials := 0; e_dlprotocol := DP_UNDEFINED;
   if ResetDevice(cmd, c_endtime, false) then begin
     c_endtime := GetTickCount() + C_REBOOT_TIME;
     while (GetTickCount() < c_endtime) do begin
@@ -335,7 +410,7 @@ begin
         break;
       end else begin
         s_temp := UpperCase(s_recv);
-        if (Pos(CSTR_WAITING, s_temp) > 0) then begin
+        if ((Pos(CSTR_WAITING, s_temp) > 0) or (Pos(CSTR_SERVICE_MENU, s_temp) > 0))then begin
           SendStr(CSTR_SERVICE + CCHR_RETURN);
           Delay(C_DELAY_ONCE); //wait till the service mode is reached
           i_trials := 0;
@@ -345,16 +420,39 @@ begin
             if result then begin
               SendStr(CSTR_B115200 + CCHR_RETURN);
               if WaitForReading(GetTickCount() + C_ANSWER_WAIT) then begin
-                if (t_ser.ReadString(s_recv) > 0) then t_ser.Baudrate := CINT_B115200;
+                if (RecvStr(s_recv, false) > 0) then t_ser.Baudrate := CINT_B115200;
               end;
             end else Delay(C_DELAY_ONCE);
             Inc(i_trials);
           until (result or (i_trials > CINT_TRIALS_MAX));
-          e_dlprotocol := DP_METRONIX;
+          if (Pos(CSTR_SERVICE_MENU, s_temp) > 0) then e_dlprotocol := DP_METRONIX2
+          else e_dlprotocol := DP_METRONIX1;
+          break;
+        end else if (Pos(CSTR_UNKNOWNCMD, s_temp) > 0) then begin
+          if assigned(t_messager) then t_messager.Add(format('[%s]: ''%s'' is not supported.', [DateTimeToStr(Now()), cmd]));
           break;
         end;
       end;
     end;
+  end;
+end;
+
+function  TComDownloader.StartDownload(): boolean;
+begin
+  i_curline := 0;
+  if assigned(t_messager) then t_messager.Add(format('[%s]: download started with protocol %s', [DateTimeToStr(Now()), GetEnumName(TypeInfo(EDownloadProtocol), Ord(e_dlprotocol))]));
+  case e_dlprotocol of
+  DP_METRONIX2: result := StartWithMTX2();
+  DP_METRONIX1: result := StartWithMTX1();
+  DP_MOTOROLA : result := StartWithMTL();
+  else result := false;
+  end;
+  
+  if assigned(t_messager) then begin
+    if (e_dlprotocol = DP_UNDEFINED) then
+      t_messager.Add(format('[%s]: download protocol is not defined', [DateTimeToStr(Now()), GetEnumName(TypeInfo(EDownloadProtocol), Ord(e_dlprotocol))]))
+    else
+      t_messager.Add(format('[%s]: download is finished with %d/%d lines', [DateTimeToStr(Now()), i_curline, t_srecords.Count]));
   end;
 end;
 
@@ -439,8 +537,7 @@ begin
 end;
 
 function TComDownloader.Download(const cmd, fname: string): boolean;
-const C_DOWNLOAD_INTERVAL: cardinal = 6000;
-var s_line, s_file, s_recv: string; i, i_trial: integer; b_break, b_ok: boolean;
+var s_file: string; 
 begin
   result := false; b_dlcancel := false;
   if assigned(t_ser) then begin
@@ -456,44 +553,11 @@ begin
 
       if (t_srecords.Count > 0) then begin
         InitProgressBar();
-        if EnterService(cmd) then begin
-          b_break := false;
-          if assigned(t_messager) then t_messager.Add(format('[%s]: download started', [DateTimeToStr(Now())]));
-
-          if (e_dlprotocol = DP_METRONIX) then begin
-            for i := 0 to t_srecords.Count - 1 do begin
-              i_trial := 0; b_ok := false;
-              s_line := t_srecords[i] + Char(13);
-              repeat
-                t_ser.WriteString(s_line);
-                s_recv := '';
-                if WaitForReading(GetTickCount() + C_DOWNLOAD_INTERVAL) then begin
-                  t_ser.ReadString(s_recv);
-                  if SameText(s_recv, '*') then b_ok := true
-                  else if SameText(s_recv, '#') then begin //repeat sending the same line
-                    Inc(i_trial);
-                    b_break := (i_trial > CINT_TRIALS_MAX);
-                  end else b_break := true; //'@' or other char
-                end else b_break := true;  //received no data
-                Application.ProcessMessages();
-              until (b_break or b_ok);
-              if (b_break or b_dlcancel) then break;
-              UpdateProgressBar(i + 1);
-            end;
-          end else if (e_dlprotocol = DP_MOTOROLA) then begin
-            for i := 0 to t_srecords.Count - 1 do begin
-              t_ser.WriteString(t_srecords[i] + CCHR_RETURN);
-              while t_ser.TxWaiting > 0 do Delay(C_DELAY_ONCE);
-              Application.ProcessMessages();
-              UpdateProgressBar(i + 1);
-              if b_dlcancel then break;
-            end;
-          end else b_break := true;
-          result := ((not b_break) and (not b_dlcancel));
-          if assigned(t_messager) then t_messager.Add(format('[%s]: download is over with %d s-records', [DateTimeToStr(Now()), t_srecords.Count]));
-        end;
+        if EnterService(cmd) then result := StartDownload();
       end;
-    end else ;
+    end else begin 
+      if assigned(t_messager) then t_messager.Add(format('[%s]: COM%d is not active.', [DateTimeToStr(Now()), t_ser.Port]));
+    end;
   end;
 end;
 
