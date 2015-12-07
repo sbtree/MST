@@ -2,7 +2,10 @@ program ScriptTester;
 
 uses
   Forms,
-  FormScriptTester in 'FormScriptTester.pas' {frmScriptTester};
+  FormScriptTester in 'FormScriptTester.pas' {frmScriptTester},
+  ScriptReader in 'ScriptReader.pas',
+  ScriptTerm in 'ScriptTerm.pas',
+  ScriptRunner in 'ScriptRunner.pas';
 
 {$R *.res}
 
