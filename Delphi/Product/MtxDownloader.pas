@@ -91,6 +91,10 @@ const
   CSTR_DONE: string = 'DONE.';
   CSTR_WAITING: string = 'WAITING...';
   CSTR_SERVICE_MENU: string = 'SERVICE-MENUE';
+  CSTR_EPR: string = 'EPR';
+  CSTR_OK: string = 'OK!';
+  CSTR_PROMPT: string = '>';
+  CSTR_START_ADDR: string = 'Start-Address';
   CSTR_START_APP: string = 'STARTING APPLICATION...';
   CSTR_MOTOROLA: string = 'MOTOROLA INC. S-RECORD LOADER';
   CSTR_METRONIX: string = 'BOOTLOADER (C) METRONIX';
@@ -265,40 +269,44 @@ begin
 end;
 
 function  TComDownloader.StartWithMTX1(): boolean;
-var i, i_trial: integer; b_break: boolean; s_line, s_recv: string;
+var i, i_trial: integer; b_ok, b_break: boolean; s_line, s_recv: string;
 begin
   for i := 0 to t_srecords.Count - 1 do begin
-    i_trial := 0;
-    s_line := t_srecords[i] + Char(13);
-    repeat
-      t_ser.WriteString(s_line);
-      s_recv := '';
-      if WaitForReading(GetTickCount() + C_DOWNLOAD_INTERVAL) then begin
-        t_ser.ReadString(s_recv);
-        if SameText(s_recv, '*') then b_break := true
-        else if SameText(s_recv, '#') then begin //repeat sending the same line
-          Inc(i_trial);
-          b_break := (i_trial > CINT_TRIALS_MAX);
-        end else b_break := true; //'@' or other char
-      end else b_break := true;  //received no data
-      Application.ProcessMessages();
-    until (b_break);
-    if (b_break or b_dlcancel) then break;
+    i_trial := 0; b_break := false;
+    s_line := t_srecords[i] + CCHR_RETURN;
+    if ((length(s_line) > 4) and SameText('S', s_line[1])) then begin //length of s-record at least
+      repeat
+        t_ser.WriteString(s_line);
+        s_recv := ''; b_ok := false; b_break := false;
+        if WaitForReading(GetTickCount() + C_DOWNLOAD_INTERVAL) then begin
+          if (t_ser.ReadString(s_recv) > 0) then  s_recv := trim(s_recv);
+          if (Pos('*', s_recv) > 0) then b_ok := true //'*' or '>' ok
+          else if (Pos('#', s_recv) > 0) then begin //'#' repeat sending the same line
+            Inc(i_trial);
+            b_break := (i_trial > CINT_TRIALS_MAX);
+          end else if ((length(s_recv) > 0) and (Pos('>', s_recv) = length(s_recv))) then b_ok := true
+          else if ContainsText(s_recv, CSTR_START_ADDR) then b_ok := true
+          else begin //'@' or other char
+            b_break := true;
+            if assigned(t_messager) then t_messager.Add(format('[%s]:<%s', [DateTimeToStr(Now()), s_recv]))
+          end;
+        end else b_break := true;  //received no data
+        Application.ProcessMessages();
+      until (b_ok or b_break);
+    end;
     UpdateProgressBar(i + 1);
+    if (b_break or b_dlcancel) then break;
   end;          
   i_curline := i;          
   result := (i_curline = t_srecords.Count);
 end;
 
 function  TComDownloader.StartWithMTX2(): boolean;
-var i: integer; 
+var s_recv: string;
 begin
-  //todo: download with protocol DP_METRONIX2
-  for i := 0 to t_srecords.Count - 1 do begin
-    break;  
-  end;
-  i_curline := i;          
-  result := (i_curline = t_srecords.Count);
+  SendStr(CSTR_EPR + CCHR_RETURN);
+  result := (RecvStrExpected(s_recv, CSTR_SERVICE, GetTickCount() + C_ANSWER_WAIT) > 0);
+  if result then result := StartWithMTX1();
 end;
 
 function  TComDownloader.TryBootMessageMTL(var msg: string): integer;
@@ -319,6 +327,12 @@ var c_time: cardinal; s_temp: string; i_pos: integer;
 begin
   s_blmessage := ''; s_fwmessage := '';
   c_time := GetTickCount() + C_REBOOT_TIME;
+  RecvStr(s_blmessage, false);
+  if (length(s_blmessage) <= 1) then begin //only one char is handled as noise
+    s_blmessage := '';
+    WaitForReading(c_time);
+  end;
+  
   RecvStrInterval(s_blmessage, c_time, C_RECV_INTERVAL);
   if (not IsValidAscii(s_blmessage)) then TryBootMessageMTL(s_blmessage)
   else begin
@@ -393,43 +407,48 @@ begin
     while (GetTickCount() < c_endtime) do begin
       s_temp := ''; RecvStrInterval(s_temp, c_endtime, C_RECV_INTERVAL);
       s_recv := s_recv + s_temp;
-      if (not IsValidAscii(s_recv)) then begin //s-record loader, baudrate=115200
-        t_ser.Baudrate := CINT_B115200;
-        repeat
-          SendStr(CSTR_BOOTQUE + CCHR_RETURN);
-          WaitForReading(c_endtime);
-          s_recv := ''; RecvStrInterval(s_recv, c_endtime, C_RECV_INTERVAL);
-          s_temp := UpperCase(trim(s_recv));
-          result := (Pos(CSTR_MOTOROLA, s_temp) > 0);
-          if result then begin
-            t_ser.FlowMode := fcXON_XOF;
-            e_dlprotocol := DP_MOTOROLA;
-          end;
-          Inc(i_trials);
-        until (result or (i_trials > CINT_TRIALS_MAX));
-        break;
-      end else begin
-        s_temp := UpperCase(s_recv);
-        if ((Pos(CSTR_WAITING, s_temp) > 0) or (Pos(CSTR_SERVICE_MENU, s_temp) > 0))then begin
-          SendStr(CSTR_SERVICE + CCHR_RETURN);
-          Delay(C_DELAY_ONCE); //wait till the service mode is reached
-          i_trials := 0;
+
+      if (ContainsText(s_recv, CSTR_WAITING) or ContainsText(s_recv, CSTR_SERVICE_MENU)) then begin
+        SendStr(CSTR_SERVICE + CCHR_RETURN);
+        if (RecvStrExpected(s_temp, CSTR_PROMPT, c_endtime) > 0) then begin //wait till the service mode is reached
+          s_recv := s_recv + s_temp;
+          i_trials := 1;
           repeat
             SendStr(CSTR_BOOTQUE + CCHR_RETURN);
-            result := (RecvStrExpected(s_recv, CSTR_SERVICE, GetTickCount() + C_ANSWER_WAIT) >= 0);
+            result := (RecvStrExpected(s_temp, CSTR_SERVICE, GetTickCount() + C_ANSWER_WAIT) > 0);
             if result then begin
+              s_recv := s_recv + s_temp;
               SendStr(CSTR_B115200 + CCHR_RETURN);
               if WaitForReading(GetTickCount() + C_ANSWER_WAIT) then begin
-                if (RecvStr(s_recv, false) > 0) then t_ser.Baudrate := CINT_B115200;
+                if (RecvStr(s_temp, false) > 0) then t_ser.Baudrate := CINT_B115200;
               end;
             end else Delay(C_DELAY_ONCE);
             Inc(i_trials);
           until (result or (i_trials > CINT_TRIALS_MAX));
-          if (Pos(CSTR_SERVICE_MENU, s_temp) > 0) then e_dlprotocol := DP_METRONIX2
-          else e_dlprotocol := DP_METRONIX1;
-          break;
-        end else if (Pos(CSTR_UNKNOWNCMD, s_temp) > 0) then begin
-          if assigned(t_messager) then t_messager.Add(format('[%s]: ''%s'' is not supported.', [DateTimeToStr(Now()), cmd]));
+        end;
+        if ContainsText(s_recv, CSTR_SERVICE_MENU) then e_dlprotocol := DP_METRONIX2
+        else e_dlprotocol := DP_METRONIX1;
+        break;
+      end else if ContainsText(s_recv, CSTR_UNKNOWNCMD) then begin
+        if assigned(t_messager) then t_messager.Add(format('[%s]: ''%s'' is not supported.', [DateTimeToStr(Now()), cmd]));
+        break;
+      end else if (not IsValidAscii(s_recv)) then begin
+        if (length(s_recv) = 1) then begin //start char of ARS iS Variant 
+          s_recv := '';
+          continue;
+        end else begin
+          t_ser.Baudrate := CINT_B115200;
+          repeat
+            SendStr(CSTR_BOOTQUE + CCHR_RETURN);
+            WaitForReading(c_endtime);
+            RecvStrInterval(s_temp, c_endtime, C_RECV_INTERVAL);
+            result := ContainsText(s_temp, CSTR_MOTOROLA);
+            if result then begin
+              t_ser.FlowMode := fcXON_XOF;
+              e_dlprotocol := DP_MOTOROLA;
+            end;
+            Inc(i_trials);
+          until (result or (i_trials > CINT_TRIALS_MAX));
           break;
         end;
       end;
