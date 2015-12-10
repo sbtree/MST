@@ -256,8 +256,11 @@ begin
   s_buffer := trim(txtSend.Text);
   s_buffer := StringReplace(s_buffer, '<CR>', Char(13),[rfReplaceAll, rfIgnoreCase]) + Char(13);
   t_cmds := TStringList.create;
-  ExtractStrings([Char(13)], [], PChar(s_buffer), t_cmds);
-  for i := 0 to t_cmds.Count - 1 do SendStr(t_cmds[i] + Char(13));
+  ExtractStrings([Char(13)], [' '], PChar(s_buffer), t_cmds);
+  for i := 0 to t_cmds.Count - 1 do begin
+    if SameText(t_cmds[i], 'Wait') then Delay(1000)
+    else SendStr(t_cmds[i] + Char(13));
+  end;
 
   {i_timeout := GetTickCount();}
   if chbRecv.Checked then
@@ -862,6 +865,7 @@ var b_break, b_timeout: boolean; s_recv: string; i_len: integer; c_endtime, c_st
 begin
   result := 0; str := '';
   c_start := GetTickCount();
+  WaitForReading(tend);
   repeat
     s_recv := '';
     c_endtime := GetTickCount() + interv;
