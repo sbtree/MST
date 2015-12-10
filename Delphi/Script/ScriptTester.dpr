@@ -5,7 +5,8 @@ uses
   FormScriptTester in 'FormScriptTester.pas' {frmScriptTester},
   ScriptReader in 'ScriptReader.pas',
   ScriptTerm in 'ScriptTerm.pas',
-  ScriptRunner in 'ScriptRunner.pas';
+  ScriptRunner in 'ScriptRunner.pas',
+  TextMessage in '..\General\TextMessage.pas';
 
 {$R *.res}
 

@@ -22,7 +22,7 @@ type
 
     end;
 
-    TStepPara = class
+    TStepPar = class
 
     end;
 
@@ -30,7 +30,7 @@ type
 
     end;
 
-    TStepCriterion = class
+    TStepTol = class
 
     end;
 
@@ -48,7 +48,20 @@ type
   TTestRoutine = class
 
   end;
+const
+  CSTR_TEXT:  string = 'T';
+  CSTR_R_ON:  string = 'R_ON';
+  CSTR_R_OFF: string = 'R_OFF';
+  CSTR_INIT:  string = 'INIT';
+  CSTR_M:     string = 'M';
+  CSTR_FUNC:  string = 'FKT';
+  CSTR_PAR:   string = 'PAR';
+  CSTR_TOL:   string = 'TOL';
+  CSTR_FINAL: string = 'FINAL';
 
+  CSTR_TERM_DEF:  string = ':';
+  CSTR_STEP_BEGIN:string = '(';
+  CSTR_STEP_END:  string = '),';
 implementation
 
 end.
