@@ -6,8 +6,8 @@ uses Classes, Contnrs, ScriptTerm, TextMessage;
 type
   EParseState = (
                 PS_IDLE,        // start state or state when a step is parsed and next step does not start yet
-                PS_DEFINITION,  // VAR=VALUE
-                PS_STEP,        // text starts with (
+                PS_VARIABLE,    // VAR=VALUE
+                PS_STEP,        // text starts with ( for a step
                 PS_TERM,        // e.g. T:xxxx
                 PS_QUOTATION,   // text starts with ' or "
                 PS_LNCOMMENT,   // text starts with //
@@ -20,6 +20,7 @@ type
   TScriptReader = class(TTextMessager)
   protected
     e_curstate: EParseState; //current state of the reader
+    t_states:   TStack;      //stack of states
     s_srcfile:  string;      //file name
     s_curtext:  string;      //string, which is not yet parsed
     t_srclines: TStringList; //liens from a source.
@@ -28,18 +29,26 @@ type
     b_allowdef: boolean;     //indicates if a defination is allowed till now
 
   protected
-    function ParseText(const text: string): boolean;
-    function FindTerm(const pattern: string): TStepTerm;
+    function  ParseText(const text: string): boolean;
+    function  FindTerm(const pattern: string): TStepTerm;
+    procedure PushState(const state: EParseState);
+    procedure PopState();
 
   public
+    constructor Create(); override;
+    destructor Destroy; override;
+
     function ReadFromFile(const srcfile: string): boolean;
     function ReadFromText(const srctext: string): boolean;
     function ReadFromList(const srclist: TStringList): boolean;
   end;
 
 const
+  CSTR_TERM_STARTS:   array[EParseState] of string = (
+                        ''
+                      );
   CLST_PARSE_STATES:  array[EParseState] of ParseStateSet = (
-                        [PS_DEFINITION, PS_STEP],
+                        [PS_VARIABLE, PS_STEP],
                         [],
                         [PS_TERM],
                         [PS_QUOTATION],
@@ -76,7 +85,37 @@ const
   CCHR_BRACKET_CLOSE: char = ')';
   CCHR_BRACE_OPEN:    char = '{';
   CCHR_BRACE_CLOSE:   char = '}';
+
 implementation
+
+// =============================================================================
+//    Description  : constructor
+//    Parameter    : --
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
+constructor TScriptReader.Create();
+begin
+	inherited Create;
+  e_curstate := PS_IDLE;
+  t_states := TStack.Create();
+end;
+
+// =============================================================================
+//    Description  : destructor
+//    Parameter    : --
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
+destructor TScriptReader.Destroy();
+begin
+	inherited Destroy;
+  while(t_states.Count > 0) do PopState();
+  t_states.Free();
+end;
+
 
 function TScriptReader.ParseText(const text: string): boolean;
 begin

@@ -6,7 +6,8 @@ uses
   ScriptReader in 'ScriptReader.pas',
   ScriptTerm in 'ScriptTerm.pas',
   ScriptRunner in 'ScriptRunner.pas',
-  TextMessage in '..\General\TextMessage.pas';
+  TextMessage in '..\General\TextMessage.pas',
+  TestScript in 'TestScript.pas';
 
 {$R *.res}
 
