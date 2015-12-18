@@ -40,6 +40,7 @@
     <DelphiCompile Include="ScriptTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Function\FunctionCaller.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="FormScriptTester.pas">
       <Form>frmScriptTester</Form>
@@ -47,6 +48,7 @@
     <DCCReference Include="ScriptReader.pas" />
     <DCCReference Include="ScriptRunner.pas" />
     <DCCReference Include="ScriptTerm.pas" />
+    <DCCReference Include="StepResult.pas" />
     <DCCReference Include="TestScript.pas" />
   </ItemGroup>
 </Project>

@@ -5,7 +5,8 @@ uses
   DataBuffer in 'DataBuffer.pas',
   GenUtils in 'GenUtils.pas',
   FormGeneralTester in 'FormGeneralTester.pas' {frmGeneralTester},
-  TextMessage in 'TextMessage.pas';
+  TextMessage in 'TextMessage.pas',
+  GenType in 'GenType.pas';
 
 {$R *.res}
 

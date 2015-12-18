@@ -24,14 +24,14 @@ type
     t_msgextern, t_msgintern: TStrings; //saves messages. it is created in constructor and replaced by SetMessages
     e_threshold: EMessageLevel; //indicates threshold of message level. The message which has greater level than this value, can be appended to t_messages
   protected
-    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure SetMessages(const msg: TStrings);
   public
     constructor Create();
     destructor  Destroy(); override;
 
-    property Messages: TStrings read t_msgextern write SetMessages;
-    property MessageThreshold: EMessageLevel read e_threshold write e_threshold;
+    property  Messages: TStrings read t_msgextern write SetMessages;
+    property  MessageThreshold: EMessageLevel read e_threshold write e_threshold;
+    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
   end;
 
 implementation
@@ -63,7 +63,7 @@ end;
 procedure TTextMessager.AddMessage(const text: string; const level: EMessageLevel);
 begin
   if ((level >= e_threshold) and (text <> '')) then
-    t_msgextern.Add(format('[%s]:[%s]%s', [DateTimeToStr(Now()),CSTR_MLKEYS[level], text]));
+    t_msgextern.Add(format('[%s] %s: %s', [DateTimeToStr(Now()),CSTR_MLKEYS[level], text]));
 end;
 
 procedure TTextMessager.SetMessages(const msg: TStrings);

@@ -14,12 +14,19 @@ object FormFTMain: TFormFTMain
   PixelsPerInch = 96
   TextHeight = 13
   object btnTest: TButton
-    Left = 456
-    Top = 232
+    Left = 479
+    Top = 268
     Width = 75
     Height = 25
     Caption = '&Test'
     TabOrder = 0
     OnClick = btnTestClick
+  end
+  object memInfo: TMemo
+    Left = 8
+    Top = 8
+    Width = 546
+    Height = 241
+    TabOrder = 1
   end
 end

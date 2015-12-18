@@ -7,7 +7,9 @@ uses
   ScriptTerm in 'ScriptTerm.pas',
   ScriptRunner in 'ScriptRunner.pas',
   TextMessage in '..\General\TextMessage.pas',
-  TestScript in 'TestScript.pas';
+  TestScript in 'TestScript.pas',
+  StepResult in 'StepResult.pas',
+  FunctionCaller in '..\Function\FunctionCaller.pas';
 
 {$R *.res}
 

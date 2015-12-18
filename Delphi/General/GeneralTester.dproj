@@ -34,6 +34,7 @@
     <DCCReference Include="FormGeneralTester.pas">
       <Form>frmGeneralTester</Form>
     </DCCReference>
+    <DCCReference Include="GenType.pas" />
     <DCCReference Include="GenUtils.pas" />
     <DCCReference Include="TextMessage.pas" />
     <None Include="ModelSupport_GeneralTester\DataBuffer\default.txvpck" />

@@ -20,7 +20,7 @@
 unit ScriptTerm;
 
 interface
-uses Classes;
+uses Classes, StepResult;
 type
 
   EStepTerm = (
@@ -50,17 +50,14 @@ type
     function ResolveTerm(var text: string; const term: EStepTerm): boolean;
   end;
 
-
-  TStepResult = class
-  public
-  end;
-
   TTestStep = class
   protected
     a_terms:    array[EStepTerm] of TStepTerm;
     t_result:   TStepResult;
+
   protected
-    
+  public
+    property StepResult: TStepResult read t_result write t_result;
   end;
 
   TTestCase = class

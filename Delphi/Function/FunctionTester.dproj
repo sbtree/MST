@@ -42,19 +42,29 @@
     <DelphiCompile Include="FunctionTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\General\GenType.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="FormFunctionTester.pas">
       <Form>FormFTMain</Form>
     </DCCReference>
-    <DCCReference Include="FuncFlashRunner.pas" />
+    <DCCReference Include="FuncDmm.pas" />
+    <DCCReference Include="FuncDso.pas" />
+    <DCCReference Include="FuncMat.pas" />
+    <DCCReference Include="FuncMxp.pas" />
+    <DCCReference Include="FuncSwt.pas" />
+    <DCCReference Include="FuncSys.pas" />
     <DCCReference Include="FunctionBase.pas" />
     <DCCReference Include="FunctionCaller.pas" />
+    <DCCReference Include="FuncTmm.pas" />
     <None Include="ModelSupport_FunctionTester\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\FuncFlashRunner\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\FuncFlashRunner\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\FunctionBase\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\FunctionBase\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FunctionCaller\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\FunctionCaller\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FunctionTester\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\FunctionTester\default.txvpck" />
   </ItemGroup>
 </Project>
