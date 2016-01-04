@@ -6,7 +6,7 @@ type
   protected
     b_stepok:   boolean;
     s_result:   string;
-    s_pattern:  string
+    s_pattern:  string;
   public
     constructor Create();
     destructor Destroy(); override;
@@ -15,10 +15,10 @@ type
     property ValuePattern: string read s_pattern write s_pattern;
     property Resulted: boolean read b_stepok write b_stepok;
 
-    function ValueStr(const pattern: string = ''): string; virtual;
-    function ValueInt(const pattern: string = ''): integer; virtual;
-    function ValueWord(const pattern: string = ''): word; virtual;
-    function ValueReal(const pattern: string = ''): real; virtual;
+//    function ValueStr(const pattern: string = ''): string; virtual;
+//    function ValueInt(const pattern: string = ''): integer; virtual;
+//    function ValueWord(const pattern: string = ''): word; virtual;
+//    function ValueReal(const pattern: string = ''): real; virtual;
   end;
 
 implementation

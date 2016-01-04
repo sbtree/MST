@@ -1,7 +1,7 @@
 unit ScriptReader;
 
 interface
-uses Classes, Contnrs, ScriptTerm, TextMessage;
+uses Classes, Contnrs, ScriptTerm, TextMessage, IniFiles;
 
 type
   EParseState = (
@@ -12,21 +12,25 @@ type
                 PS_QUOTATION,   // text starts with ' or "
                 PS_LNCOMMENT,   // text starts with //
                 PS_BLKCOMMENT,  // text starts with (* or {
-                PS_GROUP        // text starts with ( for a term
+                PS_TERMGROUP    // text starts with ( for a term
                 );
+  PParseState = ^EParseState;
+
   ParseStateSet = set of EParseState;
 
 
   TScriptReader = class(TTextMessager)
   protected
     e_curstate: EParseState; //current state of the reader
+    pe_state:   PParseState; //a pointer to EParseState
     t_states:   TStack;      //stack of states
     s_srcfile:  string;      //file name
     s_curtext:  string;      //string, which is not yet parsed
     t_srclines: TStringList; //liens from a source.
-    t_clrlines: TStringList; //clear lines, in which there is no comment any more
+    t_varvals:  THashedStringList;
     t_steps:    TObjectList; //list of test steps
     b_allowdef: boolean;     //indicates if a defination is allowed till now
+    i_curindex: integer;
 
   protected
     function  ParseText(const text: string): boolean;
@@ -35,8 +39,8 @@ type
     procedure PopState();
 
   public
-    constructor Create(); override;
-    destructor Destroy; override;
+    constructor Create();
+    destructor Destroy(); override;
 
     function ReadFromFile(const srcfile: string): boolean;
     function ReadFromText(const srctext: string): boolean;
@@ -44,33 +48,19 @@ type
   end;
 
 const
-  CSTR_TERM_STARTS:   array[EParseState] of string = (
-                        ''
-                      );
-  CLST_PARSE_STATES:  array[EParseState] of ParseStateSet = (
-                        [PS_VARIABLE, PS_STEP],
-                        [],
-                        [PS_TERM],
-                        [PS_QUOTATION],
-                        [],
-                        [],
-                        [],
-                        []
-                      );
-
   CSTR_NR:      string = 'NR';
   CSTR_TEXT:    string = 'T';
   CSTR_R_ON:    string = 'R_ON';
   CSTR_INIT:    string = 'INIT';
-  CSTR_M:       string = 'M';
   CSTR_FKT:     string = 'FKT';
   CSTR_FCT:     string = 'FCT';
+  CSTR_M:       string = 'M';
   CSTR_PAR:     string = 'PAR';
   CSTR_R_OFF:   string = 'R_OFF';
   CSTR_TOL:     string = 'TOL';
   CSTR_TOL_A:   string = 'A';
-  CSTR_TOL_MAX: string = 'MAX';
   CSTR_TOL_MIN: string = 'MIN';
+  CSTR_TOL_MAX: string = 'MAX';
   CSTR_FINAL:   string = 'FINAL';
   CSTR_COMMENT_LINE:  string = '//';
   CSTR_COMMENT_BEGIN: string = '(*';
@@ -87,6 +77,35 @@ const
   CCHR_BRACE_CLOSE:   char = '}';
 
 implementation
+
+// =============================================================================
+//    Description  : push a EParseState into state stack
+//    Parameter    : state, a EParseState which is pushed into state stack
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
+procedure TScriptReader.PushState(const state: EParseState);
+begin
+  new(pe_state);
+  pe_state^ := e_curstate;
+  t_states.Push(pe_state);
+  e_curstate := state;
+end;
+
+// =============================================================================
+//    Description  : pop a CheckerState from the state stack
+//    Parameter    : --
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
+procedure TScriptReader.PopState();
+begin
+  pe_state := t_states.Pop();
+  e_curstate := pe_state^;
+  dispose(pe_state);
+end;
 
 // =============================================================================
 //    Description  : constructor

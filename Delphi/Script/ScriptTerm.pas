@@ -31,10 +31,10 @@ type
                 ST_M,       //e.g. M:'';
                 ST_PAR,     //e.g. Par:'';
                 ST_FINAL,   //e.g. R_off: '101'; or Final:'';
-                ST_TOL,      //e.g. Tol:(A:''; Min:0; Max:0);
-                ST_TOL_A,   //e.g. (A:'';
+                ST_TOL,     //e.g. Tol:(A:''; Min:0; Max:0);
+                ST_TOL_A,   //e.g. A:'';
                 ST_TOL_MIN, //e.g. Min:0;
-                ST_TOL_MAX  //e.g. Max:0)
+                ST_TOL_MAX  //e.g. Max:0
                 );
 
   // a base class for terminology in a step: Nr, T, R_on, Fkt, Par, R_off, Tol(A, Min, Max)
@@ -43,21 +43,23 @@ type
     s_input: string;
     s_eval:  string;
   protected
-    function Evaluate(): boolean;
   public
-    property InputString: string read s_input;
+    property InputString: string read s_input write s_input;
     property EvalString: string read s_eval;
-    function ResolveTerm(var text: string; const term: EStepTerm): boolean;
   end;
 
   TTestStep = class
+  type AStepTerms = array[EStepTerm] of TStepTerm;
   protected
-    a_terms:    array[EStepTerm] of TStepTerm;
+    a_terms:    AStepTerms;
     t_result:   TStepResult;
 
   protected
   public
     property StepResult: TStepResult read t_result write t_result;
+    property StepTerms: AStepTerms read a_terms write a_terms;
+
+    //function ResolveTerm(var text: string; const term: EStepTerm): TStepTerm;
   end;
 
   TTestCase = class

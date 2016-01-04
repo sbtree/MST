@@ -68,6 +68,7 @@ end;
 function TScriptRunner.RunStep(var tstep: TTestStep): boolean;
 begin
   result := false;
+  t_curstep := tstep;
   //todo: 1. initialize this step and execute statements of 'init' or 'r_on'
   //todo: 2. read information of 'm' and control the execution of this step
   //todo: 3. call script function to execute 'fkt' with 'par'
