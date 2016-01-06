@@ -31,6 +31,7 @@ type
     t_progress: TControl; //TProgressBar; //to illustrate the progress of the download
     t_messager: TStrings; //to output messages
     b_dlcancel: boolean;  //to cancel downloading manually
+    i_cbaud:integer;
   protected
     procedure UpdateStartMessage(); virtual; abstract;
     function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
@@ -41,6 +42,7 @@ type
     constructor Create();
     destructor Destroy; override;
 
+    property CustomBaudrad: integer read i_cbaud write i_cbaud;
     property Cancel : boolean read b_dlcancel write b_dlcancel;
     property Messager: TStrings write t_messager;
     property ProgressBar: TControl write t_progress;
@@ -51,7 +53,7 @@ type
 
   TComDownloader = class(TDownloader)
   protected
-    t_ser: TSerial;
+    t_ser:  TSerial;
   protected
     procedure ResetSerial();
     function  SendStr(const str: string; const bprint: boolean = true): boolean;
@@ -145,6 +147,7 @@ begin
   s_lastfile := '';
   t_srecords := TStringList.Create();
   b_dlcancel := false;
+  i_cbaud := CINT_B115200;
 end;
 
 destructor TDownloader.Destroy;
@@ -290,7 +293,7 @@ begin
             b_break := true;
             if assigned(t_messager) then t_messager.Add(format('[%s]:<%s', [DateTimeToStr(Now()), s_recv]))
           end;
-        end else b_break := true;  //received no data
+        end else b_ok := true; //b_break := true;  //received no data as ok
         Application.ProcessMessages();
       until (b_ok or b_break);
     end;
@@ -311,13 +314,15 @@ end;
 
 function  TComDownloader.TryBootMessageMTL(var msg: string): integer;
 const CSTR_TEST_CMD: string= 'abcdefg';
+      C_WAITING_INTERVAL: cardinal = 3000;
+      C_RESTART_INTERVAL: cardinal = 2000;
 var i_baud: integer; c_endtime: cardinal;
 begin
   i_baud := t_ser.Baudrate;
-  t_ser.Baudrate := CINT_B115200;
+  t_ser.Baudrate := i_cbaud; //CINT_B115200;
   SendStr(CSTR_TEST_CMD + CCHR_RETURN);
-  c_endtime := GetTickCount() + C_ANSWER_WAIT;
-  result := RecvStrInterval(msg, c_endtime, C_RECV_INTERVAL);
+  c_endtime := GetTickCount() + C_WAITING_INTERVAL; //C_ANSWER_WAIT;
+  result := RecvStrInterval(msg, c_endtime, C_RESTART_INTERVAL);
   t_ser.Baudrate := i_baud;
 end;
 
@@ -327,15 +332,17 @@ var c_time: cardinal; s_temp: string; i_pos: integer;
 begin
   s_blmessage := ''; s_fwmessage := '';
   c_time := GetTickCount() + C_REBOOT_TIME;
-  RecvStr(s_blmessage, false);
+  //RecvStr(s_blmessage, false);
   if (length(s_blmessage) <= 1) then begin //only one char is handled as noise
     s_blmessage := '';
     WaitForReading(c_time);
   end;
   
   RecvStrInterval(s_blmessage, c_time, C_RECV_INTERVAL);
-  if (not IsValidAscii(s_blmessage)) then TryBootMessageMTL(s_blmessage)
-  else begin
+  if (not IsValidAscii(s_blmessage)) then begin
+    s_blmessage := '';
+    TryBootMessageMTL(s_blmessage);
+  end else begin
     s_temp := UpperCase(s_blmessage);
     if (Pos(CSTR_UNKNOWNCMD, s_temp) > 0) then begin
       if assigned(t_messager) then t_messager.Add(format('[%s]: device received an unknown command', [DateTimeToStr(Now())]))
@@ -349,7 +356,6 @@ begin
       s_blmessage := LeftStr(s_blmessage, i_pos - 1);
       s_fwmessage := s_temp + s_fwmessage;
     end;
-
   end;
 end;
 
@@ -420,7 +426,7 @@ begin
               s_recv := s_recv + s_temp;
               SendStr(CSTR_B115200 + CCHR_RETURN);
               if WaitForReading(GetTickCount() + C_ANSWER_WAIT) then begin
-                if (RecvStr(s_temp, false) > 0) then t_ser.Baudrate := CINT_B115200;
+                if (RecvStr(s_temp, false) > 0) then t_ser.Baudrate := i_cbaud; //CINT_B115200;
               end;
             end else Delay(C_DELAY_ONCE);
             Inc(i_trials);
@@ -437,7 +443,7 @@ begin
           s_recv := '';
           continue;
         end else begin
-          t_ser.Baudrate := CINT_B115200;
+          t_ser.Baudrate := i_cbaud; //CINT_B115200;
           repeat
             SendStr(CSTR_BOOTQUE + CCHR_RETURN);
             WaitForReading(c_endtime);

@@ -58,6 +58,8 @@ type
     lblBaudProd: TLabel;
     btnCloseProd: TButton;
     pgbSendFile: tCustomProgressbar;
+    chkCustomBaud: TCheckBox;
+    txtCustomBaud: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     //procedure ComPortRxChar(Sender: TObject; Count: Integer);
@@ -79,6 +81,7 @@ type
     procedure cmbBaudProdChange(Sender: TObject);
     procedure chkXonXoffProdClick(Sender: TObject);
     procedure btnCloseProdClick(Sender: TObject);
+    procedure chkCustomBaudClick(Sender: TObject);
   protected
     procedure Transmit();
     function SendStr(const str: string; const bprint: boolean = true): boolean;
@@ -178,6 +181,9 @@ var s_file, s_line, s_recv: string; i, i_trial: integer; t_lines: TStringList; b
 begin
   c_start := GetTickCount();
   //memRecv.Lines.Add('prog: start downloading, please reset the unit in 10 seconds');
+  i_baud := CINT_B115200;
+  if chkCustomBaud.Checked then TryStrToInt(trim(txtCustomBaud.Text), i_baud);
+  t_downloader.CustomBaudrad := i_baud;
   s_file := trim(txtFile.Text);
   b_ok := t_downloader.Download(trim(txtBootCmd.Text), s_file);
 {  c_end := GetTickCount();
@@ -689,9 +695,12 @@ begin
 end;
 
 procedure TFrmBootTester.btnStateQueClick(Sender: TObject);
-var s_blmsg, s_fwmsg: string; t_start, t_end: cardinal;
+var s_blmsg, s_fwmsg: string; t_start, t_end: cardinal; i_baud: integer;
 begin
   t_start := GetTickCount();
+  i_baud := CINT_B115200;
+  if chkCustomBaud.Checked then TryStrToInt(trim(txtCustomBaud.Text), i_baud);
+  t_downloader.CustomBaudrad := i_baud;
   e_bootstate := t_downloader.GetBootState(trim(txtBootCmd.Text));
   t_end := GetTickCount();
 
@@ -715,6 +724,11 @@ procedure TFrmBootTester.chbVerifyClick(Sender: TObject);
 begin
   txtVerify.Enabled := chbVerify.Checked;
   if chbVerify.Checked then txtVerify.SetFocus;
+end;
+
+procedure TFrmBootTester.chkCustomBaudClick(Sender: TObject);
+begin
+  txtCustomBaud.Enabled := chkCustomBaud.Checked;
 end;
 
 procedure TFrmBootTester.chkXonXoffProdClick(Sender: TObject);

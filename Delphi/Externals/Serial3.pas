@@ -308,6 +308,14 @@ begin
 end;
 
 procedure TSerial.SetBaud (Baud : Integer);
+begin
+  if ((Baud > 0) and (FBaudrate<>Baud )) then begin
+    FBaudrate := Baud ;
+    ReopenPort(FActive)
+  end
+end;
+
+{procedure TSerial.SetBaud (Baud : Integer);
 var
    i : Integer ;
    baud_ok : Boolean;
@@ -328,7 +336,7 @@ begin
    end
    else
       MessageDlg ('Baudrate is not valid', mtError, [mbOK], 0)
-end;
+end;}
 
 procedure TSerial.SetParity (Parity : eParity);
 begin

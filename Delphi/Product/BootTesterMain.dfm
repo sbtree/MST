@@ -4,7 +4,7 @@ object FrmBootTester: TFrmBootTester
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'BootTester'
-  ClientHeight = 457
+  ClientHeight = 471
   ClientWidth = 774
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -21,13 +21,13 @@ object FrmBootTester: TFrmBootTester
     Left = 416
     Top = 8
     Width = 345
-    Height = 393
+    Height = 414
     ScrollBars = ssVertical
     TabOrder = 0
   end
   object btnClear: TButton
     Left = 565
-    Top = 418
+    Top = 438
     Width = 75
     Height = 25
     Caption = '&Clear'
@@ -36,7 +36,7 @@ object FrmBootTester: TFrmBootTester
   end
   object btnExport: TButton
     Left = 686
-    Top = 418
+    Top = 438
     Width = 75
     Height = 25
     Caption = 'E&xport...'
@@ -192,33 +192,33 @@ object FrmBootTester: TFrmBootTester
     Left = 8
     Top = 296
     Width = 400
-    Height = 147
+    Height = 169
     Caption = 'Service'
     TabOrder = 4
     object lblBootCmd: TLabel
       Left = 19
-      Top = 120
+      Top = 138
       Width = 76
-      Height = 13
+      Height = 16
       Caption = 'Boot Command:'
     end
     object lblPortProd: TLabel
-      Left = 19
-      Top = 27
+      Left = 43
+      Top = 28
       Width = 24
       Height = 13
       Caption = 'Port:'
     end
     object lblBaudProd: TLabel
-      Left = 107
-      Top = 26
+      Left = 19
+      Top = 52
       Width = 48
       Height = 13
       Caption = 'Baudrate:'
     end
     object pgbSendFile: tCustomProgressbar
       Left = 19
-      Top = 89
+      Top = 110
       Width = 366
       Height = 16
       Ctl3D = True
@@ -235,49 +235,49 @@ object FrmBootTester: TFrmBootTester
     end
     object txtFile: TEdit
       Left = 19
-      Top = 64
+      Top = 82
       Width = 335
-      Height = 21
+      Height = 24
       TabOrder = 0
     end
     object btnFile: TButton
       Left = 360
-      Top = 64
+      Top = 82
       Width = 25
-      Height = 22
+      Height = 25
       Caption = '...'
       TabOrder = 1
       OnClick = btnFileClick
     end
     object btnStateQue: TButton
       Left = 246
-      Top = 113
+      Top = 131
       Width = 56
-      Height = 25
+      Height = 28
       Caption = 'State?'
       TabOrder = 2
       OnClick = btnStateQueClick
     end
     object btnDownload: TButton
       Left = 328
-      Top = 113
+      Top = 131
       Width = 57
-      Height = 25
+      Height = 28
       Caption = '&Download'
       TabOrder = 3
       OnClick = btnDownloadClick
     end
     object txtBootCmd: TEdit
       Left = 101
-      Top = 117
+      Top = 135
       Width = 63
-      Height = 21
+      Height = 24
       TabOrder = 4
       Text = 'Reset!'
     end
     object cmbPortProd: TComboBox
-      Left = 49
-      Top = 23
+      Left = 73
+      Top = 25
       Width = 48
       Height = 21
       ItemHeight = 13
@@ -296,8 +296,8 @@ object FrmBootTester: TFrmBootTester
         '8')
     end
     object chkXonXoffProd: TCheckBox
-      Left = 240
-      Top = 25
+      Left = 145
+      Top = 27
       Width = 59
       Height = 17
       Caption = 'Xon/Xoff'
@@ -305,8 +305,8 @@ object FrmBootTester: TFrmBootTester
       OnClick = chkXonXoffProdClick
     end
     object cmbBaudProd: TComboBox
-      Left = 161
-      Top = 24
+      Left = 73
+      Top = 50
       Width = 66
       Height = 21
       ItemHeight = 13
@@ -327,6 +327,24 @@ object FrmBootTester: TFrmBootTester
       Caption = '&Close'
       TabOrder = 8
       OnClick = btnCloseProdClick
+    end
+    object chkCustomBaud: TCheckBox
+      Left = 145
+      Top = 51
+      Width = 104
+      Height = 17
+      Caption = 'Custom Baudrate:'
+      TabOrder = 9
+      OnClick = chkCustomBaudClick
+    end
+    object txtCustomBaud: TEdit
+      Left = 255
+      Top = 50
+      Width = 62
+      Height = 21
+      Enabled = False
+      TabOrder = 10
+      Text = '106168'
     end
   end
 end
