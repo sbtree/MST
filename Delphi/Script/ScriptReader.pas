@@ -20,21 +20,23 @@ type
 
 
   TScriptReader = class(TTextMessager)
+  private
+    pe_state:   PParseState; //a pointer to EParseState, auxiliary class remember
   protected
     e_curstate: EParseState; //current state of the reader
-    pe_state:   PParseState; //a pointer to EParseState
     t_states:   TStack;      //stack of states
     s_srcfile:  string;      //file name
-    s_curtext:  string;      //string, which is not yet parsed
     t_srclines: TStringList; //liens from a source.
-    t_varvals:  THashedStringList;
+    //t_varvals:  THashedStringList;
+    t_purelines:TStringList; //liens without any useless char.
     t_steps:    TObjectList; //list of test steps
-    b_allowdef: boolean;     //indicates if a defination is allowed till now
-    i_curindex: integer;
+    b_allowvar: boolean;     //indicates if a variable is allowed with the format 'var=value' till now
+    s_curtext:  string;      //string, which is not yet parsed
+    i_curpos:   integer;
+    s_validstep:string;      //string, which is useful for a step
+    i_curline:  integer;
 
   protected
-    function  ParseText(const text: string): boolean;
-    function  FindTerm(const pattern: string): TStepTerm;
     procedure PushState(const state: EParseState);
     procedure PopState();
 
@@ -42,9 +44,9 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    function ReadFromFile(const srcfile: string): boolean;
-    function ReadFromText(const srctext: string): boolean;
-    function ReadFromList(const srclist: TStringList): boolean;
+    function ReadFromLine(const srctext: string; const bstop: boolean = false): boolean; virtual;
+    function ReadFromList(const srclist: TStringList): boolean; virtual;
+    function ReadFromFile(const srcfile: string): boolean; virtual;
   end;
 
 const
@@ -77,6 +79,7 @@ const
   CCHR_BRACE_CLOSE:   char = '}';
 
 implementation
+uses SysUtils, StrUtils;
 
 // =============================================================================
 //    Description  : push a EParseState into state stack
@@ -118,7 +121,10 @@ constructor TScriptReader.Create();
 begin
 	inherited Create;
   e_curstate := PS_IDLE;
+  i_curpos := 1;
+  b_allowvar := true;
   t_states := TStack.Create();
+  t_purelines := TStringList.Create;
 end;
 
 // =============================================================================
@@ -133,13 +139,49 @@ begin
 	inherited Destroy;
   while(t_states.Count > 0) do PopState();
   t_states.Free();
+  t_purelines.Free;
 end;
 
-
-function TScriptReader.ParseText(const text: string): boolean;
+function TScriptReader.ReadFromLine(const srctext: string; const bstop: boolean): boolean;
+const  CSET_BLANK_CHARS: set of char = [' ', $9, $A, $B, $C, $D];
+var i, i_curpos: integer;
 begin
-  //definition VAR=VALUE
-  //test step (Nr: 10.00; T:''; Fkt:abcd; M:'';),
+  if e_curstate = PS_IDLE then begin
+    if s_validstep <> '' then t_purelines.Add(s_validstep);
+    s_validstep := '';
+    s_curtext := MidStr(s_curtext, i_curpos + 1);
+    i_curpos := 1;
+  end;
+  //todo: 
+  i_curpos := length(s_curtext) + 1;
+  s_curtext := s_curtext + srctext;
+  for i := i_curpos to length(s_curtext) do begin
+    case e_curstate of
+      PS_IDLE: begin //only comment, variable and step are possible
+        if (s_curtext[i] in CSET_BLANK_CHARS) then
+
+      end;
+      PS_VARIABLE: ;
+      PS_STEP: begin //comment and terminology are allowed
+        b_allowvar := false; //variables are allowed only before the test step
+      end;
+      PS_TERM: ;
+      PS_QUOTATION: ;
+      PS_LNCOMMENT: ;
+      PS_BLKCOMMENT: ;
+      PS_TERMGROUP: ;
+    end;
+  end;
+end;
+
+function TScriptReader.ReadFromList(const srclist: TStringList): boolean;
+begin
+
+end;
+
+function TScriptReader.ReadFromFile(const srcfile: string): boolean;
+begin
+
 end;
 
 end.
