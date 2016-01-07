@@ -53,7 +53,7 @@ type
 
   TComDownloader = class(TDownloader)
   protected
-    t_ser:  TSerial;
+    t_ser: TSerial;
   protected
     procedure ResetSerial();
     function  SendStr(const str: string; const bprint: boolean = true): boolean;
@@ -91,6 +91,8 @@ const
   CSTR_UNKNOWNCMD: string = 'UNKNOWN COMMAND';
   CSTR_CHECKSUM: string = 'CHECKSUM';
   CSTR_DONE: string = 'DONE.';
+  CSTR_ARS2000: string = 'ARS 2000';
+  CSTR_PERCENT: string = '%';
   CSTR_WAITING: string = 'WAITING...';
   CSTR_SERVICE_MENU: string = 'SERVICE-MENUE';
   CSTR_EPR: string = 'EPR';
@@ -511,7 +513,7 @@ const
   C_MTXBL   = $00020000;
   C_MTXUPD  = $00000001;
   C_MTXAPP  = $00000002;
-var s_recv, s_temp, s_inblmsg, s_infwmsg: string; c_time: cardinal; b_repeat: boolean; lw_blfw: longword; t_lines: TStringList;
+var s_recv, s_inblmsg, s_infwmsg: string; c_time: cardinal; b_repeat: boolean; lw_blfw: longword; t_lines: TStringList;
 begin
   result := BS_UNKNOWN; lw_blfw := 0;
   c_time := GetTickCount() + C_REBOOT_TIME;
@@ -521,26 +523,26 @@ begin
       if ResetDevice(cmd, c_time) then begin
         s_inblmsg := UpperCase(trim(s_blmessage));
         s_infwmsg := UpperCase(trim(s_fwmessage));
-        if (Pos(CSTR_MOTOROLA, s_inblmsg) > 0) then lw_blfw := (lw_blfw or C_MTLBL);
-        if ((Pos(CSTR_WAITING, s_inblmsg) > 0) or (Pos(CSTR_BOOTCODE, s_inblmsg) > 0) or (Pos(CSTR_METRONIX, s_inblmsg) > 0))  then lw_blfw := (lw_blfw or C_MTXBL);
+        if ContainsText(s_inblmsg, CSTR_MOTOROLA) then lw_blfw := (lw_blfw or C_MTLBL);
+        if (ContainsText(s_inblmsg, CSTR_WAITING) or ContainsText(s_inblmsg, CSTR_BOOTCODE) or ContainsText(s_inblmsg, CSTR_METRONIX))  then lw_blfw := (lw_blfw or C_MTXBL);
 
         if (s_fwmessage <> '') then begin
-          if (Pos(CSTR_BLUPDATER, s_infwmsg) > 0)  then lw_blfw := (lw_blfw or C_MTXUPD);
+          if ContainsText(s_infwmsg, CSTR_BLUPDATER)  then lw_blfw := (lw_blfw or C_MTXUPD);
           t_lines := TStringList.Create;
           ExtractStrings([Char(10)], [Char(13)], PChar(s_infwmsg), t_lines);
-          if ((Pos(CSTR_DONE, t_lines[t_lines.Count - 1]) > 0))  then lw_blfw := C_MTXUPD
+          if ContainsText(t_lines[t_lines.Count - 1], CSTR_DONE) then lw_blfw := C_MTXUPD
+          else if (ContainsText(s_fwmessage, CSTR_ARS2000) or ContainsText(s_fwmessage, CSTR_PERCENT + CCHR_RETURN)) then lw_blfw := (lw_blfw or C_MTXAPP)
           else begin
             repeat
               c_time := GetTickCount() + C_ANSWER_WAIT;
-              RecvStr(s_temp, false); //clear buffer
+              s_recv := ''; RecvStr(s_recv, false); //clear buffer
               SendStr(CSTR_BOOTQUE + CCHR_RETURN);
               WaitForReading(c_time);
               s_recv := ''; RecvStrInterval(s_recv, c_time, C_RECV_INTERVAL);
-              s_temp := UpperCase(trim(s_recv));
               b_repeat := false;
-              if (Pos(CSTR_APPLICATION, s_temp) > 0) then lw_blfw := (lw_blfw or C_MTXAPP)
-              else if (Pos(UpperCase(CSTR_SERVICE), s_temp) > 0) then lw_blfw := (lw_blfw or C_MTXBL)
-              else if ((Pos(CSTR_ERROR, s_temp) > 0) or (Pos(CSTR_UNKNOWNCMD, s_temp) > 0)) then b_repeat := true;
+              if ContainsText(s_recv,CSTR_APPLICATION) then lw_blfw := (lw_blfw or C_MTXAPP)
+              else if ContainsText(s_recv, CSTR_SERVICE) then lw_blfw := (lw_blfw or C_MTXBL)
+              else if (ContainsText(s_recv, CSTR_ERROR) or ContainsText(s_recv, CSTR_UNKNOWNCMD)) then b_repeat := true;
             until ((not b_repeat) or (GetTickCount() >= c_time));
           end;
           t_lines.Clear;
