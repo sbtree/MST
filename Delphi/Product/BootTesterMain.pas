@@ -58,8 +58,8 @@ type
     lblBaudProd: TLabel;
     btnCloseProd: TButton;
     pgbSendFile: tCustomProgressbar;
-    chkCustomBaud: TCheckBox;
-    txtCustomBaud: TEdit;
+    chkBaudFactor: TCheckBox;
+    txtBaudFactor: TEdit;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     //procedure ComPortRxChar(Sender: TObject; Count: Integer);
@@ -81,7 +81,7 @@ type
     procedure cmbBaudProdChange(Sender: TObject);
     procedure chkXonXoffProdClick(Sender: TObject);
     procedure btnCloseProdClick(Sender: TObject);
-    procedure chkCustomBaudClick(Sender: TObject);
+    procedure chkBaudFactorClick(Sender: TObject);
   protected
     procedure Transmit();
     function SendStr(const str: string; const bprint: boolean = true): boolean;
@@ -177,13 +177,15 @@ end;
 procedure TFrmBootTester.btnDownloadClick(Sender: TObject);
 const C_DOWNLOAD_INTERVAL: cardinal = 6000;
 var s_file, s_line, s_recv: string; i, i_trial: integer; t_lines: TStringList; b_break, b_ok: boolean;
-    i_baud: integer; e_flowctrl: eFlowControl; c_start, c_end: cardinal;
+    e_flowctrl: eFlowControl; c_start, c_end: cardinal; r_factor: single;
 begin
   c_start := GetTickCount();
   //memRecv.Lines.Add('prog: start downloading, please reset the unit in 10 seconds');
-  i_baud := CINT_B115200;
-  if chkCustomBaud.Checked then TryStrToInt(trim(txtCustomBaud.Text), i_baud);
-  t_downloader.CustomBaudrad := i_baud;
+  r_factor := 1.0;
+  if chkBaudFactor.Checked then begin
+    if (not TryStrToFloat(trim(txtBaudFactor.Text), r_factor)) then r_factor := 1.0;
+  end;
+  t_downloader.BaudrateFactor := r_factor;
   s_file := trim(txtFile.Text);
   b_ok := t_downloader.Download(trim(txtBootCmd.Text), s_file);
 {  c_end := GetTickCount();
@@ -420,14 +422,14 @@ begin
   result := BS_UNKNOWN; lw_blfw := 0;
   s_inblmsg := UpperCase(trim(blmsg));
   s_infwmsg := UpperCase(trim(fwmsg));
-  if (Pos(CSTR_MOTOROLA, s_inblmsg) > 0) then lw_blfw := (lw_blfw or C_MTLBL);
-  if ((Pos(CSTR_WAITING, s_inblmsg) > 0) or (Pos(CSTR_BOOTCODE, s_inblmsg) > 0) or (Pos(CSTR_METRONIX, s_inblmsg) > 0))  then lw_blfw := (lw_blfw or C_MTXBL);
+  if ContainsText(blmsg, CSTR_MOTOROLA) then lw_blfw := (lw_blfw or C_MTLBL);
+  if (ContainsText(blmsg, CSTR_WAITING) or ContainsText(blmsg, CSTR_BOOTCODE) or ContainsText(blmsg, CSTR_METRONIX)) then lw_blfw := (lw_blfw or C_MTXBL);
 
   if (fwmsg <> '') then begin
-    if (Pos(CSTR_BLUPDATER, s_infwmsg) > 0)  then lw_blfw := (lw_blfw or C_MTXUPD);
+    if ContainsText(fwmsg, CSTR_BLUPDATER)  then lw_blfw := (lw_blfw or C_MTXUPD);
     t_lines := TStringList.Create;
-    ExtractStrings([Char(10)], [Char(13)], PChar(s_infwmsg), t_lines);
-    if ((Pos(CSTR_DONE, t_lines[t_lines.Count - 1]) > 0))  then lw_blfw := C_MTXUPD
+    ExtractStrings([Char(10)], [Char(13)], PChar(fwmsg), t_lines);
+    if ContainsText(t_lines[t_lines.Count - 1], CSTR_DONE)  then lw_blfw := C_MTXUPD
     else if t_ser.Active then begin
       repeat
         cTimeout := GetTickCount() + c_timeout;
@@ -695,12 +697,14 @@ begin
 end;
 
 procedure TFrmBootTester.btnStateQueClick(Sender: TObject);
-var s_blmsg, s_fwmsg: string; t_start, t_end: cardinal; i_baud: integer;
+var s_blmsg, s_fwmsg: string; t_start, t_end: cardinal; r_factor: single;
 begin
   t_start := GetTickCount();
-  i_baud := CINT_B115200;
-  if chkCustomBaud.Checked then TryStrToInt(trim(txtCustomBaud.Text), i_baud);
-  t_downloader.CustomBaudrad := i_baud;
+  r_factor := 1.0;
+  if chkBaudFactor.Checked then begin
+    if (not TryStrToFloat(trim(txtBaudFactor.Text), r_factor)) then r_factor := 1.0;
+  end;
+  t_downloader.BaudrateFactor := r_factor;
   e_bootstate := t_downloader.GetBootState(trim(txtBootCmd.Text));
   t_end := GetTickCount();
 
@@ -726,9 +730,9 @@ begin
   if chbVerify.Checked then txtVerify.SetFocus;
 end;
 
-procedure TFrmBootTester.chkCustomBaudClick(Sender: TObject);
+procedure TFrmBootTester.chkBaudFactorClick(Sender: TObject);
 begin
-  txtCustomBaud.Enabled := chkCustomBaud.Checked;
+  txtBaudFactor.Enabled := chkBaudFactor.Checked;
 end;
 
 procedure TFrmBootTester.chkXonXoffProdClick(Sender: TObject);

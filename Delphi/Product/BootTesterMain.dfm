@@ -199,7 +199,7 @@ object FrmBootTester: TFrmBootTester
       Left = 19
       Top = 138
       Width = 76
-      Height = 16
+      Height = 13
       Caption = 'Boot Command:'
     end
     object lblPortProd: TLabel
@@ -237,7 +237,7 @@ object FrmBootTester: TFrmBootTester
       Left = 19
       Top = 82
       Width = 335
-      Height = 24
+      Height = 21
       TabOrder = 0
     end
     object btnFile: TButton
@@ -271,7 +271,7 @@ object FrmBootTester: TFrmBootTester
       Left = 101
       Top = 135
       Width = 63
-      Height = 24
+      Height = 21
       TabOrder = 4
       Text = 'Reset!'
     end
@@ -328,23 +328,23 @@ object FrmBootTester: TFrmBootTester
       TabOrder = 8
       OnClick = btnCloseProdClick
     end
-    object chkCustomBaud: TCheckBox
+    object chkBaudFactor: TCheckBox
       Left = 145
       Top = 51
       Width = 104
       Height = 17
-      Caption = 'Custom Baudrate:'
+      Caption = 'Baudrate Factor:'
       TabOrder = 9
-      OnClick = chkCustomBaudClick
+      OnClick = chkBaudFactorClick
     end
-    object txtCustomBaud: TEdit
+    object txtBaudFactor: TEdit
       Left = 255
       Top = 50
       Width = 62
       Height = 21
       Enabled = False
       TabOrder = 10
-      Text = '106168'
+      Text = '0.9216'
     end
   end
 end
