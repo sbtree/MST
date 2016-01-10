@@ -25,6 +25,7 @@ type
   protected
     e_curstate: EParseState; //current state of the reader
     t_states:   TStack;      //stack of states
+    t_tokens:   TStack;      //save tokens
     s_srcfile:  string;      //file name
     t_srclines: TStringList; //liens from a source.
     //t_varvals:  THashedStringList;
@@ -44,7 +45,7 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    function ReadFromLine(const srctext: string; const bstop: boolean = false): boolean; virtual;
+    function ReadFromText(const srctext: string; const bstop: boolean = false): boolean; virtual;
     function ReadFromList(const srclist: TStringList): boolean; virtual;
     function ReadFromFile(const srcfile: string): boolean; virtual;
   end;
@@ -142,14 +143,14 @@ begin
   t_purelines.Free;
 end;
 
-function TScriptReader.ReadFromLine(const srctext: string; const bstop: boolean): boolean;
-const  CSET_BLANK_CHARS: set of char = [' ', $9, $A, $B, $C, $D];
-var i, i_curpos: integer;
+function TScriptReader.ReadFromText(const srctext: string; const bstop: boolean): boolean;
+const  CSET_BLANK_CHARS: set of char = [' ', Char($9), Char($A), Char($B), Char($C), Char($D)];
+var i, i_curpos: integer; s_token: string;
 begin
   if e_curstate = PS_IDLE then begin
     if s_validstep <> '' then t_purelines.Add(s_validstep);
     s_validstep := '';
-    s_curtext := MidStr(s_curtext, i_curpos + 1);
+    //s_curtext := MidStr(s_curtext, i_curpos + 1);
     i_curpos := 1;
   end;
   //todo: 
