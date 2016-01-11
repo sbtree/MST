@@ -94,7 +94,6 @@ type
     function HasInvalidAscii(const str: string): boolean;
     function GetBootMessageMTL(var msg: string): integer;
     function GetSwitchOnMessage(var blmsg, fwmsg:string; const elapse: cardinal): integer;
-    function GetBootState(const blmsg, fwmsg: string): EBootState;
     function EnterService(const cmd: string): boolean;
     function EnterServiceMode(const bs: EBootState): boolean;
     function ExpectStr(const str: string; var sRecv: string; const msecs: cardinal): boolean;
@@ -117,6 +116,7 @@ implementation
 
 {$R *.dfm}
 uses StrUtils, TypInfo, GenUtils;
+
 const
   C_DELAY_MSEC: Cardinal = 50;
   CSTR_FORMAT_TO : string = '%0.3f--------- ---------- ---------- ---------->';
@@ -139,7 +139,7 @@ const
   CSTR_B115200: string = 'B115200';
   CINT_B115200: integer = 115200;
   C_REBOOT_TIME: cardinal = 10000;  //10 seconds for reboot
-  C_MANUAL_RESTART: cardinal = 30000;
+  C_MANUAL_RESTART: cardinal = 30000;  
 
 {procedure Delay(const msec: cardinal);
 var i_timeout: cardinal;
@@ -176,11 +176,8 @@ end;
 
 procedure TFrmBootTester.btnDownloadClick(Sender: TObject);
 const C_DOWNLOAD_INTERVAL: cardinal = 6000;
-var s_file, s_line, s_recv: string; i, i_trial: integer; t_lines: TStringList; b_break, b_ok: boolean;
-    e_flowctrl: eFlowControl; c_start, c_end: cardinal; r_factor: single;
+var s_file: string; b_ok: boolean; r_factor: single;
 begin
-  c_start := GetTickCount();
-  //memRecv.Lines.Add('prog: start downloading, please reset the unit in 10 seconds');
   r_factor := 1.0;
   if chkBaudFactor.Checked then begin
     if (not TryStrToFloat(trim(txtBaudFactor.Text), r_factor)) then r_factor := 1.0;
@@ -188,73 +185,6 @@ begin
   t_downloader.BaudrateFactor := r_factor;
   s_file := trim(txtFile.Text);
   b_ok := t_downloader.Download(trim(txtBootCmd.Text), s_file);
-{  c_end := GetTickCount();
-  //memRecv.Lines.Add(format('prog[%0.3f]: download is done with [result=%s]',[(c_end - c_start)/1000.0, BoolToStr(b_ok)]));
-  if not t_ser.Active then begin
-    t_ser.Active := true;
-    if not t_ser.Active then begin
-      memRecv.Lines.Add(format('prog: serial interface is deaktived: port=%d; baud=%d', [t_ser.Port, t_ser.Baudrate]));
-      exit;
-    end;
-  end;
-
-  i_baud := t_ser.Baudrate; e_flowctrl := t_ser.FlowMode;
-  b_break := true; s_file := trim(txtFile.Text);
-  if FileExists(s_file) then begin
-    if EnterService('') then begin
-      lblSendFile.Caption := 'loading...';
-      t_lines := TStringList.Create;
-      t_lines.LoadFromFile(s_file);
-      pgbSendFile.Max := t_lines.Count;
-      pgbSendFile.Position := 0;
-      lblSendFile.Caption := '0%';
-      c_start := GetTickCount();
-      b_break := false;
-      if (e_dlprotocol = DP_METRONIX) then begin
-        for i := 0 to t_lines.Count - 1 do begin
-          i_trial := 0; b_ok := false;
-          s_line := t_lines[i] + Char(13);
-          repeat
-            //SendStr(s_line, false);
-            t_ser.WriteString(s_line);
-            s_recv := '';
-            if WaitForReading(GetTickCount() + C_DOWNLOAD_INTERVAL) then begin
-              t_ser.ReadString(s_recv);
-              //RecvStr(s_recv, false, false);
-              if SameText(s_recv, '*') then b_ok := true
-              else if SameText(s_recv, '#') then begin //repeat sending the same line
-                Inc(i_trial);
-                b_break := (i_trial > 20);
-              end else b_break := true; //'@' or other char
-            end else b_break := true;  //received no data
-          until (b_break or b_ok);
-
-          pgbSendFile.Position := i + 1;
-          lblSendFile.Caption := format('%d', [Round((pgbSendFile.Position / pgbSendFile.Max) * 100.0)]) + '%';
-          if b_break then begin
-            self.memRecv.Lines.Add(format('prog: failed to send file [trials(%d) of sending:%s; answer:%s;]', [i_trial, s_line, s_recv]));
-            break;
-          end;
-        end;
-      end else begin
-        for i := 0 to t_lines.Count - 1 do begin
-          t_ser.WriteString(t_lines[i] + Char(13));
-          while t_ser.TxWaiting > 0 do Delay(C_DELAY_MSEC);
-          pgbSendFile.Position := i + 1;
-          lblSendFile.Caption := format('%d', [Round((pgbSendFile.Position / pgbSendFile.Max) * 100.0)]) + '%';
-          Application.ProcessMessages();
-        end;
-      end;
-      c_end := GetTickCount();
-      self.memRecv.Lines.Add(format('prog[%0.3f]: downloaded %d lines of totle %d from file "%s"', [(c_end - c_start)/1000.0, pgbSendFile.Position, pgbSendFile.Max, s_file]));
-      lblSendFile.Caption := 'over';
-      t_lines.Clear;
-      FreeAndNil(t_lines);
-    end;
-  end;
-  t_ser.Baudrate := i_baud;
-  t_ser.FlowMode := e_flowctrl;
-  self.memRecv.Lines.Add(format('prog: download is finished with [%s]; port=%d; baudrate=%d; flow control=%s',[BoolToStr(not b_break), t_ser.Port, t_ser.Baudrate, GetEnumName(TypeInfo(eFlowControl), Ord(t_ser.FlowMode))]));}
 end;
 
 procedure TFrmBootTester.Transmit();
@@ -407,58 +337,6 @@ begin
       c_endtime := GetTickCount() + C_BL_FW_INTERVAL;
       if WaitForReading(c_endtime) then result := result + RecvStrInterval(fwmsg, c_endtime, 1500);
     end;
-  end;
-end;
-
-function TFrmBootTester.GetBootState(const blmsg, fwmsg: string): EBootState;
-const
-  C_MTLBL = $00010000;
-  C_MTXBL = $00020000;
-  C_MTXUPD = $00000001;
-  C_MTXAPP = $00000002;
-var sSend, s_recv, sTemp, s_inblmsg, s_infwmsg: string; cTimeout: cardinal; bRepeat: boolean;
-    t_lines: TStringList; lw_blfw: longword;
-begin
-  result := BS_UNKNOWN; lw_blfw := 0;
-  s_inblmsg := UpperCase(trim(blmsg));
-  s_infwmsg := UpperCase(trim(fwmsg));
-  if ContainsText(blmsg, CSTR_MOTOROLA) then lw_blfw := (lw_blfw or C_MTLBL);
-  if (ContainsText(blmsg, CSTR_WAITING) or ContainsText(blmsg, CSTR_BOOTCODE) or ContainsText(blmsg, CSTR_METRONIX)) then lw_blfw := (lw_blfw or C_MTXBL);
-
-  if (fwmsg <> '') then begin
-    if ContainsText(fwmsg, CSTR_BLUPDATER)  then lw_blfw := (lw_blfw or C_MTXUPD);
-    t_lines := TStringList.Create;
-    ExtractStrings([Char(10)], [Char(13)], PChar(fwmsg), t_lines);
-    if ContainsText(t_lines[t_lines.Count - 1], CSTR_DONE)  then lw_blfw := C_MTXUPD
-    else if t_ser.Active then begin
-      repeat
-        cTimeout := GetTickCount() + c_timeout;
-        if (t_ser.ReadString(s_recv) > 0) then self.memRecv.Lines.Add('prog:<' + s_recv);
-
-        sSend := CSTR_BOOTQUE + Char(13);
-        SendStr(sSend);
-
-        WaitForReading(cTimeout);
-        s_recv := ''; RecvStrInterval(s_recv, cTimeout, 100);
-        sTemp := UpperCase(trim(s_recv));
-
-        bRepeat := false;
-        if (Pos(CSTR_APPLICATION, sTemp) > 0) then lw_blfw := (lw_blfw or C_MTXAPP)
-        else if (Pos(UpperCase(CSTR_SERVICE), sTemp) > 0) then lw_blfw := (lw_blfw or C_MTXBL)
-        else if ((Pos(CSTR_ERROR, sTemp) > 0) or (Pos(CSTR_UNKNOWNCMD, sTemp) > 0)) then bRepeat := true;
-      until ((not bRepeat) or (GetTickCount() >= cTimeout));
-    end;
-    t_lines.Clear;
-    FreeAndNil(t_lines);
-  end;
-  case lw_blfw of
-    $00010000: result := BS_MTLBL_ONLY;
-    $00010001: result := BS_MTLBL_UPD;
-    $00010002: result := BS_MTLBL_APP;
-    $00020000: result := BS_MTXBL_ONLY;
-    $00020001: result := BS_MTXBL_UPD;
-    $00000001: result := BS_XBL_UPD;
-    $00020002: result := BS_MTXBL_APP;
   end;
 end;
 
@@ -697,25 +575,14 @@ begin
 end;
 
 procedure TFrmBootTester.btnStateQueClick(Sender: TObject);
-var s_blmsg, s_fwmsg: string; t_start, t_end: cardinal; r_factor: single;
+var r_factor: single;
 begin
-  t_start := GetTickCount();
   r_factor := 1.0;
   if chkBaudFactor.Checked then begin
     if (not TryStrToFloat(trim(txtBaudFactor.Text), r_factor)) then r_factor := 1.0;
   end;
   t_downloader.BaudrateFactor := r_factor;
   e_bootstate := t_downloader.GetBootState(trim(txtBootCmd.Text));
-  t_end := GetTickCount();
-
-{  if not t_ser.Active then  t_ser.Active := true;
-  if t_ser.Active then begin
-    t_start := GetTickCount();
-    GetSwitchOnMessage(s_blmsg, s_fwmsg, C_MANUAL_RESTART);
-    e_bootstate := GetBootState(s_blmsg, s_fwmsg);
-    t_end := GetTickCount();
-    memRecv.Lines.Add(format('prog[%0.3f]: boot state is %s',[(t_end - t_start)/1000.0, GetEnumName(TypeInfo(EBootState), Ord(e_bootstate))]));
-  end; }
 end;
 
 procedure TFrmBootTester.chbRecvClick(Sender: TObject);
