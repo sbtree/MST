@@ -9,7 +9,9 @@ uses
   TextMessage in '..\General\TextMessage.pas',
   TestScript in 'TestScript.pas',
   StepResult in 'StepResult.pas',
-  FunctionCaller in '..\Function\FunctionCaller.pas';
+  FunctionCaller in '..\Function\FunctionCaller.pas',
+  GenType in '..\General\GenType.pas',
+  FunctionBase in '..\Function\FunctionBase.pas';
 
 {$R *.res}
 

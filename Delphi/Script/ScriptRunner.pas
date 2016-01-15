@@ -19,12 +19,12 @@ type
     e_exemode: EExecutionMode;
   protected
     procedure SetExecutionMode(const em: EExecutionMode);
-    function  StepInit(const par: string): boolean; virtual;
+    {function  StepInit(const par: string): boolean; virtual;
     function  StepInputM(const par: string): boolean; virtual;
     function  StepFunc(const func, par: string): boolean; virtual;
     function  StepEval(const par: string): boolean; virtual;
     function  StepSave(const par: string): boolean; virtual;
-    function  StepFinal(const par: string): boolean; virtual;
+    function  StepFinal(const par: string): boolean; virtual; }
 
   public
     constructor Create();
@@ -83,12 +83,14 @@ end;
 
 function TScriptRunner.RunCase(var tcase: TTestCase): boolean;
 begin
+  result := false;
   //todo: 1. call RunStep in a loop till the last step in this case
   //todo: 2. decide to break or not if an error exists
 end;
 
 function TScriptRunner.RunRoutine(var troutine: TTestRoutine): boolean;
 begin
+  result := false;
   //todo: 1. call RunCase in a loop till the last case in this routine
   //todo: 2. decide to break or not if an error exists
 end;
