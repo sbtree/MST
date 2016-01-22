@@ -23,22 +23,22 @@ interface
 uses Classes, StepResult;
 type
 
-  EStepTerm = (
-                ST_NR,      //e.g. Nr: 10.00;
-                ST_T,       //e.g. T:'beginning of test case 1';
-                ST_INIT,    //e.g. R_on: '101'; or Init:'';
-                ST_FCT,     //e.g. Fkt: U_Mess_DC;
-                ST_M,       //e.g. M:'';
-                ST_PAR,     //e.g. Par:'';
-                ST_FINAL,   //e.g. R_off: '101'; or Final:'';
-                ST_TOL,     //e.g. Tol:(A:''; Min:0; Max:0);
-                ST_TOL_A,   //e.g. A:'';
-                ST_TOL_MIN, //e.g. Min:0;
-                ST_TOL_MAX  //e.g. Max:0
+  EStepField = (
+                SF_NR,      //e.g. Nr: 10.00;
+                SF_T,       //e.g. T:'beginning of test case 1';
+                SF_INIT,    //e.g. R_on: '101'; or Init:'';
+                SF_FCT,     //e.g. Fkt: U_Mess_DC;
+                SF_M,       //e.g. M:'';
+                SF_PAR,     //e.g. Par:'';
+                SF_FINAL,   //e.g. R_off: '101'; or Final:'';
+                SF_TOL,     //e.g. Tol:(A:''; Min:0; Max:0)
+                SF_TOL_A,   //e.g. A:'';
+                SF_TOL_MIN, //e.g. Min:0;
+                SF_TOL_MAX  //e.g. Max:0
                 );
 
   // a base class for terminology in a step: Nr, T, R_on, Fkt, Par, R_off, Tol(A, Min, Max)
-  TStepTerm = class
+  TStepField = class
   protected
     s_input: string;
     s_eval:  string;
@@ -49,15 +49,15 @@ type
   end;
 
   TTestStep = class
-  type AStepTerms = array[EStepTerm] of TStepTerm;
+  type AStepFields = array[EStepField] of TStepField;
   protected
-    a_terms:    AStepTerms;
+    a_fields:    AStepFields;
     t_result:   TStepResult;
 
   protected
   public
     property StepResult: TStepResult read t_result write t_result;
-    property StepTerms: AStepTerms read a_terms write a_terms;
+    property StepTerms: AStepFields read a_fields write a_fields;
 
     //function ResolveTerm(var text: string; const term: EStepTerm): TStepTerm;
   end;
@@ -67,20 +67,20 @@ type
     //list of step
   end;
 
-  TTestRoutine = class
+  TTestSequence = class
   protected
     //list of case
   end;
-
-implementation
 const
-  CSTR_TERMS_VER01 :  array[EStepTerm] of string = (
+  CSTR_FIELD_KEYS_V01 :  array[EStepField] of string = (
                         'NR', 'T', 'R_ON', 'FKT', 'M', 'PAR', 'R_OFF',
                         'TOL', 'A', 'MIN', 'MAX'
                       );
-                      
-  CSTR_TERMS_VER02 :  array[EStepTerm] of string = (
+
+  CSTR_FIELD_KEYS_V02  :  array[EStepField] of string = (
                         'NR', 'T', 'INIT', 'FCT', 'M', 'PAR', 'FINAL',
                         'VALID', 'A', 'MIN', 'MAX'
                       );
+
+implementation
 end.

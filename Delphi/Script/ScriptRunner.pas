@@ -34,7 +34,7 @@ type
 
     function RunStep(var tstep: TTestStep): boolean;
     function RunCase(var tcase: TTestCase): boolean;
-    function RunRoutine(var troutine: TTestRoutine): boolean;
+    function RunSequence(var troutine: TTestSequence): boolean;
 
   end;
 
@@ -88,7 +88,7 @@ begin
   //todo: 2. decide to break or not if an error exists
 end;
 
-function TScriptRunner.RunRoutine(var troutine: TTestRoutine): boolean;
+function TScriptRunner.RunSequence(var troutine: TTestSequence): boolean;
 begin
   result := false;
   //todo: 1. call RunCase in a loop till the last case in this routine

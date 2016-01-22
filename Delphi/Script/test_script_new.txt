@@ -1,0 +1,21 @@
+Language=EN
+FileVersion=$Revision: 1.71 $
+ScriptVersion=3.0.0.0
+Include=.\TestCase100.txt;.\TestCase200.txt
+(Nr:XXX.000;T:'define a named test case';INIT:#Par[=default];FCT:TestCase;PAR:'MyTestCase';M:;TOL:(A:'';MIN:;MAX:);FINAL:;)
+(Nr:XXX.010;T:'call a test instruction';INIT:'RON:101,102;ROFF:119,120;';FCT:cmd;PAR:'a;b;@Par';M:;TOL:(A:'OR:1234:0012';MIN:0;MAX:10;);FINAL:@Push;)
+(Nr:XXX.990;T:'end the named test case';INIT:;FCT:[Nil];PAR:;M:;TOL:(A:;MIN:;MAX:;);FINAL:;)
+(Nr:ZZZ.000;T:'define a unnamed test case';INIT:;FCT:[Nil];PAR:;M:;TOL:(A:;MIN:;MAX:;);FINAL:;)
+(Nr:ZZZ.010;T:'call a test instruction';INIT:'RON:101,102;ROFF:119,120;';FCT:cmd;PAR:'a;b;c';M:;TOL:(A:;MIN:;MAX:;);FINAL:@Push;)
+(Nr:ZZZ.990;T:'end the unnamed test case';INIT:;FCT:[Nil];PAR:;M:;TOL:(A:;MIN:;MAX:;);FINAL:@Restore;)
+(Nr:YYY.000;T:'Entry of a test routine';INIT:;FCT:Entry;PAR:'MyTestRoutine';M:;TOL:(A:;MIN:;MAX:;);FINAL:;)
+(Nr:YYY.010;T:'call a named test case';INIT:'RON:101,102; ROFF:111,122;';FCT:CallCase;PAR:'MyTestCase';M:;TOL:(A:;MIN:;MAX:;);FINAL:@Restore;)
+(Nr:YYY.020;T:'Push a value into stack';INIT:;FCT:Push;PAR:123;M:;TOL:(A:;MIN:;MAX:;);FINAL:;)
+(Nr:YYY.030;T:'call a unnamed test case';INIT:'RON:$SpecialRelay;';FCT:CallCase;PAR:'TestCase_ZZZ';M:;TOL:(A:;MIN:;MAX:;);FINAL:@Restore;)
+(Nr:YYY.040;T:'call a test command';INIT:'RON:101,102;ROFF:111,122;';FCT:abc;PAR:@Pop;M:'V';TOL:(A:;MIN:;MAX:;);FINAL:@Restore;)
+(Nr:YYY.050;T:'pop a value from stack';INIT:;FCT:Pop;PAR:;M:;TOL:(A:;MIN:;MAX:;);FINAL:#PopVar;)
+(Nr:YYY.060;T:'close relays for 5000ms';INIT:;FCT:CloseRelay;PAR:'101,102;5000';M:;TOL:(A:;MIN:;MAX:;);FINAL:;)
+(Nr:YYY.070;T:'push cmd result to stack';INIT:'RON:101,102;ROFF:111,122;';FCT:cmd;PAR:$INI_VAR;M:'mA';TOL:(A:;MIN:;MAX:;);FINAL:'@Restore;@Push';)
+(Nr:YYY.080;T:'call case if true';INIT:'RON:201;ROFF:202;';FCT:CallIfTrue;PAR:"$INI_VAR='123';'MyTestCase'; ARG:a";M:'';TOL:(A:;MIN:;MAX:;);FINAL:@Restore;)
+(Nr:YYY.090;T:'call case if true';INIT:'RON:201;ROFF:202;';FCT:CallIfTrue;PAR:'@PopVar=123;'MyTestCase';ARG:b';M:;TOL:(A:;MIN:;MAX:;);FINAL:'@Restore;@Push';)
+(Nr:YYY.999;T:'End of the routine';INIT:;FCT:[Nil];PAR:;M:;TOL:(A:;MIN:;MAX:;);FINAL:@Restore;)

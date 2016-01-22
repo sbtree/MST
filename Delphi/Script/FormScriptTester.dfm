@@ -13,4 +13,13 @@ object frmScriptTester: TfrmScriptTester
   OldCreateOrder = False
   PixelsPerInch = 96
   TextHeight = 13
+  object btnTest: TButton
+    Left = 296
+    Top = 248
+    Width = 75
+    Height = 25
+    Caption = '&Test'
+    TabOrder = 0
+    OnClick = btnTestClick
+  end
 end

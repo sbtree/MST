@@ -1,22 +1,22 @@
 unit ScriptReader;
 
 interface
-uses Classes, Contnrs, ScriptTerm, TextMessage, IniFiles;
+uses Classes, Contnrs, ScriptTerm, TextMessage;
 
 type
   EParseState = (
-                PS_IDLE,        // start state or state when a step is parsed and next step does not start yet
-                PS_VARNAME,     // VAR=VALUE
-                PS_VARVALUE,    // VAR=VALUE
-                PS_STEP,        // text starts with ( for a step
-                PS_TERMNAME,    // e.g. T of T:xxxx
-                PS_TERMVALUE,   // e.g. xxxx of T:xxxx
-                PS_QUOTATION,   // text starts with ' or "
-                PS_LINECOMMENT,    // text starts with //
-                PS_BRACKETCOMMENT, // comment text starts with (*
-                PS_BRACECOMMENT,   // comment text starts with {
-                PS_TERMGROUP,   // text starts with ( for a term
-                PS_PENDING      // it cannot be decided yet
+                PS_IDLE,          // start state or state when a step is parsed and next step does not start yet
+                PS_VARNAME,       // VAR=VALUE
+                PS_VARVAL,        // VAR=VALUE
+                PS_STEP,          // text starts with ( for a step
+                PS_FIELDKEY,      // e.g. T of T:xxxx
+                PS_FIELDVAL,      // e.g. xxxx of T:xxxx
+                PS_SQUOTATION,    // text starts with single quote mark '
+                PS_DQUOTATION,    // text starts with single quote mark "
+                PS_LINECOMMENT,   // text starts with //
+                PS_BRACKETCOMMENT,// comment text starts with (*
+                PS_BRACECOMMENT,  // comment text starts with {
+                PS_FIELDGROUP     // text starts with ( for a term
                 );
   PParseState = ^EParseState;
 
@@ -32,6 +32,7 @@ type
     c_lastread: char;        //save last char, which is inputted
     c_expected: char;        //save a char, which is expected 
     s_curtoken: string;      //save token string, which is found till now
+    b_token:    boolean;     //indicate if a complete token is found 
     i_rowindex: integer;     //index of row, which is being parsed
     i_colindex: integer;     //index of column, which is being parsed
     s_srcfile:  string;      //file name
@@ -40,13 +41,13 @@ type
     s_curtext:  string;      //useful chars of the step, which is just being parsed
     t_tokens:   TStack;      //save tokens
 
-    t_steps:    TObjectList; //list of test steps
+    //t_steps:    TObjectList; //list of test steps
     b_allowvar: boolean;     //indicates if a variable is allowed with the format 'var=value' till now
 
   protected
     procedure PushState(const state: EParseState);
     procedure PopState();
-    function  ReadNextChar(const ch: char): boolean;
+    function  ReadChar(const curch, nextch: char): boolean;
 
   public
     constructor Create();
@@ -55,6 +56,7 @@ type
     function ReadFromText(const srctext: string; const blast: boolean = false): boolean; virtual;
     function ReadFromList(const srclist: TStringList): boolean; virtual;
     function ReadFromFile(const srcfile: string; const bforce: boolean = false): boolean; virtual;
+    function SaveSteps(const destfile: string): boolean;
   end;
 
 const
@@ -77,19 +79,24 @@ const
   CSTR_COMMENT_BEGIN: string = '(*';
   CSTR_COMMENT_END:   string = '*)';
 
-  CCHR_COLON:         char = ':';
-  CCHR_SEMICOLON:     char = ';';
-  CCHR_COMMA:         char = ',';
-  CCHR_SQUOTATION:    char = '''';
-  CCHR_DQUOTATION:    char = '"';
-  CCHR_BRACKET_OPEN:  char = '(';
-  CCHR_BRACKET_CLOSE: char = ')';
-  CCHR_BRACE_OPEN:    char = '{';
-  CCHR_BRACE_CLOSE:   char = '}';
-  CCHR_SLASH:         char = '/';
-  CCHR_STAR:          char = '*';
+  CCHR_EQUAL         = '=';
+  CCHR_COLON         = ':';
+  CCHR_SEMICOLON     = ';';
+  CCHR_COMMA         = ',';
+  CCHR_SQUOTATION    = '''';
+  CCHR_DQUOTATION    = '"';
+  CCHR_BRACKET_OPEN  = '(';
+  CCHR_BRACKET_CLOSE = ')';
+  CCHR_BRACE_OPEN    = '{';
+  CCHR_BRACE_CLOSE   = '}';
+  CCHR_SLASH         = '/';
+  CCHR_STAR          = '*';
+  CCHR_SPACE         = ' ';
+  CCHR_TAB           = Char(9);
+  CCHR_LN            = Char(10);
+  CCHR_CR            = Char(13);
 
-  CSET_BLANK_CHARS: set of char = [' ', Char($9), Char($A), Char($B), Char($C), Char($D)];
+  CSET_BLANK_CHARS: set of char = [CCHR_TAB, CCHR_SPACE];
   CSET_FIRST_CHARS: set of char = ['_', 'A'..'Z', 'a'..'z'];
   CSET_DIGIT_CHARS: set of char = ['0'..'9'];
 
@@ -126,67 +133,233 @@ begin
 end;
 
 // =============================================================================
-//    Description  : input a new char
-//    Parameter    : --
+//    Description  : input a new char and next char
+//    Parameter    : curch,
+//                   nextch,
 //    Return       : --
 //    First author : 2016-01-12 /bsu/
 //    History      :
 // =============================================================================
-function TScriptReader.ReadNextChar(const ch: char): boolean;
+function  TScriptReader.ReadChar(const curch, nextch: char): boolean;
 begin
+//[PS_IDLE, PS_VARNAME, PS_VARVAL, PS_STEP, PS_FIELDKEY, PS_FIELDVAL, PS_SQUOTATION, PS_DQUOTATION, PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT, PS_FIELDGROUP]
   result := true;
-  case e_curstate of
-    PS_IDLE:
-    begin
-      if (not (ch in CSET_BLANK_CHARS)) then begin
-        if (ch = CCHR_BRACE_OPEN) then PushState(PS_BRACECOMMENT)
-        else if (ch in [CCHR_BRACKET_OPEN, CCHR_SLASH]) then  PushState(PS_PENDING)
-        else if (ch = CCHR_BRACE_OPEN) then PushState(PS_BRACECOMMENT)
-        else if (ch in CSET_FIRST_CHARS) then begin
-          if b_allowvar then begin
-            s_curtoken := s_curtoken + ch;
-            PushState(PS_VARNAME);
-          end else AddMessage('A variable can only defined at beginning of the script.');
-        end else AddMessage(format('The text can not be parsed: ln%d, col%d', [i_rowindex, i_colindex]));;
-      end;
-    end;
-    PS_VARNAME:
-    begin
-
-    end;
-    PS_VARVALUE: ;
-    PS_STEP: ;
-    PS_TERMNAME: ;
-    PS_TERMVALUE: ;
-    PS_QUOTATION: ;
-    PS_LINECOMMENT: ;
-    PS_BRACKETCOMMENT: ;
-    PS_BRACECOMMENT: ;
-    PS_TERMGROUP: ;
-    PS_PENDING: 
-    begin
-      PopState();
-      case c_lastread of
-      '(':
-      begin
-        if (ch = CCHR_STAR) then PushState(PS_BRACKETCOMMENT)
-        else s_curtoken := s_curtoken + ch;
-      end;
-      '/':
-      begin
-        if (ch = CCHR_SLASH) then PushState(PS_LINECOMMENT)
-        else if (e_curstate in [PS_VARVALUE, PS_TERMVALUE] )then s_curtoken := s_curtoken + ch
-        else AddMessage(format('The text can not be parsed: ln%d, col%d', [i_rowindex, i_colindex]));
-      end;
-      '*':;
+  case curch of
+  CCHR_EQUAL: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
+      else if (e_curstate = PS_VARNAME) then begin
+        PopState();
+        s_curtext := s_curtext + trim(s_curtoken) + curch;
+        s_curtoken := '';
+        PushState(PS_VARVAL);
+      end else begin  //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDGROUP]
+        result := false;
+        //todo: handle error
       end;
     end;
   end;
-
-  if (e_curstate = PS_IDLE) then begin //a complete step is parsed
+  CCHR_COLON: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
+      else if (e_curstate = PS_FIELDKEY) then begin
+        PopState();
+        s_curtext := s_curtext + trim(s_curtoken) + curch;
+        s_curtoken := '';
+        PushState(PS_FIELDVAL);
+      end else begin  //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDVAL, PS_FIELDGROUP]
+        result := false;
+        //todo: handle error
+      end;
+    end;
   end;
-  c_lastread := ch;
+  CCHR_SEMICOLON: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
+      else if (e_curstate = PS_FIELDVAL) then begin
+        PopState();
+        s_curtext := s_curtext + trim(s_curtoken) + curch;
+        s_curtoken := '';
+      end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
+        result := false;
+        //todo: handle error
+      end;
+    end;
+  end;
+  CCHR_COMMA: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT, PS_IDLE])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
+      else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
+        result := false;
+        //todo: handle error
+      end;
+    end;
+  end;
+  CCHR_SQUOTATION: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL, PS_FIELDVAL]) then begin
+        s_curtoken := s_curtoken + curch;
+        if (e_curstate = PS_SQUOTATION) then PopState()
+        else if (e_curstate in [PS_VARVAL, PS_FIELDVAL]) then PushState(PS_SQUOTATION);
+      end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
+        result := false;
+        //todo: handle error
+      end;
+    end;
+  end;
+  CCHR_DQUOTATION: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL, PS_FIELDVAL]) then begin
+        s_curtoken := s_curtoken + curch;
+        if (e_curstate = PS_DQUOTATION) then PopState()
+        else if (e_curstate in [PS_VARVAL, PS_FIELDVAL]) then PushState(PS_DQUOTATION);
+      end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
+        result := false;
+        //todo: handle error
+      end;
+    end;
+  end;
+  CCHR_BRACKET_OPEN: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION]) then s_curtoken := s_curtoken + curch
+      else if (nextch = CCHR_STAR) then begin
+        PushState(PS_BRACKETCOMMENT);
+        Inc(i_colindex);
+      end else begin  
+        if (e_curstate = PS_IDLE) then begin
+          if (trim(s_curtoken) = '') then begin
+            s_curtext := s_curtext + curch;
+            PushState(PS_STEP);
+            b_allowvar := false;
+          end else begin
+            result := false;
+            //todo: handle error
+          end; 
+        end else if (e_curstate = PS_FIELDVAL) then begin
+          if (trim(s_curtoken) = '') then begin
+            PushState(PS_FIELDGROUP);
+            s_curtext := s_curtext + curch;
+          end else s_curtoken := s_curtoken + curch;
+        end else if (e_curstate = PS_VARVAL) then s_curtoken := s_curtoken + curch
+        else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
+          result := false;
+          //todo: handle error
+        end;
+      end;
+    end;
+  end;
+  CCHR_BRACKET_CLOSE: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
+      else if (e_curstate in [PS_FIELDVAL, PS_FIELDGROUP, PS_STEP]) then begin
+        PopState();
+        s_curtext := s_curtext + trim(s_curtoken) + curch;
+        s_curtoken := '';
+        if (e_curstate = PS_IDLE) then begin//a step is over
+          t_steplines.Add(s_curtext);
+          s_curtext := '';
+        end else if (e_curstate in [PS_STEP, PS_FIELDGROUP, PS_FIELDVAL]) then begin
+          if (e_curstate = PS_FIELDGROUP) then PopState();
+        end else begin 
+          result := false;
+          //todo: handle error
+        end;
+      end else begin   //[PS_IDLE, PS_VARNAME, PS_FIELDKEY]
+        result := false;
+        //todo: handle error
+      end;
+    end;
+  end;
+  CCHR_BRACE_OPEN: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION]) then s_curtoken := s_curtoken + curch
+      else PushState(PS_BRACECOMMENT); //[PS_IDLE, PS_STEP, PS_VARNAME, PS_VARVAL, PS_FIELDKEY, PS_FIELDVAL, PS_FIELDGROUP]
+    end;
+  end;
+  CCHR_BRACE_CLOSE: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
+      else if (e_curstate = PS_BRACECOMMENT) then PopState()
+      else begin  //[PS_IDLE, PS_STEP, PS_VARNAME, PS_FIELDKEY, PS_FIELDGROUP]
+        result := false;
+        //todo: handle error
+      end; 
+    end;
+  end;
+  CCHR_SLASH: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION]) then s_curtoken := s_curtoken + curch
+      else if (nextch = CCHR_SLASH) then begin
+        s_curtext := s_curtext + trim(s_curtoken);
+        s_curtoken := '';
+        PushState(PS_LINECOMMENT);
+        Inc(i_colindex);
+      end else begin
+        if (e_curstate in [PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
+        else begin //[PS_IDLE, PS_STEP, PS_VARNAME, PS_FIELDKEY, PS_FIELDGROUP]
+          result := false;
+          //todo: handle error
+        end; 
+      end;
+    end;
+  end;
+  CCHR_STAR:begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
+      else if (e_curstate = PS_BRACKETCOMMENT) then begin
+        if (nextch = CCHR_BRACKET_CLOSE) then begin
+          PopState();
+          Inc(i_colindex);
+        end;
+      end else begin  //[PS_IDLE, PS_STEP, PS_VARNAME, PS_FIELDKEY, PS_FIELDGROUP]
+        result := false;
+        //todo: handle error
+      end;
+    end;
+  end;
+  CCHR_LN, CCHR_CR: begin
+    if (not (e_curstate in [PS_IDLE, PS_STEP, PS_FIELDGROUP, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate = PS_LINECOMMENT) then PopState()
+      else if (e_curstate = PS_VARVAL) then begin
+        s_curtext := s_curtext + trim(s_curtoken);
+        s_curtoken := '';
+        PopState();
+        if (e_curstate = PS_IDLE) then begin//a step is over
+          if (s_curtext <> '') then t_steplines.Add(s_curtext);
+          s_curtext := '';
+        end;
+      end else begin  //[PS_VARNAME, , PS_SQUOTATION, PS_DQUOTATION, PS_FIELDKEY, PS_FIELDVAL]
+        result := false;
+        //todo: handle error
+      end;
+    end;
+  end;
+  else begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACECOMMENT, PS_BRACKETCOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARNAME, PS_VARVAL, PS_FIELDKEY, PS_FIELDVAL]) then
+        s_curtoken := s_curtoken + curch
+      else begin
+        if (curch in CSET_FIRST_CHARS) then begin
+          if (e_curstate = PS_IDLE) then begin
+            if b_allowvar then begin
+              s_curtoken := s_curtoken + curch;
+              PushState(PS_VARNAME);
+            end else begin
+              result := false;
+              //todo: handle error
+            end;
+          end else begin //[PS_STEP, PS_FIELDGROUP]
+            s_curtoken := s_curtoken + curch;
+            PushState(PS_FIELDKEY); 
+          end;
+        end else begin
+        end;
+      end;
+    end;
+  end;
+  end;
 end;
+
 // =============================================================================
 //    Description  : constructor
 //    Parameter    : --
@@ -220,21 +393,22 @@ begin
 end;
 
 function TScriptReader.ReadFromText(const srctext: string; const blast: boolean): boolean;
-var i: integer;
+var i_len: integer; s_text: string;
 begin
-  result := false; i_colindex := 0;
-  for i := 1 to length(srctext) do begin
-    Inc(i_rowindex);
-    result := ReadNextChar(srctext[i]);
+  if (srctext = '') then result := true
+  else result := false;
+   
+  i_colindex := 1; i_len := length(srctext);
+  s_text := srctext + CCHR_CR;
+  while i_colindex <= i_len do begin
+    result := ReadChar(s_text[i_colindex], s_text[i_colindex + 1]);
     if (not result) then break
-    else if (e_curstate = PS_IDLE) then begin  //a complete step is archived
-      if (s_curtext <> '') then begin
-        t_steplines.Add(s_curtext);
-        s_curtext := '';
-      end;
+    else begin
+      if (e_curstate = PS_LINECOMMENT) then i_colindex := i_len;
+      Inc(i_colindex);
     end;
   end;
-
+  if result then result := ReadChar(CCHR_CR, CCHR_LN);
   if blast then begin
     s_curtext := trim(s_curtext);
     result := result and (s_curtext = '') and (e_curstate = PS_IDLE) and (t_states.Count = 0);
@@ -249,14 +423,13 @@ begin
   if srclist.Count > 0 then  begin
     for i := 0 to srclist.Count - 2 do begin
       Inc(i_rowindex);
-      result := ReadFromText(srclist[i]);
+      result := ReadFromText(srclist[i], false);
       if (not result) then break;
     end;
     if result then begin
       Inc(i_rowindex);
       result := ReadFromText(srclist[srclist.Count - 1], true);
     end;
-
     if result then result := (t_steplines.Count > 0);
   end;
 end;
@@ -271,6 +444,7 @@ begin
     else b_update := true;
 
     if (bforce or b_update) then begin
+      b_allowvar := true;
       t_lines := TStringList.Create();
       t_lines.LoadFromFile(srcfile);
       result := ReadFromList(t_lines);
@@ -281,4 +455,9 @@ begin
   end;
 end;
 
+function TScriptReader.SaveSteps(const destfile: string): boolean;
+begin
+  t_steplines.SaveToFile(destfile);
+  result := true;
+end;
 end.
