@@ -11,6 +11,23 @@ unit FuncSys;
 interface
 uses Classes, FunctionBase, TextMessage;
 
+type
+  LoopBegin = class(TFunctionBase)
+
+  end;
+
+  LoopEnd = class(TFunctionBase)
+
+  end;
+
+  IfTrueJump = class(TFunctionBase)
+
+  end;
+
+  IfFalseJump = class(TFunctionBase)
+
+  end;
+
 implementation
 
 initialization

@@ -1,7 +1,7 @@
 unit ScriptReader;
 
 interface
-uses Classes, Contnrs, ScriptTerm, TextMessage;
+uses Classes, Contnrs, ScriptTerm, StepChecker, TextMessage;
 
 type
   EParseState = (
@@ -20,33 +20,29 @@ type
                 );
   PParseState = ^EParseState;
 
-  ParseStateSet = set of EParseState;
+  //ParseStateSet = set of EParseState;
 
 
   TScriptReader = class(TTextMessager)
   private
-    pe_state:   PParseState; //a pointer to EParseState, auxiliary class remember
+    pe_state:   PParseState;  //a pointer to EParseState, auxiliary class remember
   protected
-    e_curstate: EParseState; //current state of the reader
-    t_states:   TStack;      //stack of states
-    c_lastread: char;        //save last char, which is inputted
-    c_expected: char;        //save a char, which is expected 
-    s_curtoken: string;      //save token string, which is found till now
-    b_token:    boolean;     //indicate if a complete token is found 
-    i_rowindex: integer;     //index of row, which is being parsed
-    i_colindex: integer;     //index of column, which is being parsed
-    s_srcfile:  string;      //file name
-    t_fstemp:   TDateTime;   //save time stemp of last changing for s_srcfile
-    t_steplines:TStringList; //list of test steps without any useless char
-    s_curtext:  string;      //useful chars of the step, which is just being parsed
-    t_tokens:   TStack;      //save tokens
-
-    //t_steps:    TObjectList; //list of test steps
-    b_allowvar: boolean;     //indicates if a variable is allowed with the format 'var=value' till now
+    e_curstate: EParseState;  //current state of the reader
+    t_states:   TStack;       //stack of states
+    s_curtoken: string;       //save token string, which is found till now
+    i_rowindex: integer;      //index of row, which is being parsed
+    i_colindex: integer;      //index of column, which is being parsed
+    s_srcfile:  string;       //file name
+    t_fstemp:   TDateTime;    //save time stemp of last changing for s_srcfile
+    t_steplines:TStringList;  //list of test steps without any useless char
+    s_curtext:  string;       //to save a step text or a line of 'var=value', which is parsed
+    b_allowvar: boolean;      //indicates if a variable is allowed with the format 'var=value' till now
+    t_fkeys:    TFieldKeyChecker;   // a help object for parsing
 
   protected
     procedure PushState(const state: EParseState);
     procedure PopState();
+    function  CheckFieldKey(const key: string): boolean;
     function  ReadChar(const curch, nextch: char): boolean;
 
   public
@@ -60,21 +56,6 @@ type
   end;
 
 const
-  CSTR_NR:      string = 'NR';
-  CSTR_TEXT:    string = 'T';
-  CSTR_R_ON:    string = 'R_ON';
-  CSTR_INIT:    string = 'INIT';
-  CSTR_FKT:     string = 'FKT';
-  CSTR_FCT:     string = 'FCT';
-  CSTR_M:       string = 'M';
-  CSTR_PAR:     string = 'PAR';
-  CSTR_R_OFF:   string = 'R_OFF';
-  CSTR_TOL:     string = 'TOL';
-  CSTR_TOL_A:   string = 'A';
-  CSTR_TOL_MIN: string = 'MIN';
-  CSTR_TOL_MAX: string = 'MAX';
-  CSTR_FINAL:   string = 'FINAL';
-
   CSTR_COMMENT_LINE:  string = '//';
   CSTR_COMMENT_BEGIN: string = '(*';
   CSTR_COMMENT_END:   string = '*)';
@@ -132,6 +113,16 @@ begin
   dispose(pe_state);
 end;
 
+function  TScriptReader.CheckFieldKey(const key: string): boolean;
+var i_index: EStepField;
+begin
+  result := t_fkeys.FindKey(key, i_index);
+  if result then begin
+    if (t_fkeys.IsKeyUsed(i_index)) then result := false
+    else t_fkeys.SetKeyUsed(i_index, true);
+  end;
+end;
+
 // =============================================================================
 //    Description  : input a new char and next char
 //    Parameter    : curch,
@@ -163,10 +154,15 @@ begin
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
       else if (e_curstate = PS_FIELDKEY) then begin
-        PopState();
-        s_curtext := s_curtext + trim(s_curtoken) + curch;
-        s_curtoken := '';
-        PushState(PS_FIELDVAL);
+        if CheckFieldKey(trim(s_curtoken)) then begin
+          PopState();
+          s_curtext := s_curtext + trim(s_curtoken) + curch;
+          s_curtoken := '';
+          PushState(PS_FIELDVAL);
+        end else begin
+          result := false;
+          //todo: handle error
+        end;
       end else begin  //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDVAL, PS_FIELDGROUP]
         result := false;
         //todo: handle error
@@ -258,6 +254,7 @@ begin
         if (e_curstate = PS_IDLE) then begin//a step is over
           t_steplines.Add(s_curtext);
           s_curtext := '';
+          t_fkeys.ResetUnused();
         end else if (e_curstate in [PS_STEP, PS_FIELDGROUP, PS_FIELDVAL]) then begin
           if (e_curstate = PS_FIELDGROUP) then PopState();
         end else begin 
@@ -327,6 +324,7 @@ begin
         if (e_curstate = PS_IDLE) then begin//a step is over
           if (s_curtext <> '') then t_steplines.Add(s_curtext);
           s_curtext := '';
+          t_fkeys.ResetUnused();
         end;
       end else begin  //[PS_VARNAME, , PS_SQUOTATION, PS_DQUOTATION, PS_FIELDKEY, PS_FIELDVAL]
         result := false;
@@ -374,7 +372,8 @@ begin
   t_fstemp := -1;
   b_allowvar := true;
   t_states := TStack.Create();
-  t_steplines := TStringList.Create;
+  t_steplines := TStringList.Create();
+  t_fkeys := TFieldKeyChecker.Create();
 end;
 
 // =============================================================================
@@ -389,7 +388,8 @@ begin
 	inherited Destroy;
   while(t_states.Count > 0) do PopState();
   t_states.Free();
-  t_steplines.Free;
+  t_steplines.Free();
+  t_fkeys.Free();
 end;
 
 function TScriptReader.ReadFromText(const srctext: string; const blast: boolean): boolean;

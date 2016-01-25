@@ -50,7 +50,8 @@
     <DCCReference Include="ScriptReader.pas" />
     <DCCReference Include="ScriptRunner.pas" />
     <DCCReference Include="ScriptTerm.pas" />
+    <DCCReference Include="StepChecker.pas" />
+    <DCCReference Include="StepContainer.pas" />
     <DCCReference Include="StepResult.pas" />
-    <DCCReference Include="TestScript.pas" />
   </ItemGroup>
 </Project>

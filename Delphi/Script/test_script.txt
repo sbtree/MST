@@ -35,5 +35,5 @@ Include=.\TestCase100.txt;.\TestCase200.txt
 (Nr:YYY.060; T:'close relays for 5000ms';    INIT:;                              FCT:CloseRelay;   PAR:'101,102;5000';                          M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:;),
 (Nr:YYY.070; T:'push cmd result to stack';   INIT:'RON:101,102;ROFF:111,122;';   FCT:cmd;          PAR:$INI_VAR;                                M:'mA';  TOL:(A:; MIN:; MAX:;);                  FINAL:'@Restore;@Push';),
 (Nr:YYY.080; T:'call case if true';          INIT:'RON:201;ROFF:202;';           FCT:CallIfTrue;   PAR:"$INI_VAR='123';'MyTestCase'; ARG:a";    M:'';    TOL:(A:; MIN:; MAX:;);                  FINAL:@Restore;),
-(Nr:YYY.090; T:'call case if true';          INIT:'RON:201;ROFF:202;';           FCT:CallIfTrue;   PAR:'@PopVar=123;'MyTestCase';ARG:b';        M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:'@Restore;@Push';),
+(Nr:YYY.090; T:'call case if true';          INIT:'RON:201;ROFF:202;';           FCT:CallIfTrue;   PAR:"@PopVar=123;'MyTestCase';ARG:b";        M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:'@Restore;@Push';),
 (Nr:YYY.999; T:'End of the routine';         INIT:;                              FCT:[Nil];        PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:@Restore;).

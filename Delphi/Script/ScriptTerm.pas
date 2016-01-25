@@ -21,6 +21,7 @@ unit ScriptTerm;
 
 interface
 uses Classes, StepResult;
+
 type
 
   EStepField = (
@@ -37,6 +38,8 @@ type
                 SF_TOL_MAX  //e.g. Max:0
                 );
 
+  FieldKeyArray = array[EStepField] of string;
+
   // a base class for terminology in a step: Nr, T, R_on, Fkt, Par, R_off, Tol(A, Min, Max)
   TStepField = class
   protected
@@ -45,19 +48,17 @@ type
   protected
   public
     property InputString: string read s_input write s_input;
-    property EvalString: string read s_eval;
+    property EvalString: string read s_eval write s_eval;
   end;
 
   TTestStep = class
-  type AStepFields = array[EStepField] of TStepField;
   protected
-    a_fields:    AStepFields;
+    a_fields:   array[EStepField] of TStepField;
     t_result:   TStepResult;
 
   protected
   public
     property StepResult: TStepResult read t_result write t_result;
-    property StepTerms: AStepFields read a_fields write a_fields;
 
     //function ResolveTerm(var text: string; const term: EStepTerm): TStepTerm;
   end;
@@ -71,16 +72,25 @@ type
   protected
     //list of case
   end;
+  
 const
-  CSTR_FIELD_KEYS_V01 :  array[EStepField] of string = (
+  CSTR_FIELD_KEYS_V01 :  FieldKeyArray = (
                         'NR', 'T', 'R_ON', 'FKT', 'M', 'PAR', 'R_OFF',
                         'TOL', 'A', 'MIN', 'MAX'
                       );
 
-  CSTR_FIELD_KEYS_V02  :  array[EStepField] of string = (
+  CSTR_FIELD_KEYS_V02  :  FieldKeyArray = (
                         'NR', 'T', 'INIT', 'FCT', 'M', 'PAR', 'FINAL',
                         'VALID', 'A', 'MIN', 'MAX'
                       );
 
+  CSTR_FIELD_KEYS_V03  :  FieldKeyArray = (
+                        'NR', 'T', 'INIT', 'FCT', 'M', 'PAR', 'FINAL',
+                        'TOL', 'A', 'MIN', 'MAX'
+                      );
+
 implementation
+uses StrUtils;
+
+
 end.

@@ -7,11 +7,12 @@ uses
   ScriptTerm in 'ScriptTerm.pas',
   ScriptRunner in 'ScriptRunner.pas',
   TextMessage in '..\General\TextMessage.pas',
-  TestScript in 'TestScript.pas',
   StepResult in 'StepResult.pas',
   FunctionCaller in '..\Function\FunctionCaller.pas',
   GenType in '..\General\GenType.pas',
-  FunctionBase in '..\Function\FunctionBase.pas';
+  FunctionBase in '..\Function\FunctionBase.pas',
+  StepChecker in 'StepChecker.pas',
+  StepContainer in 'StepContainer.pas';
 
 {$R *.res}
 
