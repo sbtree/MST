@@ -18,6 +18,7 @@ type
     t_curstep: TTestStep;
     t_fcaller: TFunctionCaller;
     e_exemode: EExecutionMode;
+    t_allsteps:TStepContainer;
   protected
     procedure SetExecutionMode(const em: EExecutionMode);
     {function  StepInit(const par: string): boolean; virtual;

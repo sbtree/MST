@@ -40,6 +40,7 @@
     <DelphiCompile Include="ScriptTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Function\FuncMat.pas" />
     <DCCReference Include="..\Function\FunctionBase.pas" />
     <DCCReference Include="..\Function\FunctionCaller.pas" />
     <DCCReference Include="..\General\GenType.pas" />

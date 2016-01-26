@@ -34,15 +34,18 @@ type
     i_colindex: integer;      //index of column, which is being parsed
     s_srcfile:  string;       //file name
     t_fstemp:   TDateTime;    //save time stemp of last changing for s_srcfile
-    t_steplines:TStringList;  //list of test steps without any useless char
+    t_ssteps:   TStringList;  //list of test steps without any useless char
     s_curtext:  string;       //to save a step text or a line of 'var=value', which is parsed
     b_allowvar: boolean;      //indicates if a variable is allowed with the format 'var=value' till now
     t_fkeys:    TFieldKeyChecker;   // a help object for parsing
+    e_lastfield:EStepField;   //to save the index of last field, which is found in reading the script
 
   protected
     procedure PushState(const state: EParseState);
     procedure PopState();
+    function  CheckFunctionName(const fct: string): boolean;
     function  CheckFieldKey(const key: string): boolean;
+    function  CheckFieldValue(const val: string): boolean;
     function  ReadChar(const curch, nextch: char): boolean;
 
   public
@@ -82,7 +85,7 @@ const
   CSET_DIGIT_CHARS: set of char = ['0'..'9'];
 
 implementation
-uses SysUtils, StrUtils;
+uses SysUtils, StrUtils, FunctionBase;
 
 // =============================================================================
 //    Description  : push a EParseState into state stack
@@ -113,13 +116,37 @@ begin
   dispose(pe_state);
 end;
 
-function  TScriptReader.CheckFieldKey(const key: string): boolean;
-var i_index: EStepField;
+function TScriptReader.CheckFunctionName(const fct: string) : boolean;
+var t_class : TFunctionClass;
 begin
-  result := t_fkeys.FindKey(key, i_index);
+  t_class := TFunctionClass(GetClass(fct));
+  result := true;//(t_class <> nil);  //test
+end;
+
+function  TScriptReader.CheckFieldKey(const key: string): boolean;
+begin
+  result := t_fkeys.FindKey(key, e_lastfield);
   if result then begin
-    if (t_fkeys.IsKeyUsed(i_index)) then result := false
-    else t_fkeys.SetKeyUsed(i_index, true);
+    if (t_fkeys.IsKeyUsed(e_lastfield)) then result := false
+    else t_fkeys.SetKeyUsed(e_lastfield, true);
+  end;
+end;
+
+function  TScriptReader.CheckFieldValue(const val: string): boolean;
+begin
+  result := true;
+  case e_lastfield of
+    SF_NR: result := true; //todo
+    SF_FCT: result := CheckFunctionName(val);
+    SF_M: result := true; //todo
+    SF_T,
+    SF_INIT,
+    SF_PAR,
+    SF_FINAL,
+    SF_TOL,
+    SF_TOL_A,
+    SF_TOL_MIN,
+    SF_TOL_MAX: result := true;
   end;
 end;
 
@@ -173,10 +200,23 @@ begin
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
       else if (e_curstate = PS_FIELDVAL) then begin
-        PopState();
-        s_curtext := s_curtext + trim(s_curtoken) + curch;
-        s_curtoken := '';
-      end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
+        if CheckFieldValue(trim(s_curtoken)) then begin
+          PopState();
+          s_curtext := s_curtext + trim(s_curtoken) + curch;
+          s_curtoken := '';
+        end else begin
+          result := false;
+          //todo: handle error
+        end;
+      end else if (e_curstate = PS_FIELDGROUP) then begin
+        if trim(s_curtoken) = '' then begin
+          s_curtext := s_curtext + curch;
+          PopState(); PopState();
+        end else begin
+          result := false;
+          //todo: handle error
+        end;
+      end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY]
         result := false;
         //todo: handle error
       end;
@@ -247,17 +287,25 @@ begin
   CCHR_BRACKET_CLOSE: begin
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
-      else if (e_curstate in [PS_FIELDVAL, PS_FIELDGROUP, PS_STEP]) then begin
+      else if e_curstate = PS_FIELDVAL then begin
+        if CheckFieldValue(trim(s_curtoken)) then begin
+          PopState();
+          s_curtext := s_curtext + trim(s_curtoken) + curch;
+          s_curtoken := '';
+          //if (e_curstate = PS_FIELDGROUP) then PopState();
+        end else begin
+          result := false;
+          //todo: handle error
+        end;
+      end else if (e_curstate in [PS_FIELDGROUP, PS_STEP]) then begin
         PopState();
         s_curtext := s_curtext + trim(s_curtoken) + curch;
         s_curtoken := '';
         if (e_curstate = PS_IDLE) then begin//a step is over
-          t_steplines.Add(s_curtext);
+          t_ssteps.Add(s_curtext);
           s_curtext := '';
           t_fkeys.ResetUnused();
-        end else if (e_curstate in [PS_STEP, PS_FIELDGROUP, PS_FIELDVAL]) then begin
-          if (e_curstate = PS_FIELDGROUP) then PopState();
-        end else begin 
+        end else if (e_curstate <> PS_FIELDVAL) then begin
           result := false;
           //todo: handle error
         end;
@@ -322,7 +370,7 @@ begin
         s_curtoken := '';
         PopState();
         if (e_curstate = PS_IDLE) then begin//a step is over
-          if (s_curtext <> '') then t_steplines.Add(s_curtext);
+          if (s_curtext <> '') then t_ssteps.Add(s_curtext);
           s_curtext := '';
           t_fkeys.ResetUnused();
         end;
@@ -372,7 +420,7 @@ begin
   t_fstemp := -1;
   b_allowvar := true;
   t_states := TStack.Create();
-  t_steplines := TStringList.Create();
+  t_ssteps := TStringList.Create();
   t_fkeys := TFieldKeyChecker.Create();
 end;
 
@@ -388,7 +436,7 @@ begin
 	inherited Destroy;
   while(t_states.Count > 0) do PopState();
   t_states.Free();
-  t_steplines.Free();
+  t_ssteps.Free();
   t_fkeys.Free();
 end;
 
@@ -419,7 +467,7 @@ function TScriptReader.ReadFromList(const srclist: TStringList): boolean;
 var i: integer;
 begin
   result := false; i_rowindex := 0;
-  t_steplines.Clear();
+  t_ssteps.Clear();
   if srclist.Count > 0 then  begin
     for i := 0 to srclist.Count - 2 do begin
       Inc(i_rowindex);
@@ -430,7 +478,7 @@ begin
       Inc(i_rowindex);
       result := ReadFromText(srclist[srclist.Count - 1], true);
     end;
-    if result then result := (t_steplines.Count > 0);
+    if result then result := (t_ssteps.Count > 0);
   end;
 end;
 
@@ -457,7 +505,7 @@ end;
 
 function TScriptReader.SaveSteps(const destfile: string): boolean;
 begin
-  t_steplines.SaveToFile(destfile);
+  t_ssteps.SaveToFile(destfile);
   result := true;
 end;
 end.

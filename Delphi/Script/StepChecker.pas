@@ -26,29 +26,36 @@ type
     function  IsKeyUsed(const index: EstepField): boolean;
   end;
 
+//----------------------------------------------------------------------------//
+// class name:  TStepNrChecker
+// description: A help class to check the step number:
+//              1. if it is valid
+//              2. the name is forbidden to appear in a step more than once
+//----------------------------------------------------------------------------//
   TStepNrChecker = class
+  protected
+    i_casenr: integer;
+    i_stepnr: integer;
+  public
 
+    //function CheckStepNr(const stepnr: string): boolean;
   end;
 
-  TStepTChecker = class
-
+  {TStepTChecker = class
   end;
 
   TStepInitChecker = class
-
-  end;
-
-  TStepFctChecker = class
-
-  end;
-
-  TStepMChecker = class
-
   end;
 
   TStepParChecker = class
-
   end;
+
+  TStepFctChecker = class
+  end;}
+
+  TStepMChecker = class
+  end;
+
 
 implementation
 uses StrUtils;

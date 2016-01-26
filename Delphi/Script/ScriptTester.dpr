@@ -12,7 +12,8 @@ uses
   GenType in '..\General\GenType.pas',
   FunctionBase in '..\Function\FunctionBase.pas',
   StepChecker in 'StepChecker.pas',
-  StepContainer in 'StepContainer.pas';
+  StepContainer in 'StepContainer.pas',
+  FuncMat in '..\Function\FuncMat.pas';
 
 {$R *.res}
 
