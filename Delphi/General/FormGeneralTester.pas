@@ -4,6 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, DataBuffer, StdCtrls;
 
 type
   TfrmGeneralTester = class(TForm)

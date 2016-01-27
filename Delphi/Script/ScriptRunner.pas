@@ -21,8 +21,9 @@ type
     t_allsteps:TStepContainer;
   protected
     procedure SetExecutionMode(const em: EExecutionMode);
-    {function  StepInit(const par: string): boolean; virtual;
-    function  StepInputM(const par: string): boolean; virtual;
+
+    function  StepInit(const fieldval: string): boolean; virtual;
+    {function  StepInputM(const par: string): boolean; virtual;
     function  StepFunc(const func, par: string): boolean; virtual;
     function  StepEval(const par: string): boolean; virtual;
     function  StepSave(const par: string): boolean; virtual;
@@ -65,6 +66,11 @@ begin
     EM_DIAGNOSE: e_threshold := ML_INFO;
   end;
   t_fcaller.ExecutionMode := e_exemode;
+end;
+
+function  TScriptRunner.StepInit(const fieldval: string): boolean;
+begin
+
 end;
 
 function TScriptRunner.RunStep(var tstep: TTestStep): boolean;

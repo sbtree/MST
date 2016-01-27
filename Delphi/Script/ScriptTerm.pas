@@ -39,6 +39,7 @@ type
                 );
 
   FieldKeyArray = array[EStepField] of string;
+  FieldValArray = array[EStepField] of string;
 
   // a base class for terminology in a step: Nr, T, R_on, Fkt, Par, R_off, Tol(A, Min, Max)
   TStepField = class

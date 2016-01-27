@@ -1,7 +1,7 @@
 unit ScriptReader;
 
 interface
-uses Classes, Contnrs, ScriptTerm, StepChecker, TextMessage;
+uses Classes, Contnrs, ScriptTerm, StepChecker, StepContainer, TextMessage;
 
 type
   EParseState = (
@@ -20,9 +20,6 @@ type
                 );
   PParseState = ^EParseState;
 
-  //ParseStateSet = set of EParseState;
-
-
   TScriptReader = class(TTextMessager)
   private
     pe_state:   PParseState;  //a pointer to EParseState, auxiliary class remember
@@ -34,21 +31,27 @@ type
     i_colindex: integer;      //index of column, which is being parsed
     s_srcfile:  string;       //file name
     t_fstemp:   TDateTime;    //save time stemp of last changing for s_srcfile
-    t_ssteps:   TStringList;  //list of test steps without any useless char
-    s_curtext:  string;       //to save a step text or a line of 'var=value', which is parsed
+    s_curtext:  string;       //to save current step text or line of 'var=value', which is parsed
     b_allowvar: boolean;      //indicates if a variable is allowed with the format 'var=value' till now
     t_fkeys:    TFieldKeyChecker;   // a help object for parsing
     e_lastfield:EStepField;   //to save the index of last field, which is found in reading the script
 
+    t_tsteps:   TStringList;  //list of test steps without any useless char
+    t_container:TStepContainer;     //a container to save steps
+    a_fieldvals:FieldValArray;//an array to save field values of current test step
+
   protected
     procedure PushState(const state: EParseState);
     procedure PopState();
+    procedure ResetFieldValues();
     function  CheckFunctionName(const fct: string): boolean;
     function  CheckFieldKey(const key: string): boolean;
     function  CheckFieldValue(const val: string): boolean;
     function  ReadChar(const curch, nextch: char): boolean;
 
   public
+    property StepContainer: TStepContainer read t_container;
+
     constructor Create();
     destructor Destroy(); override;
 
@@ -148,6 +151,7 @@ begin
     SF_TOL_MIN,
     SF_TOL_MAX: result := true;
   end;
+  if result then a_fieldvals[e_lastfield] := val;
 end;
 
 // =============================================================================
@@ -302,7 +306,7 @@ begin
         s_curtext := s_curtext + trim(s_curtoken) + curch;
         s_curtoken := '';
         if (e_curstate = PS_IDLE) then begin//a step is over
-          t_ssteps.Add(s_curtext);
+          t_tsteps.Add(s_curtext);
           s_curtext := '';
           t_fkeys.ResetUnused();
         end else if (e_curstate <> PS_FIELDVAL) then begin
@@ -370,7 +374,7 @@ begin
         s_curtoken := '';
         PopState();
         if (e_curstate = PS_IDLE) then begin//a step is over
-          if (s_curtext <> '') then t_ssteps.Add(s_curtext);
+          if (s_curtext <> '') then t_tsteps.Add(s_curtext);
           s_curtext := '';
           t_fkeys.ResetUnused();
         end;
@@ -387,6 +391,7 @@ begin
       else begin
         if (curch in CSET_FIRST_CHARS) then begin
           if (e_curstate = PS_IDLE) then begin
+            //todo: what about the help id, e.g. HELP_000100??
             if b_allowvar then begin
               s_curtoken := s_curtoken + curch;
               PushState(PS_VARNAME);
@@ -420,8 +425,9 @@ begin
   t_fstemp := -1;
   b_allowvar := true;
   t_states := TStack.Create();
-  t_ssteps := TStringList.Create();
+  t_tsteps := TStringList.Create();
   t_fkeys := TFieldKeyChecker.Create();
+  t_container := TStepContainer.Create();
 end;
 
 // =============================================================================
@@ -436,8 +442,9 @@ begin
 	inherited Destroy;
   while(t_states.Count > 0) do PopState();
   t_states.Free();
-  t_ssteps.Free();
+  t_tsteps.Free();
   t_fkeys.Free();
+  t_container.Free();
 end;
 
 function TScriptReader.ReadFromText(const srctext: string; const blast: boolean): boolean;
@@ -467,7 +474,7 @@ function TScriptReader.ReadFromList(const srclist: TStringList): boolean;
 var i: integer;
 begin
   result := false; i_rowindex := 0;
-  t_ssteps.Clear();
+  t_tsteps.Clear();
   if srclist.Count > 0 then  begin
     for i := 0 to srclist.Count - 2 do begin
       Inc(i_rowindex);
@@ -478,7 +485,7 @@ begin
       Inc(i_rowindex);
       result := ReadFromText(srclist[srclist.Count - 1], true);
     end;
-    if result then result := (t_ssteps.Count > 0);
+    if result then result := (t_tsteps.Count > 0);
   end;
 end;
 
@@ -505,7 +512,7 @@ end;
 
 function TScriptReader.SaveSteps(const destfile: string): boolean;
 begin
-  t_ssteps.SaveToFile(destfile);
+  t_tsteps.SaveToFile(destfile);
   result := true;
 end;
 end.

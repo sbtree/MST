@@ -5,4 +5,5 @@
 *.exe
 *.identcache
 *.local
-*/*/_history/*.*
+*.bak
+**/__history
