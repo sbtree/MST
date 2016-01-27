@@ -5,4 +5,4 @@
 *.exe
 *.identcache
 *.local
-**/_history/*.*
+*/*/_history/*.*
