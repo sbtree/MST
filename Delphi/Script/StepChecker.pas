@@ -12,14 +12,16 @@ type
 //----------------------------------------------------------------------------//
   TFieldKeyChecker = class
   protected
-    a_keys: FieldKeyArray;
+    a_keys: FieldStringArray;
     b_used: array[EStepField] of boolean;
+  protected
+    function  CheckKeys(const keys: FieldStringArray): boolean;
   public
     constructor Create();
     destructor Destroy(); override;
 
     procedure ResetUnused();
-    function  SetFieldKeys(const keys: FieldKeyArray): boolean;
+    function  SetFieldKeys(const keys: FieldStringArray): boolean;
     function  FindKey(const field: string; var idx: EStepField): boolean;
     function  FieldKey(const index: EstepField): string;
     procedure SetKeyUsed(const index: EstepField; const used: boolean);
@@ -58,13 +60,28 @@ type
 
 
 implementation
-uses StrUtils;
+uses SysUtils, StrUtils;
+
+//reduplicated key is not allowed
+function  TFieldKeyChecker.CheckKeys(const keys: FieldStringArray): boolean;
+var i, j: integer;
+begin
+  result := true;
+  for i := Ord(Low(EStepField)) to Ord(High(EStepField)) - 1 do begin
+    for j := i + 1 to Ord(High(EStepField)) do begin
+      if SameText(keys[EStepField(i)], keys[EStepField(j)]) then begin
+        result := false;
+        break;
+      end;
+    end;
+  end;
+end;
 
 constructor TFieldKeyChecker.Create();
-var i: EStepField;
 begin
   inherited Create();
-  for i := Low(EStepField) to High(EStepField) do a_keys[i] := CSTR_FIELD_KEYS_V03[i];
+  SetFieldKeys(CSTR_FIELD_KEYS_V03);
+  ResetUnused();
 end;
 
 destructor TFieldKeyChecker.Destroy();
@@ -78,17 +95,11 @@ begin
   for i := Low(EStepField) to High(EStepField) do b_used[i] := false;
 end;
 
-function TFieldKeyChecker.SetFieldKeys(const keys: FieldKeyArray): boolean;
+function TFieldKeyChecker.SetFieldKeys(const keys: FieldStringArray): boolean;
 var i: EStepField;
 begin
-  result := true;
-  for i := Low(EStepField) to High(EStepField) do begin
-    if (IndexText(keys[i], a_keys) < Ord(Low(EStepField))) then a_keys[i] := keys[i]
-    else begin
-      result := false;
-      break;
-    end;
-  end;
+  result := CheckKeys(keys);
+  if result then for i := Low(EStepField) to High(EStepField) do a_keys[i] := keys[i];
 end;
 
 function TFieldKeyChecker.FindKey(const field: string; var idx: EStepField): boolean;

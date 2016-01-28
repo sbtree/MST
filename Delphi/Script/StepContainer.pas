@@ -8,30 +8,47 @@ type
   protected
     t_steps: TObjectList; //
   protected
-    function PutStep(const sstep: string): boolean;
+
   public
-    function LoadSteps(const ssteps: TStringList): integer;
+    constructor Create();
+    destructor  Destroy(); override;
+
+    function  CreateStep(const fields: FieldStringArray): boolean;
+    procedure ClearSteps();
+//   function LoadSteps(const ssteps: TStringList): integer;
 //   function TestStep(const casenr, stepnr: integer): TTestStep;
 //   function TestCase(const casenr: integer): TTestStep;
 //   function TestSequence(const startcase, endcase: integer): TTestSequence;
   end;
 implementation
+uses SysUtils;
 
-function TStepContainer.PutStep(const sstep: string): boolean;
+constructor TStepContainer.Create();
 begin
-  result := false;
+  inherited Create();
+  t_steps := TObjectList.Create();
 end;
 
-function TStepContainer.LoadSteps(const ssteps: TStringList): integer;
-var i: integer;
+destructor TStepContainer.Destroy();
 begin
-  result := 0;
-  for i := 0 to ssteps.Count - 1 do begin
-    if PutStep(ssteps[i]) then Inc(result)
-    else begin
-      //todo: handle error
-    end;
-  end;
+  ClearSteps();
+  t_steps.Free();
+  inherited Destroy();
+end;
+
+
+function TStepContainer.CreateStep(const fields: FieldStringArray): boolean;
+var t_step: TTestStep;
+begin
+  t_step := TTestStep.Create();
+  t_step.InputFields(fields);
+  result := (t_steps.Add(t_step) >= 0);
+  if (not result) then t_step.Free();
+end;
+
+procedure TStepContainer.ClearSteps();
+begin
+  t_steps.Clear();
 end;
 
 end.

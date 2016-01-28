@@ -23,7 +23,6 @@ Include=.\TestCase100.txt;.\TestCase200.txt
 (Nr:XXX.010; T:'call a test instruction';    INIT:'RON:101,102;ROFF:119,120;';   FCT:cmd;          PAR:'a;b;@Par';                              M:;      TOL:(A:'OR:1234:0012'; MIN:0; MAX:10;); FINAL:@Push;),
 (Nr:XXX.990; T:'end the named test case';    INIT:;                              FCT:[Nil];        PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:;),
                                                                                                                                                                                            
-HELP_000100
 (Nr:ZZZ.000; T:'define a unnamed test case'; INIT:;                              FCT:[Nil];        PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:;),        
 (Nr:ZZZ.010; T:'call a test instruction';    INIT:'RON:101,102;ROFF:119,120;';   FCT:cmd;          PAR:'a;b;c';                                 M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:@Push;),   
 (Nr:ZZZ.990; T:'end the unnamed test case';  INIT:;                              FCT:[Nil];        PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:@Restore;),

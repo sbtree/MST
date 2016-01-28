@@ -22,6 +22,7 @@ type
   end;
 
 implementation
+
 constructor TStepResult.Create();
 begin
   inherited Create();

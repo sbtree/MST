@@ -33,12 +33,12 @@ type
     t_fstemp:   TDateTime;    //save time stemp of last changing for s_srcfile
     s_curtext:  string;       //to save current step text or line of 'var=value', which is parsed
     b_allowvar: boolean;      //indicates if a variable is allowed with the format 'var=value' till now
-    t_fkeys:    TFieldKeyChecker;   // a help object for parsing
+    t_fkeys:    TFieldKeyChecker; // a help object for parsing
     e_lastfield:EStepField;   //to save the index of last field, which is found in reading the script
 
     t_tsteps:   TStringList;  //list of test steps without any useless char
-    t_container:TStepContainer;     //a container to save steps
-    a_fieldvals:FieldValArray;//an array to save field values of current test step
+    t_container:TStepContainer;   //a container to save steps
+    a_fieldvals:FieldStringArray; //an array to save field values of current test step
 
   protected
     procedure PushState(const state: EParseState);
@@ -117,6 +117,12 @@ begin
   pe_state := t_states.Pop();
   e_curstate := pe_state^;
   dispose(pe_state);
+end;
+
+procedure TScriptReader.ResetFieldValues();
+var i: EStepField;
+begin
+  for i := Low(EStepField) to High(EStepField) do a_fieldvals[i] := '';
 end;
 
 function TScriptReader.CheckFunctionName(const fct: string) : boolean;
@@ -206,7 +212,8 @@ begin
       else if (e_curstate = PS_FIELDVAL) then begin
         if CheckFieldValue(trim(s_curtoken)) then begin
           PopState();
-          s_curtext := s_curtext + trim(s_curtoken) + curch;
+          a_fieldvals[e_lastfield] := trim(s_curtoken);
+          s_curtext := s_curtext + a_fieldvals[e_lastfield] + curch;
           s_curtoken := '';
         end else begin
           result := false;
@@ -294,7 +301,8 @@ begin
       else if e_curstate = PS_FIELDVAL then begin
         if CheckFieldValue(trim(s_curtoken)) then begin
           PopState();
-          s_curtext := s_curtext + trim(s_curtoken) + curch;
+          a_fieldvals[e_lastfield] := trim(s_curtoken);
+          s_curtext := s_curtext + a_fieldvals[e_lastfield] + curch;
           s_curtoken := '';
           //if (e_curstate = PS_FIELDGROUP) then PopState();
         end else begin
@@ -307,8 +315,10 @@ begin
         s_curtoken := '';
         if (e_curstate = PS_IDLE) then begin//a step is over
           t_tsteps.Add(s_curtext);
+          t_container.CreateStep(a_fieldvals);
           s_curtext := '';
           t_fkeys.ResetUnused();
+          ResetFieldValues();
         end else if (e_curstate <> PS_FIELDVAL) then begin
           result := false;
           //todo: handle error
@@ -376,9 +386,8 @@ begin
         if (e_curstate = PS_IDLE) then begin//a step is over
           if (s_curtext <> '') then t_tsteps.Add(s_curtext);
           s_curtext := '';
-          t_fkeys.ResetUnused();
         end;
-      end else begin  //[PS_VARNAME, , PS_SQUOTATION, PS_DQUOTATION, PS_FIELDKEY, PS_FIELDVAL]
+      end else begin  //[PS_VARNAME, PS_SQUOTATION, PS_DQUOTATION, PS_FIELDKEY, PS_FIELDVAL]
         result := false;
         //todo: handle error
       end;

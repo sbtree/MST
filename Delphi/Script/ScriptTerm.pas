@@ -38,8 +38,7 @@ type
                 SF_TOL_MAX  //e.g. Max:0
                 );
 
-  FieldKeyArray = array[EStepField] of string;
-  FieldValArray = array[EStepField] of string;
+  FieldStringArray = array[EStepField] of string;
 
   // a base class for terminology in a step: Nr, T, R_on, Fkt, Par, R_off, Tol(A, Min, Max)
   TStepField = class
@@ -56,11 +55,15 @@ type
   protected
     a_fields:   array[EStepField] of TStepField;
     t_result:   TStepResult;
-
   protected
-  public
-    property StepResult: TStepResult read t_result write t_result;
+    procedure   FreeFields();
 
+  public
+    constructor Create();
+    destructor Destroy(); override;
+
+    property StepResult: TStepResult read t_result write t_result;
+    procedure InputFields(const fields: FieldStringArray);
     //function ResolveTerm(var text: string; const term: EStepTerm): TStepTerm;
   end;
 
@@ -75,23 +78,53 @@ type
   end;
   
 const
-  CSTR_FIELD_KEYS_V01 :  FieldKeyArray = (
+  CSTR_FIELD_KEYS_V01 :  FieldStringArray = (
                         'NR', 'T', 'R_ON', 'FKT', 'M', 'PAR', 'R_OFF',
                         'TOL', 'A', 'MIN', 'MAX'
                       );
 
-  CSTR_FIELD_KEYS_V02  :  FieldKeyArray = (
+  CSTR_FIELD_KEYS_V02  :  FieldStringArray = (
                         'NR', 'T', 'INIT', 'FCT', 'M', 'PAR', 'FINAL',
                         'VALID', 'A', 'MIN', 'MAX'
                       );
 
-  CSTR_FIELD_KEYS_V03  :  FieldKeyArray = (
+  CSTR_FIELD_KEYS_V03  :  FieldStringArray = (
                         'NR', 'T', 'INIT', 'FCT', 'M', 'PAR', 'FINAL',
                         'TOL', 'A', 'MIN', 'MAX'
                       );
 
 implementation
-uses StrUtils;
+uses SysUtils, StrUtils;
 
+procedure  TTestStep.FreeFields();
+var i: EStepField;
+begin
+  for i := Low(EStepField) to High(EStepField) do
+    if assigned(a_fields[i]) then FreeAndNil(a_fields[i]);
+end;
+
+constructor TTestStep.Create();
+begin
+  inherited Create();
+  t_result := TStepResult.Create();
+end;
+
+destructor TTestStep.Destroy();
+begin
+  t_result.Free();
+  FreeFields();
+  inherited Destroy();
+end;
+
+procedure TTestStep.InputFields(const fields: FieldStringArray);
+var i: EStepField;
+begin
+  for i := Low(EStepField) to High(EStepField) do begin
+    if fields[i] <> '' then begin
+      a_fields[i] := TStepField.Create();
+      a_fields[i].InputString := fields[i];
+    end;
+  end;
+end;
 
 end.

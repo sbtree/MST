@@ -70,7 +70,8 @@ end;
 
 function  TScriptRunner.StepInit(const fieldval: string): boolean;
 begin
-
+  result := true;
+  //todo:
 end;
 
 function TScriptRunner.RunStep(var tstep: TTestStep): boolean;
