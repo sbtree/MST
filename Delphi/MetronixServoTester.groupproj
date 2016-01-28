@@ -12,6 +12,7 @@
     <Projects Include="Product\BootTester.dproj" />
     <Projects Include="Product\ProductTester.dproj" />
     <Projects Include="Script\ScriptTester.dproj" />
+    <Projects Include="ServoTester\ServoTester.dproj" />
     <Projects Include="Tools\ToolTester.dproj" />
   </ItemGroup>
   <ProjectExtensions>
@@ -101,14 +102,23 @@
   <Target Name="BootTester:Make">
     <MSBuild Projects="Product\BootTester.dproj" Targets="Make" />
   </Target>
+  <Target Name="ServoTester">
+    <MSBuild Projects="ServoTester\ServoTester.dproj" Targets="" />
+  </Target>
+  <Target Name="ServoTester:Clean">
+    <MSBuild Projects="ServoTester\ServoTester.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="ServoTester:Make">
+    <MSBuild Projects="ServoTester\ServoTester.dproj" Targets="Make" />
+  </Target>
   <Target Name="Build">
-    <CallTarget Targets="DeviceManager;GeneralTester;FunctionTester;ToolTester;ScriptTester;CommTester;ProductTester;DeviceTests;BootTester" />
+    <CallTarget Targets="DeviceManager;GeneralTester;FunctionTester;ToolTester;ScriptTester;CommTester;ProductTester;DeviceTests;BootTester;ServoTester" />
   </Target>
   <Target Name="Clean">
-    <CallTarget Targets="DeviceManager:Clean;GeneralTester:Clean;FunctionTester:Clean;ToolTester:Clean;ScriptTester:Clean;CommTester:Clean;ProductTester:Clean;DeviceTests:Clean;BootTester:Clean" />
+    <CallTarget Targets="DeviceManager:Clean;GeneralTester:Clean;FunctionTester:Clean;ToolTester:Clean;ScriptTester:Clean;CommTester:Clean;ProductTester:Clean;DeviceTests:Clean;BootTester:Clean;ServoTester:Clean" />
   </Target>
   <Target Name="Make">
-    <CallTarget Targets="DeviceManager:Make;GeneralTester:Make;FunctionTester:Make;ToolTester:Make;ScriptTester:Make;CommTester:Make;ProductTester:Make;DeviceTests:Make;BootTester:Make" />
+    <CallTarget Targets="DeviceManager:Make;GeneralTester:Make;FunctionTester:Make;ToolTester:Make;ScriptTester:Make;CommTester:Make;ProductTester:Make;DeviceTests:Make;BootTester:Make;ServoTester:Make" />
   </Target>
   <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
 </Project>
