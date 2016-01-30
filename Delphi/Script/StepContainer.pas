@@ -1,12 +1,13 @@
 unit StepContainer;
 
 interface
-uses Classes, Contnrs, ScriptTerm;
+uses Classes, Contnrs, TestStep, TestCase;
 
 type
   TStepContainer = class
   protected
     t_steps: TObjectList; //
+    t_cases: TObjectList; //
   protected
 
   public
@@ -14,8 +15,8 @@ type
     destructor  Destroy(); override;
 
     function  CreateStep(const fields: FieldStringArray): boolean;
+    function  GetStep(const idx: integer): TTestStep;
     procedure ClearSteps();
-//   function LoadSteps(const ssteps: TStringList): integer;
 //   function TestStep(const casenr, stepnr: integer): TTestStep;
 //   function TestCase(const casenr: integer): TTestStep;
 //   function TestSequence(const startcase, endcase: integer): TTestSequence;
@@ -44,6 +45,12 @@ begin
   t_step.InputFields(fields);
   result := (t_steps.Add(t_step) >= 0);
   if (not result) then t_step.Free();
+end;
+
+function  TStepContainer.GetStep(const idx: integer): TTestStep;
+begin
+  result := nil;
+  if ((idx >= 0) and (idx < t_steps.Count)) then result := TTestStep(t_steps.Items[idx]);
 end;
 
 procedure TStepContainer.ClearSteps();

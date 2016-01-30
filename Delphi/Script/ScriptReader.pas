@@ -1,7 +1,7 @@
 unit ScriptReader;
 
 interface
-uses Classes, Contnrs, ScriptTerm, StepChecker, StepContainer, TextMessage;
+uses Classes, Contnrs, TestStep, StepChecker, StepContainer, TextMessage;
 
 type
   EParseState = (
@@ -21,10 +21,19 @@ type
   PParseState = ^EParseState;
 
   TScriptReader = class(TTextMessager)
+  type
+    StateEntry = record
+      e_state:EParseState;//save state
+      i_row:  integer;    //save row of the beginning of the state
+      i_col:  integer;    //save column of the beginning of the state
+    end;
+    PStateEntry = ^StateEntry;
+
   private
-    pe_state:   PParseState;  //a pointer to EParseState, auxiliary class remember
+    p_sentry:   PStateEntry;  //a pointer to StateEntry, auxiliary class remember
   protected
-    e_curstate: EParseState;  //current state of the reader
+    e_curstate: EParseState;  //current state of the reader, identical as the state in t_sentry
+    t_sentry:   StateEntry;   //current state entry, inclusive current state
     t_states:   TStack;       //stack of states
     s_curtoken: string;       //save token string, which is found till now
     i_rowindex: integer;      //index of row, which is being parsed
@@ -62,14 +71,11 @@ type
   end;
 
 const
-  CSTR_COMMENT_LINE:  string = '//';
-  CSTR_COMMENT_BEGIN: string = '(*';
-  CSTR_COMMENT_END:   string = '*)';
-
   CCHR_EQUAL         = '=';
   CCHR_COLON         = ':';
   CCHR_SEMICOLON     = ';';
   CCHR_COMMA         = ',';
+  CCHR_POINT         = '.';
   CCHR_SQUOTATION    = '''';
   CCHR_DQUOTATION    = '"';
   CCHR_BRACKET_OPEN  = '(';
@@ -99,10 +105,15 @@ uses SysUtils, StrUtils, FunctionBase;
 // =============================================================================
 procedure TScriptReader.PushState(const state: EParseState);
 begin
-  new(pe_state);
-  pe_state^ := e_curstate;
-  t_states.Push(pe_state);
+  new(p_sentry);
+  p_sentry^.e_state := t_sentry.e_state;
+  p_sentry^.i_row := t_sentry.i_row;
+  p_sentry^.i_col := t_sentry.i_col;
+  t_states.Push(p_sentry);
   e_curstate := state;
+  t_sentry.e_state := e_curstate;
+  t_sentry.i_row := i_rowindex;
+  t_sentry.i_col := i_colindex;
 end;
 
 // =============================================================================
@@ -114,9 +125,12 @@ end;
 // =============================================================================
 procedure TScriptReader.PopState();
 begin
-  pe_state := t_states.Pop();
-  e_curstate := pe_state^;
-  dispose(pe_state);
+  p_sentry := t_states.Pop();
+  t_sentry.e_state := p_sentry^.e_state;
+  t_sentry.i_row := p_sentry^.i_row;
+  t_sentry.i_col := p_sentry^.i_col;
+  e_curstate := t_sentry.e_state;
+  dispose(p_sentry);
 end;
 
 procedure TScriptReader.ResetFieldValues();
@@ -412,7 +426,9 @@ begin
             s_curtoken := s_curtoken + curch;
             PushState(PS_FIELDKEY); 
           end;
-        end else begin
+        end else if (not (curch in CSET_BLANK_CHARS)) then begin
+          result := false;
+          //todo: unexpected char in current state
         end;
       end;
     end;
@@ -431,6 +447,9 @@ constructor TScriptReader.Create();
 begin
 	inherited Create;
   e_curstate := PS_IDLE;
+  t_sentry.e_state := e_curstate;
+  t_sentry.i_row := 0;
+  t_sentry.i_col := 0;
   t_fstemp := -1;
   b_allowvar := true;
   t_states := TStack.Create();
@@ -457,25 +476,25 @@ begin
 end;
 
 function TScriptReader.ReadFromText(const srctext: string; const blast: boolean): boolean;
-var i_len: integer; s_text: string;
+var i_len, i_lensrc: integer; s_text: string;
 begin
   if (srctext = '') then result := true
   else result := false;
-   
-  i_colindex := 1; i_len := length(srctext);
-  s_text := srctext + CCHR_CR;
-  while i_colindex <= i_len do begin
+
+  i_colindex := 1; i_lensrc := length(srctext);
+  s_text := srctext + CCHR_CR + CCHR_LN; //append CCHR_CR and CCHR_LN, in order easily to solve ending of a line
+  i_len := i_lensrc + 2; //length of all char (inclusive CCHR_CR and CCHR_LN)
+  while i_colindex < i_len do begin
     result := ReadChar(s_text[i_colindex], s_text[i_colindex + 1]);
     if (not result) then break
     else begin
-      if (e_curstate = PS_LINECOMMENT) then i_colindex := i_len;
+      if (e_curstate = PS_LINECOMMENT) then i_colindex := i_lensrc; //jump to the end of this text (exclusive CCHR_CR and CCHR_LN), if line comment is found
       Inc(i_colindex);
     end;
   end;
-  if result then result := ReadChar(CCHR_CR, CCHR_LN);
   if blast then begin
     s_curtext := trim(s_curtext);
-    result := result and (s_curtext = '') and (e_curstate = PS_IDLE) and (t_states.Count = 0);
+    result := (result and (s_curtext = '') and (e_curstate = PS_IDLE) and (t_states.Count = 0));
   end;
 end;
 
@@ -485,12 +504,12 @@ begin
   result := false; i_rowindex := 0;
   t_tsteps.Clear();
   if srclist.Count > 0 then  begin
-    for i := 0 to srclist.Count - 2 do begin
+    for i := 0 to srclist.Count - 2 do begin //read in (n-1) lines, firstly
       Inc(i_rowindex);
       result := ReadFromText(srclist[i], false);
       if (not result) then break;
     end;
-    if result then begin
+    if result then begin //read in the last line
       Inc(i_rowindex);
       result := ReadFromText(srclist[srclist.Count - 1], true);
     end;

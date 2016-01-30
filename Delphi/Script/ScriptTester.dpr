@@ -4,7 +4,7 @@ uses
   Forms,
   FormScriptTester in 'FormScriptTester.pas' {frmScriptTester},
   ScriptReader in 'ScriptReader.pas',
-  ScriptTerm in 'ScriptTerm.pas',
+  TestStep in 'TestStep.pas',
   ScriptRunner in 'ScriptRunner.pas',
   TextMessage in '..\General\TextMessage.pas',
   StepResult in 'StepResult.pas',
@@ -13,7 +13,9 @@ uses
   FunctionBase in '..\Function\FunctionBase.pas',
   StepChecker in 'StepChecker.pas',
   StepContainer in 'StepContainer.pas',
-  FuncMat in '..\Function\FuncMat.pas';
+  FuncMat in '..\Function\FuncMat.pas',
+  TestCase in 'TestCase.pas',
+  TestSequence in 'TestSequence.pas';
 
 {$R *.res}
 

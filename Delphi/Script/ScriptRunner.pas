@@ -2,7 +2,7 @@ unit ScriptRunner;
 
 interface
 
-uses  Classes, ScriptReader, ScriptTerm, StepResult, StepContainer, TextMessage,
+uses  Classes, ScriptReader, TestStep, TestCase, TestSequence, StepResult, StepContainer, TextMessage,
       FunctionCaller, GenType;
 
 type

@@ -14,12 +14,14 @@ Include=.\TestCase100.txt;.\TestCase200.txt
              block comment 1)
              *)                
              FCT:EvaluateStr;     PAR:'MyTestCase';                            
-             TOL:(A:(MIN:'ABC'); );
+             TOL:(A: ''; MIN:'ABC'; Max:'');
              {block comment 2
              17.09.2014 09:25}
              FINAL:;
              ),
-             
+{test} 
+
+(**)            
 (Nr:XXX.010; T:'call a test instruction';    INIT:'RON:101,102;ROFF:119,120;';   FCT:cmd;          PAR:'a;b;@Par';                              M:;      TOL:(A:'OR:1234:0012'; MIN:0; MAX:10;); FINAL:@Push;),
 (Nr:XXX.990; T:'end the named test case';    INIT:;                              FCT:[Nil];        PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:;),
                                                                                                                                                                                            
@@ -37,4 +39,4 @@ Include=.\TestCase100.txt;.\TestCase200.txt
 (Nr:YYY.070; T:'push cmd result to stack';   INIT:'RON:101,102;ROFF:111,122;';   FCT:cmd;          PAR:$INI_VAR;                                M:'mA';  TOL:(A:; MIN:; MAX:;);                  FINAL:'@Restore;@Push';),
 (Nr:YYY.080; T:'call case if true';          INIT:'RON:201;ROFF:202;';           FCT:CallIfTrue;   PAR:"$INI_VAR='123';'MyTestCase'; ARG:a";    M:'';    TOL:(A:; MIN:; MAX:;);                  FINAL:@Restore;),
 (Nr:YYY.090; T:'call case if true';          INIT:'RON:201;ROFF:202;';           FCT:CallIfTrue;   PAR:"@PopVar=123;'MyTestCase';ARG:b";        M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:'@Restore;@Push';),
-(Nr:YYY.999; T:'End of the routine';         INIT:;                              FCT:[Nil];        PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:@Restore;).
+(Nr:YYY.999; T:'End of the routine';         INIT:;                              FCT:[Nil];        PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  FINAL:@Restore;),

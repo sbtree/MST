@@ -1,7 +1,7 @@
 unit StepChecker;
 
 interface
-uses ScriptTerm;
+uses TestStep;
 
 type
 //----------------------------------------------------------------------------//

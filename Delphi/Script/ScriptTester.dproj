@@ -25,6 +25,7 @@
     <DCC_ResourcePath>..\Externals</DCC_ResourcePath>
     <DCC_ObjPath>..\Externals</DCC_ObjPath>
     <DCC_IncludePath>..\Externals</DCC_IncludePath>
+    <DCC_Optimize>False</DCC_Optimize>
   </PropertyGroup>
   <ProjectExtensions>
     <Borland.Personality>Delphi.Personality</Borland.Personality>
@@ -50,9 +51,11 @@
     </DCCReference>
     <DCCReference Include="ScriptReader.pas" />
     <DCCReference Include="ScriptRunner.pas" />
-    <DCCReference Include="ScriptTerm.pas" />
     <DCCReference Include="StepChecker.pas" />
     <DCCReference Include="StepContainer.pas" />
     <DCCReference Include="StepResult.pas" />
+    <DCCReference Include="TestCase.pas" />
+    <DCCReference Include="TestSequence.pas" />
+    <DCCReference Include="TestStep.pas" />
   </ItemGroup>
 </Project>

@@ -17,7 +17,7 @@
 // History      :
 //==============================================================================
 
-unit ScriptTerm;
+unit TestStep;
 
 interface
 uses Classes, StepResult;
@@ -62,19 +62,9 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    property StepResult: TStepResult read t_result write t_result;
+    property  StepResult: TStepResult read t_result write t_result;
     procedure InputFields(const fields: FieldStringArray);
     //function ResolveTerm(var text: string; const term: EStepTerm): TStepTerm;
-  end;
-
-  TTestCase = class
-  protected
-    //list of step
-  end;
-
-  TTestSequence = class
-  protected
-    //list of case
   end;
   
 const
