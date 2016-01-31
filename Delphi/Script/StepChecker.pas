@@ -40,7 +40,7 @@ type
     i_stepnr: integer;
   public
 
-    //function CheckStepNr(const stepnr: string): boolean;
+    //function CheckNr(const nr: string): boolean;
   end;
 
   {TStepTChecker = class

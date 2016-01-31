@@ -64,7 +64,6 @@ type
 
     property  StepResult: TStepResult read t_result write t_result;
     procedure InputFields(const fields: FieldStringArray);
-    //function ResolveTerm(var text: string; const term: EStepTerm): TStepTerm;
   end;
   
 const

@@ -5,8 +5,9 @@ interface
 type
   TTestCase = class
   protected
-    i_casenr: integer;
-    a_stepidx: array of integer;
+    i_casenr:   integer;
+    i_firstidx:integer;
+    i_lastidx: integer;
 
     //list of step
   public
