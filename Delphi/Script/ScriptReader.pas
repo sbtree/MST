@@ -5,10 +5,10 @@ uses Classes, Contnrs, TestStep, StepChecker, StepContainer, TextMessage;
 
 type
   EParseState = (
-                PS_IDLE,          // start state or state when a step is parsed and next step does not start yet
-                PS_VARNAME,       // VAR=VALUE
-                PS_VARVAL,        // VAR=VALUE
-                PS_STEP,          // text starts with ( for a step
+                PS_IDLE,          // start state or state between ending of a test step and beginning of next test step
+                PS_VARNAME,       // in the string before '=' of the pattern 'VAR=VALUE'
+                PS_VARVAL,        // in the string after '=' of the pattern 'VAR=VALUE'
+                PS_STEP,          // text starts with open bracket '(' for a step
                 PS_FIELDKEY,      // e.g. T of T:xxxx
                 PS_FIELDVAL,      // e.g. xxxx of T:xxxx
                 PS_SQUOTATION,    // text starts with single quote mark '
@@ -52,6 +52,7 @@ type
   protected
     procedure PushState(const state: EParseState);
     procedure PopState();
+    procedure ClearStates();
     procedure ResetFieldValues();
     function  CheckFunctionName(const fct: string): boolean;
     function  CheckFieldKey(const key: string): boolean;
@@ -64,10 +65,11 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    function ReadFromText(const srctext: string; const blast: boolean = false): boolean; virtual;
-    function ReadFromList(const srclist: TStringList): boolean; virtual;
-    function ReadFromFile(const srcfile: string; const bforce: boolean = false): boolean; virtual;
-    function SaveSteps(const destfile: string): boolean;
+    procedure Clear();
+    function  ReadFromText(const srctext: string; const blast: boolean = false): boolean; virtual;
+    function  ReadFromList(const srclist: TStringList): boolean; virtual;
+    function  ReadFromFile(const srcfile: string; const bforce: boolean = false): boolean; virtual;
+    function  SaveToFile(const destfile: string): boolean;
   end;
 
 const
@@ -131,6 +133,20 @@ begin
   t_sentry.i_col := p_sentry^.i_col;
   e_curstate := t_sentry.e_state;
   dispose(p_sentry);
+end;
+
+procedure TScriptReader.ClearStates();
+begin
+  while (t_states.Count > 0) do begin
+    p_sentry := t_states.Pop();
+    dispose(p_sentry);
+  end;
+  t_sentry.e_state := PS_IDLE;
+  t_sentry.i_row := 0;
+  t_sentry.i_col := 0;
+  e_curstate := t_sentry.e_state;
+  i_rowindex := t_sentry.i_row;
+  i_colindex := t_sentry.i_col;
 end;
 
 procedure TScriptReader.ResetFieldValues();
@@ -248,9 +264,22 @@ begin
     end;
   end;
   CCHR_COMMA: begin
-    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT, PS_IDLE])) then begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
-      else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
+      else if (e_curstate = PS_IDLE) then begin //ending of a test step
+        //todo:
+      end else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
+        result := false;
+        //todo: handle error
+      end;
+    end;
+  end;
+  CCHR_POINT: begin
+    if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
+      else if (e_curstate = PS_IDLE) then begin //ending of a test case
+        //todo:
+      end else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
         //todo: handle error
       end;
@@ -330,6 +359,8 @@ begin
         if (e_curstate = PS_IDLE) then begin//a step is over
           t_tsteps.Add(s_curtext);
           t_container.CreateStep(a_fieldvals);
+          t_sentry.i_row := i_rowindex; //update row and column for each idle state
+          t_sentry.i_col := i_colindex;
           s_curtext := '';
           t_fkeys.ResetUnused();
           ResetFieldValues();
@@ -407,11 +438,11 @@ begin
       end;
     end;
   end;
-  else begin
+  else begin //other chars
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACECOMMENT, PS_BRACKETCOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARNAME, PS_VARVAL, PS_FIELDKEY, PS_FIELDVAL]) then
         s_curtoken := s_curtoken + curch
-      else begin
+      else begin //[PS_IDLE, PS_STEP, PS_FIELDGROUP]
         if (curch in CSET_FIRST_CHARS) then begin
           if (e_curstate = PS_IDLE) then begin
             //todo: what about the help id, e.g. HELP_000100??
@@ -424,7 +455,7 @@ begin
             end;
           end else begin //[PS_STEP, PS_FIELDGROUP]
             s_curtoken := s_curtoken + curch;
-            PushState(PS_FIELDKEY); 
+            PushState(PS_FIELDKEY);
           end;
         end else if (not (curch in CSET_BLANK_CHARS)) then begin
           result := false;
@@ -475,6 +506,19 @@ begin
   t_container.Free();
 end;
 
+procedure TScriptReader.Clear();
+begin
+  e_curstate := PS_IDLE;
+  ClearStates();
+  t_fstemp := -1;
+  s_srcfile := '';
+  s_curtext := '';
+  s_curtoken := '';
+  b_allowvar := true;
+  t_tsteps.Clear();
+  t_container.ClearSteps();
+end;
+
 function TScriptReader.ReadFromText(const srctext: string; const blast: boolean): boolean;
 var i_len, i_lensrc: integer; s_text: string;
 begin
@@ -501,8 +545,8 @@ end;
 function TScriptReader.ReadFromList(const srclist: TStringList): boolean;
 var i: integer;
 begin
-  result := false; i_rowindex := 0;
-  t_tsteps.Clear();
+  result := false;
+  Clear();
   if srclist.Count > 0 then  begin
     for i := 0 to srclist.Count - 2 do begin //read in (n-1) lines, firstly
       Inc(i_rowindex);
@@ -538,9 +582,27 @@ begin
   end;
 end;
 
-function TScriptReader.SaveSteps(const destfile: string): boolean;
+function TScriptReader.SaveToFile(const destfile: string): boolean;
+var i: integer; s_line: string; j:EStepField;
+    t_steps: TStringList; t_step: TTestStep; t_field: TStepField;
 begin
-  t_tsteps.SaveToFile(destfile);
+  t_steps := TStringList.Create();
+  for i := 0 to t_container.StepCount() - 1 do begin
+    t_step := t_container.GetStep(i);
+    if assigned(t_step) then begin
+      t_field := t_step.StepFields[SF_NR];
+      if assigned(t_field) then s_line := t_field.InputString;
+      for j := SF_T to High(EStepField) do begin
+        t_field := t_step.StepFields[j];
+        if assigned(t_field) then s_line := s_line + ';' + #9 + t_field.InputString;
+      end;
+      t_steps.Add(s_line);
+    end;
+  end;
+  t_steps.SaveToFile(destfile);
+  t_steps.Free();
+  //t_tsteps.SaveToFile(destfile);
   result := true;
 end;
+
 end.

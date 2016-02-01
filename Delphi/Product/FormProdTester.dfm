@@ -14,8 +14,8 @@ object frmProdTester: TfrmProdTester
   PixelsPerInch = 96
   TextHeight = 13
   object btnTest: TButton
-    Left = 479
-    Top = 268
+    Left = 535
+    Top = 471
     Width = 75
     Height = 25
     Caption = '&Test'

@@ -3,9 +3,10 @@ unit TestCase;
 interface
 
 type
-  TTestCase = class
+  TCaseDescriptor = class
   protected
     i_casenr:   integer;
+    s_caseid:   string;
     i_firstidx:integer;
     i_lastidx: integer;
 

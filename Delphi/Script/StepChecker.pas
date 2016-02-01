@@ -58,6 +58,13 @@ type
   TStepMChecker = class
   end;
 
+  TCaseChecker = class
+
+  end;
+
+  TLoopChecker = class
+
+  end;
 
 implementation
 uses SysUtils, StrUtils;
@@ -80,7 +87,7 @@ end;
 constructor TFieldKeyChecker.Create();
 begin
   inherited Create();
-  SetFieldKeys(CSTR_FIELD_KEYS_V03);
+  SetFieldKeys(CSTR_FIELD_KEYS_V01);
   ResetUnused();
 end;
 

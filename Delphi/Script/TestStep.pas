@@ -47,13 +47,15 @@ type
     s_eval:  string;
   protected
   public
-    property InputString: string read s_input write s_input;
-    property EvalString: string read s_eval write s_eval;
+    property  InputString: string read s_input write s_input;
+    property  EvalString: string read s_eval write s_eval;
+    procedure Assign(const source: TStepField);
   end;
 
+  StepFieldArray = array[EStepField] of TStepField;
   TTestStep = class
   protected
-    a_fields:   array[EStepField] of TStepField;
+    a_fields:   StepFieldArray;
     t_result:   TStepResult;
   protected
     procedure   FreeFields();
@@ -62,8 +64,12 @@ type
     constructor Create();
     destructor Destroy(); override;
 
+    property  StepFields: StepFieldArray read a_fields write a_fields;
     property  StepResult: TStepResult read t_result write t_result;
     procedure InputFields(const fields: FieldStringArray);
+    procedure Assign(const source: TTestStep);
+    procedure AssignResult(const source: TStepResult);
+    //function  FieldString(const field: EStepField): string;
   end;
   
 const
@@ -85,6 +91,14 @@ const
 implementation
 uses SysUtils, StrUtils;
 
+procedure TStepField.Assign(const source: TStepField);
+begin
+  if assigned(source) then begin
+    StrCopy(PChar(s_input), PChar(source.InputString));
+    StrCopy(PChar(s_eval), PChar(source.EvalString));
+  end;
+end;
+
 procedure  TTestStep.FreeFields();
 var i: EStepField;
 begin
@@ -95,12 +109,11 @@ end;
 constructor TTestStep.Create();
 begin
   inherited Create();
-  t_result := TStepResult.Create();
 end;
 
 destructor TTestStep.Destroy();
 begin
-  t_result.Free();
+  if assigned(t_result) then t_result.Free();
   FreeFields();
   inherited Destroy();
 end;
@@ -115,5 +128,32 @@ begin
     end;
   end;
 end;
+
+procedure TTestStep.Assign(const source: TTestStep);
+var i: EStepField;
+begin
+  if assigned(source) then begin
+    for i := Low(EStepField) to High(EStepField) do begin
+      if assigned(source.StepFields[i]) then begin
+        a_fields[i] := TStepField.Create();
+        a_fields[i].Assign(source.StepFields[i]);
+      end;
+    end;
+    AssignResult(source.StepResult);
+  end;
+end;
+
+procedure TTestStep.AssignResult(const source: TStepResult);
+begin
+  if assigned(source) then begin
+    if not assigned(t_result) then t_result := TStepResult.Create();
+    t_result.Assigne(source);
+  end else if assigned(t_result) then FreeAndNil(t_result);
+end;
+{function  TTestStep.FieldString(const field: EStepField): string;
+begin
+  result := '';
+  if assigned(a_fields[field]) then result := a_fields[field].InputString;
+end;}
 
 end.

@@ -4,13 +4,16 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls;
+  Dialogs, StdCtrls, ScriptReader;
 
 type
   TfrmScriptTester = class(TForm)
     btnTest: TButton;
     procedure btnTestClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
+    t_sreader : TScriptReader;
     { Private-Deklarationen }
   public
     { Public-Deklarationen }
@@ -23,14 +26,19 @@ implementation
 
 {$R *.dfm}
 
-uses ScriptReader;
-
 procedure TfrmScriptTester.btnTestClick(Sender: TObject);
-var t_sreader: TScriptReader;
+begin
+  t_sreader.ReadFromFile('PST_BT_FT_PS_liste.TXT');
+  t_sreader.SaveToFile('PST_BT_FT_PS_liste_new.txt');
+end;
+
+procedure TfrmScriptTester.FormCreate(Sender: TObject);
 begin
   t_sreader := TScriptReader.Create();
-  t_sreader.ReadFromFile('test_script.TXT');
-  t_sreader.SaveSteps('test_script_new.txt');
+end;
+
+procedure TfrmScriptTester.FormDestroy(Sender: TObject);
+begin
   t_sreader.Free();
 end;
 
