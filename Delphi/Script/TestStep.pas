@@ -94,8 +94,8 @@ uses SysUtils, StrUtils;
 procedure TStepField.Assign(const source: TStepField);
 begin
   if assigned(source) then begin
-    StrCopy(PChar(s_input), PChar(source.InputString));
-    StrCopy(PChar(s_eval), PChar(source.EvalString));
+    s_input := source.InputString;
+    s_eval := source.EvalString;
   end;
 end;
 

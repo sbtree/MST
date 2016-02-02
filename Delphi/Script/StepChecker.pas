@@ -38,6 +38,7 @@ type
   protected
     i_casenr: integer;
     i_stepnr: integer;
+    f_csnr:   single;
   public
 
     //function CheckNr(const nr: string): boolean;

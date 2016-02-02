@@ -6,3 +6,503 @@
 11.08;	'voltage measurement +30V_int [108,128]';	'108,128';	U_Mess_DC;	'V';	'';	'108';	'';	28;	33
 11.21;	'Test DMM-measuringbus without supply';	'';	U_Mess_DC;	'V';	'';	'';	'';	-0.2;	0.2
 11.99;	'Finished';	'';	nil;	'';	'';	'128';	'';	0;	0
+21.00;	'Test voltage +12V on TP XY15';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-21.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	nil;	'';	'';	'';	'';	0;	0
+21.05;	'Test DMM-measuringbus without supply voltage';	'';	U_Mess_DC;	'V';	'';	'';	'';	-0.2;	0.2
+21.06;	'Measurement +12V [102,128]';	'102,128';	U_Mess_DC;	'V';	'';	'102,128';	'';	10.8;	13.3
+21.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+31.00;	'Test voltage +5V on X902.5';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-31.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	nil;	'';	'';	'';	'';	0;	0
+31.05;	'Test DMM-measuringbus without supply voltage';	'';	U_Mess_DC;	'V';	'';	'';	'';	-0.2;	0.2
+31.06;	'Measurement +5V [103,128]';	'103,128';	U_Mess_DC;	'V';	'';	'103,128';	'';	4.75;	5.5
+31.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+41.00;	'Test voltage +3.3V on X401.2';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-41.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	nil;	'';	'';	'';	'';	0;	0
+41.05;	'Test DMM-measuringbus without supply';	'';	U_Mess_DC;	'V';	'';	'';	'';	-0.2;	0.2
+41.06;	'Measurement +3.3V [104,128]';	'104,128';	U_Mess_DC;	'V';	'';	'104,128';	'';	3.2;	3.4
+41.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+51.00;	'Test voltage +3.3V_Ref on TP +3.3V_Ref';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-51.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	nil;	'';	'';	'';	'';	0;	0
+51.05;	'Test DMM-measuringbus without supply';	'';	U_Mess_DC;	'V';	'';	'';	'';	-0.2;	0.2
+51.07;	'Measurement +3.3V_Ref [105,128]';	'105,128';	U_Mess_DC;	'V';	'';	'105,128';	'';	3.2;	3.4
+51.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+71.00;	'Bootloader update and Firmware Download';	'';	LabelFkt;	'';	'NIO-Loop:0';	'';	'';	0;	0
+71.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131,132';	wait;	'';	'1500';	'';	'';	0;	0
+71.02;	'Create file "PlatinenNr_Temp.s"';	'';	write_PlatinenNr_sfile;	'';	'C:\pp';	'';	'';	0;	0
+71.04;	'Create a new BL-updater-file (BT_to_BT)';	'';	BL_sfile_PST_Batch;	'';	'BATCH_0001 BOOTLOADER_0001 BOOTLOADER_0002 C:\pp';	'';	'';	0;	0
+71.06;	'Create a new BL-updater-file (Sevcon_to_BT)';	'';	BL_sfile_PST_Batch;	'';	'BATCH_0001 BOOTLOADER_0003 BOOTLOADER_0004 C:\pp';	'';	'';	0;	0
+71.08;	'BL_Appl.-Version_main (RIP:1FFD)';	'';	COM_A;	'';	'RIP:1FFD';	'';	'';	0;	0
+71.10;	'BL_Appl.-Version_sub (RIP:1FFC)';	'';	COM_A;	'';	'RIP:1FFC';	'';	'';	0;	0
+71.12;	'BL_Produktstep_main (RIP:1FFA)';	'';	COM_A;	'';	'RIP:1FFA';	'';	'';	0;	0
+71.14;	'BL_Productstep_Sub (RIP:1FFB)';	'';	COM_A;	'';	'RIP:1FFB';	'';	'';	0;	0
+71.16;	'BL_KM-Release_Haupt (RIP:1FFE)';	'';	COM_A;	'';	'RIP:1FFE';	'';	'';	0;	0
+71.18;	'BL_KM-Release_Sub (RIP:1FFF)';	'';	COM_A;	'';	'RIP:1FFF';	'';	'';	0;	0
+71.20;	'BL update and FW download, if necessary';	'';	BL_Version_PST;	'';	'BATCH_0002 BOOTLOADER_0005 BOOTLOADER_0002 BOOTLOADER_0004 FIRMWARE_0001 @SonderRel_01 COM_A';	'';	'';	0;	0
+71.22;	'BL_Appl.-Version_main (RIP:1FFD)';	'';	COM_A;	'20000 ms';	'RIP:1FFD';	'';	'????:CIP:????:????';	0;	0
+71.24;	'BL_Appl.-Version_sub (RIP:1FFC)';	'';	COM_A;	'10';	'RIP:1FFC';	'';	'????:CIP:????:????';	0;	0
+71.26;	'BL_Produktstep_Main (RIP:1FFA)';	'';	COM_A;	'10';	'RIP:1FFA';	'';	'????:CIP:????:????';	0;	0
+71.28;	'BL_Produktstep_Sub (RIP:1FFB)';	'';	COM_A;	'10';	'RIP:1FFB';	'';	'????:CIP:????:????';	0;	0
+71.30;	'BL_KM-Release_Main (RIP:1FFE)';	'';	COM_A;	'10';	'RIP:1FFE';	'';	'????:CIP:????:????';	0;	0
+71.32;	'BL_KM-Release_Sub (RIP:1FFF)';	'';	COM_A;	'10';	'RIP:1FFF';	'';	'????:CIP:????:????';	0;	0
+71.34;	'BL version check';	'';	BL_Version_PST;	'';	'CHECK BOOTLOADER_0001 @SonderRel_01';	'';	'';	0;	0
+71.36;	'can init';	'';	Can_Init;	'';	'';	'';	'';	0;	0
+71.38;	'can clear';	'';	Can_Clear;	'';	'';	'';	'';	0;	0
+71.40;	'RESET!';	'';	COM_A_SENDONLY;	'';	'reset!';	'';	'';	0;	0
+71.42;	'Wait';	'';	wait;	'';	'100';	'';	'';	0;	0
+71.44;	'BT-HW-Number query (CAN-swith on Message)';	'';	CAN;	'';	'';	'';	'';	0;	0
+71.46;	'Wait';	'';	wait;	'';	'1000';	'';	'';	0;	0
+71.48;	'FW-Number request';	'';	COM_A;	'10';	'RIPL:1904';	'';	'????:CIPL:????:????????';	0;	0
+71.50;	'Check FW-version, if necessary, update';	'';	FW_Version_PST;	'';	'FIRMWARE_0001 @SonderRel_01 COM_A';	'';	'';	0;	0
+71.52;	'Wait';	'';	wait;	'';	'1000';	'';	'';	0;	0
+71.54;	'can init';	'';	Can_Init;	'';	'';	'';	'';	0;	0
+71.56;	'can clear';	'';	Can_Clear;	'';	'';	'';	'';	0;	0
+71.58;	'RESET!';	'';	COM_A_SENDONLY;	'';	'reset!';	'';	'';	0;	0
+71.60;	'Wait';	'';	wait;	'';	'100';	'';	'';	0;	0
+71.62;	'BT-HW-Number request (CAN-swith on Message)';	'';	CAN;	'';	'';	'';	'587:????????????????';	0;	0
+71.64;	'Wait';	'';	wait;	'';	'1000';	'';	'';	0;	0
+71.66;	'FW-Number request';	'';	COM_A;	'';	'RIPL:1904';	'';	'????:CIPL:????:????????';	0;	0
+71.68;	'Check FW-version';	'';	FW_Version_PST;	'';	'CHECK FIRMWARE_0001';	'';	'';	0;	0
+71.70;	'Set identifier "Function test NOK" (1908:FFFF)';	'';	COM_A;	'';	'SIP:1908:FFFF!';	'';	'????:CIP:????:????';	0;	0
+71.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+81.00;	'PCB serial Nr Check and printed to memory';	'';	nil;	'';	'';	'';	'';	0;	0
+-81.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+81.12;	'Read out the boardnumber part1 (year)';	'132';	COM_A;	'';	'RIP:190E';	'';	'????:CIP:????:????';	0;	0
+81.14;	'Read out the boardnumber part2 (week)';	'';	COM_A;	'';	'RIP:1910';	'';	'????:CIP:????:????';	0;	0
+81.16;	'Read out the boardnumber part3 (day)';	'';	COM_A;	'';	'RIP:1912';	'';	'????:CIP:????:????';	0;	0
+81.18;	'Read out the boardnumber part4 (act. number1)';	'';	COM_A;	'';	'RIP:1914';	'';	'????:CIP:????:????';	0;	0
+81.20;	'Read out the boardnumber part5 (act. number2)';	'';	COM_A;	'';	'RIP:1916';	'';	'????:CIP:????:????';	0;	0
+81.22;	'Boardnumber is assembled';	'';	PlateNr_read_PST;	'';	'';	'';	'';	0;	0
+81.24;	'Boardnumber compare with the setting';	'';	PlateNr_compare;	'';	'';	'';	'';	0;	0
+81.26;	'Write the boardnumber part1 (year)';	'';	COM_A;	'';	'SIP:190E:@PlatinenNrWord_0!';	'';	'????:CIP:????:????';	0;	0
+81.28;	'Write the boardnumber part2 (week)';	'';	COM_A;	'';	'SIP:1910:@PlatinenNrWord_1!';	'';	'????:CIP:????:????';	0;	0
+81.30;	'Write the boardnumber part3 (day)';	'';	COM_A;	'';	'SIP:1912:@PlatinenNrWord_2!';	'';	'????:CIP:????:????';	0;	0
+81.32;	'Write the boardnumber part4 (act. number1)';	'';	COM_A;	'';	'SIP:1914:@PlatinenNrWord_3!';	'';	'????:CIP:????:????';	0;	0
+81.34;	'Write the boardnumber part5 (act. number2)';	'';	COM_A;	'';	'SIP:1916:@PlatinenNrWord_4!';	'';	'????:CIP:????:????';	0;	0
+81.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+88.00;	'HW and SW info Printed to memory';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-88.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+88.26;	'write the device ID';	'132';	COM_A;	'';	'SIP:190C:0000!';	'';	'????:CIP:????:????';	0;	0
+88.28;	'write HW_Vers_main [%s] ';	'';	COM_A;	'';	'SIP:1902:@HWHaupt_ASCII!';	'';	'????:CIP:1902:@HWHaupt_ASCII';	0;	0
+88.30;	'write HW_Vers_sub  [%s]';	'';	COM_A;	'';	'SIP:1900:@HWSub_ASCII!';	'';	'????:CIP:1900:@HWSub_ASCII';	0;	0
+88.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+91.00;	'Parameter download on RS232';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-91.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+91.12;	'Parameter download';	'132';	PS_Load_A;	'';	'PARA_0001';	'';	'';	0;	0
+91.14;	'Data save (%s)';	'';	COM_A;	'';	'Save!';	'';	'DONE';	0;	0
+91.16;	'Set motor speed to 1000 upm';	'';	COM_A;	'';	'SIP:094:03E8!';	'';	'????:CIP:????:????';	0;	0
+91.18;	'Set velocity set point selector on RS232';	'';	COM_A;	'';	'SIP:26E:0002!';	'';	'????:CIP:????:????';	0;	0
+91.20;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+91.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+95.00;	'JUMP_PS_DEVICE(24/10_Östergrens )';	'';	jump_ps_device;	'';	'24/10_Östergrens   PS_212';	'';	'';	0;	0
+95.02;	'JUMP_PS_DEVICE(48/10_Östergrens )';	'';	jump_ps_device;	'';	'48/10_Östergrens   PS_214';	'';	'';	0;	0
+212.00;	'Test board type (24V-Variant)';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-212.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+212.14;	'Read out the board type and compare with the setting';	'132';	COM_A;	'';	'RIP:00C';	'';	'????:CIP:????:0000';	0;	0
+212.16;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+212.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+213.00;	'JUMP_PS(PS_231)';	'';	jump_ps;	'';	'PS_231';	'';	'';	0;	0
+214.00;	'Test board type (48V-Variant) ';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-214.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+214.14;	'Read out the board type and compare with the setting';	'132';	COM_A;	'';	'RIP:00C';	'';	'????:CIP:????:0001';	0;	0
+214.16;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+214.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+231.00;	'Test internal PST temperature';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-231.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+231.12;	'Request internal Temperatur (%s)';	'132';	COM_A;	'';	'RIP:02C';	'';	'????:CIP:????:????';	0;	0
+231.14;	'Calculate intermediary result';	'';	ARITHMETIK;	'';	'3.3-(@LASTINT[1]*3.3)/$7FF8';	'';	'';	1.57;	1.8
+231.16;	'Calculate temperature and compare with the tolerance';	'';	ARITHMETIK;	'°C';	'25 + (66 - (40 * @LASTREAL[1]))/(20 * @LASTREAL[1] * 0.0079)';	'';	'';	15;	35
+231.26;	'Quit error';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+231.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+241.00;	'Test internal Bus Voltage (Amplifier Stage)';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-241.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+241.15;	'Power stage switch off';	'132';	COM_A;	'';	'SRF-';	'';	'????:CRF-';	0;	0
+241.16;	'Read the current command word';	'';	COM_A;	'';	'RIP:000';	'';	'????:CIP:????:????';	0;	0
+241.18;	'Calculate the new command word';	'';	ARITHMETIK;	'';	'(@LASTINT[1] and $F437) or $C8';	'';	'';	0;	65534
+241.20;	'Rewrite the command word';	'';	COM_A;	'';	'SIP:000:@ArithInt16!';	'';	'????:CIP:????:????';	0;	0
+241.22;	'Set velocity set point selector on RS232';	'';	COM_A;	'';	'SIP:26E:0002!';	'';	'????:CIP:????:????';	0;	0
+241.24;	'Set velocity set point to input rotation';	'';	COM_A;	'';	'SIP:094:0500!';	'';	'????:CIP:????:????';	0;	0
+241.26;	'Set the Current set point selector to Speed controller';	'';	COM_A;	'';	'SIP:25E:0004!';	'';	'????:CIP:????:????';	0;	0
+241.28;	'Set Position set point selector to 0';	'';	COM_A;	'';	'SIP:278:0000!';	'';	'????:CIP:????:????';	0;	0
+241.30;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+241.34;	'Power stage switch on';	'';	COM_A;	'';	'SRF+';	'';	'????:CRF+';	0;	0
+241.36;	'Delay(%s)';	'';	Wait;	'';	'500';	'';	'';	0;	0
+241.38;	'PST-Request internal Bus Voltage(%s) ';	'';	COM_A;	'';	'RIP:028';	'';	'????:CIP:????:????';	0;	0
+241.40;	'If read voltage corresponding to the desired value';	'';	ARITHMETIK;	'V';	'@LastInt[1]*95.7/$7FF8';	'';	'';	28.30;	31.7
+241.48;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+241.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+251.00;	'Test CAN-Communication';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-251.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+251.23;	'Quit errors';	'132';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+251.24;	'CAN_Bus Initialization ';	'';	Can_Init;	'';	'';	'';	'';	0;	0
+251.26;	'Read CAN-Status';	'';	Can_Status;	'';	'';	'';	'';	0;	0
+251.28;	'Delay(%s)';	'';	Wait;	'';	'750';	'';	'';	0;	0
+251.29;	'Test CAN-communication';	'';	CAN;	'';	'607:40003003';	'';	'587:4B0030??????';	0;	0
+251.30;	'Read Statusword a.compare with receive value from CAN';	'';	COM_A;	'';	'RIP:200';	'';	'????:CIP:????:@Msg5@Msg4';	0;	0
+251.36;	'Deactivate CAN-Communication';	'';	Can_Close;	'';	'';	'';	'';	0;	0
+251.38;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+251.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+261.00;	'Test +12V_out(X901.3) and I_Ref Error';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-261.01;	'Relay turn on and wait for Boot(%s)';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+261.12;	'Send test command 1 [%s]';	'132';	COM_A;	'';	'SIP:000:01C8!';	'';	'????:CIP:????:????';	0;	0
+261.13;	'Send test command 2 [%s]';	'';	COM_A;	'';	'SIP:202:0006!';	'';	'????:CIP:????:????';	0;	0
+261.14;	'I_Ref Error to produce (GND_REF +12 V_out separate from K107)';	'';	nil;	'';	'';	'107';	'';	0;	0
+261.16;	'Measuring +12V_out and compare with tolerance';	'128,106';	U_Mess_DC;	'V';	'';	'';	'';	10.6;	13.2
+261.18;	'JUMP_PS_FLAG(JURA=1 )';	'';	jump_ps_flag;	'';	'FLAG_JURA  PS_261.26';	'';	'';	0;	0
+261.20;	'RS232-request to PST +12V_out';	'';	COM_A;	'';	'RIP:024';	'';	'????:CIP:????:????';	0;	0
+261.22;	'Calculate voltage value and compare with tolerance';	'';	ARITHMETIK;	'';	'@LastInt[1]*16.5/$7FF8';	'';	'';	10.6;	13.2
+261.26;	'RS232-request to error word [%s]';	'';	COM_A;	'';	'RIP:008';	'';	'????:CIP:????:????';	0;	0
+261.28;	'Test I_REF_ERROR (Bit11 must be 1)';	'';	ARITHMETIK;	'';	'@LASTINT[1] and $400';	'';	'';	1024;	1024
+261.30;	'Output +12V_out on GND_REF (via R=1K) switch on';	'107';	nil;	'';	'';	'';	'';	0;	0
+261.32;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+261.34;	'new Measuring and compare with tolerance';	'';	U_Mess_DC;	'V';	'';	'128,106';	'';	10.6;	13.2
+261.36;	'RS232-request to error word [%s]';	'';	COM_A;	'';	'RIP:008';	'';	'????:CIP:????:????';	0;	0
+261.38;	'Test I_REF_ERROR(Bit11 muss 0 sein)';	'';	ARITHMETIK;	'';	'@LASTINT[1] and $400';	'';	'';	0;	0
+261.44;	'Send test command [%s]';	'';	COM_A;	'';	'SIP:202:0000!';	'';	'????:CIP:????:????';	0;	0
+261.48;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+261.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+271.00;	'Test +5V_out (X901.4)';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-271.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+271.24;	'measure the voltage and compare with tolerance';	'128,109,132';	U_Mess_DC;	'V';	'';	'128,109';	'';	4.75;	5.25
+271.26;	'RS232-request nach to +5V_out';	'';	COM_A;	'';	'RIP:026';	'';	'????:CIP:????:????';	0;	0
+271.28;	'Calculate voltage value and compare with tolerance';	'';	ARITHMETIK;	'';	'@LastInt[1]*16.5/$7FF8';	'';	'';	4.75;	5.25
+271.32;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+271.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+281.00;	'Test +12V_out with load';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-281.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+281.22;	'GND_int an DMM_GND turn on';	'128,132';	nil;	'';	'';	'';	'';	0;	0
+281.24;	'Send Testcommand [%s]';	'';	COM_A;	'';	'SIP:202:0006!';	'';	'????:CIP:????:????';	0;	0
+281.28;	'measure the voltage +12V and compare with tolerance';	'102';	U_Mess_DC;	'V';	'';	'102';	'';	10.8;	13.3
+281.30;	'Send Testcommand [%s]';	'';	COM_A;	'';	'SIP:202:0100!';	'';	'????:CIP:????:????';	0;	0
+281.34;	'measure the voltage +12V_out and compare with tolerance';	'106';	U_Mess_DC;	'V';	'';	'106,128';	'';	10.6;	13.2
+281.38;	'Send Testcommand [%s]';	'';	COM_A;	'';	'SIP:202:0000!';	'';	'????:CIP:????:????';	0;	0
+281.40;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+281.50;	'All Relays turn off';	'';	nil;	'';	'';	'ALL';	'';	0;	0
+281.99;	'Finished';	'';	Wait;	'';	'200';	'';	'';	0;	0
+290.00;	'JUMP_PS_FLAG(JURA=1 )';	'';	jump_ps_flag;	'';	'FLAG_JURA  PS_331';	'';	'';	0;	0
+290.02;	'JUMP_PS_FLAG(JURA=0 )';	'';	jump_ps_flag;	'';	'NOT FLAG_JURA  PS_291';	'';	'';	0;	0
+291.00;	'Test analogue input 0';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+291.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+291.20;	'Set Position set point selector not to analog';	'132';	COM_A;	'';	'SIP:278:0000!';	'';	'????:CIP:????:????';	0;	0
+291.30;	'Delay(%s)';	'';	Wait;	'';	'800';	'';	'';	0;	0
+291.32;	'RS232-Request to A_IN0';	'';	COM_A;	'';	'RIP:020';	'';	'????:CIP:????:????';	0;	0
+291.34;	'Calculate voltage value and compare with tolerance';	'';	ARITHMETIK;	'';	'@LastInt[1]*5.0/$7FF8';	'';	'';	2.35;	2.65
+291.44;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+291.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+311.00;	'Test analogue input 1';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-311.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+311.20;	'Set Position set point selector not to analogue';	'132';	COM_A;	'';	'SIP:278:0000!';	'';	'????:CIP:????:????';	0;	0
+311.30;	'Delay(%s)';	'';	Wait;	'';	'800';	'';	'';	0;	0
+311.32;	'RS232-Request to A_IN1';	'';	COM_A;	'';	'RIP:022';	'';	'????:CIP:????:????';	0;	0
+311.34;	'Calculate voltage value and compare with tolerance';	'';	ARITHMETIK;	'';	'@LastInt[1]*5.0/$7FF8';	'';	'';	2.35;	2.65
+311.44;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+311.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+321.00;	'Analogue input short circuit';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-321.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+321.20;	'Set Position set point selector to analogue';	'132';	COM_A;	'';	'SIP:26E:0001!';	'';	'????:CIP:????:????';	0;	0
+321.30;	'short circuit between AIN0 and AIN1';	'127';	nil;	'';	'';	'';	'';	0;	0
+321.36;	'Read AIN0 Input';	'';	COM_A;	'';	'RIP:020';	'';	'????:CIP:????:????';	0;	0
+321.38;	'Calculate the value to Volt';	'';	ARITHMETIK;	'';	'@LastInt[1]*5.0/$7FF8';	'';	'';	2;	3
+321.40;	'Read AIN1 Input';	'';	COM_A;	'';	'RIP:022';	'';	'????:CIP:????:????';	0;	0
+321.42;	'Calculate the value to Volt';	'';	ARITHMETIK;	'';	'@LastInt[1]*5.0/$7FF8';	'';	'';	2;	3
+321.44;	'Reading the extended error word';	'';	COM_A;	'';	'RIP:00A';	'';	'????:CIP:????:????';	0;	0
+321.46;	'test, whether the error detected';	'';	ARITHMETIK;	'';	'@LASTINT[1] and $1000';	'';	'';	4096;	4096
+321.52;	'Relay turn off [%s]';	'';	nil;	'';	'';	'127';	'';	0;	0
+321.54;	'Delay(%s)';	'';	Wait;	'';	'200';	'';	'';	0;	0
+321.57;	'Error to quit.';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+321.58;	'Read AIN0 Input';	'';	COM_A;	'';	'RIP:020';	'';	'????:CIP:????:????';	0;	0
+321.60;	'Calculate the value to Volt';	'';	ARITHMETIK;	'';	'@LastInt[1]*5.0/$7FF8';	'';	'';	2;	3
+321.62;	'Read AIN1 Input';	'';	COM_A;	'';	'RIP:022';	'';	'????:CIP:????:????';	0;	0
+321.64;	'Calculate the value to Volt';	'';	ARITHMETIK;	'';	'@LastInt[1]*5.0/$7FF8';	'';	'';	2;	3
+321.65;	'Delay(%s)';	'';	Wait;	'';	'100';	'';	'';	0;	0
+321.66;	'Reading the extended error word';	'';	COM_A;	'';	'RIP:00A';	'';	'????:CIP:????:????';	0;	0
+321.68;	'test if error detected';	'';	ARITHMETIK;	'';	'@LASTINT[1] and $1000';	'';	'';	0;	0
+321.70;	'Set velocity set point selector on RS232';	'';	COM_A;	'';	'SIP:26E:0002!';	'';	'????:CIP:????:????';	0;	0
+321.72;	'Delay(%s)';	'';	Wait;	'';	'100';	'';	'';	0;	0
+321.74;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+321.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+331.00;	'Test Reference switch';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+331.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+331.22;	'Send Testcommand [%s] ';	'132';	COM_A;	'';	'SIP:202:0006!';	'';	'????:CIP:????:????';	0;	0
+331.24;	'RS232-Request to Reference switch';	'';	COM_A;	'';	'RIP:072';	'';	'????:CIP:????:????';	0;	0
+331.30;	'Check switch status (Bit1 must be 0)';	'';	ARITHMETIK;	'';	'@LASTINT[1] and $1';	'';	'';	0;	0
+331.32;	'+12V an REF turn on (110)';	'110';	nil;	'';	'';	'';	'';	0;	0
+331.34;	'RS232-Request to Reference switch';	'';	COM_A;	'';	'RIP:072';	'';	'????:CIP:????:????';	0;	0
+331.36;	'Check switch status (Bit1 must be 1)';	'';	ARITHMETIK;	'';	'@LASTINT[1] and $1';	'';	'';	1;	1
+331.40;	'+12V disconnect from REF';	'';	nil;	'';	'';	'110';	'';	0;	0
+331.42;	'Write a Testcommand to the transfer record (%s)';	'';	COM_A;	'';	'SIP:202:0000!';	'';	'????:CIP:????:????';	0;	0
+331.44;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+331.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+341.00;	'Bootstrap Supply voltage';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-341.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+341.14;	'Measure Phase V';	'122,128,132';	U_Mess_DC;	'V';	'';	'122';	'';	10;	15
+341.18;	'Measure Phase U';	'121';	U_Mess_DC;	'V';	'';	'121';	'';	10;	15
+341.22;	'Measure Phase W';	'123';	U_Mess_DC;	'V';	'';	'123,128';	'';	10;	15
+341.34;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+341.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+351.00;	'Test Hall sensor input and runnning smooothness';	'';	LabelFkt;	'';	'NIO-Loop:0';	'';	'';	0;	0
+-351.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+351.14;	'Quit errors';	'132';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+351.16;	'Power stage turn off (%s)';	'';	COM_A;	'';	'SRF-';	'';	'????:CRF-';	0;	0
+351.18;	'Read the current command word';	'';	COM_A;	'';	'RIP:000';	'';	'????:CIP:????:????';	0;	0
+351.20;	'Calculate the new command word';	'';	ARITHMETIK;	'';	'(@LASTINT[1] and $F437) or $C8';	'';	'';	0;	65534
+351.22;	'Restore command word';	'';	COM_A;	'';	'SIP:000:@ArithInt16!';	'';	'????:CIP:????:????';	0;	0
+351.24;	'Set velocity set point selector on RS232';	'';	COM_A;	'';	'SIP:26E:0002!';	'';	'????:CIP:????:????';	0;	0
+351.26;	'set velocity set point selectorto input rotation';	'';	COM_A;	'';	'SIP:094:0200!';	'';	'????:CIP:????:????';	0;	0
+351.28;	'set current set point selector on speed controller';	'';	COM_A;	'';	'SIP:25E:0004!';	'';	'????:CIP:????:????';	0;	0
+351.30;	'Set Position set point selector to 0';	'';	COM_A;	'';	'SIP:278:0000!';	'';	'????:CIP:????:????';	0;	0
+351.32;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+351.34;	'Delay(%s)';	'';	Wait;	'';	'100';	'';	'';	0;	0
+351.36;	'Power stage switch on';	'';	COM_A;	'';	'SRF+';	'';	'????:CRF+';	0;	0
+351.38;	'Delay(%s)';	'';	Wait;	'';	'100';	'';	'';	0;	0
+351.44;	'Reading the extended error word';	'';	COM_A;	'';	'RIP:008';	'';	'????:CIP:????:????';	0;	0
+351.46;	'Check the error Hall sensor inputs(Bit7 must be 0)';	'';	ARITHMETIK;	'';	'@LASTINT[1] and $80';	'';	'';	0;	0
+351.48;	'Acoustic signal for visual check';	'';	Beep;	'';	'1';	'';	'';	0;	0
+351.50;	'visual check, if motor running';	'';	Frage_JaNein;	'';	'Does the motor run smooth?';	'';	'';	0;	0
+351.56;	'Power stage switch off ';	'';	COM_A;	'';	'SRF-';	'';	'????:CRF-';	0;	0
+351.58;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+351.99;	'Finished';	'';	nil;	'';	'';	'128';	'';	0;	0
+361.00;	'Current measurement';	'';	LabelFkt;	'';	'NIO-Loop:1';	'ALL';	'';	0;	0
+361.01;	'Delay(%s)';	'';	Wait;	'';	'1000';	'';	'';	0;	0
+361.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+361.14;	'Read the current command word';	'128,132';	COM_A;	'';	'RIP:278';	'';	'????:CIP:????:????';	0;	0
+361.15;	'Save the reading command word';	'';	save_var;	'';	'@LASTINT[1],@VarInt[1]';	'';	'';	0;	100
+361.16;	'Put Position set point selector';	'';	COM_A;	'';	'SIP:278:0000!';	'';	'????:CIP:????:????';	0;	0
+361.18;	'Hall1 and Hall2 an_PST_GND_out switch on (112,113)';	'112,113';	nil;	'';	'';	'';	'';	0;	0
+361.19;	'+5V_PST disconnect from Hall_5V ( Relay 111 turn off)';	'';	nil;	'';	'';	'111';	'';	0;	0
+361.20;	'Current measurement module(LEM1_out1) to DMM switch on';	'114';	wait;	'';	'100';	'';	'';	0;	0
+361.21;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+361.22;	'Delay(%s)';	'';	Wait;	'';	'500';	'';	'';	0;	0
+361.24;	'Torque setpoint control switch on';	'';	COM_A;	'';	'SIP:000:0048!';	'';	'????:CIP:????:????';	0;	0
+361.26;	'Set current set point selector on parameter setting via RS232';	'';	COM_A;	'';	'SIP:25E:0002!';	'';	'????:CIP:????:????';	0;	0
+361.28;	'Set current set point value to +10A ';	'';	COM_A;	'';	'SIP:084:03E8!';	'';	'????:CIP:????:????';	0;	0
+361.30;	'Delay(%s)';	'';	Wait;	'';	'50';	'';	'';	0;	0
+361.32;	'Power stage turn on';	'';	COM_A;	'';	'SRF+';	'';	'????:CRF+';	0;	0
+361.34;	'Delay(%s)';	'';	Wait;	'';	'100';	'';	'';	0;	0
+361.36;	'Current measurement phase U via LEM voltage';	'';	U_Mess_DC;	'V';	'';	'';	'';	3.18;	3.32
+361.38;	'Set current set point value to  -10A ';	'';	COM_A;	'';	'SIP:084:FC17!';	'';	'????:CIP:????:????';	0;	0
+361.42;	'Current measurement phase U via LEM voltage';	'';	U_Mess_DC;	'V';	'';	'';	'';	1.68;	1.84
+361.44;	'Power stage switch off';	'';	COM_A;	'';	'SRF-';	'114,113';	'????:CRF-';	0;	0
+361.48;	'Current measurement module(LEM2_out2) to DMM switch on';	'115';	nil;	'';	'';	'';	'';	0;	0
+361.50;	'Set current set point value  +10A -> $3E8 ';	'';	COM_A;	'';	'SIP:084:03E8!';	'';	'????:CIP:????:????';	0;	0
+361.52;	'Power stage turn on';	'';	COM_A;	'';	'SRF+';	'';	'????:CRF+';	0;	0
+361.54;	'Delay(%s)';	'';	Wait;	'';	'100';	'';	'';	0;	0
+361.56;	'Current measurement phase V via LEM voltage';	'';	U_Mess_DC;	'V';	'';	'';	'';	3.18;	3.32
+361.58;	'Set current set point value  -10A ';	'';	COM_A;	'';	'SIP:084:FC17!';	'';	'????:CIP:????:????';	0;	0
+361.60;	'Current measurement phase V via LEM voltage';	'';	U_Mess_DC;	'V';	'';	'';	'';	1.68;	1.84
+361.62;	'Power stage switch off';	'';	COM_A;	'';	'SRF-';	'';	'????:CRF-';	0;	0
+361.64;	'Delay(%s)';	'111';	Wait;	'';	'50';	'115,113,128';	'';	0;	0
+361.68;	'Restore Position set point selector';	'';	COM_A;	'';	'SIP:278:@VarInt[1]!';	'';	'????:CIP:????:????';	0;	0
+361.70;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+361.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+371.00;	'Short circuit detection (BT) Phase U';	'';	LabelFkt;	'';	'NIO-Loop:1';	'ALL';	'';	0;	0
+371.01;	'Delay(%s)';	'';	Wait;	'';	'1000';	'';	'';	0;	0
+371.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+371.14;	'Read the current command word;GND_int an DMM_GND';	'128,132';	COM_A;	'';	'RIP:278';	'';	'????:CIP:????:????';	0;	0
+371.15;	'Save the reading command word';	'';	save_var;	'';	'@LASTINT[1],@VarInt[1]';	'';	'';	0;	100
+371.16;	'Put Position set point selector';	'';	COM_A;	'';	'SIP:278:0000!';	'';	'????:CIP:????:????';	0;	0
+371.18;	'Hall1 and Hall2 an_PST_GND_out switch on (113)';	'113';	nil;	'';	'';	'';	'';	0;	0
+371.19;	'+5V_PST disconnect from Hall_5V ( Relay 111 turn off)';	'';	nil;	'';	'';	'111';	'';	0;	0
+371.21;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+371.22;	'Delay(%s)';	'';	Wait;	'';	'500';	'';	'';	0;	0
+371.24;	'Torque setpoint control switch on';	'';	COM_A;	'';	'SIP:000:0048!';	'';	'????:CIP:????:????';	0;	0
+371.26;	'Set current set point selector on parameter setting via RS232';	'';	COM_A;	'';	'SIP:25E:0002!';	'';	'????:CIP:????:????';	0;	0
+371.27;	'Set current set point value to +10A ';	'';	COM_A;	'';	'SIP:084:03E8!';	'';	'????:CIP:????:????';	0;	0
+371.30;	'Delay(%s)';	'';	Wait;	'';	'50';	'';	'';	0;	0
+371.32;	'Power stage turn on';	'';	COM_A;	'';	'SRF+';	'';	'????:CRF+';	0;	0
+371.34;	'Delay(%s)';	'';	Wait;	'';	'500';	'';	'';	0;	0
+371.36;	'Short circuit Ph-U (K124 turn on and then turn off)';	'124';	Wait;	'';	'250';	'124';	'';	0;	0
+371.38;	'Delay(%s)';	'';	Wait;	'';	'800';	'';	'';	0;	0
+371.40;	'Power stage switch off';	'';	COM_A;	'';	'SRF-';	'';	'????:CRF-';	0;	0
+371.42;	'Read current set point selectorfor controlling';	'';	COM_A;	'';	'RIP:25E';	'';	'????:CIP:????:????';	0;	0
+371.44;	'Read error word';	'';	COM_A;	'';	'RIP:008';	'';	'????:CIP:????:????';	0;	0
+371.48;	'Calculate error word(Bit5 must be 1)';	'';	ARITHMETIK;	'';	'@LASTINT[1] and $20';	'';	'';	32;	32
+371.99;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'113';	'????:CQT+';	0;	0
+372.00;	'Short circuit detection (BT) Phase V';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-372.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+372.14;	'Read the current command word;GND_int to DMM_GND';	'128,132';	COM_A;	'';	'RIP:278';	'';	'????:CIP:????:????';	0;	0
+372.15;	'Save the reading command word';	'';	save_var;	'';	'@LASTINT[1],@VarInt[1]';	'';	'';	0;	100
+372.16;	'Put Position set point selector';	'';	COM_A;	'';	'SIP:278:0000!';	'';	'????:CIP:????:????';	0;	0
+372.18;	'Hall1 and Hall2 an_PST_GND_out switch on (112)';	'112';	nil;	'';	'';	'';	'';	0;	0
+372.19;	'+5V_PST disconnect from Hall_5V ( Relay 111 turn off)';	'';	nil;	'';	'';	'111';	'';	0;	0
+372.21;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+372.22;	'Delay(%s)';	'';	Wait;	'';	'500';	'';	'';	0;	0
+372.24;	'Torque setpoint control switch on';	'';	COM_A;	'';	'SIP:000:0048!';	'';	'????:CIP:????:????';	0;	0
+372.26;	'Set current set point selector on parameter setting via RS232';	'';	COM_A;	'';	'SIP:25E:0002!';	'';	'????:CIP:????:????';	0;	0
+372.27;	'Set current set point value to +10A ';	'';	COM_A;	'';	'SIP:084:03E8!';	'';	'????:CIP:????:????';	0;	0
+372.30;	'Delay(%s)';	'';	Wait;	'';	'50';	'';	'';	0;	0
+372.32;	'Power stage turn on';	'';	COM_A;	'';	'SRF+';	'';	'????:CRF+';	0;	0
+372.34;	'Delay(%s)';	'';	Wait;	'';	'500';	'';	'';	0;	0
+372.56;	'Short circuit Ph-V (K125 turn on and then turn off)';	'125';	Wait;	'';	'250';	'125';	'';	0;	0
+372.58;	'Delay(%s)';	'';	Wait;	'';	'800';	'';	'';	0;	0
+372.60;	'Power stage abschalten';	'';	COM_A;	'';	'SRF-';	'';	'????:CRF-';	0;	0
+372.62;	'Read current set point selectorfor controlling';	'';	COM_A;	'';	'RIP:25E';	'';	'????:CIP:????:????';	0;	0
+372.64;	'Read error word';	'';	COM_A;	'';	'RIP:008';	'';	'????:CIP:????:????';	0;	0
+372.68;	'Calculate error word(Bit5 must be 1)';	'';	ARITHMETIK;	'';	'@LASTINT[1] and $20';	'';	'';	32;	32
+372.99;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+373.00;	'Short circuit detection (BT) Phase W';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-373.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+373.14;	'Read the current command word;GND_int an DMM_GND';	'128,132';	COM_A;	'';	'RIP:278';	'';	'????:CIP:????:????';	0;	0
+373.15;	'Save the reading command word';	'';	save_var;	'';	'@LASTINT[1],@VarInt[1]';	'';	'';	0;	100
+373.16;	'Put Position set point selector';	'';	COM_A;	'';	'SIP:278:0000!';	'';	'????:CIP:????:????';	0;	0
+373.18;	'Hall1 and Hall2 an_PST_GND_out switch on (112,113)';	'112,113';	nil;	'';	'';	'';	'';	0;	0
+373.19;	'+5V_PST disconnect from Hall_5V ( Relay 111 turn off)';	'';	nil;	'';	'';	'111';	'';	0;	0
+373.21;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+373.22;	'Delay(%s)';	'';	Wait;	'';	'500';	'';	'';	0;	0
+373.24;	'Torque setpoint control switch on';	'';	COM_A;	'';	'SIP:000:0048!';	'';	'????:CIP:????:????';	0;	0
+373.26;	'Set current set point selector on parameter setting via RS232';	'';	COM_A;	'';	'SIP:25E:0002!';	'';	'????:CIP:????:????';	0;	0
+373.27;	'Set current set point value to +10A ';	'';	COM_A;	'';	'SIP:084:03E8!';	'';	'????:CIP:????:????';	0;	0
+373.30;	'Delay(%s)';	'';	Wait;	'';	'50';	'';	'';	0;	0
+373.32;	'Power stage turn on';	'';	COM_A;	'';	'SRF+';	'';	'????:CRF+';	0;	0
+373.34;	'Delay(%s)';	'';	Wait;	'';	'500';	'';	'';	0;	0
+373.56;	'Short circuit Ph-W (K126 ON - OFF)';	'126';	Wait;	'';	'250';	'126';	'';	0;	0
+373.58;	'Delay(%s)';	'';	Wait;	'';	'800';	'';	'';	0;	0
+373.60;	'Power stage switch off';	'';	COM_A;	'';	'SRF-';	'';	'????:CRF-';	0;	0
+373.62;	'Read current set point selectorfor controlling';	'';	COM_A;	'';	'RIP:25E';	'';	'????:CIP:????:????';	0;	0
+373.64;	'Read error word';	'';	COM_A;	'';	'RIP:008';	'';	'????:CIP:????:????';	0;	0
+373.68;	'Calculate error word(Bit5 must be 1)';	'';	ARITHMETIK;	'';	'@LASTINT[1] and $20';	'';	'';	32;	32
+373.99;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+378.00;	'JUMP_PS_FLAG(JURA=1 )';	'';	jump_ps_flag;	'';	'FLAG_JURA  PS_380';	'';	'';	0;	0
+378.02;	'JUMP_PS_FLAG(JURA=0 )';	'';	jump_ps_flag;	'';	'NOT FLAG_JURA  PS_400';	'';	'';	0;	0
+380.00;	'Lord brake is tested on both coil output (for Jura)';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-380.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+380.21;	'Quit errors';	'132';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+380.22;	'Delay(%s)';	'';	Wait;	'';	'500';	'';	'';	0;	0
+380.31;	'Set I-brakee to 500mA';	'';	COM_A;	'';	'SIP:0BA:01F4!';	'';	'????:CIP:????:????';	0;	0
+380.33;	'Measurement before the Ref.resistance(5,1R) [139,128]';	'139,128';	U_Mess_DC;	'V';	'%5';	'139,128';	'';	-0.2;	5
+380.34;	'Measurement behind the Ref.resistance [140,128]';	'140,128';	U_Mess_DC;	'V';	'%5';	'140,128';	'';	-0.2;	5
+380.35;	'Calculation current consumption +-10 percent';	'';	I_Berechnung;	'mA';	'5.1';	'';	'';	380;	620
+380.36;	'Brake current via RS232 request';	'';	COM_A;	'=%10';	'RIP:0B8';	'';	'????:CIP:00B8:????';	0;	0
+380.37;	'Calculate Brake current and compare with tolerance (+-10 Proz)';	'';	ARITHMETIK;	'';	'@LastInt';	'';	'';	450;	550
+380.51;	'Set I-brakee to 1000mA';	'';	COM_A;	'';	'SIP:0BA:03E8!';	'';	'????:CIP:????:????';	0;	0
+380.53;	'Measurement before the Ref.resistance(5,1R) [139,128]';	'139,128';	U_Mess_DC;	'V';	'%5';	'139,128';	'';	-0.2;	10
+380.54;	'Measurement behind the Ref.resistance [140,128]';	'140,128';	U_Mess_DC;	'V';	'%5';	'140,128';	'';	-0.2;	10
+380.55;	'Calculation of current consumption +-10 percent';	'';	I_Berechnung;	'mA';	'5.1';	'';	'';	880;	1120
+380.56;	'Brake current via RS232 request';	'';	COM_A;	'=%10';	'RIP:0B8';	'';	'????:CIP:00B8:????';	0;	0
+380.57;	'Calculate Brake current and compare with tolerance +-10 Proz';	'';	ARITHMETIK;	'';	'@LastInt';	'';	'';	950;	1050
+380.71;	'Set I-brakee to 0mA';	'';	COM_A;	'';	'SIP:0BA:0000!';	'';	'????:CIP:????:????';	0;	0
+380.73;	'Measurement before the Ref.resistance(5,1R) [139,128]';	'139,128';	U_Mess_DC;	'V';	'%5';	'139,128';	'';	-0.2;	10
+380.74;	'Measurement behind the Ref.resistance[140,128]';	'140,128';	U_Mess_DC;	'V';	'%5';	'140,128';	'';	-0.2;	10
+380.75;	'Calculate current draw [-0,5 bis +60mA]';	'';	I_Berechnung;	'mA';	'5.1';	'';	'';	-0.2;	120
+380.76;	'Brake current via RS232 request';	'';	COM_A;	'=%10';	'RIP:0B8';	'';	'????:CIP:00B8:????';	0;	0
+380.77;	'Calculate Brake current and compare with tolerance [-0,5 ... +60mA]';	'';	ARITHMETIK;	'';	'@LastInt';	'';	'';	-0.2;	60
+380.80;	'Set I-Bremse to 0mA';	'';	COM_A;	'';	'SIP:0BA:0000!';	'';	'????:CIP:????:????';	0;	0
+380.99;	'Finished';	'';	nil;	'';	'';	'128';	'';	0;	0
+385.00;	'Test PWM-Encoder LORD';	'';	LabelFkt;	'';	'NIO-Loop:1';	'';	'';	0;	0
+-385.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+385.20;	'Set Position set point selector to PWM-set point';	'132';	COM_A;	'';	'SIP:278:0007!';	'';	'????:CIP:????:????';	0;	0
+385.21;	'Delay(%s)';	'';	Wait;	'';	'50';	'';	'';	0;	0
+385.30;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+385.31;	'Delay(%s)';	'';	Wait;	'';	'50';	'';	'';	0;	0
+385.32;	'RS232-Request to voltage value PWM1';	'';	COM_A;	'';	'RIP:0E0';	'';	'????:CIP:????:????';	0;	0
+385.34;	'Calculate voltage value and compare with tolerance';	'';	ARITHMETIK;	'';	'@LastInt[1]*5.0/$7FF8';	'';	'';	3.85;	4.15
+385.36;	'RS232-Request to voltage value PWM2';	'';	COM_A;	'';	'RIP:0E2';	'';	'????:CIP:????:????';	0;	0
+385.38;	'Calculate voltage value and compare with tolerance';	'';	ARITHMETIK;	'';	'@LastInt[1]*5.0/$7FF8';	'';	'';	0.96;	1.04
+385.40;	'Quit errors';	'';	COM_A;	'';	'SQT+';	'';	'????:CQT+';	0;	0
+385.99;	'Finished';	'';	nil;	'';	'';	'128';	'';	0;	0
+400.00;	'Final test: read error word(BT) => error free';	'';	nil;	'';	'';	'ALL';	'';	0;	0
+400.01;	'Wait(%s)';	'';	Wait;	'';	'1000';	'';	'';	0;	0
+400.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	nil;	'';	'';	'';	'';	0;	0
+400.16;	'Wait(%s)';	'132';	Wait;	'';	'2000';	'';	'';	0;	0
+400.18;	'CAN_Bus Initi. ';	'';	Can_Init;	'';	'';	'';	'';	0;	0
+400.20;	'can clear';	'';	Can_Clear;	'';	'';	'';	'';	0;	0
+400.24;	'Set velocity set point selector on RS232';	'';	COM_A;	'';	'SIP:26E:0002!';	'';	'????:CIP:????:????';	0;	0
+400.26;	'Set velocity set point to input rotation';	'';	COM_A;	'';	'SIP:094:0200!';	'';	'????:CIP:????:????';	0;	0
+400.28;	'Set the Current set point selector on Speed controller';	'';	COM_A;	'';	'SIP:25E:0004!';	'';	'????:CIP:????:????';	0;	0
+400.30;	'Set Position set point selector to 0';	'';	COM_A;	'';	'SIP:278:0000!';	'';	'????:CIP:????:????';	0;	0
+400.32;	'Quit errors';	'';	COM_A;	'30';	'SQT+';	'';	'????:CQT+';	0;	0
+400.34;	'Read error word';	'';	COM_A;	'';	'RIPL:008';	'';	'????:CIPL:????:????????';	0;	0
+400.36;	'Check, if complete test error free';	'';	ARITHMETIK;	'';	'@LASTINT[1]';	'';	'';	0;	0
+400.38;	'Disable CAN-Communication';	'';	Can_Close;	'';	'';	'';	'';	0;	0
+400.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+405.00;	'Write Date of test for BT-variant';	'';	nil;	'';	'';	'';	'';	0;	0
+-405.02;	'Show_Error';	'';	Show_Error;	'';	'Dieser Prüfschritt kann nicht im Einzelschritt-Modus gestartet werden!';	'';	'';	0;	0
+-405.04;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131,132';	wait;	'';	'2000';	'';	'';	0;	0
+405.06;	'Write Date of test (week)';	'132';	COM_A;	'';	'SIP:1908:@Woche!';	'';	'????:CIP:????:????';	0;	0
+405.08;	'Write Date of test (year)';	'';	COM_A;	'';	'SIP:190A:@Jahr!';	'';	'????:CIP:????:????';	0;	0
+405.09;	'Wait(%s)';	'';	Wait;	'';	'1000';	'';	'';	0;	0
+405.10;	'All Relays turn off';	'';	nil;	'';	'';	'ALL';	'';	0;	0
+405.12;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131,132';	wait;	'';	'2000';	'';	'';	0;	0
+405.16;	'Read Date of test (week)';	'';	COM_A;	'10';	'RIP:1908';	'';	'????:CIP:????:@Woche';	0;	0
+405.18;	'Read Date of test(year)';	'';	COM_A;	'10';	'RIP:190A';	'';	'????:CIP:????:@Jahr';	0;	0
+405.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+800.00;	'JUMP_PS(%s)';	'';	jump_ps;	'';	'PS_990';	'';	'';	0;	0
+850.00;	'Pretest for Standard-BT-variant';	'';	nil;	'';	'';	'';	'';	0;	0
+850.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+850.04;	'Test Variant Standard- 0V OK?';	'128,136';	U_Mess_DC;	'V';	'';	'136';	'';	-0.2;	0.2
+850.06;	'Test DMM-measuringbus without Supply';	'';	U_Mess_DC;	'V';	'';	'';	'';	-0.2;	0.2
+850.08;	'Measurement of Voltage on X901.1 (Ser_out/BR+) ';	'128,135';	U_Mess_DC;	'V';	'';	'135';	'';	-15;	3
+850.10;	'RS232-PST and RS232-PC to connect';	'132';	nil;	'';	'';	'';	'';	0;	0
+850.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+860.00;	'Pretest for JURA-BT-variant';	'';	nil;	'';	'';	'';	'';	0;	0
+860.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+860.04;	'Test variant JURA(T1002)- 24V OK?';	'128,136';	U_Mess_DC;	'V';	'';	'136';	'';	22;	25
+860.06;	'Test DMM-measuringbus without Supply';	'';	U_Mess_DC;	'V';	'';	'';	'';	-0.2;	0.2
+860.08;	'Measurement of Voltage on X901.1 (Ser_out/BR+) ';	'128,135';	U_Mess_DC;	'V';	'';	'135';	'';	-15;	3
+860.10;	'RS232-PST and RS232-PC to connect';	'132';	nil;	'';	'';	'';	'';	0;	0
+860.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+880.00;	'Pretest for BT-variant and read the boardnumber';	'';	nil;	'';	'';	'';	'';	0;	0
+880.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+880.04;	'Test variant Standard- 0V OK?';	'128,136';	U_Mess_DC;	'V';	'';	'136';	'';	-0.2;	0.2
+880.06;	'Test DMM-measuringbus without Supply';	'';	U_Mess_DC;	'V';	'';	'';	'';	-0.2;	0.2
+880.08;	'Measurement of Voltage on X901.1 (Ser_out/BR+)';	'128,135';	U_Mess_DC;	'V';	'';	'135';	'';	-15;	3
+880.10;	'RS232-PST and RS232-PC to connect';	'132';	nil;	'';	'';	'';	'';	0;	0
+880.24;	'Edit box in the user surface will be cleared';	'';	PlateNr_clear;	'';	'';	'';	'';	0;	0
+880.26;	'Read out the boardnumber part1 (year)';	'';	COM_A;	'30';	'RIP:190E';	'';	'????:CIP:????:????';	0;	0
+880.28;	'Read out the boardnumber part2 (week)';	'';	COM_A;	'';	'RIP:1910';	'';	'????:CIP:????:????';	0;	0
+880.30;	'Read out the boardnumber part3 (day)';	'';	COM_A;	'';	'RIP:1912';	'';	'????:CIP:????:????';	0;	0
+880.32;	'Read out the boardnumber part4 (act. Number1)';	'';	COM_A;	'';	'RIP:1914';	'';	'????:CIP:????:????';	0;	0
+880.34;	'Read out the boardnumber part5 (act. Number2)';	'';	COM_A;	'';	'RIP:1916';	'';	'????:CIP:????:????';	0;	0
+880.36;	'Boardnumber is assembled a. displayed in user surface';	'';	PlateNr_read_PST;	'';	'';	'';	'';	0;	0
+880.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+890.00;	'Pretest for JURA-variant and read the boardnumber';	'';	nil;	'';	'';	'';	'';	0;	0
+890.02;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131';	wait;	'';	'2000';	'';	'';	0;	0
+890.04;	'Test variant JURA(T1002)- 24V OK?';	'128,136';	U_Mess_DC;	'V';	'';	'136';	'';	22;	25
+890.06;	'Test DMM-measuringbus without Supply';	'';	U_Mess_DC;	'V';	'';	'';	'';	-0.2;	0.2
+890.08;	'Measurement of Voltage on X901.1 (Ser_out/BR+) ';	'128,135';	U_Mess_DC;	'V';	'';	'135';	'';	-15;	3
+890.10;	'RS232-PST and RS232-PC to connect';	'132';	nil;	'';	'';	'';	'';	0;	0
+890.24;	'Edit box in the user surface will be cleared';	'';	PlateNr_clear;	'';	'';	'';	'';	0;	0
+890.26;	'Read out the boardnumber part1 (year)';	'';	COM_A;	'';	'RIP:190E';	'';	'????:CIP:????:????';	0;	0
+890.28;	'Read out the boardnumber part2 (Week)';	'';	COM_A;	'';	'RIP:1910';	'';	'????:CIP:????:????';	0;	0
+890.30;	'Read out the boardnumber part3 (day)';	'';	COM_A;	'';	'RIP:1912';	'';	'????:CIP:????:????';	0;	0
+890.32;	'Read out the boardnumber part4 (act. Number1)';	'';	COM_A;	'';	'RIP:1914';	'';	'????:CIP:????:????';	0;	0
+890.34;	'Read out the boardnumber part5 (act. Number2)';	'';	COM_A;	'';	'RIP:1916';	'';	'????:CIP:????:????';	0;	0
+890.36;	'Boardnumber is assembled + displayed in user surface';	'';	PlateNr_read_PST;	'';	'';	'';	'';	0;	0
+890.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+895.00;	'FORCE: Bootloader update and Firmware Download';	'';	Entry;	'';	'FORCE: BT BL and FW Download';	'';	'';	0;	0
+895.01;	'Supply +30V_int turn on';	'107,@SonderRel_01,129,111,131,132';	wait;	'';	'1500';	'';	'';	0;	0
+895.02;	'Create file "PlatinenNr_Temp.s"';	'';	write_PlatinenNr_sfile;	'';	'C:\pp';	'';	'';	0;	0
+895.04;	'Create a new BL-updater-file (BT_to_BT)';	'';	BL_sfile_PST_Batch;	'';	'BATCH_0001 BOOTLOADER_0001 BOOTLOADER_0002 C:\pp';	'';	'';	0;	0
+895.06;	'Create a new BL-updater-file (Sevcon_to_BT)';	'';	BL_sfile_PST_Batch;	'';	'BATCH_0001 BOOTLOADER_0003 BOOTLOADER_0004 C:\pp';	'';	'';	0;	0
+895.08;	'BL_Appl.-Version_main (RIP:1FFD)';	'';	COM_A;	'';	'RIP:1FFD';	'';	'';	0;	0
+895.10;	'BL_Appl.-Version_sub (RIP:1FFC)';	'';	COM_A;	'';	'RIP:1FFC';	'';	'';	0;	0
+895.12;	'BL_Produktstep_main (RIP:1FFA)';	'';	COM_A;	'';	'RIP:1FFA';	'';	'';	0;	0
+895.14;	'BL_Productstep_Sub (RIP:1FFB)';	'';	COM_A;	'';	'RIP:1FFB';	'';	'';	0;	0
+895.16;	'BL_KM-Release_Haupt (RIP:1FFE)';	'';	COM_A;	'';	'RIP:1FFE';	'';	'';	0;	0
+895.18;	'BL_KM-Release_Sub (RIP:1FFF)';	'';	COM_A;	'';	'RIP:1FFF';	'';	'';	0;	0
+895.20;	'BL update and FW download, if necessary';	'';	BL_Version_PST;	'';	'FORCE BATCH_0002 BOOTLOADER_0005 BOOTLOADER_0002 BOOTLOADER_0004 FIRMWARE_0001 @SonderRel_01 COM_A';	'';	'';	0;	0
+895.22;	'BL_Appl.-Version_main (RIP:1FFD)';	'';	COM_A;	'20000 ms';	'RIP:1FFD';	'';	'????:CIP:????:????';	0;	0
+895.24;	'BL_Appl.-Version_sub (RIP:1FFC)';	'';	COM_A;	'10';	'RIP:1FFC';	'';	'????:CIP:????:????';	0;	0
+895.26;	'BL_Produktstep_Main (RIP:1FFA)';	'';	COM_A;	'10';	'RIP:1FFA';	'';	'????:CIP:????:????';	0;	0
+895.28;	'BL_Produktstep_Sub (RIP:1FFB)';	'';	COM_A;	'10';	'RIP:1FFB';	'';	'????:CIP:????:????';	0;	0
+895.30;	'BL_KM-Release_Main (RIP:1FFE)';	'';	COM_A;	'10';	'RIP:1FFE';	'';	'????:CIP:????:????';	0;	0
+895.32;	'BL_KM-Release_Sub (RIP:1FFF)';	'';	COM_A;	'10';	'RIP:1FFF';	'';	'????:CIP:????:????';	0;	0
+895.34;	'BL version check';	'';	BL_Version_PST;	'';	'CHECK BOOTLOADER_0001 @SonderRel_01';	'';	'';	0;	0
+895.36;	'can init';	'';	Can_Init;	'';	'';	'';	'';	0;	0
+895.38;	'can clear';	'';	Can_Clear;	'';	'';	'';	'';	0;	0
+895.40;	'RESET!';	'';	COM_A_SENDONLY;	'';	'reset!';	'';	'';	0;	0
+895.42;	'Wait';	'';	wait;	'';	'100';	'';	'';	0;	0
+895.44;	'BT-HW-Number query (CAN-swith on Message)';	'';	CAN;	'';	'';	'';	'';	0;	0
+895.46;	'Wait';	'';	wait;	'';	'1000';	'';	'';	0;	0
+895.48;	'FW-Number request';	'';	COM_A;	'10';	'RIPL:1904';	'';	'????:CIPL:????:????????';	0;	0
+895.50;	'Check FW-version, if necessary, update';	'';	FW_Version_PST;	'';	'FIRMWARE_0001 @SonderRel_01 COM_A';	'';	'';	0;	0
+895.52;	'Wait';	'';	wait;	'';	'1000';	'';	'';	0;	0
+895.54;	'can init';	'';	Can_Init;	'';	'';	'';	'';	0;	0
+895.56;	'can clear';	'';	Can_Clear;	'';	'';	'';	'';	0;	0
+895.58;	'RESET!';	'';	COM_A_SENDONLY;	'';	'reset!';	'';	'';	0;	0
+895.60;	'Wait';	'';	wait;	'';	'100';	'';	'';	0;	0
+895.62;	'BT-HW-Number request (CAN-swith on Message)';	'';	CAN;	'';	'';	'';	'587:????????????????';	0;	0
+895.64;	'Wait';	'';	wait;	'';	'1000';	'';	'';	0;	0
+895.66;	'FW-Number request';	'';	COM_A;	'';	'RIPL:1904';	'';	'????:CIPL:????:????????';	0;	0
+895.68;	'Check FW-version';	'';	FW_Version_PST;	'';	'CHECK FIRMWARE_0001';	'';	'';	0;	0
+895.99;	'Finished';	'';	nil;	'';	'';	'';	'';	0;	0
+990.00;	'END OF TEST';	'';	nil;	'';	'';	'';	'';	0;	0

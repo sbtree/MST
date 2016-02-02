@@ -27,9 +27,15 @@ implementation
 {$R *.dfm}
 
 procedure TfrmScriptTester.btnTestClick(Sender: TObject);
+var t_localreader: TScriptReader;
 begin
   t_sreader.ReadFromFile('PST_BT_FT_PS_liste.TXT');
-  t_sreader.SaveToFile('PST_BT_FT_PS_liste_new.txt');
+  t_localreader := TScriptReader.Create();
+  t_localreader.StepContainer.Assign(t_sreader.StepContainer);
+  t_sreader.StepContainer.ClearSteps();
+  t_localreader.SaveToFile('PST_BT_FT_PS_liste_new.txt');
+  //t_sreader.SaveToFile('PST_BT_FT_PS_liste_new.txt');
+  t_localreader.Free();
 end;
 
 procedure TfrmScriptTester.FormCreate(Sender: TObject);

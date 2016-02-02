@@ -41,8 +41,8 @@ procedure TStepResult.Assigne(const source: TStepResult);
 begin
   if assigned(source) then begin
     b_stepok := source.Resulted;
-    StrCopy(PChar(s_result), PChar(source.ResultString));
-    StrCopy(PChar(s_pattern), PChar(source.ValuePattern));
+    s_result := source.ResultString;
+    s_pattern := source.ValuePattern;
   end;
 end;
 

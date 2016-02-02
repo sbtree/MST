@@ -32,7 +32,7 @@ Fkt:Entry;             M: '';    Par:'Standard-Test';                 R_off:''; 
     (Nr:  11.05; T:'Test DMM-measuringbus without supply';                 R_on:'';                              Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
     (Nr:  11.08; T:'voltage measurement +30V_int [108,128]';               R_on:'108,128';                       Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'108';                        Tol: ( A:'';                       Min: 28;  Max:  33  ); ),
     (Nr:  11.21; T:'Test DMM-measuringbus without supply';                 R_on:'';                              Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
-    (Nr:  11.99; T:'Finished';                                             R_on:'';                              Fkt:nil;               M: '';    Par:'';                              R_off:'128';                        Tol: ( A:'';                       Min: 0;   Max:  0   ); ).
+    (Nr:  11.99; T:'Finished';                                             R_on:'';                              Fkt:nil;               M: '';    Par:'';                              R_off:'128';                        Tol: ( A:'';                       Min: 0;   Max:  0   ); ),
 
  
  // 12V_supply voltage

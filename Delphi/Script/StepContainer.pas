@@ -4,10 +4,6 @@ interface
 uses Classes, Contnrs, IniFiles, TestStep, TestCase;
 
 type
-  TCaseDescriptor = class
-  
-  end;
-
   TStepContainer = class
   protected
     t_steps:  TObjectList;  //to save test steps
@@ -25,6 +21,7 @@ type
     function  GetStep(const idx: integer): TTestStep;
     function  StepCount(): integer;
     procedure ClearSteps();
+    procedure Assign(const source: TStepContainer);
 //   function TestStep(const casenr, stepnr: integer): TTestStep;
 //   function TestCase(const casenr: integer): TTestStep;
 //   function TestSequence(const startcase, endcase: integer): TTestSequence;
@@ -36,11 +33,13 @@ constructor TStepContainer.Create();
 begin
   inherited Create();
   t_steps := TObjectList.Create();
+  t_cases := TObjectList.Create();
 end;
 
 destructor TStepContainer.Destroy();
 begin
   ClearSteps();
+  t_cases.Free();
   t_steps.Free();
   inherited Destroy();
 end;
@@ -76,6 +75,19 @@ begin
   //t_nisteps.Clear();
   //t_nicases.Clear();
   //t_nicids.Clear();
+end;
+
+procedure TStepContainer.Assign(const source: TStepContainer);
+var t_step: TTestStep; i: integer;
+begin
+  if assigned(source) then begin
+    ClearSteps();
+    for i := 0 to source.StepCount - 1 do begin
+      t_step := TTestStep.Create();
+      t_step.Assign(source.GetStep(i));
+      t_steps.Add(t_step);
+    end;
+  end;
 end;
 
 end.
