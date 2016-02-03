@@ -1,8 +1,8 @@
-unit ScriptRunner;
+unit TestRunner;
 
 interface
 
-uses  Classes, ScriptReader, TestStep, TestCase, TestSequence, StepResult, StepContainer, TextMessage,
+uses  Classes, ScriptReader, TestStep, CaseChecker, TestSequence, StepResult, StepContainer, TextMessage,
       FunctionCaller, GenType;
 
 type
@@ -15,10 +15,10 @@ type
 // =============================================================================
   TScriptRunner = class(TTextMessager)
   protected
-    t_curstep: TTestStep;
-    t_fcaller: TFunctionCaller;
-    e_exemode: EExecutionMode;
-    t_allsteps:TStepContainer;
+    t_curstep:  TTestStep;
+    t_fcaller:  TFunctionCaller;
+    e_exemode:  EExecutionMode;
+    t_container:TStepContainer;
   protected
     procedure SetExecutionMode(const em: EExecutionMode);
 

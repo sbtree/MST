@@ -67,11 +67,11 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    procedure AssignResult(const source: TStepResult);
     property  StepFields: StepFieldArray read a_fields write a_fields;
-    property  StepResult: TStepResult read t_result write AssignResult;
+    property  StepResult: TStepResult read t_result write t_result;
     procedure InputFields(const fields: FieldStringArray);
     procedure Assign(const source: TTestStep);
+    procedure AssignResult(const source: TStepResult);
     //function  FieldString(const field: EStepField): string;
   end;
   

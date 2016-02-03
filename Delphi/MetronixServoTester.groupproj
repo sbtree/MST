@@ -11,6 +11,7 @@
     <Projects Include="General\GeneralTester.dproj" />
     <Projects Include="Product\BootTester.dproj" />
     <Projects Include="Product\ProductTester.dproj" />
+    <Projects Include="Runner\RunnerTester.dproj" />
     <Projects Include="Script\ScriptTester.dproj" />
     <Projects Include="ServoTester\ServoTester.dproj" />
     <Projects Include="Tools\ToolTester.dproj" />
@@ -111,14 +112,23 @@
   <Target Name="ServoTester:Make">
     <MSBuild Projects="ServoTester\ServoTester.dproj" Targets="Make" />
   </Target>
+  <Target Name="RunnerTester">
+    <MSBuild Projects="Runner\RunnerTester.dproj" Targets="" />
+  </Target>
+  <Target Name="RunnerTester:Clean">
+    <MSBuild Projects="Runner\RunnerTester.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="RunnerTester:Make">
+    <MSBuild Projects="Runner\RunnerTester.dproj" Targets="Make" />
+  </Target>
   <Target Name="Build">
-    <CallTarget Targets="DeviceManager;GeneralTester;FunctionTester;ToolTester;ScriptTester;CommTester;ProductTester;DeviceTests;BootTester;ServoTester" />
+    <CallTarget Targets="DeviceManager;GeneralTester;FunctionTester;ToolTester;ScriptTester;CommTester;ProductTester;DeviceTests;BootTester;ServoTester;RunnerTester" />
   </Target>
   <Target Name="Clean">
-    <CallTarget Targets="DeviceManager:Clean;GeneralTester:Clean;FunctionTester:Clean;ToolTester:Clean;ScriptTester:Clean;CommTester:Clean;ProductTester:Clean;DeviceTests:Clean;BootTester:Clean;ServoTester:Clean" />
+    <CallTarget Targets="DeviceManager:Clean;GeneralTester:Clean;FunctionTester:Clean;ToolTester:Clean;ScriptTester:Clean;CommTester:Clean;ProductTester:Clean;DeviceTests:Clean;BootTester:Clean;ServoTester:Clean;RunnerTester:Clean" />
   </Target>
   <Target Name="Make">
-    <CallTarget Targets="DeviceManager:Make;GeneralTester:Make;FunctionTester:Make;ToolTester:Make;ScriptTester:Make;CommTester:Make;ProductTester:Make;DeviceTests:Make;BootTester:Make;ServoTester:Make" />
+    <CallTarget Targets="DeviceManager:Make;GeneralTester:Make;FunctionTester:Make;ToolTester:Make;ScriptTester:Make;CommTester:Make;ProductTester:Make;DeviceTests:Make;BootTester:Make;ServoTester:Make;RunnerTester:Make" />
   </Target>
   <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
 </Project>

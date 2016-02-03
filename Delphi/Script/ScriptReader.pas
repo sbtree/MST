@@ -1,3 +1,79 @@
+// =============================================================================
+// Module name  : $RCSfile: ScriptReader.pas,v $
+// Description  : This unit defines class for reading in a script of test cases.
+//                A script is composed some variable definitions and test cases.
+//                A test case is composed of some test steps. A test step is
+//                composed of some fields. A field has a name and a value.
+//                A variable definition has a variable name and a variable value,
+//                which are joined through "=" and it looks lie a line  in an
+//                ini-file, e.g.:
+//                  VERSION=1.4.100000.1.1
+//                NOTE: A variable defination must be in one line
+//                A field has a field name and a field value, which are separated
+//                through ":" and ended through ";", e.g.:
+//                  Nr:10.00;
+//                A field group is allowed as a field value to be presented in a
+//                bracket pair("(" and ")"), e.g.:
+//                  Tol:(A:'ABC'; Min:0; Max:123);
+//                NOTE: The ";" can be removed after last field in the field group.
+//                More than one values should be quoted using quotation marks of
+//                ''' or '"' as one value, e.g.:
+//                  Par: 'BATCH_0001 BOOTLOADER_0001 FIRMWARE_0001 TIMEOUT_120000';
+//                NOTE: one or more blanks (space or tab) can be used to separate
+//                the values.
+//                A pseudo-string is allowed in a field value with a prifix "#"
+//                (statically replaced through settings from the ini-file of a 
+//                product variant) or "@" (dynamically replaced in running of the
+//                test step), e.g.:
+//                  Par:'#TYP_CODE'; and Tol:(A:'@FWVerMain'; Min:0; Max:256);
+//                A quotation (a pair of single quotation mark or double
+//                quotation mark) can be used in a field value, in order intuitive
+//                to present a value, e.g.:
+//                  T:"beginning of test case 1";
+//                A test step has to be written in a pair of a bracket pair ("("
+//                and ")"), e.g.:
+//                  (Nr:10.00; T:'beginning of test case 1'; R_on:'101'; Fkt:nil; M:''; Par:''; R_off:''; Tol:(A:''; Min:0;Max:0);)
+//                An optional ',' (for ending of a test step) or '.' (for ending 
+//                of a test case) kann be given at the end of a test step, e.g:
+//                  (Nr:10.00; T:'beginning of test case 1'; R_on:'101'; Fkt:nil; M:''; Par:''; R_off:''; Tol:(A:''; Min:0;Max:0);),
+//                    ...,
+//                  (Nr:10.99; T:'end of test case 1'; R_on:''; Fkt:nil; M:''; Par:''; R_off:'101'; Tol:(A:''; Min:0;Max:0);).
+//                One test step may be written in more than one lines, but the
+//                line feed is not allowed in a field name, a field value and a
+//                quotation, e.g.:
+//                  (Nr:10.00;  T:'beginning of test case 1';
+//                              R_on:'101'; Fkt:nil; M:''; Par:''; R_off:'';
+//                              Tol:(A:''; Min:0;Max:0);)
+//                One or more blanks(space and tab) are allowed bewteen fiels in the test step
+//                A comment can be written in three patterns:
+//                  //comment (line comment start with '//' till the ending of the line)
+//                  {comment block} (block comment in brace-pair)
+//                  (*comment block*) (block comment in a pair of '(*' and '*)')
+//                For example:
+//                  (Nr:10.00;  T:'beginning of test case 1'; //start a test case
+//                              R_on:'101'; Fkt:nil; {nothing to do} M:''; Par:''; R_off:'';
+//                              (*this is a test
+//                              line*)
+//                              Tol:(A:''; Min:0;Max:0);)
+//                NOTE: A comment is allowed not only in a test step, but also
+//                in a variable definition. A block comment may be written in
+//                more than one liens.
+//
+//                A complete script of test cases will look like:
+//                (Nr:10.00; T:'beginning of test case 1'; R_on:'101'; Fkt:nil; M:''; Par:''; R_off:''; Tol:(A:''; Min:0;Max:0);),
+//                (Nr:10.10; T:'  measurement of dc voltage'; R_on:'101'; Fkt:U_Mess_DC; M:''; Par:''; R_off:''; Tol:(A:''; Min:0;Max:1);),
+//                ...
+//                (Nr:10.99; T:'end of test case 1'; R_on:''; Fkt:nil; M:''; Par:''; R_off:'101'; Tol:(A:''; Min:0;Max:0);).
+//                ...
+//                (Nr:50.00; T:'beginning of test case n'; R_on:'202'; Fkt:nil; M:''; Par:''; R_off:''; Tol:(A:''; Min:0;Max:0);),
+//                ...
+//                (Nr:50.99; T:'end of test case n'; R_on:''; Fkt:nil; M:''; Par:''; R_off:'202'; Tol:(A:''; Min:0;Max:0);),
+//                ...
+//                (Nr:990.00; T:'end of test script'; R_on:''; Fkt:nil; M:''; Par:''; R_off:''; Tol:(A:''; Min:0;Max:0);).
+// Compiler     : Delphi 2007
+// Author       : 2016-02-03 /bsu/
+// History      :
+//==============================================================================
 unit ScriptReader;
 
 interface

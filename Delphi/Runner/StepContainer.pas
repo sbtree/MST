@@ -1,7 +1,7 @@
 unit StepContainer;
 
 interface
-uses Classes, Contnrs, IniFiles, TestStep, CaseChecker;
+uses Classes, Contnrs, IniFiles, TestStep, TestCase;
 
 type
   TStepContainer = class
