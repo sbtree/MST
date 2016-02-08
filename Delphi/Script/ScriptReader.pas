@@ -592,7 +592,7 @@ begin
   s_curtoken := '';
   b_allowvar := true;
   t_tsteps.Clear();
-  t_container.ClearSteps();
+  t_container.Clear();
 end;
 
 function TScriptReader.ReadFromText(const srctext: string; const blast: boolean): boolean;

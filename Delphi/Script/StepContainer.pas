@@ -20,7 +20,7 @@ type
     function  CreateStep(const fields: FieldStringArray): boolean;
     function  GetStep(const idx: integer): TTestStep;
     function  StepCount(): integer;
-    procedure ClearSteps();
+    procedure Clear();
     procedure Assign(const source: TStepContainer);
 //   function TestStep(const casenr, stepnr: integer): TTestStep;
 //   function TestCase(const casenr: integer): TTestStep;
@@ -38,7 +38,7 @@ end;
 
 destructor TStepContainer.Destroy();
 begin
-  ClearSteps();
+  Clear();
   t_cases.Free();
   t_steps.Free();
   inherited Destroy();
@@ -68,7 +68,7 @@ begin
   result := t_steps.Count;
 end;
 
-procedure TStepContainer.ClearSteps();
+procedure TStepContainer.Clear();
 begin
   t_steps.Clear();
   t_cases.Clear();
@@ -81,8 +81,8 @@ procedure TStepContainer.Assign(const source: TStepContainer);
 var t_step: TTestStep; i: integer;
 begin
   if assigned(source) then begin
-    ClearSteps();
-    for i := 0 to source.StepCount - 1 do begin
+    Clear();
+    for i := 0 to source.StepCount() - 1 do begin
       t_step := TTestStep.Create();
       t_step.Assign(source.GetStep(i));
       t_steps.Add(t_step);
