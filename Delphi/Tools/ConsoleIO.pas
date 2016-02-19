@@ -5,7 +5,7 @@ uses StdCtrls;
 
   procedure RunDosInMemo(const DosApp: string; AMemo: TMemo);
 implementation
-uses Windows;
+uses Windows, SysUtils;
 
 procedure RunDosInMemo(const DosApp: string; AMemo: TMemo);
 const
@@ -19,6 +19,7 @@ var
   Buffer: PChar;
   BytesRead: DWord;
   Buf: string;
+  curerror: DWORD;
 begin
   with Security do
   begin
@@ -81,6 +82,9 @@ begin
           AMemo.Lines.Add(Copy(Buf, 1, pos(#10, Buf) - 1));
           Delete(Buf, 1, pos(#10, Buf));
         end;
+      end else begin
+        curerror := GetLastError();
+        AMemo.Lines.Add(format('Last Error: %0.8x', [curerror]));
       end;
     finally
       FreeMem(Buffer);
