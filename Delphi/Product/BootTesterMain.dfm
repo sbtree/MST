@@ -347,4 +347,13 @@ object FrmBootTester: TFrmBootTester
       Text = '0.9216'
     end
   end
+  object btnTest: TButton
+    Left = 432
+    Top = 440
+    Width = 75
+    Height = 25
+    Caption = '&Test'
+    TabOrder = 5
+    OnClick = btnTestClick
+  end
 end

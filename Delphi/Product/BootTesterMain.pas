@@ -60,6 +60,7 @@ type
     pgbSendFile: tCustomProgressbar;
     chkBaudFactor: TCheckBox;
     txtBaudFactor: TEdit;
+    btnTest: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     //procedure ComPortRxChar(Sender: TObject; Count: Integer);
@@ -82,6 +83,7 @@ type
     procedure chkXonXoffProdClick(Sender: TObject);
     procedure btnCloseProdClick(Sender: TObject);
     procedure chkBaudFactorClick(Sender: TObject);
+    procedure btnTestClick(Sender: TObject);
   protected
     procedure Transmit();
     function SendStr(const str: string; const bprint: boolean = true): boolean;
@@ -583,6 +585,35 @@ begin
   end;
   t_downloader.BaudrateFactor := r_factor;
   e_bootstate := t_downloader.GetBootState(trim(txtBootCmd.Text));
+end;
+
+procedure TFrmBootTester.btnTestClick(Sender: TObject);
+var s_send, s_recv, s_tmp: string; b_app: boolean; c_time: cardinal;
+begin
+  if not t_ser.Active then  t_ser.Active := true;
+  if t_ser.Active then
+  begin
+    s_send := 'RESET!' + Char(13);
+    SendStr(s_send);
+    b_app := false; s_recv := '';
+    s_send := 'BOOT?' + Char(13);
+    c_time := GetTickCount() + 20000;
+    while (not b_app) do
+    begin
+      s_tmp := '';
+      SendStr(s_send); Delay(100);
+      if (RecvStr(s_tmp) > 0) then s_recv := s_recv + trim(s_tmp);
+      b_app := (EndsText('application', s_recv) or (GetTickCount() >= c_time));
+    end;
+
+    s_tmp := '';
+    if (RecvStr(s_tmp) > 0) then s_recv := s_recv + trim(s_tmp);
+    s_send := 'OW:0014:000004E2' + Char(13);
+    SendStr(s_send);
+    s_recv := '';
+    RecvStr(s_recv);
+  end;
+
 end;
 
 procedure TFrmBootTester.chbRecvClick(Sender: TObject);
