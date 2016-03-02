@@ -23,7 +23,7 @@ uses Classes, TextMessage, GenType;
 type
   TFunctionBase = class(TPersistent)
   protected
-    t_messager: TTextMessager;  //a pointer, which can be asssigned through property Messager
+    t_messenger:TTextMessenger; //a pointer, which can be asssigned through property Messager
     e_exemode:  EExecutionMode; //execution mode, which can be changed through property ExecutionMode
     b_aborted:  boolean;        //indicates if current execution should be aborted
     s_par:      string;         //saves parameter string of this function object
@@ -37,7 +37,7 @@ type
 
     property ResultString: string read s_result write s_result;
     property ExecutionMode: EExecutionMode read e_exemode write e_exemode;
-    property Messager: TTextMessager read t_messager write t_messager;
+    property Messenger: TTextMessenger read t_messenger write t_messenger;
     property Aborted: boolean read b_aborted write SetAborted;
     
     function LoadParameter(const par: string): boolean; virtual;
@@ -67,7 +67,7 @@ end;
 
 procedure TFunctionBase.AddMessage(const text: string; const level: EMessageLevel);
 begin
-  if assigned(t_messager) then t_messager.AddMessage(text, level);
+  if assigned(t_messenger) then t_messenger.AddMessage(text, '', level);
 end;
 
 function TFunctionBase.LoadParameter(const par: string): boolean;

@@ -15,7 +15,7 @@ uses Forms, Windows, IniFiles, Contnrs;
   function GetAbsoluteFilePath(filePath, basePath: string): string;
 
   //string and array
-  function IndexOfStr(const aArray: array of string; const S: string): integer;
+  //function IndexOfStr(const aArray: array of string; const S: string): integer;
   function StrToCharArray(const sData: string; var aData: array of char): integer;
   function StrFromCharArray(const aData: array of char): string;
   function IsHexStr(const sData: string): boolean;
@@ -95,9 +95,9 @@ end;
 // Return       : index of string in the array. -1 is returnd, if not found
 // Exceptions   : --
 // First author : 2015-08-14 /bsu/
-// History      :
+// History      : 2016-03-01 /bsu/ same as IndexText in StrUtils
 // =============================================================================
-function IndexOfStr(const aArray: array of string; const S: string): integer;
+{function IndexOfStr(const aArray: array of string; const S: string): integer;
 var I: Integer;
 begin
   Result := -1;
@@ -107,7 +107,7 @@ begin
       Break;
     end;
 end;
-
+}
 // =============================================================================
 // Class        : --
 // Function     : StrToCharArray

@@ -96,7 +96,7 @@ var i_baud: integer; s_in: string; i_idx: integer;
 begin
   result := false;
   s_in := trim(sval);
-  i_idx := IndexOfStr(CSTR_BAUD_VALUES, sval);
+  i_idx := IndexText(sval, CSTR_BAUD_VALUES);
   if ((i_idx >= Low(aBaudrates)) and (i_idx <= High(aBaudrates))) then begin
     result := TryStrToInt(sval, i_baud);
     if result then pser^.Baudrate := i_baud;
@@ -122,7 +122,7 @@ var i_idx: integer; s_in: string;
 begin
   result := false;
   s_in := UpperCase(sval);
-  i_idx := IndexOfStr(CSTR_PA_VALUES, s_in);
+  i_idx := IndexText(s_in, CSTR_PA_VALUES);
   if ((i_idx >= Ord(paNone)) and (i_idx <= Ord(paSpace))) then begin
     pser^.Parity := eParity(i_idx);
     result := true;
@@ -148,7 +148,7 @@ var i_idx: integer; s_in: string;
 begin
   result := false;
   s_in := UpperCase(sval);
-  i_idx := IndexOfStr(CSTR_DB_VALUES, s_in);
+  i_idx := IndexText(s_in, CSTR_DB_VALUES);
   if ((i_idx >= Ord(d7bit)) and (i_idx <= Ord(d8bit))) then begin
     pser^.DataBits := eDataBits(i_idx);
     result := true;
@@ -174,7 +174,7 @@ var i_idx: integer; s_in: string;
 begin
   result := false;
   s_in := UpperCase(sval);
-  i_idx := IndexOfStr(CSTR_SB_VALUES, s_in);
+  i_idx := IndexText(s_in, CSTR_SB_VALUES);
   if ((i_idx >= Ord(st1bit)) and (i_idx <= Ord(st2bit))) then begin
     pser^.StopBits := eStopBits(i_idx);
     result := true;
@@ -201,7 +201,7 @@ var i_idx: integer; s_in: string;
 begin
   result := false;
   s_in := UpperCase(sval);
-  i_idx := IndexOfStr(CSTR_FC_VALUES, s_in);
+  i_idx := IndexText(s_in, CSTR_FC_VALUES);
   if ((i_idx >= Ord(fcNone)) and (i_idx <= Ord(fcXON_XOF))) then begin
     pser^.FlowMode := eFlowControl(i_idx);
     result := true;

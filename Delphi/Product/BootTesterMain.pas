@@ -593,7 +593,7 @@ begin
   if not t_ser.Active then  t_ser.Active := true;
   if t_ser.Active then
   begin
-    s_send := 'RESET!' + Char(13);
+    s_send := 'INIT!' + Char(13);
     SendStr(s_send);
     b_app := false; s_recv := '';
     s_send := 'BOOT?' + Char(13);

@@ -7,7 +7,7 @@ type
   //ScriptFunction = function(const par: string): boolean of object;
 
   //define class of function caller, which calls script functions
-  TFunctionCaller = class(TTextMessager)
+  TFunctionCaller = class(TTextMessenger)
   protected
     t_func:   TFunctionBase;
     e_exemode:EExecutionMode;
@@ -58,21 +58,21 @@ end;
 function TFunctionCaller.CallFunction(const func, par: string): boolean;
 begin
   result := false;
-  if (func = '') then AddMessage('The called function "' + func + '" is not available.', ML_ERROR)
+  if (func = '') then AddMessage('The called function "' + func + '" is not available.', '', ML_ERROR)
   else if SameText(func, 'Nil') then AddMessage('Nothing is done for calling ' + func)
   else begin
     t_func := FindFunction(func);
     if assigned(t_func) then
     begin
-      t_func.Messager := self;
+      t_func.Messenger := self;
       t_func.ExecutionMode := e_exemode;
       result := t_func.LoadParameter(par);
       if (result) then begin
         result := t_func.Execute();
         s_result := t_func.ResultString;
-      end else AddMessage('The called function "' + func + '" is not executed because of an error in its parameter.', ML_ERROR);
+      end else AddMessage('The called function "' + func + '" is not executed because of an error in its parameter.', '', ML_ERROR);
       FreeAndNil(t_func);
-    end else AddMessage('The called function "' + func + '" is not available.', ML_ERROR);
+    end else AddMessage('The called function "' + func + '" is not available.', '', ML_ERROR);
   end;
 end;
 

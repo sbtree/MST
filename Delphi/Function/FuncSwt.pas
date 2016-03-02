@@ -12,28 +12,22 @@ unit FuncSwt;
 interface
 uses Classes, Windows, FunctionBase, TextMessage;
 
+type
+  ExecConsoleCmd = class(TFunctionBase)
+  protected
+    s_cmdline: string;
+  protected
+    procedure CaptureStdOut();
+    procedure OutputInfo(outputs: TStrings; S: string);
+  public
+    function LoadParameter(const par: string): boolean; override;
+    function Execute(): boolean; override;
+  end;
+
 implementation
-uses SysUtils;
-procedure CmdExecAndView(FileName: string; memo: TMemo);
-  {procedure _AddInfo(mmInfo:TMemo; S: string; var line: string);
-  var
-    i, p: Integer;
-  begin
-    if mmInfo.Lines.Count > 800 then
-      mmInfo.Lines.Clear;
-    //\r
-    for i := 0 to Length(S) - 1 do
-      if S[i] = #13 then S[i] := ' ';
-    line := line + S;
-    // \n
-    p := Pos(#10, line);
-    if p > 0 then
-    begin
-      // \n
-      mmInfo.Lines.Add(Copy(line, 1, p - 1));
-      line := Copy(line, p + 1, Length(line) - p);
-    end;
-  end;}
+uses SysUtils, StdCtrls, Forms;
+
+procedure ExecConsoleCmd.CaptureStdOut();
 var
   hReadPipe, hWritePipe: THandle;
   si: STARTUPINFO;
@@ -42,7 +36,8 @@ var
   cchReadBuffer: DWORD;
   ph: PChar;
   fname: PChar;
-  line: string;
+  t_outputs: TStringList;
+  i: integer;
 begin
   fname := allocmem(1024);
   ph := AllocMem(1024);
@@ -57,13 +52,14 @@ begin
   si.wShowWindow := SW_HIDE;
   si.hStdOutput := hWritePipe;
   si.hStdError := hWritePipe;
-  StrPCopy(fname, FileName);
+  StrPCopy(fname, s_cmdline);
   if CreateProcess(nil, fname, nil, nil, true, 0, nil, nil, si, pi) = False then
   begin
     FreeMem(ph);
     FreeMem(fname);
     Exit;
   end;
+  t_outputs := TStringList.Create();
   CloseHandle(hWritePipe);
   while (true) do
   begin
@@ -72,14 +68,17 @@ begin
     begin
       if ReadFile(hReadPipe, ph^, 512, cchReadBuffer, nil) = false then break;
       ph[cchReadbuffer] := chr(0);
-      _AddInfo(memo, ph, line);
     end
     else if (WaitForSingleObject(pi.hProcess, 0) = WAIT_OBJECT_0) then break;
     Application.ProcessMessages;
     Sleep(200);
   end;
   ph[cchReadBuffer] := chr(0);
-  _AddInfo(memo, ph, line);
+  OutputInfo(t_outputs, ph);
+  if assigned(t_messenger) then begin
+    for i := 0 to t_outputs.Count - 1 do t_messenger.AddMessage(t_outputs[i]);
+  end;
+  FreeAndNil(t_outputs);
   CloseHandle(hReadPipe);
   CloseHandle(pi.hThread);
   CloseHandle(pi.hProcess);
@@ -87,9 +86,39 @@ begin
   FreeMem(fname);
 end;
 
+procedure ExecConsoleCmd.OutputInfo(outputs: TStrings; S: string);
+var
+  i, p: Integer; s_line: string;
+begin
+  outputs.Clear;
+  p := 0;
+  for i := 0 to Length(S) - 1 do begin
+    //\r
+    if (S[i] = #10) then begin
+      s_line := trim(Copy(s, p, i - p));
+      if (s_line <> '') then outputs.Add(s_line);
+      p := i + 1;
+    end;
+  end;
+  s_line := trim(Copy(s, p, Length(S) - p));
+  if (s_line <> '') then outputs.Add(s_line);
+end;
+
+function ExecConsoleCmd.LoadParameter(const par: string): boolean;
+begin
+  s_cmdline := trim(par);
+  result := FileExists(par);
+end;
+
+function ExecConsoleCmd.Execute(): boolean;
+begin
+  result := true;
+  CaptureStdOut();
+end;
+
 initialization
-  //Classes.RegisterClass(YourSubclass);
+  Classes.RegisterClass(ExecConsoleCmd);
 
 finalization
-  //Classes.UnregisterClass(YourSubclass);
+  Classes.UnregisterClass(ExecConsoleCmd);
 end.

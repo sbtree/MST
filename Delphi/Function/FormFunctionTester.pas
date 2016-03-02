@@ -31,6 +31,7 @@ begin
   t_fcaller := TFunctionCaller.Create;
   t_fcaller.ExecutionMode := EM_DIAGNOSE;
   t_fcaller.Messages := memInfo.Lines;
+  t_fcaller.CallFunction('ExecConsoleCmd', 'N:\SW_INBE\DIS-2\Tools\flash_over_jtag.exe');
   t_fcaller.CallFunction('Nil', 'abc');
   t_fcaller.CallFunction('abcd', 'abc');
   t_fcaller.CallFunction('EvaluateStr', '@abc');

@@ -19,19 +19,23 @@ type
                     ML_FATAL    //fatal message
                   );
 
-  TTextMessager = class
+  TTextMessenger = class
   protected
-    t_msgextern, t_msgintern: TStrings; //saves messages. it is created in constructor and replaced by SetMessages
-    e_threshold: EMessageLevel; //indicates threshold of message level. The message which has greater level than this value, can be appended to t_messages
+    t_msgintern:  TStrings; //saves messages. it is created in constructor
+    t_msgextern:  TStrings; //default pointing to t_msgintern, but it will be replaced by SetMessages
+    e_threshold:  EMessageLevel; //indicates threshold of message level. The message which has greater level than this value, can be appended to t_msg
+    b_tstamp:     boolean; //indicats, whether the time stamp should be prepended, default true
   protected
-    procedure SetMessages(const msg: TStrings);
+    procedure SetMessages(const msgs: TStrings);
   public
     constructor Create();
     destructor  Destroy(); override;
 
     property  Messages: TStrings read t_msgextern write SetMessages;
     property  MessageThreshold: EMessageLevel read e_threshold write e_threshold;
-    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    property  TimeStamp: boolean read b_tstamp write b_tstamp;
+
+    procedure AddMessage(const text: string; const sender: string = ''; const level: EMessageLevel = ML_INFO);
   end;
 
 implementation
@@ -45,30 +49,37 @@ const CSTR_MLKEYS: array[EMessageLevel] of string = (
                    'fatal'
                    );
 
-constructor TTextMessager.Create();
+constructor TTextMessenger.Create();
 begin
   inherited Create();
   t_msgintern := TStringList.Create;
   t_msgextern := t_msgintern;
   e_threshold := ML_INFO;
+  b_tstamp := true;
 end;
 
-destructor TTextMessager.Destroy();
+destructor TTextMessenger.Destroy();
 begin
   t_msgintern.Clear;
   t_msgintern.Free;
   inherited Destroy;
 end;
 
-procedure TTextMessager.AddMessage(const text: string; const level: EMessageLevel);
+procedure TTextMessenger.AddMessage(const text: string; const sender: string; const level: EMessageLevel);
+var s_msg: string;
 begin
-  if ((level >= e_threshold) and (text <> '')) then
-    t_msgextern.Add(format('[%s] %s: %s', [DateTimeToStr(Now()),CSTR_MLKEYS[level], text]));
+  if ((level >= e_threshold) and (text <> '')) then begin
+    s_msg := '[' + CSTR_MLKEYS[level] + ']' + text;
+    if (sender <> '' ) then s_msg := '[' + sender + ']' + s_msg;
+    if b_tstamp then s_msg := '[' + DateTimeToStr(Now()) + ']: ' + s_msg;
+    t_msgintern.Add(s_msg);
+    if (t_msgextern <> t_msgintern) then t_msgextern.Add(s_msg);
+  end;
 end;
 
-procedure TTextMessager.SetMessages(const msg: TStrings);
+procedure TTextMessenger.SetMessages(const msgs: TStrings);
 begin
-  if assigned(msg) then t_msgextern := msg
+  if assigned(msgs) then t_msgextern := msgs
   else t_msgextern := t_msgintern;
 end;
 
