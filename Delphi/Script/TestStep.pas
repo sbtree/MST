@@ -46,12 +46,14 @@ type
   // a base class for terminology in a step: Nr, T, R_on, Fkt, Par, R_off, Tol(A, Min, Max)
   TStepField = class
   protected
-    s_input: string;
-    s_eval:  string;
+    s_input:  string; //to save original input string
+    s_evalst: string; //to save string, which is evaluated using the statical information in the configuration
+    s_evaldy: string; //to save string, which is evaluated using the dynamical inforation in the run
   protected
+    function  GetEvaluatedStr(): string;
   public
     property  InputString: string read s_input write s_input;
-    property  EvalString: string read s_eval write s_eval;
+    property  EvalString: string read GetEvaluatedStr;
     procedure Assign(const source: TStepField);
   end;
 
@@ -94,11 +96,16 @@ const
 implementation
 uses SysUtils, StrUtils;
 
+function  TStepField.GetEvaluatedStr(): string;
+begin
+  result := s_evaldy;
+end;
+
 procedure TStepField.Assign(const source: TStepField);
 begin
   if assigned(source) then begin
     s_input := source.InputString;
-    s_eval := source.EvalString;
+    s_evalst := source.EvalString;
   end;
 end;
 

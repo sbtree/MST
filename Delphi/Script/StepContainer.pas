@@ -54,7 +54,7 @@ begin
   if result then begin
     s_keyval := format('%s=%d', [fields[SF_NR], i_index]);
     //t_nisteps.Add()
-  end else t_step.Free();
+  end else FreeAndNil(t_step);
 end;
 
 function  TStepContainer.GetStep(const idx: integer): TTestStep;

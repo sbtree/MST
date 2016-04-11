@@ -21,13 +21,19 @@ var
   FormFTMain: TFormFTMain;
 
 implementation
-
+uses StrUtils;
 {$R *.dfm}
 
 procedure TFormFTMain.btnTestClick(Sender: TObject);
 //var t_fr_set_dm: FR_Set_DM;
-var t_fcaller: TFunctionCaller;
+var t_fcaller: TFunctionCaller; s_test, s_show: string; i: integer;
 begin
+  s_test := 'Restarting' + Char(0) + 'Motorola';
+  for i := 0 to length(s_test) do
+    if s_test[i] = Char(0) then s_show :=  s_show + Char(13)
+    else s_show :=  s_show + s_test[i];
+
+  ShowMessage(format('length = %d, %s', [length(s_show), s_show]));
   t_fcaller := TFunctionCaller.Create;
   t_fcaller.ExecutionMode := EM_DIAGNOSE;
   t_fcaller.Messages := memInfo.Lines;
