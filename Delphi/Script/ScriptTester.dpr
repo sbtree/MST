@@ -9,7 +9,7 @@ uses
   StepResult in 'StepResult.pas',
   FunctionCaller in '..\Function\FunctionCaller.pas',
   GenType in '..\General\GenType.pas',
-  FunctionBase in '..\Function\FunctionBase.pas',
+  FuncBase in '..\Function\FuncBase.pas',
   StepChecker in 'StepChecker.pas',
   StepContainer in 'StepContainer.pas',
   FuncMat in '..\Function\FuncMat.pas',

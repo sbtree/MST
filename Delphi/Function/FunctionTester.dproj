@@ -47,13 +47,14 @@
     <DCCReference Include="FormFunctionTester.pas">
       <Form>FormFTMain</Form>
     </DCCReference>
+    <DCCReference Include="FuncAux.pas" />
+    <DCCReference Include="FuncBase.pas" />
     <DCCReference Include="FuncDmm.pas" />
     <DCCReference Include="FuncDso.pas" />
     <DCCReference Include="FuncMat.pas" />
     <DCCReference Include="FuncMxp.pas" />
     <DCCReference Include="FuncSwt.pas" />
     <DCCReference Include="FuncSys.pas" />
-    <DCCReference Include="FunctionBase.pas" />
     <DCCReference Include="FunctionCaller.pas" />
     <DCCReference Include="FuncTmm.pas" />
     <None Include="ModelSupport_FunctionTester\default.txaPackage" />
