@@ -2,17 +2,16 @@ program ScriptTester;
 
 uses
   Forms,
+  GenType in '..\General\GenType.pas',
+  TextMessage in '..\General\TextMessage.pas',
+  FuncBase in '..\Function\FuncBase.pas',
+  FuncMat in '..\Function\FuncMat.pas',
   FormScriptTester in 'FormScriptTester.pas' {frmScriptTester},
   ScriptReader in 'ScriptReader.pas',
-  TestStep in 'TestStep.pas',
-  TextMessage in '..\General\TextMessage.pas',
+  StepDescriptor in 'StepDescriptor.pas',
   StepResult in 'StepResult.pas',
-  FunctionCaller in '..\Function\FunctionCaller.pas',
-  GenType in '..\General\GenType.pas',
-  FuncBase in '..\Function\FuncBase.pas',
   StepChecker in 'StepChecker.pas',
   StepContainer in 'StepContainer.pas',
-  FuncMat in '..\Function\FuncMat.pas',
   CaseChecker in 'CaseChecker.pas';
 
 {$R *.res}

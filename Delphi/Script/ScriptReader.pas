@@ -1,16 +1,16 @@
 // =============================================================================
 // Module name  : $RCSfile: ScriptReader.pas,v $
-// Description  : This unit defines class for reading in a script of test cases.
-//                A script is composed some variable definitions and test cases.
-//                A test case is composed of some test steps. A test step is
-//                composed of some fields. A field has a name and a value.
+// Description  : This unit defines a class for reading a test script.
+//                A test script is composed some variable definitions and some
+//                test cases.
 //                A variable definition has a variable name and a variable value,
-//                which are joined through "=" and it looks lie a line  in an
+//                which are joined through "=" and it looks like a line in an
 //                ini-file, e.g.:
 //                  VERSION=1.4.100000.1.1
-//                NOTE: A variable defination must be in one line
-//                A field has a field name and a field value, which are separated
-//                through ":" and ended through ";", e.g.:
+//                NOTE: A variable defination must be written in one line.
+//                A test case is a set of test steps. A test step includes some
+//                predefined fields and every field must have a name and a value
+//                which are separated through ":" and it ends with ";", e.g.:
 //                  Nr:10.00;
 //                A field group is allowed as a field value to be presented in a
 //                bracket pair("(" and ")"), e.g.:
@@ -77,7 +77,7 @@
 unit ScriptReader;
 
 interface
-uses Classes, Contnrs, TestStep, StepChecker, StepContainer, TextMessage;
+uses Classes, Contnrs, StepDescriptor, StepChecker, StepContainer, TextMessage;
 
 type
   EParseState = (
@@ -96,7 +96,7 @@ type
                 );
   PParseState = ^EParseState;
 
-  TScriptReader = class(TTextMessager)
+  TScriptReader = class(TTextMessenger)
   type
     StateEntry = record
       e_state:EParseState;//save state
@@ -118,7 +118,8 @@ type
     t_fstemp:   TDateTime;    //save time stemp of last changing for s_srcfile
     s_curtext:  string;       //to save current step text or line of 'var=value', which is parsed
     b_allowvar: boolean;      //indicates if a variable is allowed with the format 'var=value' till now
-    t_fkeys:    TFieldKeyChecker; // a help object for parsing
+    t_fnchecker:TFieldNameChecker; // a help object for parsing
+    t_fvchecker:TFieldValueChecker; // a help object for parsing
     e_lastfield:EStepField;   //to save the index of last field, which is found in reading the script
 
     t_tsteps:   TStringList;  //list of test steps without any useless char
@@ -130,8 +131,7 @@ type
     procedure PopState();
     procedure ClearStates();
     procedure ResetFieldValues();
-    function  CheckFunctionName(const fct: string): boolean;
-    function  CheckFieldKey(const key: string): boolean;
+    function  CheckFieldName(const name: string): boolean;
     function  CheckFieldValue(const val: string): boolean;
     function  ReadChar(const curch, nextch: char): boolean;
 
@@ -172,7 +172,7 @@ const
   CSET_DIGIT_CHARS: set of char = ['0'..'9'];
 
 implementation
-uses SysUtils, StrUtils, FunctionBase;
+uses SysUtils, StrUtils, FuncBase;
 
 // =============================================================================
 //    Description  : push a EParseState into state stack
@@ -231,38 +231,18 @@ begin
   for i := Low(EStepField) to High(EStepField) do a_fieldvals[i] := '';
 end;
 
-function TScriptReader.CheckFunctionName(const fct: string) : boolean;
-var t_class : TFunctionClass;
+function  TScriptReader.CheckFieldName(const name: string): boolean;
 begin
-  t_class := TFunctionClass(GetClass(fct));
-  result := true;//(t_class <> nil);  //test
-end;
-
-function  TScriptReader.CheckFieldKey(const key: string): boolean;
-begin
-  result := t_fkeys.FindKey(key, e_lastfield);
+  result := t_fnchecker.FindName(name, e_lastfield);
   if result then begin
-    if (t_fkeys.IsKeyUsed(e_lastfield)) then result := false
-    else t_fkeys.SetKeyUsed(e_lastfield, true);
+    if (t_fnchecker.IsNameUsed(e_lastfield)) then result := false
+    else t_fnchecker.SetNameUsed(e_lastfield, true);
   end;
 end;
 
 function  TScriptReader.CheckFieldValue(const val: string): boolean;
 begin
-  result := true;
-  case e_lastfield of
-    SF_NR: result := true; //todo
-    SF_FCT: result := CheckFunctionName(val);
-    SF_M: result := true; //todo
-    SF_T,
-    SF_INIT,
-    SF_PAR,
-    SF_FINAL,
-    SF_TOL,
-    SF_TOL_A,
-    SF_TOL_MIN,
-    SF_TOL_MAX: result := true;
-  end;
+  result := t_fvchecker.CheckField(e_lastfield, val);
   if result then a_fieldvals[e_lastfield] := val;
 end;
 
@@ -297,7 +277,7 @@ begin
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
       else if (e_curstate = PS_FIELDKEY) then begin
-        if CheckFieldKey(trim(s_curtoken)) then begin
+        if CheckFieldName(trim(s_curtoken)) then begin
           PopState();
           s_curtext := s_curtext + trim(s_curtoken) + curch;
           s_curtoken := '';
@@ -318,7 +298,6 @@ begin
       else if (e_curstate = PS_FIELDVAL) then begin
         if CheckFieldValue(trim(s_curtoken)) then begin
           PopState();
-          a_fieldvals[e_lastfield] := trim(s_curtoken);
           s_curtext := s_curtext + a_fieldvals[e_lastfield] + curch;
           s_curtoken := '';
         end else begin
@@ -420,7 +399,6 @@ begin
       else if e_curstate = PS_FIELDVAL then begin
         if CheckFieldValue(trim(s_curtoken)) then begin
           PopState();
-          a_fieldvals[e_lastfield] := trim(s_curtoken);
           s_curtext := s_curtext + a_fieldvals[e_lastfield] + curch;
           s_curtoken := '';
           //if (e_curstate = PS_FIELDGROUP) then PopState();
@@ -438,7 +416,7 @@ begin
           t_sentry.i_row := i_rowindex; //update row and column for each idle state
           t_sentry.i_col := i_colindex;
           s_curtext := '';
-          t_fkeys.ResetUnused();
+          t_fnchecker.ResetUnused();
           ResetFieldValues();
         end else if (e_curstate <> PS_FIELDVAL) then begin
           result := false;
@@ -561,7 +539,8 @@ begin
   b_allowvar := true;
   t_states := TStack.Create();
   t_tsteps := TStringList.Create();
-  t_fkeys := TFieldKeyChecker.Create();
+  t_fnchecker := TFieldNameChecker.Create();
+  t_fvchecker := TFieldValueChecker.Create();
   t_container := TStepContainer.Create();
 end;
 
@@ -578,7 +557,8 @@ begin
   while(t_states.Count > 0) do PopState();
   t_states.Free();
   t_tsteps.Free();
-  t_fkeys.Free();
+  t_fnchecker.Free();
+  t_fvchecker.Free();
   t_container.Free();
 end;
 
@@ -652,7 +632,8 @@ begin
       t_lines.LoadFromFile(srcfile);
       result := ReadFromList(t_lines);
       s_srcfile := srcfile;
-      t_fstemp := t_fdatetime;
+      if result then t_fstemp := t_fdatetime
+      else t_fstemp := -1;
       t_lines.Free();
     end;
   end;
@@ -664,7 +645,7 @@ var i: integer; s_line: string; j:EStepField;
 begin
   t_steps := TStringList.Create();
   for i := 0 to t_container.StepCount() - 1 do begin
-    t_step := t_container.GetStep(i);
+    t_step := t_container.GetStepByIndex(i);
     if assigned(t_step) then begin
       t_field := t_step.StepFields[SF_NR];
       if assigned(t_field) then s_line := t_field.InputString;
@@ -677,7 +658,7 @@ begin
   end;
   t_steps.SaveToFile(destfile);
   t_steps.Free();
-  //t_tsteps.SaveToFile(destfile);
+  //t_tsteps.SaveToFile(destfile); //
   result := true;
 end;
 

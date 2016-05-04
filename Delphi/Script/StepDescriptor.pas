@@ -20,7 +20,7 @@
 // History      :
 //==============================================================================
 
-unit TestStep;
+unit StepDescriptor;
 
 interface
 uses Classes, StepResult;
@@ -78,19 +78,46 @@ type
   end;
   
 const
-  CSTR_FIELD_KEYS_V01 :  FieldStringArray = (
-                        'NR', 'T', 'R_ON', 'FKT', 'M', 'PAR', 'R_OFF',
-                        'TOL', 'A', 'MIN', 'MAX'
+  CSTR_FIELD_NAMES_V01 :  FieldStringArray = (
+                        'NR',
+                        'T',
+                        'R_ON',
+                        'FKT',
+                        'M',
+                        'PAR',
+                        'R_OFF',
+                        'TOL',
+                        'A',
+                        'MIN',
+                        'MAX'
                       );
 
-  CSTR_FIELD_KEYS_V02  :  FieldStringArray = (
-                        'NR', 'T', 'INIT', 'FCT', 'M', 'PAR', 'FINAL',
-                        'VALID', 'A', 'MIN', 'MAX'
+  CSTR_FIELD_NAMES_V02  :  FieldStringArray = (
+                        'NR',
+                        'T',
+                        'INIT',
+                        'FCT',
+                        'M',
+                        'PAR',
+                        'FINAL',
+                        'VALID',
+                        'A',
+                        'MIN',
+                        'MAX'
                       );
 
-  CSTR_FIELD_KEYS_V03  :  FieldStringArray = (
-                        'NR', 'T', 'INIT', 'FCT', 'M', 'PAR', 'FINAL',
-                        'TOL', 'A', 'MIN', 'MAX'
+  CSTR_FIELD_NAMES_V03  :  FieldStringArray = (
+                        'NR',
+                        'T',
+                        'INIT',
+                        'FCT',
+                        'M',
+                        'PAR',
+                        'FINAL',
+                        'TOL',
+                        'A',
+                        'MIN',
+                        'MAX'
                       );
 
 implementation

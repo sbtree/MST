@@ -9,7 +9,7 @@
 unit FuncMat;
 
 interface
-uses Classes, FunctionBase, TextMessage;
+uses Classes, FuncBase, TextMessage;
 type
   EvaluateStr = class(TFunctionBase)
   public

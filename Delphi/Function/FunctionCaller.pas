@@ -1,7 +1,7 @@
 unit FunctionCaller;
 
 interface
-uses Classes,TextMessage, FunctionBase, GenType;
+uses Classes,TextMessage, FuncBase, GenType;
 type
   //define prototype of script functions
   //ScriptFunction = function(const par: string): boolean of object;
