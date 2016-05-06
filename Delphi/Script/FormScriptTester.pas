@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ScriptReader;
+  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage;
 
 type
   TfrmScriptTester = class(TForm)
@@ -16,6 +16,11 @@ type
     btnOpenScript: TButton;
     btnReadScript: TButton;
     btnSaveScript: TButton;
+    memInfo: TMemo;
+    txtField: TEdit;
+    btnGetField: TButton;
+    btnPrevious: TButton;
+    btnNext: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnGetStepByNrClick(Sender: TObject);
@@ -23,9 +28,13 @@ type
     procedure btnOpenScriptClick(Sender: TObject);
     procedure btnReadScriptClick(Sender: TObject);
     procedure btnSaveScriptClick(Sender: TObject);
+    procedure btnGetFieldClick(Sender: TObject);
+    procedure btnPreviousClick(Sender: TObject);
+    procedure btnNextClick(Sender: TObject);
   private
     t_sreader : TScriptReader;
-    { Private-Deklarationen }
+    t_tstep   : TTestStep;
+    t_messenger: TTextMessenger;
   public
     { Public-Deklarationen }
   end;
@@ -36,26 +45,59 @@ var
 implementation
 
 {$R *.dfm}
-uses StepContainer, StepDescriptor;
+uses StepContainer;
+
+procedure TfrmScriptTester.btnGetFieldClick(Sender: TObject);
+var i_idx: integer; e_field: EStepField; s_fval: string;
+begin
+  t_tstep := t_sreader.StepContainer.CurrentStep();
+  if assigned(t_tstep) then begin
+    i_idx := IndexText(trim(txtField.Text), CSTR_FIELD_NAMES_V01);
+    if ((i_idx >= Ord(Low(EStepField))) and (i_idx <= Ord(High(EStepField)))) then begin
+      e_field := EStepField(i_idx);
+      s_fval := t_tstep.StepFields[e_field].InputString;
+      t_messenger.AddMessage('Field value: ' + CSTR_FIELD_NAMES_V01[e_field] + '=' + s_fval);
+    end else
+      t_messenger.AddMessage('Field is NOT found');
+  end else
+    t_messenger.AddMessage('Please select a test step, firstly.');
+end;
 
 procedure TfrmScriptTester.btnGetStepByIndexClick(Sender: TObject);
-var t_tstep: TTestStep; i_idx: integer;
+var i_idx: integer;
 begin
-  t_sreader.ReadFromFile(trim(txtScriptFile.Text));
-  i_idx := StrToInt(trim(txtStepIndex.Text));
-  t_tstep := t_sreader.StepContainer.GetStepByIndex(i_idx);
-  if (t_tstep <> Nil) then ShowMessage('Nr=' + t_tstep.StepFields[SF_NR].InputString + ', T=' + t_tstep.StepFields[SF_T].InputString)
-  else ShowMessage('Index=' + txtStepIndex.Text + ' is NOT found');
+  if (t_sreader.StepContainer.StepCount > 0) then begin
+    i_idx := StrToInt(trim(txtStepIndex.Text));
+    t_tstep := t_sreader.StepContainer.GetStepByIndex(i_idx);
+    if assigned(t_tstep) then
+      t_messenger.AddMessage(format('Current step (Index=%d): Nr=%s', [i_idx, t_tstep.StepFields[SF_NR].InputString]))
+    else
+      t_messenger.AddMessage(format('Index=%d is NOT found.', [i_idx]));
+  end else
+    t_messenger.AddMessage('No step is loaded.');
 end;
 
 procedure TfrmScriptTester.btnGetStepByNrClick(Sender: TObject);
-var t_tstep: TTestStep; s_nr: string;
+var s_nr: string;
 begin
-  t_sreader.ReadFromFile(trim(txtScriptFile.Text));
-  s_nr := trim(txtStepNr.Text);
-  t_tstep := t_sreader.StepContainer.GetStepByNr(s_nr);
-  if (t_tstep <> Nil) then ShowMessage('Nr=' + s_nr + ', T=' + t_tstep.StepFields[SF_T].InputString)
-  else ShowMessage('Nr=' + s_nr + ' is NOT found');
+  if (t_sreader.StepContainer.StepCount > 0) then begin
+    s_nr := trim(txtStepNr.Text);
+    t_tstep := t_sreader.StepContainer.GetStepByNr(s_nr);
+    if assigned(t_tstep) then
+      t_messenger.AddMessage('Current step: Nr=' + s_nr + ', T=' + t_tstep.StepFields[SF_T].InputString)
+    else
+      t_messenger.AddMessage('Nr=' + s_nr + ' is NOT found');
+  end else
+    t_messenger.AddMessage('No step is loaded.');
+end;
+
+procedure TfrmScriptTester.btnNextClick(Sender: TObject);
+begin
+  t_tstep := t_sreader.StepContainer.NextStep();
+  if assigned(t_tstep) then
+    t_messenger.AddMessage('Next step: Nr=' + t_tstep.StepFields[SF_NR].InputString)
+  else
+    t_messenger.AddMessage('Next step is NOT valid.');
 end;
 
 procedure TfrmScriptTester.btnOpenScriptClick(Sender: TObject);
@@ -72,9 +114,21 @@ begin
   t_dialog.Free; // Free up the dialog
 end;
 
+procedure TfrmScriptTester.btnPreviousClick(Sender: TObject);
+begin
+  t_tstep := t_sreader.StepContainer.PreviousStep();
+  if assigned(t_tstep) then
+    t_messenger.AddMessage('Previous step: Nr=' + t_tstep.StepFields[SF_NR].InputString)
+  else
+    t_messenger.AddMessage('Previous is NOT found');
+end;
+
 procedure TfrmScriptTester.btnReadScriptClick(Sender: TObject);
 begin
-  t_sreader.ReadFromFile(trim(txtScriptFile.Text), true);
+  if (t_sreader.ReadFromFile(trim(txtScriptFile.Text), true)) then
+    t_messenger.AddMessage(format('The test Script is loaded successfully: %d steps', [t_sreader.StepContainer.StepCount]))
+  else
+    t_messenger.AddMessage('Failed to read file!');
 end;
 
 procedure TfrmScriptTester.btnSaveScriptClick(Sender: TObject);
@@ -83,17 +137,21 @@ begin
   s_fsave := trim(txtScriptFile.Text);
   s_ext := RightStr(s_fsave, 4);
   s_fsave := LeftStr(s_fsave, length(s_fsave) - 4) + '_new' + s_ext;
-  if t_sreader.SaveToFile(s_fsave) then ShowMessage('Script is save in "' + s_fsave + '".' );
+  if t_sreader.SaveToFile(s_fsave) then t_messenger.AddMessage('Script is save in "' + s_fsave + '".' )
+  else t_messenger.AddMessage('Failed to save the script into file.' )
 end;
 
 procedure TfrmScriptTester.FormCreate(Sender: TObject);
 begin
   t_sreader := TScriptReader.Create();
+  t_messenger := TTextMessenger.Create();
+  t_messenger.Messages := memInfo.Lines;
 end;
 
 procedure TfrmScriptTester.FormDestroy(Sender: TObject);
 begin
   t_sreader.Free();
+  t_messenger.Free();
 end;
 
 end.

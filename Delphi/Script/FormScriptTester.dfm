@@ -2,7 +2,7 @@ object frmScriptTester: TfrmScriptTester
   Left = 0
   Top = 0
   Caption = 'ScriptTester'
-  ClientHeight = 301
+  ClientHeight = 330
   ClientWidth = 562
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,8 +16,8 @@ object frmScriptTester: TfrmScriptTester
   PixelsPerInch = 96
   TextHeight = 13
   object btnGetStepByNr: TButton
-    Left = 63
-    Top = 262
+    Left = 62
+    Top = 298
     Width = 90
     Height = 25
     Caption = 'GetStepByNr'
@@ -25,16 +25,16 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnGetStepByNrClick
   end
   object txtStepNr: TEdit
-    Left = 8
-    Top = 264
+    Left = 7
+    Top = 300
     Width = 49
     Height = 21
     TabOrder = 1
     Text = '895.68'
   end
   object btnGetStepByIndex: TButton
-    Left = 63
-    Top = 233
+    Left = 62
+    Top = 267
     Width = 90
     Height = 25
     Caption = 'GetStepByIndex'
@@ -42,24 +42,24 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnGetStepByIndexClick
   end
   object txtStepIndex: TEdit
-    Left = 8
-    Top = 235
+    Left = 7
+    Top = 269
     Width = 49
     Height = 21
     TabOrder = 3
     Text = '0'
   end
   object txtScriptFile: TEdit
-    Left = 8
-    Top = 8
+    Left = 7
+    Top = 240
     Width = 353
     Height = 21
     TabOrder = 4
     Text = 'PST_BT_FT_PS_liste.txt'
   end
   object btnOpenScript: TButton
-    Left = 366
-    Top = 6
+    Left = 365
+    Top = 238
     Width = 27
     Height = 25
     Caption = '...'
@@ -67,8 +67,8 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnOpenScriptClick
   end
   object btnReadScript: TButton
-    Left = 399
-    Top = 6
+    Left = 398
+    Top = 238
     Width = 75
     Height = 25
     Caption = 'ReadScript'
@@ -76,12 +76,54 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnReadScriptClick
   end
   object btnSaveScript: TButton
-    Left = 480
-    Top = 6
+    Left = 479
+    Top = 238
     Width = 75
     Height = 25
     Caption = 'SaveScript'
     TabOrder = 7
     OnClick = btnSaveScriptClick
+  end
+  object memInfo: TMemo
+    Left = 8
+    Top = 8
+    Width = 546
+    Height = 224
+    TabOrder = 8
+  end
+  object txtField: TEdit
+    Left = 399
+    Top = 299
+    Width = 74
+    Height = 21
+    TabOrder = 9
+    Text = 'T'
+  end
+  object btnGetField: TButton
+    Left = 479
+    Top = 297
+    Width = 75
+    Height = 25
+    Caption = 'GetField'
+    TabOrder = 10
+    OnClick = btnGetFieldClick
+  end
+  object btnPrevious: TButton
+    Left = 191
+    Top = 297
+    Width = 75
+    Height = 25
+    Caption = 'Previous'
+    TabOrder = 11
+    OnClick = btnPreviousClick
+  end
+  object btnNext: TButton
+    Left = 285
+    Top = 297
+    Width = 75
+    Height = 25
+    Caption = 'Next'
+    TabOrder = 12
+    OnClick = btnNextClick
   end
 end

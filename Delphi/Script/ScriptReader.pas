@@ -96,7 +96,7 @@ type
                 );
   PParseState = ^EParseState;
 
-  TScriptReader = class(TTextMessenger)
+  TScriptReader = class
   type
     StateEntry = record
       e_state:EParseState;//save state
@@ -118,15 +118,17 @@ type
     t_fstemp:   TDateTime;    //save time stemp of last changing for s_srcfile
     s_curtext:  string;       //to save current step text or line of 'var=value', which is parsed
     b_allowvar: boolean;      //indicates if a variable is allowed with the format 'var=value' till now
-    t_fnchecker:TFieldNameChecker; // a help object for parsing
+    t_fnchecker:TFieldNameChecker;  // a help object for parsing
     t_fvchecker:TFieldValueChecker; // a help object for parsing
     e_lastfield:EStepField;   //to save the index of last field, which is found in reading the script
 
     t_tsteps:   TStringList;  //list of test steps without any useless char
-    t_container:TStepContainer;   //a container to save steps
-    a_fieldvals:FieldStringArray; //an array to save field values of current test step
+    t_container:TStepContainer;     //a container to save steps
+    a_fieldvals:FieldStringArray;   //an array to save field values of current test step
+    t_messenger:TTextMessenger;     //to reference a extern messenger, see property Messenger
 
   protected
+    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure PushState(const state: EParseState);
     procedure PopState();
     procedure ClearStates();
@@ -137,6 +139,7 @@ type
 
   public
     property StepContainer: TStepContainer read t_container;
+    property Messenger: TTextMessenger read t_messenger write t_messenger;
 
     constructor Create();
     destructor Destroy(); override;
@@ -173,6 +176,11 @@ const
 
 implementation
 uses SysUtils, StrUtils, FuncBase;
+
+procedure TScriptReader.AddMessage(const text: string; const level: EMessageLevel);
+begin
+  if assigned(t_messenger) then t_messenger.AddMessage(text, 'ScriptReader', level);
+end;
 
 // =============================================================================
 //    Description  : push a EParseState into state stack

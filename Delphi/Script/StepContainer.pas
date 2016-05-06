@@ -8,11 +8,11 @@ type
   protected
     t_steps:  TObjectList;  //to save test steps
     t_stepnrs:TStrings;     //auxiliary variable, to save the step number matching index of t_steps;
+    i_curstep:integer;      //index of step, to indicate current step, which is now selected, -1 means no selection
     t_cases:  TObjectList;  //to save test cases
 //    t_nicases:THashedStringList; //to save pairs of case-nr and case index for searching
 //    t_nicids: THashedStringList; //to save pairs of case-nr and case identifer for searching
   protected
-
   public
     constructor Create();
     destructor  Destroy(); override;
@@ -20,6 +20,9 @@ type
     function  CreateStep(const fields: FieldStringArray): boolean;
     function  GetStepByIndex(const idx: integer): TTestStep;
     function  GetStepByNr(const nr: string): TTestStep;
+    function  PreviousStep(): TTestStep;
+    function  CurrentStep(): TTestStep;
+    function  NextStep(): TTestStep;
     function  StepCount(): integer;
     procedure Clear();
     procedure Assign(const source: TStepContainer);
@@ -35,6 +38,7 @@ begin
   inherited Create();
   t_steps := TObjectList.Create();
   t_stepnrs := TStringList.Create();
+  i_curstep := -1;
   t_cases := TObjectList.Create();
 end;
 
@@ -61,8 +65,8 @@ end;
 
 function  TStepContainer.GetStepByIndex(const idx: integer): TTestStep;
 begin
-  result := nil;
-  if ((idx >= 0) and (idx < t_steps.Count)) then result := TTestStep(t_steps.Items[idx]);
+  if ((idx >= 0) and (idx < t_steps.Count)) then i_curstep := idx;
+  result := CurrentStep();
 end;
 
 function  TStepContainer.GetStepByNr(const nr: string): TTestStep;
@@ -70,6 +74,24 @@ var i_idx: integer;
 begin
   i_idx := t_stepnrs.IndexOf(nr);
   result := GetStepByIndex(i_idx);
+end;
+
+function  TStepContainer.PreviousStep(): TTestStep;
+begin
+  if (i_curstep >= 0) then dec(i_curstep);
+  result := CurrentStep();
+end;
+
+function  TStepContainer.CurrentStep(): TTestStep;
+begin
+  if ((i_curstep >= 0) and (i_curstep < t_steps.Count)) then result := TTestStep(t_steps.Items[i_curstep])
+  else result := Nil;
+end;
+
+function  TStepContainer.NextStep(): TTestStep;
+begin
+  if (i_curstep < t_steps.Count) then inc(i_curstep);
+  result := CurrentStep();
 end;
 
 function  TStepContainer.StepCount(): integer;
@@ -81,6 +103,7 @@ procedure TStepContainer.Clear();
 begin
   t_steps.Clear();
   t_stepnrs.Clear();
+  i_curstep := -1;
   t_cases.Clear();
   //t_nicases.Clear();
   //t_nicids.Clear();
