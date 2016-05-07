@@ -65,7 +65,8 @@ end;
 
 function  TStepContainer.GetStepByIndex(const idx: integer): TTestStep;
 begin
-  if ((idx >= 0) and (idx < t_steps.Count)) then i_curstep := idx;
+  if ((idx >= 0) and (idx < t_steps.Count)) then i_curstep := idx
+  else i_curstep := -1;
   result := CurrentStep();
 end;
 

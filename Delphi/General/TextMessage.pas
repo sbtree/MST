@@ -69,8 +69,9 @@ procedure TTextMessenger.AddMessage(const text: string; const sender: string; co
 var s_msg: string;
 begin
   if ((level >= e_threshold) and (text <> '')) then begin
-    s_msg := '[' + CSTR_MLKEYS[level] + ']' + text;
-    if (sender <> '' ) then s_msg := '[' + sender + ']' + s_msg;
+    if (sender <> '' ) then s_msg := '[' + sender + ']' + text
+    else s_msg := text;
+    s_msg := '[' + CSTR_MLKEYS[level] + ']' + s_msg;
     if b_tstamp then s_msg := '[' + DateTimeToStr(Now()) + ']: ' + s_msg;
     t_msgintern.Add(s_msg);
     if (t_msgextern <> t_msgintern) then t_msgextern.Add(s_msg);

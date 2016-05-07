@@ -77,7 +77,7 @@
 unit ScriptReader;
 
 interface
-uses Classes, Contnrs, StepDescriptor, StepChecker, StepContainer, TextMessage;
+uses Classes, Contnrs, StepDescriptor, StepChecker, StepContainer, TextMessage, TypInfo;
 
 type
   EParseState = (
@@ -85,7 +85,7 @@ type
                 PS_VARNAME,       // in the string before '=' of the pattern 'VAR=VALUE'
                 PS_VARVAL,        // in the string after '=' of the pattern 'VAR=VALUE'
                 PS_STEP,          // text starts with open bracket '(' for a step
-                PS_FIELDKEY,      // e.g. T of T:xxxx
+                PS_FIELDNAME,     // e.g. T of T:xxxx
                 PS_FIELDVAL,      // e.g. xxxx of T:xxxx
                 PS_SQUOTATION,    // text starts with single quote mark '
                 PS_DQUOTATION,    // text starts with single quote mark "
@@ -107,6 +107,7 @@ type
 
   private
     p_sentry:   PStateEntry;  //a pointer to StateEntry, auxiliary class remember
+    p_ptinfo:   PTypeInfo;    //a pointer to type info of EParseState
   protected
     e_curstate: EParseState;  //current state of the reader, identical as the state in t_sentry
     t_sentry:   StateEntry;   //current state entry, inclusive current state
@@ -139,6 +140,8 @@ type
 
   public
     property StepContainer: TStepContainer read t_container;
+    property FieldNameChecker: TFieldNameChecker read t_fnchecker;
+    property FieldValueChecker: TFieldValueChecker read t_fvchecker;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
 
     constructor Create();
@@ -177,9 +180,20 @@ const
 implementation
 uses SysUtils, StrUtils, FuncBase;
 
+// =============================================================================
+//    Description  : add a message into t_messenger if it exists
+//    Parameter    : text, text of the message
+//                   level, level of the message (see EMessageLevel in TextMessage)
+//    Return       : --
+//    First author : 2016-05-06 /bsu/
+//    History      :
+// =============================================================================
 procedure TScriptReader.AddMessage(const text: string; const level: EMessageLevel);
 begin
-  if assigned(t_messenger) then t_messenger.AddMessage(text, 'ScriptReader', level);
+  if assigned(t_messenger) then begin
+    if (level in [ML_INFO, ML_WARNING]) then t_messenger.AddMessage(text, ClassName, level)
+    else t_messenger.AddMessage(format('[r:%d, c:%d, s:%s] %s', [i_rowindex, i_colindex, GetEnumName(p_ptinfo, integer(e_curstate)), text]), ClassName, level);
+  end;
 end;
 
 // =============================================================================
@@ -203,7 +217,7 @@ begin
 end;
 
 // =============================================================================
-//    Description  : pop a CheckerState from the state stack
+//    Description  : pop a EParseState from the state stack
 //    Parameter    : --
 //    Return       : --
 //    First author : 2014-08-27 /bsu/
@@ -219,6 +233,13 @@ begin
   dispose(p_sentry);
 end;
 
+// =============================================================================
+//    Description  : clear the state stack and set current state with PS_IDLE
+//    Parameter    : --
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
 procedure TScriptReader.ClearStates();
 begin
   while (t_states.Count > 0) do begin
@@ -233,25 +254,52 @@ begin
   i_colindex := t_sentry.i_col;
 end;
 
+// =============================================================================
+//    Description  : set a_fieldvals with empty string
+//    Parameter    : --
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
 procedure TScriptReader.ResetFieldValues();
 var i: EStepField;
 begin
   for i := Low(EStepField) to High(EStepField) do a_fieldvals[i] := '';
 end;
 
+// =============================================================================
+//    Description  : check if the field name is valid or if it is used more than
+//                   once in one step.
+//    Parameter    : name, field name
+//    Return       : true, if the field name is valid.
+//                   false, otherwise
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
 function  TScriptReader.CheckFieldName(const name: string): boolean;
 begin
   result := t_fnchecker.FindName(name, e_lastfield);
   if result then begin
-    if (t_fnchecker.IsNameUsed(e_lastfield)) then result := false
-    else t_fnchecker.SetNameUsed(e_lastfield, true);
-  end;
+    if (t_fnchecker.IsNameUsed(e_lastfield)) then begin
+      AddMessage(format('Dopplicated field name (%s).', [name]),ML_ERROR);
+      result := false
+    end else  t_fnchecker.SetNameUsed(e_lastfield, true);
+  end else AddMessage(format('Invalid field name (%s).', [name]),ML_ERROR);
 end;
 
+// =============================================================================
+//    Description  : check field value if it is grammatically valid
+//    Parameter    : val, value of the corresponding field
+//    Return       : true, if the value is valid
+//                   false, otherwise
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
 function  TScriptReader.CheckFieldValue(const val: string): boolean;
 begin
   result := t_fvchecker.CheckField(e_lastfield, val);
-  if result then a_fieldvals[e_lastfield] := val;
+  if result then a_fieldvals[e_lastfield] := val
+  else AddMessage(format('Invalid value (%s) for the field (%s).', [val, t_fnchecker.FieldName(e_lastfield)]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -263,6 +311,7 @@ end;
 //    History      :
 // =============================================================================
 function  TScriptReader.ReadChar(const curch, nextch: char): boolean;
+const CSTR_UNEXCEPTED: string = 'Unexcepted char';
 begin
 //[PS_IDLE, PS_VARNAME, PS_VARVAL, PS_STEP, PS_FIELDKEY, PS_FIELDVAL, PS_SQUOTATION, PS_DQUOTATION, PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT, PS_FIELDGROUP]
   result := true;
@@ -277,26 +326,23 @@ begin
         PushState(PS_VARVAL);
       end else begin  //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDGROUP]
         result := false;
-        //todo: handle error
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
   CCHR_COLON: begin
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
-      else if (e_curstate = PS_FIELDKEY) then begin
+      else if (e_curstate = PS_FIELDNAME) then begin
         if CheckFieldName(trim(s_curtoken)) then begin
           PopState();
           s_curtext := s_curtext + trim(s_curtoken) + curch;
           s_curtoken := '';
           PushState(PS_FIELDVAL);
-        end else begin
-          result := false;
-          //todo: handle error
-        end;
+        end else result := false; // error is already handled in CheckFieldName
       end else begin  //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDVAL, PS_FIELDGROUP]
         result := false;
-        //todo: handle error
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -308,21 +354,18 @@ begin
           PopState();
           s_curtext := s_curtext + a_fieldvals[e_lastfield] + curch;
           s_curtoken := '';
-        end else begin
-          result := false;
-          //todo: handle error
-        end;
+        end else  result := false; // error is already handled in CheckFieldValue
       end else if (e_curstate = PS_FIELDGROUP) then begin
         if trim(s_curtoken) = '' then begin
           s_curtext := s_curtext + curch;
           PopState(); PopState();
         end else begin
           result := false;
-          //todo: handle error
+          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY]
         result := false;
-        //todo: handle error
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -333,7 +376,7 @@ begin
         //todo:
       end else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        //todo: handle error
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -344,7 +387,7 @@ begin
         //todo:
       end else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        //todo: handle error
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -356,7 +399,7 @@ begin
         else if (e_curstate in [PS_VARVAL, PS_FIELDVAL]) then PushState(PS_SQUOTATION);
       end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        //todo: handle error
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -368,7 +411,7 @@ begin
         else if (e_curstate in [PS_VARVAL, PS_FIELDVAL]) then PushState(PS_DQUOTATION);
       end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        //todo: handle error
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -386,8 +429,8 @@ begin
             b_allowvar := false;
           end else begin
             result := false;
-            //todo: handle error
-          end; 
+            AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+          end;
         end else if (e_curstate = PS_FIELDVAL) then begin
           if (trim(s_curtoken) = '') then begin
             PushState(PS_FIELDGROUP);
@@ -396,7 +439,7 @@ begin
         end else if (e_curstate = PS_VARVAL) then s_curtoken := s_curtoken + curch
         else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
           result := false;
-          //todo: handle error
+          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end;
     end;
@@ -412,7 +455,7 @@ begin
           //if (e_curstate = PS_FIELDGROUP) then PopState();
         end else begin
           result := false;
-          //todo: handle error
+          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end else if (e_curstate in [PS_FIELDGROUP, PS_STEP]) then begin
         PopState();
@@ -428,11 +471,11 @@ begin
           ResetFieldValues();
         end else if (e_curstate <> PS_FIELDVAL) then begin
           result := false;
-          //todo: handle error
+          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end else begin   //[PS_IDLE, PS_VARNAME, PS_FIELDKEY]
         result := false;
-        //todo: handle error
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -448,8 +491,8 @@ begin
       else if (e_curstate = PS_BRACECOMMENT) then PopState()
       else begin  //[PS_IDLE, PS_STEP, PS_VARNAME, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        //todo: handle error
-      end; 
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+      end;
     end;
   end;
   CCHR_SLASH: begin
@@ -464,8 +507,8 @@ begin
         if (e_curstate in [PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
         else begin //[PS_IDLE, PS_STEP, PS_VARNAME, PS_FIELDKEY, PS_FIELDGROUP]
           result := false;
-          //todo: handle error
-        end; 
+          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        end;
       end;
     end;
   end;
@@ -479,7 +522,7 @@ begin
         end;
       end else begin  //[PS_IDLE, PS_STEP, PS_VARNAME, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        //todo: handle error
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -496,13 +539,13 @@ begin
         end;
       end else begin  //[PS_VARNAME, PS_SQUOTATION, PS_DQUOTATION, PS_FIELDKEY, PS_FIELDVAL]
         result := false;
-        //todo: handle error
+        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
   else begin //other chars
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACECOMMENT, PS_BRACKETCOMMENT])) then begin
-      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARNAME, PS_VARVAL, PS_FIELDKEY, PS_FIELDVAL]) then
+      if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARNAME, PS_VARVAL, PS_FIELDNAME, PS_FIELDVAL]) then
         s_curtoken := s_curtoken + curch
       else begin //[PS_IDLE, PS_STEP, PS_FIELDGROUP]
         if (curch in CSET_FIRST_CHARS) then begin
@@ -513,15 +556,15 @@ begin
               PushState(PS_VARNAME);
             end else begin
               result := false;
-              //todo: handle error
+              AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
             end;
           end else begin //[PS_STEP, PS_FIELDGROUP]
             s_curtoken := s_curtoken + curch;
-            PushState(PS_FIELDKEY);
+            PushState(PS_FIELDNAME);
           end;
         end else if (not (curch in CSET_BLANK_CHARS)) then begin
           result := false;
-          //todo: unexpected char in current state
+          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end;
     end;
@@ -540,6 +583,7 @@ constructor TScriptReader.Create();
 begin
 	inherited Create;
   e_curstate := PS_IDLE;
+  p_ptinfo := TypeInfo(EParseState);
   t_sentry.e_state := e_curstate;
   t_sentry.i_row := 0;
   t_sentry.i_col := 0;
@@ -570,6 +614,13 @@ begin
   t_container.Free();
 end;
 
+// =============================================================================
+//    Description  : clear all information and set all variables into initial state
+//    Parameter    : --
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
 procedure TScriptReader.Clear();
 begin
   e_curstate := PS_IDLE;
@@ -581,8 +632,17 @@ begin
   b_allowvar := true;
   t_tsteps.Clear();
   t_container.Clear();
+  t_fnchecker.ResetUnused();
 end;
 
+// =============================================================================
+//    Description  : read test step from a line text
+//    Parameter    : srctext, text of test script
+//                   blast, indicate if this text is the last line
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
 function TScriptReader.ReadFromText(const srctext: string; const blast: boolean): boolean;
 var i_len, i_lensrc: integer; s_text: string;
 begin
@@ -606,6 +666,13 @@ begin
   end;
 end;
 
+// =============================================================================
+//    Description  : read test steps from a string list
+//    Parameter    : srclist, string list of test script
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
 function TScriptReader.ReadFromList(const srclist: TStringList): boolean;
 var i: integer;
 begin
@@ -621,10 +688,24 @@ begin
       Inc(i_rowindex);
       result := ReadFromText(srclist[srclist.Count - 1], true);
     end;
-    if result then result := (t_tsteps.Count > 0);
-  end;
+    if result then begin
+      if (t_tsteps.Count > 0) then
+        AddMessage(format('%d variable(s) and %d step(s) are loaded.', [t_tsteps.Count - t_container.StepCount, t_container.StepCount]), ML_INFO)
+      else AddMessage('No valid line is loaded from the test script.', ML_WARNING);
+    end;
+  end else AddMessage('Empty script.', ML_WARNING);
 end;
 
+// =============================================================================
+//    Description  : read test steps from a script file. If the script is loaded
+//                   currently and the file is not changed, the reading is depended
+//                   on the second parameter
+//    Parameter    : srcfile, file name of test script
+//                   bforce, indicates if the loading is forced to be done
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
 function TScriptReader.ReadFromFile(const srcfile: string; const bforce: boolean ): boolean;
 var t_lines: TStringList; b_update: boolean; t_fdatetime: TDateTime;
 begin
@@ -639,14 +720,23 @@ begin
       t_lines := TStringList.Create();
       t_lines.LoadFromFile(srcfile);
       result := ReadFromList(t_lines);
-      s_srcfile := srcfile;
-      if result then t_fstemp := t_fdatetime
-      else t_fstemp := -1;
+      if result then begin
+        s_srcfile := srcfile;
+        if result then t_fstemp := t_fdatetime
+        else t_fstemp := -1;
+      end else AddMessage(format('Failed to read file(%s).', [srcfile]), ML_WARNING);;
       t_lines.Free();
     end;
-  end;
+  end else AddMessage(format('File is NOT found (%s).', [srcfile]), ML_WARNING);
 end;
 
+// =============================================================================
+//    Description  : save current test steps (only filed values) into a file
+//    Parameter    : destfile, file name to save
+//    Return       : --
+//    First author : 2014-08-27 /bsu/
+//    History      :
+// =============================================================================
 function TScriptReader.SaveToFile(const destfile: string): boolean;
 var i: integer; s_line: string; j:EStepField;
     t_steps: TStringList; t_step: TTestStep; t_field: TStepField;
@@ -666,8 +756,8 @@ begin
   end;
   t_steps.SaveToFile(destfile);
   t_steps.Free();
-  //t_tsteps.SaveToFile(destfile); //
   result := true;
+  AddMessage(format('Saved successfully (%s)', [destfile]), ML_INFO);
 end;
 
 end.

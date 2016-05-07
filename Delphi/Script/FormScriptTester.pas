@@ -48,13 +48,11 @@ implementation
 uses StepContainer;
 
 procedure TfrmScriptTester.btnGetFieldClick(Sender: TObject);
-var i_idx: integer; e_field: EStepField; s_fval: string;
+var e_field: EStepField; s_fval: string;
 begin
   t_tstep := t_sreader.StepContainer.CurrentStep();
   if assigned(t_tstep) then begin
-    i_idx := IndexText(trim(txtField.Text), CSTR_FIELD_NAMES_V01);
-    if ((i_idx >= Ord(Low(EStepField))) and (i_idx <= Ord(High(EStepField)))) then begin
-      e_field := EStepField(i_idx);
+    if t_sreader.FieldNameChecker.FindName(trim(txtField.Text), e_field) then begin
       s_fval := t_tstep.StepFields[e_field].InputString;
       t_messenger.AddMessage('Field value: ' + CSTR_FIELD_NAMES_V01[e_field] + '=' + s_fval);
     end else
@@ -125,10 +123,7 @@ end;
 
 procedure TfrmScriptTester.btnReadScriptClick(Sender: TObject);
 begin
-  if (t_sreader.ReadFromFile(trim(txtScriptFile.Text), true)) then
-    t_messenger.AddMessage(format('The test Script is loaded successfully: %d steps', [t_sreader.StepContainer.StepCount]))
-  else
-    t_messenger.AddMessage('Failed to read file!');
+  t_sreader.ReadFromFile(trim(txtScriptFile.Text), true);
 end;
 
 procedure TfrmScriptTester.btnSaveScriptClick(Sender: TObject);
@@ -137,8 +132,7 @@ begin
   s_fsave := trim(txtScriptFile.Text);
   s_ext := RightStr(s_fsave, 4);
   s_fsave := LeftStr(s_fsave, length(s_fsave) - 4) + '_new' + s_ext;
-  if t_sreader.SaveToFile(s_fsave) then t_messenger.AddMessage('Script is save in "' + s_fsave + '".' )
-  else t_messenger.AddMessage('Failed to save the script into file.' )
+  t_sreader.SaveToFile(s_fsave);
 end;
 
 procedure TfrmScriptTester.FormCreate(Sender: TObject);
@@ -146,6 +140,7 @@ begin
   t_sreader := TScriptReader.Create();
   t_messenger := TTextMessenger.Create();
   t_messenger.Messages := memInfo.Lines;
+  t_sreader.Messenger := t_messenger;
 end;
 
 procedure TfrmScriptTester.FormDestroy(Sender: TObject);

@@ -13,8 +13,8 @@
 // =============================================================
    VERSION=2.0.100012.2.3
    RAZOR_REVISION=$Revision: 1.1 $
-   
-(*
+(*   
+
      Nr.       Titel                                       Relais_on                             Funktion           Mass-   Parameter                  Relais_off                          Toleranzen
                                                                                                                     einheit
     ----------+-------------------------------------------+-------------------------------------+------------------+-------+--------------------------+-----------------------------------+--------------------------------------------------- 
@@ -35,22 +35,22 @@ Fkt:Entry;             M: '';    Par:'Standard-Test';                 R_off:''; 
     (Nr:  11.99; T:'Finished';                                             R_on:'';                              Fkt:nil;               M: '';    Par:'';                              R_off:'128';                        Tol: ( A:'';                       Min: 0;   Max:  0   ); ),
 
  
- // 12V_supply voltage
+{ // 12V_supply voltage
     (Nr:  21.00; T:'Test voltage +12V on TP XY15';                         R_on:'';                              Fkt:LabelFkt;          M: '';    Par:'NIO-Loop:1';                    R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
     (Nr: -21.02; T:'Supply +30V_int turn on';                              R_on:'107,@SonderRel_01,129,111,131'; Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
     (Nr:  21.05; T:'Test DMM-measuringbus without supply voltage';         R_on:'';                              Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
     (Nr:  21.06; T:'Measurement +12V [102,128]';                           R_on:'102,128';                       Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'102,128';                    Tol: ( A:'';                       Min: 10.8; Max:  13.3); ),
     (Nr:  21.99; T:'Finished';                                             R_on:'';                              Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
-                                                                                                                                                                                                                                                    
+}                                                                                                                                                                                                                                                    
                                                                                                                                                                                                                                                    
                                                                                                                                                                                                                                                    
 // 5V_Supplysspannung                                                                                                                                                                                                                           
-    (Nr:  31.00; T:'Test voltage +5V on X902.5';                           R_on:'';                              Fkt:LabelFkt;          M: '';    Par:'NIO-Loop:1';                    R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+(*    (Nr:  31.00; T:'Test voltage +5V on X902.5';                           R_on:'';                              Fkt:LabelFkt;          M: '';    Par:'NIO-Loop:1';                    R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
     (Nr: -31.02; T:'Supply +30V_int turn on';                              R_on:'107,@SonderRel_01,129,111,131'; Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
     (Nr:  31.05; T:'Test DMM-measuringbus without supply voltage';         R_on:'';                              Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
     (Nr:  31.06; T:'Measurement +5V [103,128]';                            R_on:'103,128';                       Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'103,128';                    Tol: ( A:'';                       Min: 4.75; Max:  5.5 ); ),
     (Nr:  31.99; T:'Finished';                                             R_on:'';                              Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
-                                                                                                                                                                                                                                                              
+*)                                                                                                                                                                                                                                                              
                                                                                                                                                                                                                                                               
                                                                                                                                                                                                                                                               
 // 3.3V_supply voltage
