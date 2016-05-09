@@ -17,7 +17,7 @@ object frmScriptTester: TfrmScriptTester
   TextHeight = 13
   object btnGetStepByNr: TButton
     Left = 62
-    Top = 298
+    Top = 270
     Width = 90
     Height = 25
     Caption = 'GetStepByNr'
@@ -26,7 +26,7 @@ object frmScriptTester: TfrmScriptTester
   end
   object txtStepNr: TEdit
     Left = 7
-    Top = 300
+    Top = 272
     Width = 49
     Height = 21
     TabOrder = 1
@@ -34,7 +34,7 @@ object frmScriptTester: TfrmScriptTester
   end
   object btnGetStepByIndex: TButton
     Left = 62
-    Top = 267
+    Top = 297
     Width = 90
     Height = 25
     Caption = 'GetStepByIndex'
@@ -43,7 +43,7 @@ object frmScriptTester: TfrmScriptTester
   end
   object txtStepIndex: TEdit
     Left = 7
-    Top = 269
+    Top = 299
     Width = 49
     Height = 21
     TabOrder = 3
@@ -92,16 +92,16 @@ object frmScriptTester: TfrmScriptTester
     TabOrder = 8
   end
   object txtField: TEdit
-    Left = 399
-    Top = 299
+    Left = 205
+    Top = 302
     Width = 74
     Height = 21
     TabOrder = 9
     Text = 'T'
   end
   object btnGetField: TButton
-    Left = 479
-    Top = 297
+    Left = 285
+    Top = 300
     Width = 75
     Height = 25
     Caption = 'GetField'
@@ -109,8 +109,8 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnGetFieldClick
   end
   object btnPrevious: TButton
-    Left = 191
-    Top = 297
+    Left = 204
+    Top = 269
     Width = 75
     Height = 25
     Caption = 'Previous'
@@ -119,7 +119,7 @@ object frmScriptTester: TfrmScriptTester
   end
   object btnNext: TButton
     Left = 285
-    Top = 297
+    Top = 269
     Width = 75
     Height = 25
     Caption = 'Next'
@@ -142,5 +142,22 @@ object frmScriptTester: TfrmScriptTester
     Caption = 'GetCase'
     TabOrder = 14
     OnClick = btnGetCaseClick
+  end
+  object txtSequence: TEdit
+    Left = 399
+    Top = 300
+    Width = 74
+    Height = 21
+    TabOrder = 15
+    Text = '10-80'
+  end
+  object btnSequence: TButton
+    Left = 479
+    Top = 297
+    Width = 75
+    Height = 25
+    Caption = 'GetSequence'
+    TabOrder = 16
+    OnClick = btnSequenceClick
   end
 end

@@ -5,16 +5,19 @@ uses Classes, Contnrs, IniFiles, StepDescriptor;
 
 type
   TStepGroup = class;
+  TIndexSet = set of byte;
   TStepContainer = class
   protected
-    t_steps:  TObjectList;  //to save test steps
-    t_stepnrs:TStrings;     //auxiliary variable, to save the step number matching index of t_steps;
-    i_curstep:integer;      //index of step, to indicate current step, which is now selected, -1 means no selection
-    t_cases:  TObjectList;  //to save test cases
-    t_casenrs:TStrings;     //auxiliary variable, to save the number of test case for easily searching, mathching index of t_cases
-    i_lastcnr:integer;      //to save last case number
+    t_steps:    TObjectList;  //to save test steps
+    t_stepnrs:  TStrings;     //auxiliary variable, to save the step number matching index of t_steps;
+    i_curstep:  integer;      //index of step, to indicate current step, which is now selected, -1 means no selection
+    t_cases:    TObjectList;  //to save test cases
+    t_casenrs:  TStrings;     //auxiliary variable, to save the number of test case for easily searching, mathching index of t_cases
+    i_lastcnr:  integer;      //to save last case number
+    //t_caselist: TStrings;     //to save a list of valid case numbers, used in function TestSequence
   protected
     procedure DetectCase(const stepnr:string);
+    function  IndexSet(const casenrs: string): TIndexSet;
     
   public
     constructor Create();
@@ -29,7 +32,7 @@ type
     function  StepCount(): integer;
     function  TestCaseByIndex(const caseidx: integer): TStepGroup;
     function  TestCaseByNr(const casenr: string): TStepGroup;
-    function  TestSequence(const casefrom, caseto: integer): TStepGroup;
+    function  TestSequence(const incl: string; const excl: string = ''): string;
     procedure Clear();
     procedure SaveFile(const sfile: string);
     procedure Assign(const source: TStepContainer);
@@ -39,6 +42,7 @@ type
   protected
     i_indexfrom:  integer; //index of the first step of this group in the container
     i_indexto:    integer; //index of the last step of this group in the container
+    i_groupnr:    integer; //number of the group, e.g. test case number
     t_container:  TStepContainer; //step container
   public
     constructor Create();
@@ -47,6 +51,7 @@ type
     property StepContainer: TStepContainer read t_container write t_container;
     property IndexFrom: integer read i_indexfrom write i_indexfrom;
     property IndexTo: integer read i_indexto write i_indexto;
+    property GroupNr: integer read i_groupnr write i_groupnr;
   end;
 
 implementation
@@ -63,24 +68,65 @@ begin
       if TryStrToInt(s_casenr, i_casenr) then begin
         i_curstepidx := t_steps.Count - 1;
         i_casenr := abs(i_casenr);
-        if (i_casenr = i_lastcnr) then begin
+        if (i_casenr = i_lastcnr) then begin //update indexto of last case if the case number is same as last one
           if (t_cases.Count > 0) then begin
             t_tcase := TStepGroup(t_cases.Last);
             if assigned(t_tcase) then t_tcase.IndexTo := i_curstepidx;
           end;
-        end else begin
+        end else begin  //create a new case if the case number differs from last one
           t_tcase := TStepGroup.Create();
           t_tcase.StepContainer := self;
           if (t_cases.Add(t_tcase) >= 0) then begin
+            t_tcase.GroupNr := i_casenr;
             t_tcase.IndexFrom := i_curstepidx;
             t_tcase.IndexTo := i_curstepidx;
-            t_casenrs.Add(s_casenr);
+            t_casenrs.Add(IntToStr(i_casenr));
           end else FreeAndNil(t_tcase);
           i_lastcnr := i_casenr;
         end;
       end;
     end;
     FreeAndNil(t_nrs);
+  end;
+end;
+
+function  TStepContainer.IndexSet(const casenrs: string): TIndexSet;
+var i, i_maxidx: integer; t_cstrs, t_cnrs: TStrings;
+    i_cnr, i_cnr1, i_cnr2, i_idx: integer; s_cnr: string;
+begin
+  result := [];
+  if (t_casenrs.Count > 255) then i_maxidx := 255
+  else i_maxidx := t_casenrs.Count - 1;
+
+  if SameText(casenrs, 'all') then begin
+    for i := 0 to i_maxidx do Include(result, i);
+  end else  begin
+    if (casenrs <>'') then begin
+      t_cstrs := TStringList.Create();
+      if (ExtractStrings([','], [' '], PChar(casenrs), t_cstrs) > 0) then begin
+        t_cnrs := TStringList.Create();
+        for i := 0 to t_cstrs.Count - 1 do begin
+          t_cnrs.Clear();
+          if (ExtractStrings(['-'], [' '], PChar(t_cstrs[i]), t_cnrs) > 1) then begin
+            if (TryStrToInt(t_cnrs[0], i_cnr1) and TryStrToInt(t_cnrs[t_cnrs.Count-1], i_cnr2)) then begin
+              for i_cnr := i_cnr1 to i_cnr2 do begin
+                s_cnr := IntToStr(i_cnr);
+                i_idx := t_casenrs.IndexOf(s_cnr);
+                if ((i_idx >= 0) and (i_idx <= i_maxidx)) then Include(result, i_idx);
+              end;
+            end;
+          end else begin
+            if TryStrToInt(t_cstrs[i], i_cnr) then begin
+              s_cnr := IntToStr(i_cnr);
+              i_idx := t_casenrs.IndexOf(s_cnr);
+              if ((i_idx >= 0) and (i_idx <= i_maxidx)) then Include(result, i_idx);
+            end;
+          end;
+        end;
+        FreeAndNil(t_cnrs);
+      end;
+      FreeAndNil(t_cstrs);
+    end;
   end;
 end;
 
@@ -92,6 +138,7 @@ begin
   t_stepnrs := TStringList.Create();
   t_cases := TObjectList.Create();
   t_casenrs := TStringList.Create();
+  //t_caselist := TStringList.Create();
 end;
 
 destructor TStepContainer.Destroy();
@@ -101,6 +148,7 @@ begin
   t_stepnrs.Free();
   t_cases.Free();
   t_casenrs.Free();
+  //t_caselist.Free();
   inherited Destroy();
 end;
 
@@ -114,8 +162,8 @@ begin
     t_stepnrs.Add(fields[SF_NR]);  //save step number into the list for searching
     DetectCase(fields[SF_NR]);
   end else begin
-    FreeAndNil(t_step);
     result := false;
+    FreeAndNil(t_step);
   end;
 end;
 
@@ -163,15 +211,44 @@ begin
 end;
 
 function  TStepContainer.TestCaseByNr(const casenr: string): TStepGroup;
-var i_caseidx: integer;
+var i_caseidx, i_casenr: integer;
 begin
-  i_caseidx := t_casenrs.IndexOf(casenr);
+  if TryStrToInt(casenr, i_casenr) then  i_caseidx := t_casenrs.IndexOf(IntToStr(i_casenr))
+  else i_caseidx := -1;
   result := TestCaseByIndex(i_caseidx);
 end;
 
-function  TStepContainer.TestSequence(const casefrom, caseto: integer): TStepGroup;
+// =============================================================================
+//    Description  : analyze the given strings incl and excl and return back a
+//                   list of valid case numbers
+//    Parameter    : incl, a string to represent inclusive test cases
+//                   excl, a string to represent exclusive test cases
+//                   example for strings incl and excl:
+//                   1. 'all' - all test case in the container
+//                   2. '11-201' - test cases from 11 to 201
+//                   3. '110, 220, 360' - test cases of 110, 220 and 360
+//                   4. '28-400, 520, 650' - combination of 2. and 3.
+//    Return       : a list of test case numbers, which is a subset of test cases
+//                   in the container, subset(incl) - subset(excl)
+//    First author : 2016-05-09 /bsu/
+//                   WARNING: because of using set in this function the count of
+//                   test cases is not allowed beyond 255
+//    History      :
+// =============================================================================
+function  TStepContainer.TestSequence(const incl: string; const excl: string): string;
+var set_incl, set_excl, set_result: TIndexSet; i, i_maxidx: integer; i_idx: byte;
 begin
-  result := nil;
+  //t_caselist.Clear();
+  set_incl := IndexSet(incl);
+  set_excl := IndexSet(excl);
+  set_result := set_incl - set_excl;
+  if (t_casenrs.Count > 255) then i_maxidx := 255
+  else i_maxidx := t_casenrs.Count - 1;
+  for i := 0 to i_maxidx do begin
+    i_idx := byte(i);
+    if (i_idx in set_result) then result := result + t_casenrs[i] + ',';//t_caselist.Add(t_casenrs[i]);
+  end;
+  //result := t_caselist;
 end;
 
 procedure TStepContainer.Clear();
@@ -182,6 +259,7 @@ begin
   t_stepnrs.Clear();
   t_cases.Clear();
   t_casenrs.Clear();
+  //t_caselist.Clear();
 end;
 
 

@@ -23,6 +23,8 @@ type
     btnNext: TButton;
     txtCase: TEdit;
     btnGetCase: TButton;
+    txtSequence: TEdit;
+    btnSequence: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnGetStepByNrClick(Sender: TObject);
@@ -34,6 +36,7 @@ type
     procedure btnPreviousClick(Sender: TObject);
     procedure btnNextClick(Sender: TObject);
     procedure btnGetCaseClick(Sender: TObject);
+    procedure btnSequenceClick(Sender: TObject);
   private
     t_sreader : TScriptReader;
     t_tstep   : TTestStep;
@@ -54,7 +57,7 @@ var t_group: TStepGroup;
 begin
   t_group := t_container.TestCaseByNr(trim(txtCase.Text));
   if assigned(t_group) then
-    t_messenger.AddMessage(format('Test Case: Nr=%s, index from=%d, index to=%d', [trim(txtCase.Text), t_group.IndexFrom, t_group.IndexTo]))
+    t_messenger.AddMessage(format('Test Case: Nr=%d, index from=%d, index to=%d', [t_group.GroupNr, t_group.IndexFrom, t_group.IndexTo]))
   else
     t_messenger.AddMessage(format('Test Case (Nr=%s) is NOT found.', [trim(txtCase.Text)]));
   
@@ -146,6 +149,13 @@ begin
   s_ext := RightStr(s_fsave, 4);
   s_fsave := LeftStr(s_fsave, length(s_fsave) - 4) + '_new' + s_ext;
   t_sreader.SaveToFile(s_fsave);
+end;
+
+procedure TfrmScriptTester.btnSequenceClick(Sender: TObject);
+var s_casenrs: string;
+begin
+  s_casenrs := t_container.TestSequence(trim(txtSequence.Text));
+  t_messenger.AddMessage('Test Sequence: ' + s_casenrs);
 end;
 
 procedure TfrmScriptTester.FormCreate(Sender: TObject);
