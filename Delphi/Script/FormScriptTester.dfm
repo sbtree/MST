@@ -126,4 +126,21 @@ object frmScriptTester: TfrmScriptTester
     TabOrder = 12
     OnClick = btnNextClick
   end
+  object txtCase: TEdit
+    Left = 399
+    Top = 272
+    Width = 74
+    Height = 21
+    TabOrder = 13
+    Text = '11'
+  end
+  object btnGetCase: TButton
+    Left = 479
+    Top = 269
+    Width = 75
+    Height = 25
+    Caption = 'GetCase'
+    TabOrder = 14
+    OnClick = btnGetCaseClick
+  end
 end

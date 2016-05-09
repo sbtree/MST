@@ -11,8 +11,7 @@ uses
   StepDescriptor in 'StepDescriptor.pas',
   StepResult in 'StepResult.pas',
   StepChecker in 'StepChecker.pas',
-  StepContainer in 'StepContainer.pas',
-  CaseChecker in 'CaseChecker.pas';
+  StepContainer in 'StepContainer.pas';
 
 {$R *.res}
 

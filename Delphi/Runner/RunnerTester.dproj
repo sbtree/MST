@@ -32,8 +32,14 @@
     <DelphiCompile Include="RunnerTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Function\FunctionCaller.pas" />
+    <DCCReference Include="..\General\GenType.pas" />
+    <DCCReference Include="..\General\TextMessage.pas" />
+    <DCCReference Include="..\Script\ScriptReader.pas" />
+    <DCCReference Include="..\Script\StepContainer.pas" />
     <DCCReference Include="FormRunnerTester.pas">
       <Form>Form2</Form>
     </DCCReference>
+    <DCCReference Include="TestRunner.pas" />
   </ItemGroup>
 </Project>

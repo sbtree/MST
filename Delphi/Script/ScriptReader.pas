@@ -139,7 +139,7 @@ type
     function  ReadChar(const curch, nextch: char): boolean;
 
   public
-    property StepContainer: TStepContainer read t_container;
+    property StepContainer: TStepContainer read t_container write t_container;
     property FieldNameChecker: TFieldNameChecker read t_fnchecker;
     property FieldValueChecker: TFieldValueChecker read t_fvchecker;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
@@ -298,8 +298,10 @@ end;
 function  TScriptReader.CheckFieldValue(const val: string): boolean;
 begin
   result := t_fvchecker.CheckField(e_lastfield, val);
-  if result then a_fieldvals[e_lastfield] := val
-  else AddMessage(format('Invalid value (%s) for the field (%s).', [val, t_fnchecker.FieldName(e_lastfield)]), ML_ERROR);
+  if result then
+    a_fieldvals[e_lastfield] := val
+  else
+    AddMessage(format('Invalid value (%s) for the field (%s).', [val, t_fnchecker.FieldName(e_lastfield)]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -463,7 +465,7 @@ begin
         s_curtoken := '';
         if (e_curstate = PS_IDLE) then begin//a step is over
           t_tsteps.Add(s_curtext);
-          t_container.CreateStep(a_fieldvals);
+          t_container.AddTestStep(a_fieldvals);
           t_sentry.i_row := i_rowindex; //update row and column for each idle state
           t_sentry.i_col := i_colindex;
           s_curtext := '';
@@ -593,7 +595,6 @@ begin
   t_tsteps := TStringList.Create();
   t_fnchecker := TFieldNameChecker.Create();
   t_fvchecker := TFieldValueChecker.Create();
-  t_container := TStepContainer.Create();
 end;
 
 // =============================================================================
@@ -611,7 +612,6 @@ begin
   t_tsteps.Free();
   t_fnchecker.Free();
   t_fvchecker.Free();
-  t_container.Free();
 end;
 
 // =============================================================================
@@ -631,8 +631,9 @@ begin
   s_curtoken := '';
   b_allowvar := true;
   t_tsteps.Clear();
-  t_container.Clear();
+  if assigned(t_container) then t_container.Clear();
   t_fnchecker.ResetUnused();
+  t_fvchecker.ResetChecker();
 end;
 
 // =============================================================================
@@ -724,40 +725,24 @@ begin
         s_srcfile := srcfile;
         if result then t_fstemp := t_fdatetime
         else t_fstemp := -1;
-      end else AddMessage(format('Failed to read file(%s).', [srcfile]), ML_WARNING);;
+      end else AddMessage(format('Failed to read file (%s).', [srcfile]), ML_WARNING);;
       t_lines.Free();
     end;
   end else AddMessage(format('File is NOT found (%s).', [srcfile]), ML_WARNING);
 end;
 
 // =============================================================================
-//    Description  : save current test steps (only filed values) into a file
+//    Description  : save clear script into a file
 //    Parameter    : destfile, file name to save
 //    Return       : --
 //    First author : 2014-08-27 /bsu/
 //    History      :
 // =============================================================================
 function TScriptReader.SaveToFile(const destfile: string): boolean;
-var i: integer; s_line: string; j:EStepField;
-    t_steps: TStringList; t_step: TTestStep; t_field: TStepField;
 begin
-  t_steps := TStringList.Create();
-  for i := 0 to t_container.StepCount() - 1 do begin
-    t_step := t_container.GetStepByIndex(i);
-    if assigned(t_step) then begin
-      t_field := t_step.StepFields[SF_NR];
-      if assigned(t_field) then s_line := t_field.InputString;
-      for j := SF_T to High(EStepField) do begin
-        t_field := t_step.StepFields[j];
-        if assigned(t_field) then s_line := s_line + ';' + #9 + t_field.InputString;
-      end;
-      t_steps.Add(s_line);
-    end;
-  end;
-  t_steps.SaveToFile(destfile);
-  t_steps.Free();
-  result := true;
+  t_tsteps.SaveToFile(destfile);
   AddMessage(format('Saved successfully (%s)', [destfile]), ML_INFO);
+  result := true;
 end;
 
 end.

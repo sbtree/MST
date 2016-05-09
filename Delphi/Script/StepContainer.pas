@@ -1,80 +1,136 @@
 unit StepContainer;
 
 interface
-uses Classes, Contnrs, IniFiles, StepDescriptor, CaseChecker;
+uses Classes, Contnrs, IniFiles, StepDescriptor;
 
 type
+  TStepGroup = class;
   TStepContainer = class
   protected
     t_steps:  TObjectList;  //to save test steps
     t_stepnrs:TStrings;     //auxiliary variable, to save the step number matching index of t_steps;
     i_curstep:integer;      //index of step, to indicate current step, which is now selected, -1 means no selection
     t_cases:  TObjectList;  //to save test cases
-//    t_nicases:THashedStringList; //to save pairs of case-nr and case index for searching
-//    t_nicids: THashedStringList; //to save pairs of case-nr and case identifer for searching
+    t_casenrs:TStrings;     //auxiliary variable, to save the number of test case for easily searching, mathching index of t_cases
+    i_lastcnr:integer;      //to save last case number
   protected
+    procedure DetectCase(const stepnr:string);
+    
   public
     constructor Create();
     destructor  Destroy(); override;
 
-    function  CreateStep(const fields: FieldStringArray): boolean;
-    function  GetStepByIndex(const idx: integer): TTestStep;
-    function  GetStepByNr(const nr: string): TTestStep;
+    function  AddTestStep(const fields: FieldStringArray): boolean;
+    function  TestStepByIndex(const idx: integer): TTestStep;
+    function  TestStepByNr(const nr: string): TTestStep;
     function  PreviousStep(): TTestStep;
     function  CurrentStep(): TTestStep;
     function  NextStep(): TTestStep;
     function  StepCount(): integer;
+    function  TestCaseByIndex(const caseidx: integer): TStepGroup;
+    function  TestCaseByNr(const casenr: string): TStepGroup;
+    function  TestSequence(const casefrom, caseto: integer): TStepGroup;
     procedure Clear();
+    procedure SaveFile(const sfile: string);
     procedure Assign(const source: TStepContainer);
-//   function TestCase(const casenr: integer): TTestCase;
-//   function TestSequence(const startcase, endcase: integer): TTestSequence;
+  end;
+
+  TStepGroup = class
+  protected
+    i_indexfrom:  integer; //index of the first step of this group in the container
+    i_indexto:    integer; //index of the last step of this group in the container
+    t_container:  TStepContainer; //step container
+  public
+    constructor Create();
+    destructor Destroy(); override;
+
+    property StepContainer: TStepContainer read t_container write t_container;
+    property IndexFrom: integer read i_indexfrom write i_indexfrom;
+    property IndexTo: integer read i_indexto write i_indexto;
   end;
 
 implementation
 uses SysUtils, StrUtils;
 
+procedure  TStepContainer.DetectCase(const stepnr:string);
+var t_tcase: TStepGroup; s_casenr: string; i_casenr, i_curstepidx: integer;
+    t_nrs: TStrings;
+begin
+  if (trim(stepnr) <> '') then begin
+    t_nrs := TStringList.Create();
+    if (ExtractStrings(['.'], [' '], PChar(stepnr), t_nrs) > 0) then begin
+      s_casenr := t_nrs[0];
+      if TryStrToInt(s_casenr, i_casenr) then begin
+        i_curstepidx := t_steps.Count - 1;
+        i_casenr := abs(i_casenr);
+        if (i_casenr = i_lastcnr) then begin
+          if (t_cases.Count > 0) then begin
+            t_tcase := TStepGroup(t_cases.Last);
+            if assigned(t_tcase) then t_tcase.IndexTo := i_curstepidx;
+          end;
+        end else begin
+          t_tcase := TStepGroup.Create();
+          t_tcase.StepContainer := self;
+          if (t_cases.Add(t_tcase) >= 0) then begin
+            t_tcase.IndexFrom := i_curstepidx;
+            t_tcase.IndexTo := i_curstepidx;
+            t_casenrs.Add(s_casenr);
+          end else FreeAndNil(t_tcase);
+          i_lastcnr := i_casenr;
+        end;
+      end;
+    end;
+    FreeAndNil(t_nrs);
+  end;
+end;
+
 constructor TStepContainer.Create();
 begin
   inherited Create();
+  i_curstep := -1;
   t_steps := TObjectList.Create();
   t_stepnrs := TStringList.Create();
-  i_curstep := -1;
   t_cases := TObjectList.Create();
+  t_casenrs := TStringList.Create();
 end;
 
 destructor TStepContainer.Destroy();
 begin
   Clear();
-  t_cases.Free();
-  t_stepnrs.Free();
   t_steps.Free();
+  t_stepnrs.Free();
+  t_cases.Free();
+  t_casenrs.Free();
   inherited Destroy();
 end;
 
-function TStepContainer.CreateStep(const fields: FieldStringArray): boolean;
-var t_step: TTestStep; i_index: integer;
+function TStepContainer.AddTestStep(const fields: FieldStringArray): boolean;
+var t_step: TTestStep;
 begin
   t_step := TTestStep.Create();
   t_step.InputFields(fields);
-  i_index := t_steps.Add(t_step);
-  result := (i_index >= 0);
-  if result then begin
-    t_stepnrs.Add(fields[SF_NR]);
-  end else FreeAndNil(t_step);
+  if (t_steps.Add(t_step) >= 0) then begin
+    result := true;
+    t_stepnrs.Add(fields[SF_NR]);  //save step number into the list for searching
+    DetectCase(fields[SF_NR]);
+  end else begin
+    FreeAndNil(t_step);
+    result := false;
+  end;
 end;
 
-function  TStepContainer.GetStepByIndex(const idx: integer): TTestStep;
+function  TStepContainer.TestStepByIndex(const idx: integer): TTestStep;
 begin
   if ((idx >= 0) and (idx < t_steps.Count)) then i_curstep := idx
   else i_curstep := -1;
   result := CurrentStep();
 end;
 
-function  TStepContainer.GetStepByNr(const nr: string): TTestStep;
+function  TStepContainer.TestStepByNr(const nr: string): TTestStep;
 var i_idx: integer;
 begin
   i_idx := t_stepnrs.IndexOf(nr);
-  result := GetStepByIndex(i_idx);
+  result := TestStepByIndex(i_idx);
 end;
 
 function  TStepContainer.PreviousStep(): TTestStep;
@@ -100,14 +156,59 @@ begin
   result := t_steps.Count;
 end;
 
+function  TStepContainer.TestCaseByIndex(const caseidx: integer): TStepGroup;
+begin
+  result := nil;
+  if ((caseidx >= 0) and (caseidx < t_cases.Count)) then result := TStepGroup(t_cases.Items[caseidx]);
+end;
+
+function  TStepContainer.TestCaseByNr(const casenr: string): TStepGroup;
+var i_caseidx: integer;
+begin
+  i_caseidx := t_casenrs.IndexOf(casenr);
+  result := TestCaseByIndex(i_caseidx);
+end;
+
+function  TStepContainer.TestSequence(const casefrom, caseto: integer): TStepGroup;
+begin
+  result := nil;
+end;
+
 procedure TStepContainer.Clear();
 begin
+  i_curstep := -1;
+  i_lastcnr := -1;
   t_steps.Clear();
   t_stepnrs.Clear();
-  i_curstep := -1;
   t_cases.Clear();
-  //t_nicases.Clear();
-  //t_nicids.Clear();
+  t_casenrs.Clear();
+end;
+
+
+// =============================================================================
+//    Description  : save field values of test steps into a file
+//    Parameter    : sfile, file name to save
+//    Return       : --
+//    First author : 2016-05-09 /bsu/
+//    History      :
+// =============================================================================
+procedure TStepContainer.SaveFile(const sfile: string);
+var i: integer; s_line: string; j:EStepField;
+    t_stepvals: TStringList; t_step: TTestStep; t_field: TStepField;
+begin
+  t_stepvals := TStringList.Create();
+  for i := 0 to t_steps.Count - 1 do begin
+    t_step := TTestStep(t_steps.Items[i]);
+    t_field := t_step.StepFields[SF_NR];
+    if assigned(t_field) then s_line := t_field.InputString;
+    for j := SF_T to High(EStepField) do begin
+      t_field := t_step.StepFields[j];
+      if assigned(t_field) then s_line := s_line + ';' + #9 + t_field.InputString;
+    end;
+    t_stepvals.Add(s_line);
+  end;
+  t_stepvals.SaveToFile(sfile);
+  t_stepvals.Free();
 end;
 
 procedure TStepContainer.Assign(const source: TStepContainer);
@@ -117,11 +218,23 @@ begin
     Clear();
     for i := 0 to source.StepCount() - 1 do begin
       t_step := TTestStep.Create();
-      t_step.Assign(source.GetStepByIndex(i));
+      t_step.Assign(source.TestStepByIndex(i));
       t_steps.Add(t_step);
       t_stepnrs.Add(t_step.StepFields[SF_NR].InputString);
     end;
   end;
+end;
+
+constructor TStepGroup.Create();
+begin
+  inherited Create();
+  i_indexfrom := -1;
+  i_indexto := -1;
+end;
+
+destructor TStepGroup.Destroy();
+begin
+  inherited Destroy();
 end;
 
 end.

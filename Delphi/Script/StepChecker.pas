@@ -35,8 +35,7 @@ type
 //----------------------------------------------------------------------------//
   TFieldValueChecker = class
   protected
-    i_casenr: integer;
-    i_stepnr: integer;
+    f_lastnr:   single;
   protected
     function CheckNr(const str: string): boolean;
     function CheckT(const str: string): boolean;
@@ -53,9 +52,9 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    function CheckField(const field: EStepField; const val: string): boolean;
+    procedure ResetChecker();
+    function  CheckField(const field: EStepField; const val: string): boolean;
   end;
-
 
 implementation
 uses SysUtils, StrUtils;
@@ -124,9 +123,17 @@ begin
 end;
 
 function TFieldValueChecker.CheckNr(const str: string): boolean;
+var s_snr: string; f_stepnr: single;
 begin
-  //todo:
-  result := true;
+  result := false;
+  s_snr := ReplaceStr(str, '.', DecimalSeparator); //replace '.' with the system decimal separator
+  if TryStrToFloat(s_snr, f_stepnr) then begin
+    f_stepnr := abs(f_stepnr);
+    if (f_stepnr > f_lastnr) then begin
+      result := true;
+      f_lastnr := f_stepnr;
+    end;
+  end;
 end;
 
 function TFieldValueChecker.CheckT(const str: string): boolean;
@@ -193,13 +200,17 @@ end;
 constructor TFieldValueChecker.Create();
 begin
   inherited Create();
-  //todo:
+  ResetChecker();
 end;
 
 destructor TFieldValueChecker.Destroy();
 begin
-  //todo:
   inherited Destroy();
+end;
+
+procedure TFieldValueChecker.ResetChecker();
+begin
+  f_lastnr := 0.0;
 end;
 
 function TFieldValueChecker.CheckField(const field: EStepField; const val: string): boolean;

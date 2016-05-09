@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage;
+  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage, StepContainer;
 
 type
   TfrmScriptTester = class(TForm)
@@ -21,6 +21,8 @@ type
     btnGetField: TButton;
     btnPrevious: TButton;
     btnNext: TButton;
+    txtCase: TEdit;
+    btnGetCase: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnGetStepByNrClick(Sender: TObject);
@@ -31,10 +33,12 @@ type
     procedure btnGetFieldClick(Sender: TObject);
     procedure btnPreviousClick(Sender: TObject);
     procedure btnNextClick(Sender: TObject);
+    procedure btnGetCaseClick(Sender: TObject);
   private
     t_sreader : TScriptReader;
     t_tstep   : TTestStep;
     t_messenger: TTextMessenger;
+    t_container: TStepContainer;
   public
     { Public-Deklarationen }
   end;
@@ -43,9 +47,18 @@ var
   frmScriptTester: TfrmScriptTester;
 
 implementation
-
 {$R *.dfm}
-uses StepContainer;
+
+procedure TfrmScriptTester.btnGetCaseClick(Sender: TObject);
+var t_group: TStepGroup;
+begin
+  t_group := t_container.TestCaseByNr(trim(txtCase.Text));
+  if assigned(t_group) then
+    t_messenger.AddMessage(format('Test Case: Nr=%s, index from=%d, index to=%d', [trim(txtCase.Text), t_group.IndexFrom, t_group.IndexTo]))
+  else
+    t_messenger.AddMessage(format('Test Case (Nr=%s) is NOT found.', [trim(txtCase.Text)]));
+  
+end;
 
 procedure TfrmScriptTester.btnGetFieldClick(Sender: TObject);
 var e_field: EStepField; s_fval: string;
@@ -66,7 +79,7 @@ var i_idx: integer;
 begin
   if (t_sreader.StepContainer.StepCount > 0) then begin
     i_idx := StrToInt(trim(txtStepIndex.Text));
-    t_tstep := t_sreader.StepContainer.GetStepByIndex(i_idx);
+    t_tstep := t_sreader.StepContainer.TestStepByIndex(i_idx);
     if assigned(t_tstep) then
       t_messenger.AddMessage(format('Current step (Index=%d): Nr=%s', [i_idx, t_tstep.StepFields[SF_NR].InputString]))
     else
@@ -80,7 +93,7 @@ var s_nr: string;
 begin
   if (t_sreader.StepContainer.StepCount > 0) then begin
     s_nr := trim(txtStepNr.Text);
-    t_tstep := t_sreader.StepContainer.GetStepByNr(s_nr);
+    t_tstep := t_sreader.StepContainer.TestStepByNr(s_nr);
     if assigned(t_tstep) then
       t_messenger.AddMessage('Current step: Nr=' + s_nr + ', T=' + t_tstep.StepFields[SF_T].InputString)
     else
@@ -139,14 +152,17 @@ procedure TfrmScriptTester.FormCreate(Sender: TObject);
 begin
   t_sreader := TScriptReader.Create();
   t_messenger := TTextMessenger.Create();
+  t_container := TStepContainer.Create();
   t_messenger.Messages := memInfo.Lines;
   t_sreader.Messenger := t_messenger;
+  t_sreader.StepContainer := t_container;
 end;
 
 procedure TfrmScriptTester.FormDestroy(Sender: TObject);
 begin
   t_sreader.Free();
   t_messenger.Free();
+  t_container.Free();
 end;
 
 end.
