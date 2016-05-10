@@ -102,7 +102,7 @@ type
       e_state:EParseState;//save state
       i_row:  integer;    //save row of the beginning of the state
       i_col:  integer;    //save column of the beginning of the state
-      e_gsf:  EStepField; //save step field of a group
+      e_field:EStepField; //save step field of a group
     end;
     PStateEntry = ^StateEntry;
 
@@ -210,13 +210,13 @@ begin
   p_sentry^.e_state := t_sentry.e_state;
   p_sentry^.i_row := t_sentry.i_row;
   p_sentry^.i_col := t_sentry.i_col;
-  //if state = PS_FIELDGROUP then p_sentry^.e_gsf := e_lastfield;
-
+  p_sentry^.e_field := t_sentry.e_field;
   t_states.Push(p_sentry);
   e_curstate := state;
   t_sentry.e_state := e_curstate;
   t_sentry.i_row := i_rowindex;
   t_sentry.i_col := i_colindex;
+  t_sentry.e_field := e_lastfield;
 end;
 
 // =============================================================================
@@ -229,10 +229,10 @@ end;
 procedure TScriptReader.PopState();
 begin
   p_sentry := t_states.Pop();
-  //if p_sentry^.e_state = PS_FIELDGROUP then e_lastfield := p_sentry^.e_gsf;
   t_sentry.e_state := p_sentry^.e_state;
   t_sentry.i_row := p_sentry^.i_row;
   t_sentry.i_col := p_sentry^.i_col;
+  t_sentry.e_field := p_sentry^.e_field;
   e_curstate := t_sentry.e_state;
   dispose(p_sentry);
 end;
@@ -360,6 +360,7 @@ begin
           PopState();
           s_curtext := s_curtext + a_fieldvals[e_lastfield] + curch;
           s_curtoken := '';
+          if (e_curstate = PS_FIELDGROUP) then e_lastfield := t_sentry.e_field;
         end else  result := false; // error is already handled in CheckFieldValue
       end else if (e_curstate = PS_FIELDGROUP) then begin
         if trim(s_curtoken) = '' then begin
@@ -458,7 +459,7 @@ begin
           PopState();
           s_curtext := s_curtext + a_fieldvals[e_lastfield] + curch;
           s_curtoken := '';
-          //if (e_curstate = PS_FIELDGROUP) then PopState();
+          if (e_curstate = PS_FIELDGROUP) then e_lastfield := t_sentry.e_field;
         end else begin
           result := false;
           AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);

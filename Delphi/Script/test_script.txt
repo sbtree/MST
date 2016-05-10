@@ -15,7 +15,7 @@ Include=.\TestCase100.txt;.\TestCase200.txt{}
              *)                
              FkT:EvaluateStr;     PAR:'MyTestCase';
              r_off:;                            
-             TOL:(A: ''; MIN:'ABC'; Max:'');
+             TOL:(A: ''; MIN:0; Max:10);
              {block comment 2
              17.09.2014 09:25}
              ),
