@@ -70,9 +70,13 @@ type
     destructor Destroy(); override;
 
     procedure AssignResult(const source: TStepResult);
-    property  StepFields: StepFieldArray read a_fields write a_fields;
+    //property  StepFields: StepFieldArray read a_fields write a_fields;
     property  StepResult: TStepResult read t_result write AssignResult;
     procedure InputFields(const fields: FieldStringArray);
+    function  GetField(const esf: EStepField): TStepField;
+    function  GetFieldName(const esf: EStepField): string;
+    function  GetFieldValue(const esf: EStepField): string;
+    procedure SetFieldValue(const esf: EStepField; const sval: string);
     procedure Assign(const source: TTestStep);
     //function  FieldString(const field: EStepField): string;
   end;
@@ -166,16 +170,36 @@ begin
   end;
 end;
 
+function  TTestStep.GetField(const esf: EStepField): TStepField;
+begin
+  result := a_fields[esf];
+end;
+
+function  TTestStep.GetFieldName(const esf: EStepField): string;
+begin
+
+end;
+
+function  TTestStep.GetFieldValue(const esf: EStepField): string;
+begin
+  result := '';
+  if assigned(a_fields[esf]) then result := a_fields[esf].InputString;
+end;
+
+procedure TTestStep.SetFieldValue(const esf: EStepField; const sval: string);
+begin
+  if assigned(a_fields[esf]) then a_fields[esf].InputString := sval
+  else if (sval <> '') then begin
+    a_fields[esf] := TStepField.Create();
+    a_fields[esf].InputString := sval;
+  end;
+end;
+
 procedure TTestStep.Assign(const source: TTestStep);
 var i: EStepField;
 begin
   if assigned(source) then begin
-    for i := Low(EStepField) to High(EStepField) do begin
-      if assigned(source.StepFields[i]) then begin
-        a_fields[i] := TStepField.Create();
-        a_fields[i].Assign(source.StepFields[i]);
-      end;
-    end;
+    for i := Low(EStepField) to High(EStepField) do SetFieldValue(i, source.GetFieldValue(i));
     AssignResult(source.StepResult);
   end;
 end;

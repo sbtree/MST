@@ -102,6 +102,7 @@ type
       e_state:EParseState;//save state
       i_row:  integer;    //save row of the beginning of the state
       i_col:  integer;    //save column of the beginning of the state
+      e_gsf:  EStepField; //save step field of a group
     end;
     PStateEntry = ^StateEntry;
 
@@ -151,7 +152,7 @@ type
     function  ReadFromText(const srctext: string; const blast: boolean = false): boolean; virtual;
     function  ReadFromList(const srclist: TStringList): boolean; virtual;
     function  ReadFromFile(const srcfile: string; const bforce: boolean = false): boolean; virtual;
-    function  SaveToFile(const destfile: string): boolean;
+    function  SaveToFile(const destfile: string = ''): boolean;
   end;
 
 const
@@ -209,6 +210,8 @@ begin
   p_sentry^.e_state := t_sentry.e_state;
   p_sentry^.i_row := t_sentry.i_row;
   p_sentry^.i_col := t_sentry.i_col;
+  //if state = PS_FIELDGROUP then p_sentry^.e_gsf := e_lastfield;
+
   t_states.Push(p_sentry);
   e_curstate := state;
   t_sentry.e_state := e_curstate;
@@ -226,6 +229,7 @@ end;
 procedure TScriptReader.PopState();
 begin
   p_sentry := t_states.Pop();
+  //if p_sentry^.e_state = PS_FIELDGROUP then e_lastfield := p_sentry^.e_gsf;
   t_sentry.e_state := p_sentry^.e_state;
   t_sentry.i_row := p_sentry^.i_row;
   t_sentry.i_col := p_sentry^.i_col;
@@ -539,6 +543,9 @@ begin
           if (s_curtext <> '') then t_tsteps.Add(s_curtext);
           s_curtext := '';
         end;
+      end else if (StartsText('HELP_', s_curtoken) and (e_curstate = PS_VARNAME)) then begin //ignore HELP-index directly after variable
+        s_curtoken := '';
+        PopState();
       end else begin  //[PS_VARNAME, PS_SQUOTATION, PS_DQUOTATION, PS_FIELDKEY, PS_FIELDVAL]
         result := false;
         AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
@@ -552,8 +559,7 @@ begin
       else begin //[PS_IDLE, PS_STEP, PS_FIELDGROUP]
         if (curch in CSET_FIRST_CHARS) then begin
           if (e_curstate = PS_IDLE) then begin
-            //todo: what about the help id, e.g. HELP_000100??
-            if b_allowvar then begin
+            if (b_allowvar or StartsText(s_curtoken + curch + nextch, 'HELP_')) then begin //todo: what about the help id, e.g. HELP_000100??
               s_curtoken := s_curtoken + curch;
               PushState(PS_VARNAME);
             end else begin
@@ -664,6 +670,7 @@ begin
   if blast then begin
     s_curtext := trim(s_curtext);
     result := (result and (s_curtext = '') and (e_curstate = PS_IDLE) and (t_states.Count = 0));
+    if (not result) then AddMessage(format('Script end: text=%s, state=%s', [s_curtext, GetEnumName(p_ptinfo, integer(e_curstate))]), ML_ERROR);
   end;
 end;
 
@@ -690,9 +697,10 @@ begin
       result := ReadFromText(srclist[srclist.Count - 1], true);
     end;
     if result then begin
-      if (t_tsteps.Count > 0) then
-        AddMessage(format('%d variable(s) and %d step(s) are loaded.', [t_tsteps.Count - t_container.StepCount, t_container.StepCount]), ML_INFO)
-      else AddMessage('No valid line is loaded from the test script.', ML_WARNING);
+      if (t_tsteps.Count > 0) then begin
+        AddMessage(format('%d variable(s), %d step(s) and %d case(s) are loaded.', [t_tsteps.Count - t_container.CountStep, t_container.CountStep, t_container.CountCase]), ML_INFO);
+        if ((t_container.CountCase - 1) > CINT_CASES_MAX) then AddMessage(format('The count (%d) of test cases is over the limit (%d).', [t_container.CountCase, CINT_CASES_MAX + 1]), ML_WARNING);
+      end else AddMessage('No valid line is loaded from the test script.', ML_WARNING);
     end;
   end else AddMessage('Empty script.', ML_WARNING);
 end;
@@ -739,10 +747,24 @@ end;
 //    History      :
 // =============================================================================
 function TScriptReader.SaveToFile(const destfile: string): boolean;
+var s_fname, s_ext: string;
 begin
-  t_tsteps.SaveToFile(destfile);
-  AddMessage(format('Saved successfully (%s)', [destfile]), ML_INFO);
-  result := true;
+  result := false;
+  s_fname := destfile;
+  if destfile = '' then begin
+    if (length(s_srcfile) > 4) then begin
+      s_ext := ExtractFileExt(s_srcfile);
+      s_fname := LeftStr(s_srcfile, length(s_srcfile) - length(s_ext)) + '_clear' + s_ext;
+    end;
+  end;
+  if s_fname <> '' then begin
+    t_tsteps.SaveToFile(s_fname);
+    result := (t_tsteps.Count > 0);
+  end;
+  if result then begin
+    if t_tsteps.Count> 1 then AddMessage(format('%d lines are saved in "%s"', [t_tsteps.Count, s_fname]), ML_INFO)
+    else AddMessage(format('Only %d line is saved in "%s"', [t_tsteps.Count, s_fname]), ML_INFO);
+  end else AddMessage('No line is saved.', ML_WARNING);
 end;
 
 end.
