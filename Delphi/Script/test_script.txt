@@ -7,7 +7,6 @@ Language=EN
 FileVersion=$Revision: 1.71 $
 ScriptVersion=3.0.0.0
 Include=.\TestCase100.txt;.\TestCase200.txt{}
-ScriptVersion1=3.0.0.2
 
 (Nr:100.000; T:'define a named test case'; //line comment  
              r_on:#Par[=default];

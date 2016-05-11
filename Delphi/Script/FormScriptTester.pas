@@ -30,6 +30,8 @@ type
     lblExclusive: TLabel;
     txtVariable: TEdit;
     btnVariable: TButton;
+    btnClear: TButton;
+    chkForce: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnGetStepByNrClick(Sender: TObject);
@@ -43,6 +45,7 @@ type
     procedure btnGetCaseClick(Sender: TObject);
     procedure btnSequenceClick(Sender: TObject);
     procedure btnVariableClick(Sender: TObject);
+    procedure btnClearClick(Sender: TObject);
   private
     t_sreader:  TScriptReader;
     t_tstep:    TTestStep;
@@ -59,21 +62,27 @@ var
 implementation
 {$R *.dfm}
 
-procedure TfrmScriptTester.btnGetCaseClick(Sender: TObject);
-var t_group: TStepGroup;
+procedure TfrmScriptTester.btnClearClick(Sender: TObject);
 begin
-  t_group := t_container.TestCaseByNr(trim(txtCase.Text));
-  if assigned(t_group) then
-    t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, index from=%d, index to=%d', [t_group.GroupNr, t_group.GroupTitle, t_group.IndexFrom, t_group.IndexTo]))
-  else
-    t_messenger.AddMessage(format('Test Case (Nr=%s) is NOT found.', [trim(txtCase.Text)]));
-  
+  t_sreader.Clear();
+end;
+
+procedure TfrmScriptTester.btnGetCaseClick(Sender: TObject);
+var t_sgroup: TStepGroup;
+begin
+  if (t_container.CountCase > 0) then begin
+    t_sgroup := t_container.TestCaseByNr(trim(txtCase.Text));
+    if assigned(t_sgroup) then
+      t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, index from=%d, index to=%d', [t_sgroup.GroupNr, t_sgroup.GroupTitle, t_sgroup.IndexFrom, t_sgroup.IndexTo]))
+    else
+      t_messenger.AddMessage(format('Test Case (Nr=%s) is NOT found.', [trim(txtCase.Text)]));
+  end else t_messenger.AddMessage('No case is loaded', '', ML_WARNING);
 end;
 
 procedure TfrmScriptTester.btnGetFieldClick(Sender: TObject);
 var e_field: EStepField; s_fval: string;
 begin
-  t_tstep := t_sreader.StepContainer.CurrentStep();
+  t_tstep := t_container.CurrentStep();
   if assigned(t_tstep) then begin
     if t_sreader.FieldNameChecker.FindName(trim(txtField.Text), e_field) then begin
       s_fval := t_tstep.GetFieldValue(e_field);
@@ -87,9 +96,9 @@ end;
 procedure TfrmScriptTester.btnGetStepByIndexClick(Sender: TObject);
 var i_idx: integer;
 begin
-  if (t_sreader.StepContainer.CountStep > 0) then begin
+  if (t_container.CountStep > 0) then begin
     i_idx := StrToInt(trim(txtStepIndex.Text));
-    t_tstep := t_sreader.StepContainer.TestStepByIndex(i_idx);
+    t_tstep := t_container.TestStepByIndex(i_idx);
     if assigned(t_tstep) then
       t_messenger.AddMessage(format('Current step (Index=%d): Nr=%s', [i_idx, t_tstep.GetFieldValue(SF_NR)]))
     else
@@ -101,9 +110,9 @@ end;
 procedure TfrmScriptTester.btnGetStepByNrClick(Sender: TObject);
 var s_nr: string;
 begin
-  if (t_sreader.StepContainer.CountStep > 0) then begin
+  if (t_container.CountStep > 0) then begin
     s_nr := trim(txtStepNr.Text);
-    t_tstep := t_sreader.StepContainer.TestStepByNr(s_nr);
+    t_tstep := t_container.TestStepByNr(s_nr);
     if assigned(t_tstep) then
       t_messenger.AddMessage('Current step: Nr=' + s_nr + ', T=' + t_tstep.GetFieldValue(SF_T))
     else
@@ -114,7 +123,7 @@ end;
 
 procedure TfrmScriptTester.btnNextClick(Sender: TObject);
 begin
-  t_tstep := t_sreader.StepContainer.NextStep();
+  t_tstep := t_container.NextStep();
   if assigned(t_tstep) then
     t_messenger.AddMessage('Next step: Nr=' + t_tstep.GetFieldValue(SF_NR))
   else
@@ -137,7 +146,7 @@ end;
 
 procedure TfrmScriptTester.btnPreviousClick(Sender: TObject);
 begin
-  t_tstep := t_sreader.StepContainer.PreviousStep();
+  t_tstep := t_container.PreviousStep();
   if assigned(t_tstep) then
     t_messenger.AddMessage('Previous step: Nr=' + t_tstep.GetFieldValue(SF_NR))
   else
@@ -146,7 +155,7 @@ end;
 
 procedure TfrmScriptTester.btnReadScriptClick(Sender: TObject);
 begin
-  t_sreader.ReadFromFile(trim(txtScriptFile.Text), true);
+  t_sreader.ReadFromFile(trim(txtScriptFile.Text), chkForce.Checked);
 end;
 
 procedure TfrmScriptTester.btnSaveScriptClick(Sender: TObject);
@@ -158,7 +167,8 @@ procedure TfrmScriptTester.btnSequenceClick(Sender: TObject);
 var s_casenrs: string;
 begin
   s_casenrs := t_container.TestSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
-  t_messenger.AddMessage('Test Sequence: ' + s_casenrs);
+  if s_casenrs <> '' then t_messenger.AddMessage('Test Sequence: ' + s_casenrs)
+  else t_messenger.AddMessage('Test Sequence: no case')
 end;
 
 procedure TfrmScriptTester.btnVariableClick(Sender: TObject);

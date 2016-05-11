@@ -156,7 +156,7 @@ type
 
     procedure Clear();
     function  ReadFromText(const srctext: string; const blast: boolean = false): boolean; virtual;
-    function  ReadFromList(const srclist: TStringList): boolean; virtual;
+    function  ReadFromList(const srclist: TStringList; const bclear: boolean = true): boolean; virtual;
     function  ReadFromFile(const srcfile: string; const bforce: boolean = false): boolean; virtual;
     function  SaveToFile(const destfile: string = ''): boolean;
   end;
@@ -257,8 +257,8 @@ begin
     dispose(p_sentry);
   end;
   t_sentry.e_state := PS_IDLE;
-  t_sentry.i_row := 0;
-  t_sentry.i_col := 0;
+  t_sentry.i_row := 1;
+  t_sentry.i_col := 1;
   e_curstate := t_sentry.e_state;
   i_rowindex := t_sentry.i_row;
   i_colindex := t_sentry.i_col;
@@ -380,8 +380,8 @@ begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
       else if (e_curstate = PS_VARNAME) then begin
         PopState();
-        s_curkey := s_curtoken;
-        s_curtext := s_curtext + trim(s_curtoken) + curch;
+        s_curkey := trim(s_curtoken);
+        s_curtext := s_curtext + s_curkey + curch;
         s_curtoken := '';
         PushState(PS_VARVAL);
       end else begin  //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDGROUP]
@@ -394,10 +394,10 @@ begin
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
       else if (e_curstate = PS_FIELDNAME) then begin
-        s_curkey := s_curtoken;
-        if CheckFieldName(trim(s_curtoken)) then begin
+        s_curkey := trim(s_curtoken);
+        if CheckFieldName(s_curkey) then begin
           PopState();
-          s_curtext := s_curtext + trim(s_curtoken) + curch;
+          s_curtext := s_curtext + s_curkey + curch;
           s_curtoken := '';
           PushState(PS_FIELDVAL);
         end else result := false; // error is already handled in CheckFieldName
@@ -690,11 +690,12 @@ begin
   s_curtext := '';
   s_curtoken := '';
   b_allowvar := true;
-  t_tsteps.Clear();
   if assigned(t_container) then t_container.Clear();
   if assigned(t_variables) then t_variables.Clear();
   t_fnchecker.ResetUnused();
   t_fvchecker.ResetChecker();
+  if (t_tsteps.Count > 0) then AddMessage('All existing variables and test steps are unloaded.');
+  t_tsteps.Clear();
 end;
 
 // =============================================================================
@@ -736,25 +737,37 @@ end;
 //    First author : 2014-08-27 /bsu/
 //    History      :
 // =============================================================================
-function TScriptReader.ReadFromList(const srclist: TStringList): boolean;
-var i: integer;
+function TScriptReader.ReadFromList(const srclist: TStringList; const bclear: boolean): boolean;
+var i, i_vars, i_steps, i_cases: integer;
 begin
   result := false;
-  Clear();
+  if bclear then Clear()
+  else if (t_tsteps.Count > 0) then AddMessage('All existing variables and test steps are kept.');
+       
   if srclist.Count > 0 then  begin
+    i_rowindex := 1;
     for i := 0 to srclist.Count - 2 do begin //read in (n-1) lines, firstly
-      Inc(i_rowindex);
       result := ReadFromText(srclist[i], false);
       if (not result) then break;
+      Inc(i_rowindex);
     end;
     if result then begin //read in the last line
       Inc(i_rowindex);
       result := ReadFromText(srclist[srclist.Count - 1], true);
     end;
     if result then begin
+      if assigned(t_variables) then i_vars := t_variables.Count
+      else i_vars := 0;
+      if assigned(t_container) then begin
+        i_steps := t_container.CountStep;
+        i_cases := t_container.CountCase;
+      end else begin
+        i_steps := 0;
+        i_cases := 0;
+      end;
       if (t_tsteps.Count > 0) then begin
-        AddMessage(format('%d variable(s), %d step(s) and %d case(s) are loaded.', [t_tsteps.Count - t_container.CountStep, t_container.CountStep, t_container.CountCase]), ML_INFO);
-        if ((t_container.CountCase - 1) > CINT_CASES_MAX) then AddMessage(format('The count (%d) of test cases is over the limit (%d).', [t_container.CountCase, CINT_CASES_MAX + 1]), ML_WARNING);
+        AddMessage(format('%d variable(s), %d step(s) and %d case(s) are loaded.', [i_vars, i_steps, i_cases]), ML_INFO);
+        if ((i_cases - 1) > CINT_CASES_MAX) then AddMessage(format('The count (%d) of test cases is over the limit (%d).', [i_cases, CINT_CASES_MAX + 1]), ML_WARNING);
       end else AddMessage('No valid line is loaded from the test script.', ML_WARNING);
     end;
   end else AddMessage('Empty script.', ML_WARNING);
@@ -788,10 +801,10 @@ begin
         s_srcfile := srcfile;
         if result then t_fstemp := t_fdatetime
         else t_fstemp := -1;
-      end else AddMessage(format('Failed to read file (%s).', [srcfile]), ML_WARNING);;
+      end else AddMessage(format('Failed to read this file (%s)', [srcfile]), ML_ERROR);
       t_lines.Free();
-    end;
-  end else AddMessage(format('File is NOT found (%s).', [srcfile]), ML_WARNING);
+    end else AddMessage('This file is already loaded.', ML_INFO);
+  end else AddMessage(format('This file is NOT found (%s).', [srcfile]), ML_WARNING);
 end;
 
 // =============================================================================

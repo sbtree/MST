@@ -52,6 +52,9 @@ type
   protected
     function  GetEvaluatedStr(): string;
   public
+    constructor Create();
+    destructor Destroy(); override;
+
     property  InputString: string read s_input write s_input;
     property  EvalString: string read GetEvaluatedStr;
     procedure Assign(const source: TStepField);
@@ -130,6 +133,16 @@ uses SysUtils, StrUtils;
 function  TStepField.GetEvaluatedStr(): string;
 begin
   result := s_evaldy;
+end;
+
+constructor TStepField.Create();
+begin
+  inherited Create();
+end;
+
+destructor TStepField.Destroy();
+begin
+  inherited Destroy();
 end;
 
 procedure TStepField.Assign(const source: TStepField);

@@ -66,13 +66,13 @@ object frmScriptTester: TfrmScriptTester
   object txtScriptFile: TEdit
     Left = 7
     Top = 240
-    Width = 353
+    Width = 382
     Height = 21
     TabOrder = 4
     Text = 'PST_BT_FT_PS_liste.txt'
   end
   object btnOpenScript: TButton
-    Left = 365
+    Left = 395
     Top = 238
     Width = 27
     Height = 25
@@ -81,17 +81,17 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnOpenScriptClick
   end
   object btnReadScript: TButton
-    Left = 398
+    Left = 480
     Top = 238
-    Width = 75
+    Width = 74
     Height = 25
     Caption = 'ReadScript'
     TabOrder = 6
     OnClick = btnReadScriptClick
   end
   object btnSaveScript: TButton
-    Left = 479
-    Top = 238
+    Left = 368
+    Top = 298
     Width = 75
     Height = 25
     Caption = 'SaveScript'
@@ -202,5 +202,22 @@ object frmScriptTester: TfrmScriptTester
     Caption = 'GetVariable'
     TabOrder = 19
     OnClick = btnVariableClick
+  end
+  object btnClear: TButton
+    Left = 368
+    Top = 326
+    Width = 75
+    Height = 25
+    Caption = 'Clear'
+    TabOrder = 20
+    OnClick = btnClearClick
+  end
+  object chkForce: TCheckBox
+    Left = 427
+    Top = 242
+    Width = 45
+    Height = 17
+    Caption = 'Force'
+    TabOrder = 21
   end
 end
