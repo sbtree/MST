@@ -77,7 +77,8 @@
 unit ScriptReader;
 
 interface
-uses Classes, Contnrs, StepDescriptor, StepChecker, StepContainer, TextMessage, TypInfo;
+uses  Classes, Contnrs, StepDescriptor, StepChecker, StepContainer, TextMessage,
+      TypInfo, NamedStrings;
 
 type
   EParseState = (
@@ -125,8 +126,10 @@ type
     e_lastfield:EStepField;   //to save the index of last field, which is found in reading the script
 
     t_tsteps:   TStringList;  //list of test steps without any useless char
+    t_variables:TNamedStrings; //to save variables, name=value pair
     t_container:TStepContainer;     //a container to save steps
     a_fieldvals:FieldStringArray;   //an array to save field values of current test step
+    s_curkey:      string;    //to save current key word, e.g. field name, variable name
     t_messenger:TTextMessenger;     //to reference a extern messenger, see property Messenger
 
   protected
@@ -137,9 +140,12 @@ type
     procedure ResetFieldValues();
     function  CheckFieldName(const name: string): boolean;
     function  CheckFieldValue(const val: string): boolean;
+    function  CheckVariable(const name, value: string): boolean;
+    function  CheckTestStep(): boolean;
     function  ReadChar(const curch, nextch: char): boolean;
 
   public
+    property VarContainer: TNamedStrings read t_variables write t_variables;
     property StepContainer: TStepContainer read t_container write t_container;
     property FieldNameChecker: TFieldNameChecker read t_fnchecker;
     property FieldValueChecker: TFieldValueChecker read t_fvchecker;
@@ -193,7 +199,7 @@ procedure TScriptReader.AddMessage(const text: string; const level: EMessageLeve
 begin
   if assigned(t_messenger) then begin
     if (level in [ML_INFO, ML_WARNING]) then t_messenger.AddMessage(text, ClassName, level)
-    else t_messenger.AddMessage(format('[r:%d, c:%d, s:%s] %s', [i_rowindex, i_colindex, GetEnumName(p_ptinfo, integer(e_curstate)), text]), ClassName, level);
+    else t_messenger.AddMessage(format('[r:%d, c:%d, s:%s]%s', [i_rowindex, i_colindex, GetEnumName(p_ptinfo, integer(e_curstate)), text]), ClassName, level);
   end;
 end;
 
@@ -309,6 +315,53 @@ begin
 end;
 
 // =============================================================================
+//    Description  : check if variable definition is valid, e.g. the name may not
+//                   be dupplicated
+//    Parameter    : name, name of the variable
+//                   value, value of the variable in string
+//    Return       : true, if the variable definition is valid
+//                   false, otherwise
+//    First author : 2016-05-11 /bsu/
+//    History      :
+// =============================================================================
+function  TScriptReader.CheckVariable(const name, value: string): boolean;
+begin
+  result := false;
+  if assigned(t_variables) then begin
+    result := t_variables.AddNamedString(name, value);
+    if (not result) then
+      AddMessage(format('Failed to input variable (name=%s), dupplicated?',[name]), ML_ERROR);
+  end else
+    AddMessage('No container is given for variables', ML_ERROR);
+end;
+
+// =============================================================================
+//    Description  : check if variable definition is valid, e.g. the name may not
+//                   be dupplicated
+//    Parameter    : name, name of the variable
+//                   value, value of the variable in string
+//    Return       : true, if the variable definition is valid
+//                   false, otherwise
+//    First author : 2016-05-11 /bsu/
+//    History      :
+// =============================================================================
+function  TScriptReader.CheckTestStep(): boolean;
+begin
+  result := false;
+  if assigned(t_container) then begin
+    result := t_container.AddTestStep(a_fieldvals);
+    if result then begin
+      t_sentry.i_row := i_rowindex; //update row and column for each idle state
+      t_sentry.i_col := i_colindex;
+      s_curtext := '';
+      t_fnchecker.ResetUnused();
+      ResetFieldValues();
+    end else
+      AddMessage(format('Failed to input a test step (Nr=%s).',[a_fieldvals[SF_NR]]), ML_ERROR);
+  end else
+    AddMessage('No container is given for test steps.', ML_ERROR);
+end;
+// =============================================================================
 //    Description  : input a new char and next char
 //    Parameter    : curch,
 //                   nextch,
@@ -327,6 +380,7 @@ begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
       else if (e_curstate = PS_VARNAME) then begin
         PopState();
+        s_curkey := s_curtoken;
         s_curtext := s_curtext + trim(s_curtoken) + curch;
         s_curtoken := '';
         PushState(PS_VARVAL);
@@ -340,6 +394,7 @@ begin
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
       else if (e_curstate = PS_FIELDNAME) then begin
+        s_curkey := s_curtoken;
         if CheckFieldName(trim(s_curtoken)) then begin
           PopState();
           s_curtext := s_curtext + trim(s_curtoken) + curch;
@@ -470,12 +525,7 @@ begin
         s_curtoken := '';
         if (e_curstate = PS_IDLE) then begin//a step is over
           t_tsteps.Add(s_curtext);
-          t_container.AddTestStep(a_fieldvals);
-          t_sentry.i_row := i_rowindex; //update row and column for each idle state
-          t_sentry.i_col := i_colindex;
-          s_curtext := '';
-          t_fnchecker.ResetUnused();
-          ResetFieldValues();
+          result := CheckTestStep();
         end else if (e_curstate <> PS_FIELDVAL) then begin
           result := false;
           AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
@@ -537,12 +587,15 @@ begin
     if (not (e_curstate in [PS_IDLE, PS_STEP, PS_FIELDGROUP, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate = PS_LINECOMMENT) then PopState()
       else if (e_curstate = PS_VARVAL) then begin
-        s_curtext := s_curtext + trim(s_curtoken);
-        s_curtoken := '';
-        PopState();
-        if (e_curstate = PS_IDLE) then begin//a step is over
-          if (s_curtext <> '') then t_tsteps.Add(s_curtext);
-          s_curtext := '';
+        result := CheckVariable(s_curkey, s_curtoken);
+        if result then begin
+          s_curtext := s_curtext + trim(s_curtoken);
+          s_curtoken := '';
+          PopState();
+          if (e_curstate = PS_IDLE) then begin//a step is over
+            if (s_curtext <> '') then t_tsteps.Add(s_curtext);
+            s_curtext := '';
+          end;
         end;
       end else if (StartsText('HELP_', s_curtoken) and (e_curstate = PS_VARNAME)) then begin //ignore HELP-index directly after variable
         s_curtoken := '';
@@ -639,6 +692,7 @@ begin
   b_allowvar := true;
   t_tsteps.Clear();
   if assigned(t_container) then t_container.Clear();
+  if assigned(t_variables) then t_variables.Clear();
   t_fnchecker.ResetUnused();
   t_fvchecker.ResetChecker();
 end;

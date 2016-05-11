@@ -2,7 +2,7 @@ object frmScriptTester: TfrmScriptTester
   Left = 0
   Top = 0
   Caption = 'ScriptTester'
-  ClientHeight = 330
+  ClientHeight = 356
   ClientWidth = 562
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -15,6 +15,20 @@ object frmScriptTester: TfrmScriptTester
   OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
+  object lblInclusive: TLabel
+    Left = 449
+    Top = 275
+    Width = 25
+    Height = 13
+    Caption = 'Incl.:'
+  end
+  object lblExclusive: TLabel
+    Left = 449
+    Top = 302
+    Width = 27
+    Height = 13
+    Caption = 'Excl.:'
+  end
   object btnGetStepByNr: TButton
     Left = 62
     Top = 270
@@ -34,7 +48,7 @@ object frmScriptTester: TfrmScriptTester
   end
   object btnGetStepByIndex: TButton
     Left = 62
-    Top = 297
+    Top = 298
     Width = 90
     Height = 25
     Caption = 'GetStepByIndex'
@@ -92,26 +106,26 @@ object frmScriptTester: TfrmScriptTester
     TabOrder = 8
   end
   object txtField: TEdit
-    Left = 205
-    Top = 272
+    Left = 184
+    Top = 300
     Width = 74
     Height = 21
     TabOrder = 9
     Text = 'FKT'
   end
   object btnGetField: TButton
-    Left = 285
-    Top = 270
-    Width = 75
+    Left = 263
+    Top = 298
+    Width = 90
     Height = 25
     Caption = 'GetField'
     TabOrder = 10
     OnClick = btnGetFieldClick
   end
   object btnPrevious: TButton
-    Left = 156
-    Top = 270
-    Width = 29
+    Left = 8
+    Top = 326
+    Width = 48
     Height = 25
     Hint = 'previous test step'
     Caption = '<'
@@ -119,9 +133,9 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnPreviousClick
   end
   object btnNext: TButton
-    Left = 156
-    Top = 297
-    Width = 29
+    Left = 104
+    Top = 326
+    Width = 48
     Height = 25
     Hint = 'next test step'
     Caption = '>'
@@ -129,24 +143,24 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnNextClick
   end
   object txtCase: TEdit
-    Left = 205
-    Top = 300
+    Left = 184
+    Top = 328
     Width = 74
     Height = 21
     TabOrder = 13
     Text = '11'
   end
   object btnGetCase: TButton
-    Left = 285
-    Top = 297
-    Width = 75
+    Left = 263
+    Top = 326
+    Width = 90
     Height = 25
     Caption = 'GetCase'
     TabOrder = 14
     OnClick = btnGetCaseClick
   end
   object txtInclusive: TEdit
-    Left = 399
+    Left = 480
     Top = 272
     Width = 74
     Height = 21
@@ -155,9 +169,9 @@ object frmScriptTester: TfrmScriptTester
     Text = 'all'
   end
   object btnSequence: TButton
-    Left = 479
-    Top = 297
-    Width = 75
+    Left = 449
+    Top = 326
+    Width = 105
     Height = 25
     Caption = 'GetSequence'
     TabOrder = 16
@@ -165,11 +179,28 @@ object frmScriptTester: TfrmScriptTester
   end
   object txtExclusive: TEdit
     Left = 479
-    Top = 272
+    Top = 298
     Width = 74
     Height = 21
     Hint = 'exclusive test cases'
     TabOrder = 17
     Text = '10-80'
+  end
+  object txtVariable: TEdit
+    Left = 184
+    Top = 272
+    Width = 74
+    Height = 21
+    TabOrder = 18
+    Text = 'Include'
+  end
+  object btnVariable: TButton
+    Left = 263
+    Top = 270
+    Width = 90
+    Height = 25
+    Caption = 'GetVariable'
+    TabOrder = 19
+    OnClick = btnVariableClick
   end
 end

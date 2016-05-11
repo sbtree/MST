@@ -36,6 +36,7 @@
     </DCCReference>
     <DCCReference Include="GenType.pas" />
     <DCCReference Include="GenUtils.pas" />
+    <DCCReference Include="NamedStrings.pas" />
     <DCCReference Include="TextMessage.pas" />
     <None Include="ModelSupport_GeneralTester\DataBuffer\default.txvpck" />
     <None Include="ModelSupport_GeneralTester\default.txaPackage" />

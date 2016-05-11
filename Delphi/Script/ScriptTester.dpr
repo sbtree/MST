@@ -11,7 +11,8 @@ uses
   StepDescriptor in 'StepDescriptor.pas',
   StepResult in 'StepResult.pas',
   StepChecker in 'StepChecker.pas',
-  StepContainer in 'StepContainer.pas';
+  StepContainer in 'StepContainer.pas',
+  NamedStrings in '..\General\NamedStrings.pas';
 
 {$R *.res}
 

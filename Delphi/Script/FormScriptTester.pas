@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage, StepContainer;
+  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage, StepContainer, NamedStrings;
 
 type
   TfrmScriptTester = class(TForm)
@@ -26,6 +26,10 @@ type
     txtInclusive: TEdit;
     btnSequence: TButton;
     txtExclusive: TEdit;
+    lblInclusive: TLabel;
+    lblExclusive: TLabel;
+    txtVariable: TEdit;
+    btnVariable: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnGetStepByNrClick(Sender: TObject);
@@ -38,11 +42,13 @@ type
     procedure btnNextClick(Sender: TObject);
     procedure btnGetCaseClick(Sender: TObject);
     procedure btnSequenceClick(Sender: TObject);
+    procedure btnVariableClick(Sender: TObject);
   private
     t_sreader:  TScriptReader;
     t_tstep:    TTestStep;
     t_messenger:TTextMessenger;
     t_container:TStepContainer;
+    t_vars:     TNamedStrings;
   public
     { Public-Deklarationen }
   end;
@@ -155,14 +161,26 @@ begin
   t_messenger.AddMessage('Test Sequence: ' + s_casenrs);
 end;
 
+procedure TfrmScriptTester.btnVariableClick(Sender: TObject);
+var s_varname, s_varval: string;
+begin
+  s_varname := trim(txtVariable.Text);
+  if (t_vars.GetNamedString(s_varname, s_varval)) then
+    t_messenger.AddMessage(format('Variable: name=%s, value=%s', [s_varname, s_varval]))
+  else
+    t_messenger.AddMessage(format('Variable NOT found: name=%s', [s_varname]))
+end;
+
 procedure TfrmScriptTester.FormCreate(Sender: TObject);
 begin
   t_sreader := TScriptReader.Create();
   t_messenger := TTextMessenger.Create();
   t_container := TStepContainer.Create();
+  t_vars := TNamedStrings.Create();
   t_messenger.Messages := memInfo.Lines;
   t_sreader.Messenger := t_messenger;
   t_sreader.StepContainer := t_container;
+  t_sreader.VarContainer := t_vars;
 end;
 
 procedure TfrmScriptTester.FormDestroy(Sender: TObject);
@@ -170,6 +188,7 @@ begin
   t_sreader.Free();
   t_messenger.Free();
   t_container.Free();
+  t_vars.Free();
 end;
 
 end.
