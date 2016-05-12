@@ -98,7 +98,7 @@ const
                         'MIN',
                         'MAX'
                       );
-
+{
   CSTR_FIELD_NAMES_V02  :  FieldStringArray = (
                         'NR',
                         'T',
@@ -126,7 +126,7 @@ const
                         'MIN',
                         'MAX'
                       );
-
+}
 implementation
 uses SysUtils, StrUtils;
 
@@ -221,7 +221,7 @@ procedure TTestStep.AssignResult(const source: TStepResult);
 begin
   if assigned(source) then begin
     if not assigned(t_result) then t_result := TStepResult.Create();
-    t_result.Assigne(source);
+    t_result.Assign(source);
   end else if assigned(t_result) then FreeAndNil(t_result);
 end;
 {function  TTestStep.FieldString(const field: EStepField): string;

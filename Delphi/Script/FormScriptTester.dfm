@@ -16,15 +16,15 @@ object frmScriptTester: TfrmScriptTester
   PixelsPerInch = 96
   TextHeight = 13
   object lblInclusive: TLabel
-    Left = 449
-    Top = 275
+    Left = 361
+    Top = 276
     Width = 25
     Height = 13
     Caption = 'Incl.:'
   end
   object lblExclusive: TLabel
-    Left = 449
-    Top = 302
+    Left = 361
+    Top = 303
     Width = 27
     Height = 13
     Caption = 'Excl.:'
@@ -66,31 +66,31 @@ object frmScriptTester: TfrmScriptTester
   object txtScriptFile: TEdit
     Left = 7
     Top = 240
-    Width = 382
+    Width = 405
     Height = 21
     TabOrder = 4
     Text = 'PST_BT_FT_PS_liste.txt'
   end
   object btnOpenScript: TButton
-    Left = 395
-    Top = 238
-    Width = 27
-    Height = 25
+    Left = 418
+    Top = 240
+    Width = 24
+    Height = 21
     Caption = '...'
     TabOrder = 5
     OnClick = btnOpenScriptClick
   end
   object btnReadScript: TButton
-    Left = 480
-    Top = 238
-    Width = 74
+    Left = 479
+    Top = 270
+    Width = 75
     Height = 25
     Caption = 'ReadScript'
     TabOrder = 6
     OnClick = btnReadScriptClick
   end
   object btnSaveScript: TButton
-    Left = 368
+    Left = 479
     Top = 298
     Width = 75
     Height = 25
@@ -160,8 +160,8 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnGetCaseClick
   end
   object txtInclusive: TEdit
-    Left = 480
-    Top = 272
+    Left = 392
+    Top = 273
     Width = 74
     Height = 21
     Hint = 'inclusive test cases'
@@ -169,8 +169,8 @@ object frmScriptTester: TfrmScriptTester
     Text = 'all'
   end
   object btnSequence: TButton
-    Left = 449
-    Top = 326
+    Left = 361
+    Top = 327
     Width = 105
     Height = 25
     Caption = 'GetSequence'
@@ -178,8 +178,8 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnSequenceClick
   end
   object txtExclusive: TEdit
-    Left = 479
-    Top = 298
+    Left = 391
+    Top = 299
     Width = 74
     Height = 21
     Hint = 'exclusive test cases'
@@ -204,7 +204,7 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnVariableClick
   end
   object btnClear: TButton
-    Left = 368
+    Left = 479
     Top = 326
     Width = 75
     Height = 25
@@ -213,11 +213,19 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnClearClick
   end
   object chkForce: TCheckBox
-    Left = 427
+    Left = 448
     Top = 242
     Width = 45
     Height = 17
     Caption = 'Force'
     TabOrder = 21
+  end
+  object chkAppend: TCheckBox
+    Left = 500
+    Top = 242
+    Width = 54
+    Height = 17
+    Caption = 'Append'
+    TabOrder = 22
   end
 end

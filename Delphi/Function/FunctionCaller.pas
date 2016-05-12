@@ -59,7 +59,7 @@ function TFunctionCaller.CallFunction(const func, par: string): boolean;
 begin
   result := false;
   if (func = '') then AddMessage('The called function "' + func + '" is not available.', '', ML_ERROR)
-  else if SameText(func, 'Nil') then AddMessage('Nothing is done for calling ' + func)
+  else if SameText(func, 'nil') then AddMessage('Nothing is done for calling ' + func)
   else begin
     t_func := FindFunction(func);
     if assigned(t_func) then

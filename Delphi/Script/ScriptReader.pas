@@ -126,10 +126,10 @@ type
     e_lastfield:EStepField;   //to save the index of last field, which is found in reading the script
 
     t_tsteps:   TStringList;  //list of test steps without any useless char
-    t_variables:TNamedStrings; //to save variables, name=value pair
+    t_variables:TNamedStrings;      //to save variables, name=value pair
     t_container:TStepContainer;     //a container to save steps
     a_fieldvals:FieldStringArray;   //an array to save field values of current test step
-    s_curkey:      string;    //to save current key word, e.g. field name, variable name
+    s_curkey:   string;       //to save current key word, e.g. field name, variable name
     t_messenger:TTextMessenger;     //to reference a extern messenger, see property Messenger
 
   protected
@@ -156,8 +156,8 @@ type
 
     procedure Clear();
     function  ReadFromText(const srctext: string; const blast: boolean = false): boolean; virtual;
-    function  ReadFromList(const srclist: TStringList; const bclear: boolean = true): boolean; virtual;
-    function  ReadFromFile(const srcfile: string; const bforce: boolean = false): boolean; virtual;
+    function  ReadFromList(const srclist: TStringList; const bappend: boolean = false): boolean; virtual;
+    function  ReadFromFile(const srcfile: string; const bforce: boolean = false; const bappend: boolean = false): boolean; virtual;
     function  SaveToFile(const destfile: string = ''): boolean;
   end;
 
@@ -682,7 +682,10 @@ end;
 //    History      :
 // =============================================================================
 procedure TScriptReader.Clear();
+var i_vars, i_steps, i_cases: integer; b_info: boolean;
 begin
+  i_vars := 0; i_steps := 0; i_cases := 0;
+  b_info := (t_tsteps.Count > 0);
   e_curstate := PS_IDLE;
   ClearStates();
   t_fstemp := -1;
@@ -690,12 +693,19 @@ begin
   s_curtext := '';
   s_curtoken := '';
   b_allowvar := true;
-  if assigned(t_container) then t_container.Clear();
-  if assigned(t_variables) then t_variables.Clear();
   t_fnchecker.ResetUnused();
   t_fvchecker.ResetChecker();
-  if (t_tsteps.Count > 0) then AddMessage('All existing variables and test steps are unloaded.');
   t_tsteps.Clear();
+  if assigned(t_variables) then begin
+    i_vars := t_variables.Count;
+    t_variables.Clear();
+  end;
+  if assigned(t_container) then begin
+    i_steps := t_container.CountStep;
+    i_cases := t_container.CountCase;
+    t_container.Clear();
+  end;
+  if b_info then AddMessage(format('All existing variables (%d), test steps (%d) in %d case(s) were unloaded.', [i_vars, i_steps, i_cases]));
 end;
 
 // =============================================================================
@@ -737,13 +747,14 @@ end;
 //    First author : 2014-08-27 /bsu/
 //    History      :
 // =============================================================================
-function TScriptReader.ReadFromList(const srclist: TStringList; const bclear: boolean): boolean;
+function TScriptReader.ReadFromList(const srclist: TStringList; const bappend: boolean): boolean;
 var i, i_vars, i_steps, i_cases: integer;
 begin
   result := false;
-  if bclear then Clear()
-  else if (t_tsteps.Count > 0) then AddMessage('All existing variables and test steps are kept.');
-       
+  if bappend then begin
+    if (t_tsteps.Count > 0) then AddMessage('All variables and test steps from this script will be appended.');
+  end else Clear();
+
   if srclist.Count > 0 then  begin
     i_rowindex := 1;
     for i := 0 to srclist.Count - 2 do begin //read in (n-1) lines, firstly
@@ -766,7 +777,7 @@ begin
         i_cases := 0;
       end;
       if (t_tsteps.Count > 0) then begin
-        AddMessage(format('%d variable(s), %d step(s) and %d case(s) are loaded.', [i_vars, i_steps, i_cases]), ML_INFO);
+        AddMessage(format('%d variable(s), %d step(s) and %d case(s) are now loaded.', [i_vars, i_steps, i_cases]), ML_INFO);
         if ((i_cases - 1) > CINT_CASES_MAX) then AddMessage(format('The count (%d) of test cases is over the limit (%d).', [i_cases, CINT_CASES_MAX + 1]), ML_WARNING);
       end else AddMessage('No valid line is loaded from the test script.', ML_WARNING);
     end;
@@ -783,20 +794,23 @@ end;
 //    First author : 2014-08-27 /bsu/
 //    History      :
 // =============================================================================
-function TScriptReader.ReadFromFile(const srcfile: string; const bforce: boolean ): boolean;
-var t_lines: TStringList; b_update: boolean; t_fdatetime: TDateTime;
+function TScriptReader.ReadFromFile(const srcfile: string; const bforce: boolean; const bappend: boolean): boolean;
+var t_lines: TStringList; b_update, b_append: boolean; t_fdatetime: TDateTime;
 begin
   result := FileExists(srcfile);
   if result then begin
     FileAge(srcfile, t_fdatetime);
-    if SameText(s_srcfile, srcfile) then b_update := (t_fdatetime <> t_fstemp)
-    else b_update := true;
+    b_append := bappend;
+    if SameText(s_srcfile, srcfile) then begin
+      b_update := (t_fdatetime <> t_fstemp);
+      b_append := false;
+    end else b_update := true;
 
     if (bforce or b_update) then begin
       b_allowvar := true;
       t_lines := TStringList.Create();
       t_lines.LoadFromFile(srcfile);
-      result := ReadFromList(t_lines);
+      result := ReadFromList(t_lines, b_append);
       if result then begin
         s_srcfile := srcfile;
         if result then t_fstemp := t_fdatetime

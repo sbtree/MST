@@ -15,7 +15,7 @@ type
     property ValuePattern: string read s_pattern write s_pattern;
     property Resulted: boolean read b_stepok write b_stepok;
 
-    procedure Assigne(const source: TStepResult);
+    procedure Assign(const source: TStepResult);
 
 //    function ValueStr(const pattern: string = ''): string; virtual;
 //    function ValueInt(const pattern: string = ''): integer; virtual;
@@ -37,7 +37,7 @@ begin
   inherited Destroy();
 end;
 
-procedure TStepResult.Assigne(const source: TStepResult);
+procedure TStepResult.Assign(const source: TStepResult);
 begin
   if assigned(source) then begin
     b_stepok := source.Resulted;

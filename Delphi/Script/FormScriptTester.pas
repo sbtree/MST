@@ -32,6 +32,7 @@ type
     btnVariable: TButton;
     btnClear: TButton;
     chkForce: TCheckBox;
+    chkAppend: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnGetStepByNrClick(Sender: TObject);
@@ -134,7 +135,7 @@ procedure TfrmScriptTester.btnOpenScriptClick(Sender: TObject);
 var
   t_dialog : TOpenDialog;    // Save dialog variable
 begin
-  t_dialog := TSaveDialog.Create(self); // Create the save dialog object - assign to our save dialog variable
+  t_dialog := TOpenDialog.Create(self); // Create the save dialog object - assign to our save dialog variable
   t_dialog.Title := 'Open a Test Script'; // Give the dialog a title
   t_dialog.InitialDir := GetCurrentDir;// Set up the starting directory to be the current one
   t_dialog.Filter := 'Text file|*.txt|All files|*.*'; // Allow only .txt and .doc file types to be saved
@@ -155,7 +156,7 @@ end;
 
 procedure TfrmScriptTester.btnReadScriptClick(Sender: TObject);
 begin
-  t_sreader.ReadFromFile(trim(txtScriptFile.Text), chkForce.Checked);
+  t_sreader.ReadFromFile(trim(txtScriptFile.Text), chkForce.Checked, chkAppend.Checked);
 end;
 
 procedure TfrmScriptTester.btnSaveScriptClick(Sender: TObject);
