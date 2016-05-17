@@ -35,6 +35,9 @@ type
     procedure btnReadScriptClick(Sender: TObject);
     procedure btnRunStepByNrClick(Sender: TObject);
     procedure btnGetFieldClick(Sender: TObject);
+    procedure btnRunCaseClick(Sender: TObject);
+    procedure btnSequenceClick(Sender: TObject);
+    procedure btnPreviousClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_tstep:    TTestStep;
@@ -68,14 +71,30 @@ begin
     t_messenger.AddMessage('Please select a test step, firstly.');
 end;
 
+procedure TForm2.btnPreviousClick(Sender: TObject);
+begin
+  //todo:
+  t_container.NextStep();
+end;
+
 procedure TForm2.btnReadScriptClick(Sender: TObject);
 begin
   t_sreader.ReadFromFile(trim(txtScriptFile.Text), chkForce.Checked, chkAppend.Checked);
 end;
 
+procedure TForm2.btnRunCaseClick(Sender: TObject);
+begin
+  t_runner.RunCase(trim(txtCase.Text));
+end;
+
 procedure TForm2.btnRunStepByNrClick(Sender: TObject);
 begin
   t_runner.RunStep(trim(txtStepNr.Text));
+end;
+
+procedure TForm2.btnSequenceClick(Sender: TObject);
+begin
+  t_runner.RunSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
 end;
 
 procedure TForm2.FormCreate(Sender: TObject);

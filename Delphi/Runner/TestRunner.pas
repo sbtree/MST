@@ -47,7 +47,7 @@ type
     property StepContainer: TStepContainer read t_container write t_container;
 
     function RunStep(const stepnr: string): boolean;
-    function RunCase(const casenr: integer): boolean;
+    function RunCase(const casenr: string): boolean;
     function RunSequence(const csincl, csexcl: string): boolean;
   end;
 
@@ -100,42 +100,42 @@ function  TTestRunner.StepInit(const val: string): boolean;
 begin
   result := true;
   //todo:
-  AddMessage(format('The value (%s) of field (r_on) is accepted.', [val]));
+  //AddMessage(format('The value (%s) of field (r_on) is accepted.', [val]));
 end;
 
 function  TTestRunner.StepInputM(const val: string): boolean;
 begin
   result := true;
   //todo:
-  AddMessage(format('The value (%s) of field (M) is accepted.', [val]));
+  //AddMessage(format('The value (%s) of field (M) is accepted.', [val]));
 end;
 
 function  TTestRunner.StepFunc(const func, par: string): boolean; 
 begin
   result := true;
   //todo:
-  AddMessage(format('The function (%s) with parameter (%s) is executed.', [func, par]));
+  //AddMessage(format('The function (%s) with parameter (%s) is executed.', [func, par]));
 end;
 
 function  TTestRunner.StepEval(const val: string): boolean; 
 begin
   result := true;
   //todo:
-  AddMessage(format('The value (%s) is evaluated.', [val]));
+  //AddMessage(format('The value (%s) is evaluated.', [val]));
 end;
 
 function  TTestRunner.StepSave(const val: string): boolean;
 begin
   result := true;
   //todo:
-  AddMessage(format('The resault (%s)  is saved.', [val]));
+  //AddMessage(format('The resault (%s)  is saved.', [val]));
 end;
 
 function  TTestRunner.StepFinal(const val: string): boolean;
 begin
   result := true;
   //todo:
-  AddMessage(format('The value (%s) of field (r_off) is accepted.', [val]));
+  //AddMessage(format('The value (%s) of field (r_off) is accepted.', [val]));
 end;
 
 
@@ -152,13 +152,14 @@ begin
     if result then result := StepFunc(step.GetFieldValue(SF_FCT), step.GetFieldValue(SF_PAR));
     //t_fcaller.CallFunction('','');
     //4. save result string of this step //todo: consider of result pattern here
-    t_curstep.StepResult.ResultString := t_fcaller.ResultString;
+    //t_curstep.StepResult.ResultString := t_fcaller.ResultString;
 
     //todo: 5. evaluate the resualt of calling function with 'tol'
     if result then result := StepEval(step.GetFieldValue(SF_TOL_A));
     //todo: 6. finalize this step 'final' or 'r_off'
     if result then result := StepFinal(step.GetFieldValue(SF_FINAL));
-    t_curstep.StepResult.Resulted := result;
+    //t_curstep.StepResult.Resulted := result;
+    AddMessage(format('The step (%s) is done successfully.', [step.GetFieldValue(SF_NR)]));
   end;
 end;
 
@@ -168,18 +169,32 @@ begin
   if assigned(t_container) then  result := RunCurStep(t_container.TestStepByNr(stepnr));
 end;
 
-function TTestRunner.RunCase(const casenr: integer): boolean;
+function TTestRunner.RunCase(const casenr: string): boolean;
+var i: integer; t_steps: TStepGroup; s_casenr: string;
 begin
   result := false;
-  //todo: 1. call RunStep in a loop till the last step in this case
-  //todo: 2. decide to break or not if an error exists
+  if assigned(t_container) then begin
+    t_steps := t_container.TestCaseByNr(casenr);
+    if assigned(t_steps) then begin
+      for i := t_steps.IndexFrom to t_steps.IndexTo do begin
+        result := RunCurStep(t_container.TestStepByIndex(i));
+        if (not result) then break;
+      end;
+    end;
+  end;
 end;
 
 function TTestRunner.RunSequence(const csincl, csexcl: string): boolean;
+var t_cases: TStrings; i: integer; s_casenr: string;
 begin
   result := false;
-  //todo: 1. call RunCase in a loop till the last case in this routine
-  //todo: 2. decide to break or not if an error exists
+  if assigned(t_container) then begin
+    t_cases := t_container.TestSequence(csincl, csexcl);
+    for i := 0 to t_cases.Count - 1 do begin
+      result := RunCase(t_cases[i]);
+      if (not result) then break;
+    end;
+  end;
 end;
 
 end.

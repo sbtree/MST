@@ -83,6 +83,8 @@ object Form2: TForm2
     Top = 8
     Width = 546
     Height = 224
+    ReadOnly = True
+    ScrollBars = ssBoth
     TabOrder = 6
   end
   object txtField: TEdit
@@ -110,6 +112,7 @@ object Form2: TForm2
     Hint = 'previous test step'
     Caption = '<'
     TabOrder = 9
+    OnClick = btnPreviousClick
   end
   object btnNext: TButton
     Left = 426
@@ -135,6 +138,7 @@ object Form2: TForm2
     Height = 25
     Caption = 'RunCase'
     TabOrder = 12
+    OnClick = btnRunCaseClick
   end
   object txtInclusive: TEdit
     Left = 480
@@ -152,6 +156,7 @@ object Form2: TForm2
     Height = 25
     Caption = 'RunSequence'
     TabOrder = 14
+    OnClick = btnSequenceClick
   end
   object txtExclusive: TEdit
     Left = 480
