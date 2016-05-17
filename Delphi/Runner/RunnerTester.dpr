@@ -4,11 +4,16 @@ uses
   Forms,
   FormRunnerTester in 'FormRunnerTester.pas' {Form2},
   TestRunner in 'TestRunner.pas',
-  ScriptReader in '..\Script\ScriptReader.pas',
   GenType in '..\General\GenType.pas',
   TextMessage in '..\General\TextMessage.pas',
   FunctionCaller in '..\Function\FunctionCaller.pas',
-  StepContainer in '..\Script\StepContainer.pas';
+  FuncBase in '..\Function\FuncBase.pas',
+  ScriptReader in '..\Script\ScriptReader.pas',
+  StepChecker in '..\Script\StepChecker.pas',
+  StepContainer in '..\Script\StepContainer.pas',
+  StepDescriptor in '..\Script\StepDescriptor.pas',
+  StepResult in '..\Script\StepResult.pas',
+  NamedStrings in '..\General\NamedStrings.pas';
 
 {$R *.res}
 

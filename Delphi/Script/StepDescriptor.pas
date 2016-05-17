@@ -190,7 +190,8 @@ end;
 
 function  TTestStep.GetFieldName(const esf: EStepField): string;
 begin
-
+  //todo: names in StepChecker
+  result := '';
 end;
 
 function  TTestStep.GetFieldValue(const esf: EStepField): string;

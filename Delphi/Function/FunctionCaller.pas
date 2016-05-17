@@ -7,12 +7,14 @@ type
   //ScriptFunction = function(const par: string): boolean of object;
 
   //define class of function caller, which calls script functions
-  TFunctionCaller = class(TTextMessenger)
+  TFunctionCaller = class
   protected
-    t_func:   TFunctionBase;
-    e_exemode:EExecutionMode;
-    s_result: string;
+    t_func:       TFunctionBase;
+    e_exemode:    EExecutionMode;
+    s_result:     string;
+    t_messenger:  TTextMessenger;
   protected
+    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure SetExecutionMode(const em: EExecutionMode);
     function  FindFunction(const func: string): TFunctionBase; virtual;
   public
@@ -20,6 +22,7 @@ type
     destructor Destroy(); override;
     
     property  ExecutionMode: EExecutionMode read e_exemode write SetExecutionMode;
+    property  Messenger: TTextMessenger read t_messenger write t_messenger;
     property  ResultString: string read s_result write s_result;
     function  CallFunction(const func, par: string): boolean;
   end;
@@ -27,12 +30,19 @@ type
 implementation
 uses SysUtils;
 
+procedure TFunctionCaller.AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
+begin
+  //todo:
+end;
+
 procedure TFunctionCaller.SetExecutionMode(const em: EExecutionMode);
 begin
   e_exemode := em;
-  case e_exemode of
-    EM_NORMAL, EM_SIMULATE: e_threshold := ML_ERROR;
-    EM_DIAGNOSE: e_threshold := ML_INFO;
+  if assigned(t_messenger) then begin
+    case e_exemode of
+      EM_NORMAL, EM_SIMULATE: t_messenger.MessageThreshold := ML_ERROR;
+      EM_DIAGNOSE: t_messenger.MessageThreshold := ML_INFO;
+    end;
   end;
 end;
 
@@ -58,21 +68,21 @@ end;
 function TFunctionCaller.CallFunction(const func, par: string): boolean;
 begin
   result := false;
-  if (func = '') then AddMessage('The called function "' + func + '" is not available.', '', ML_ERROR)
+  if (func = '') then AddMessage('The called function "' + func + '" is not available.', ML_ERROR)
   else if SameText(func, 'nil') then AddMessage('Nothing is done for calling ' + func)
   else begin
     t_func := FindFunction(func);
     if assigned(t_func) then
     begin
-      t_func.Messenger := self;
+      t_func.Messenger := t_messenger;
       t_func.ExecutionMode := e_exemode;
       result := t_func.LoadParameter(par);
       if (result) then begin
         result := t_func.Execute();
         s_result := t_func.ResultString;
-      end else AddMessage('The called function "' + func + '" is not executed because of an error in its parameter.', '', ML_ERROR);
+      end else AddMessage('The called function "' + func + '" is not executed because of an error in its parameter.', ML_ERROR);
       FreeAndNil(t_func);
-    end else AddMessage('The called function "' + func + '" is not available.', '', ML_ERROR);
+    end else AddMessage('The called function "' + func + '" is not available.', ML_ERROR);
   end;
 end;
 

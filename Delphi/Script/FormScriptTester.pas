@@ -167,7 +167,7 @@ end;
 procedure TfrmScriptTester.btnSequenceClick(Sender: TObject);
 var s_casenrs: string;
 begin
-  s_casenrs := t_container.TestSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
+  s_casenrs := t_container.TestSequence(trim(txtInclusive.Text), trim(txtExclusive.Text)).DelimitedText;
   if s_casenrs <> '' then t_messenger.AddMessage('Test Sequence: ' + s_casenrs)
   else t_messenger.AddMessage('Test Sequence: no case')
 end;

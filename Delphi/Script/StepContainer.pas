@@ -14,6 +14,10 @@ type
     t_cases:    TObjectList;  //to save test cases
     t_casenrs:  TStrings;     //auxiliary variable, to save the number of test case for easily searching, mathching index of t_cases
     i_lastcnr:  integer;      //to save last case number
+    t_sequence: TStrings;     //to save the number of test cases in current test sequence
+    s_inclusive:string;       //to save expression of inclusive cases, see function TestSequence
+    s_exclusive:string;       //to save expression of exclusive cases, see function TestSequence
+
   protected
     procedure UpdateTestCase(const stepnr, title: string);
     function  IndexSet(const casenrs: string): TIndexSet;
@@ -35,7 +39,7 @@ type
     function  NextStep(): TTestStep;
     function  TestCaseByIndex(const caseidx: integer): TStepGroup;
     function  TestCaseByNr(const casenr: string): TStepGroup;
-    function  TestSequence(const incl: string; const excl: string = ''): string;
+    function  TestSequence(const incl: string; const excl: string = ''): TStrings;
     procedure Clear();
     procedure SaveFile(const sfile: string);
     procedure Assign(const source: TStepContainer);
@@ -48,6 +52,9 @@ type
     i_groupnr:    integer; //number of the group, e.g. test case number
     s_title:      string;  //title of this group
     t_container:  TStepContainer; //step container
+  protected
+    function CountStep(): integer;
+
   public
     constructor Create();
     destructor Destroy(); override;
@@ -55,6 +62,7 @@ type
     property StepContainer: TStepContainer read t_container write t_container;
     property IndexFrom: integer read i_indexfrom write i_indexfrom;
     property IndexTo: integer read i_indexto write i_indexto;
+    property Count: integer read CountStep;
     property GroupNr: integer read i_groupnr write i_groupnr;
     property GroupTitle: string read s_title write s_title;
   end;
@@ -172,6 +180,8 @@ begin
   t_stepnrs := TStringList.Create();
   t_cases := TObjectList.Create();
   t_casenrs := TStringList.Create();
+  t_sequence := TStringList.Create();
+  t_sequence.Delimiter := ',';
 end;
 
 destructor TStepContainer.Destroy();
@@ -181,6 +191,7 @@ begin
   t_stepnrs.Free();
   t_cases.Free();
   t_casenrs.Free();
+  t_sequence.Free();
   inherited Destroy();
 end;
 
@@ -260,19 +271,22 @@ end;
 //                   CINT_CASES_MAX (255), are not considered.
 //    History      :
 // =============================================================================
-function  TStepContainer.TestSequence(const incl: string; const excl: string): string;
+function  TStepContainer.TestSequence(const incl: string; const excl: string): TStrings;
 var set_incl, set_excl, set_result: TIndexSet; i, i_maxidx: integer; i_idx: byte;
 begin
-  set_incl := IndexSet(incl);
-  set_excl := IndexSet(excl);
-  set_result := set_incl - set_excl;
-  if ((t_casenrs.Count - 1) > CINT_CASES_MAX) then i_maxidx := CINT_CASES_MAX
-  else i_maxidx := t_casenrs.Count - 1;
-  for i := 0 to i_maxidx do begin
-    i_idx := byte(i);
-    if (i_idx in set_result) then result := result + t_casenrs[i] + ',';
+  if ((incl <> s_inclusive) or (excl <> s_exclusive)) then begin
+    t_sequence.Clear();
+    set_incl := IndexSet(incl); s_inclusive := incl;
+    set_excl := IndexSet(excl); s_exclusive := excl;
+    set_result := set_incl - set_excl;
+    if ((t_casenrs.Count - 1) > CINT_CASES_MAX) then i_maxidx := CINT_CASES_MAX
+    else i_maxidx := t_casenrs.Count - 1;
+    for i := 0 to i_maxidx do begin
+      i_idx := byte(i);
+      if (i_idx in set_result) then t_sequence.Add(t_casenrs[i]);
+    end;
   end;
-  if EndsText(',',result) then result := LeftStr(result, length(result) - 1);
+  result := t_sequence;
 end;
 
 procedure TStepContainer.Clear();
@@ -283,6 +297,9 @@ begin
   t_stepnrs.Clear();
   t_cases.Clear();
   t_casenrs.Clear();
+  t_sequence.Clear();
+  s_inclusive := '';
+  s_exclusive := ''
 end;
 
 
@@ -324,6 +341,12 @@ begin
       t_stepnrs.Add(t_step.GetFieldValue(SF_NR));
     end;
   end;
+end;
+
+function TStepGroup.CountStep(): integer;
+begin
+  if ((i_indexfrom >= 0) and (i_indexto  >= i_indexfrom)) then result := i_indexto - i_indexfrom + 1
+  else result := 0;
 end;
 
 constructor TStepGroup.Create();

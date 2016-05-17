@@ -32,11 +32,16 @@
     <DelphiCompile Include="RunnerTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Function\FuncBase.pas" />
     <DCCReference Include="..\Function\FunctionCaller.pas" />
     <DCCReference Include="..\General\GenType.pas" />
+    <DCCReference Include="..\General\NamedStrings.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="..\Script\ScriptReader.pas" />
+    <DCCReference Include="..\Script\StepChecker.pas" />
     <DCCReference Include="..\Script\StepContainer.pas" />
+    <DCCReference Include="..\Script\StepDescriptor.pas" />
+    <DCCReference Include="..\Script\StepResult.pas" />
     <DCCReference Include="FormRunnerTester.pas">
       <Form>Form2</Form>
     </DCCReference>

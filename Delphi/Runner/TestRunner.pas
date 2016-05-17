@@ -2,7 +2,7 @@ unit TestRunner;
 
 interface
 
-uses  Classes, TypInfo, TestStep, StepDescriptor, TestSequence, StepResult, StepContainer, TextMessage,
+uses  Classes, TypInfo, StepDescriptor, StepResult, StepContainer, TextMessage,
       FunctionCaller, GenType;
 
 type
@@ -18,6 +18,8 @@ type
      p_ptinfo:   PTypeInfo;    //a pointer to type info of EParseState
 
   protected
+
+    t_curcase:  TStepGroup;
     t_curstep:  TTestStep;
     t_fcaller:  TFunctionCaller;
     e_exemode:  EExecutionMode;
@@ -27,14 +29,14 @@ type
     procedure SetExecutionMode(const em: EExecutionMode);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
 
-    function  StepInit(const fieldval: string): boolean; virtual;
-    {function  StepInputM(const par: string): boolean; virtual;
+    function  StepInit(const val: string): boolean; virtual;
+    function  StepInputM(const val: string): boolean; virtual;
     function  StepFunc(const func, par: string): boolean; virtual;
-    function  StepEval(const par: string): boolean; virtual;
-    function  StepSave(const par: string): boolean; virtual;
-    function  StepFinal(const par: string): boolean; virtual; }
+    function  StepEval(const val: string): boolean; virtual;
+    function  StepSave(const val: string): boolean; virtual;
+    function  StepFinal(const val: string): boolean; virtual;
 
-    function RunStep(step: TTestStep): boolean;
+    function RunCurStep(step: TTestStep): boolean;
 
   public
     constructor Create();
@@ -44,11 +46,9 @@ type
     property Messenger: TTextMessenger read t_messenger write t_messenger;
     property StepContainer: TStepContainer read t_container write t_container;
 
-    function RunStepByIndex(const stepidx: integer): boolean;
-    function RunStepByNr(const stepnr: string): boolean;
+    function RunStep(const stepnr: string): boolean;
     function RunCase(const casenr: integer): boolean;
-    function RunSequence(const casefrom, caseto: integer): boolean;
-
+    function RunSequence(const csincl, csexcl: string): boolean;
   end;
 
 implementation
@@ -58,7 +58,7 @@ constructor TTestRunner.Create();
 begin
   inherited Create();
   t_fcaller := TFunctionCaller.Create();
-  t_fcaller.Messages := self.Messages;
+  t_fcaller.Messenger := self.Messenger;
   ExecutionMode := EM_NORMAL;
 end;
 
@@ -71,9 +71,11 @@ end;
 procedure TTestRunner.SetExecutionMode(const em: EExecutionMode);
 begin
   e_exemode := em;
-  case e_exemode of
-    EM_NORMAL, EM_SIMULATE: e_threshold := ML_ERROR;
-    EM_DIAGNOSE: e_threshold := ML_INFO;
+  if assigned(t_messenger) then begin
+    case e_exemode of
+      EM_NORMAL, EM_SIMULATE: t_messenger.MessageThreshold := ML_ERROR;
+      EM_DIAGNOSE: t_messenger.MessageThreshold := ML_INFO;
+    end;
   end;
   t_fcaller.ExecutionMode := e_exemode;
 end;
@@ -90,44 +92,80 @@ procedure TTestRunner.AddMessage(const text: string; const level: EMessageLevel)
 begin
   if assigned(t_messenger) then begin
     //if (level in [ML_INFO, ML_WARNING]) then t_messenger.AddMessage(text, ClassName, level)
-    //else t_messenger.AddMessage(format('[r:%d, c:%d, s:%s] %s', [i_rowindex, i_colindex, GetEnumName(p_ptinfo, integer(e_curstate)), text]), ClassName, level);
+    t_messenger.AddMessage(format('%s', [text]), 'TTestRunner', level);
   end;
 end;
 
-function  TTestRunner.StepInit(const fieldval: string): boolean;
+function  TTestRunner.StepInit(const val: string): boolean;
 begin
   result := true;
   //todo:
+  AddMessage(format('The value (%s) of field (r_on) is accepted.', [val]));
 end;
 
-function TTestRunner.RunStep(step: TTestStep): boolean;
+function  TTestRunner.StepInputM(const val: string): boolean;
+begin
+  result := true;
+  //todo:
+  AddMessage(format('The value (%s) of field (M) is accepted.', [val]));
+end;
+
+function  TTestRunner.StepFunc(const func, par: string): boolean; 
+begin
+  result := true;
+  //todo:
+  AddMessage(format('The function (%s) with parameter (%s) is executed.', [func, par]));
+end;
+
+function  TTestRunner.StepEval(const val: string): boolean; 
+begin
+  result := true;
+  //todo:
+  AddMessage(format('The value (%s) is evaluated.', [val]));
+end;
+
+function  TTestRunner.StepSave(const val: string): boolean;
+begin
+  result := true;
+  //todo:
+  AddMessage(format('The resault (%s)  is saved.', [val]));
+end;
+
+function  TTestRunner.StepFinal(const val: string): boolean;
+begin
+  result := true;
+  //todo:
+  AddMessage(format('The value (%s) of field (r_off) is accepted.', [val]));
+end;
+
+
+function TTestRunner.RunCurStep(step: TTestStep): boolean;
 begin
   result := false;
   if assigned(step) then begin
     t_curstep := step;
     //todo: 1. initialize this step and execute statements of 'init' or 'r_on'
+    result := StepInit(step.GetFieldValue(SF_INIT));
     //todo: 2. read information of 'm' and control the execution of this step
+    if result then result := StepInputM(step.GetFieldValue(SF_M));
     //todo: 3. call script function to execute 'fkt' with 'par'
+    if result then result := StepFunc(step.GetFieldValue(SF_FCT), step.GetFieldValue(SF_PAR));
     //t_fcaller.CallFunction('','');
     //4. save result string of this step //todo: consider of result pattern here
     t_curstep.StepResult.ResultString := t_fcaller.ResultString;
 
     //todo: 5. evaluate the resualt of calling function with 'tol'
+    if result then result := StepEval(step.GetFieldValue(SF_TOL_A));
     //todo: 6. finalize this step 'final' or 'r_off'
+    if result then result := StepFinal(step.GetFieldValue(SF_FINAL));
     t_curstep.StepResult.Resulted := result;
   end;
 end;
 
-function TTestRunner.RunStepByIndex(const stepidx: integer): boolean;
+function TTestRunner.RunStep(const stepnr: string): boolean;
 begin
   result := false;
-  if assigned(t_container) then  result := RunStep(t_container.GetStepByIndex(stepidx));
-end;
-
-function TTestRunner.RunStepByNr(const stepnr: string): boolean;
-begin
-  result := false;
-  if assigned(t_container) then  result := RunStep(t_container.GetStepByNr(stepnr));
+  if assigned(t_container) then  result := RunCurStep(t_container.TestStepByNr(stepnr));
 end;
 
 function TTestRunner.RunCase(const casenr: integer): boolean;
@@ -137,7 +175,7 @@ begin
   //todo: 2. decide to break or not if an error exists
 end;
 
-function TTestRunner.RunSequence(var troutine: TTestSequence): boolean;
+function TTestRunner.RunSequence(const csincl, csexcl: string): boolean;
 begin
   result := false;
   //todo: 1. call RunCase in a loop till the last case in this routine
