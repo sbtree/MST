@@ -34,6 +34,7 @@ type
     chkForce: TCheckBox;
     chkAppend: TCheckBox;
     btnSequenceSteps: TButton;
+    btnCurrentCase: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnGetStepByNrClick(Sender: TObject);
@@ -49,6 +50,7 @@ type
     procedure btnVariableClick(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
     procedure btnSequenceStepsClick(Sender: TObject);
+    procedure btnCurrentCaseClick(Sender: TObject);
   private
     t_sreader:  TScriptReader;
     t_tstep:    TTestStep;
@@ -68,6 +70,16 @@ implementation
 procedure TfrmScriptTester.btnClearClick(Sender: TObject);
 begin
   t_sreader.Clear();
+end;
+
+procedure TfrmScriptTester.btnCurrentCaseClick(Sender: TObject);
+var t_sgroup: TStepGroup;
+begin
+  t_sgroup := t_container.CurrentCase;
+  if assigned(t_sgroup) then
+    t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, index from=%d, index to=%d', [t_sgroup.GroupNr, t_sgroup.GroupTitle, t_sgroup.IndexFrom, t_sgroup.IndexTo]))
+  else
+    t_messenger.AddMessage(format('Test Case (Nr=%s) is NOT found.', [trim(txtCase.Text)]));
 end;
 
 procedure TfrmScriptTester.btnGetCaseClick(Sender: TObject);

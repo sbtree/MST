@@ -92,6 +92,10 @@ type
   protected
     function  GetCases(): integer;
     function  GetSteps(): integer;
+    function  FirstIndexOfStep(): integer;
+    function  PrevIndexOfStep(): integer;
+    function  CurIndexOfStep(): integer;
+    function  NextIndexOfStep(): integer;
     procedure UpdateCase(const caseidx: byte);
     procedure Clear();
 
@@ -103,8 +107,11 @@ type
     property  CountStep: integer read GetSteps;
     property  CaseNrList: TStrings read t_casenrs;
     property  StepNrList: TStrings read t_stepnrs;
-    property  StepIndex: integer read i_curindex;
-    
+    property  FirstStepIndex: integer read FirstIndexOfStep;
+    property  PreviousStepIndex: integer read PrevIndexOfStep;
+    property  CurrentStepIndex: integer read CurIndexOfStep;
+    property  NextStepIndex: integer read NextIndexOfStep;
+
     procedure Update(const csset: TIndexSet);
   end;
 
@@ -439,6 +446,30 @@ begin
   result := length(a_steps);
 end;
 
+function  TTestSequence.FirstIndexOfStep(): integer;
+begin
+  if (length(a_steps) > 0) then i_curindex := 0;
+  result := CurIndexOfStep();
+end;
+
+function  TTestSequence.PrevIndexOfStep(): integer;
+begin
+  if ((i_curindex >= 0) and (i_curindex < length(a_steps))) then dec(i_curindex);
+  result := CurIndexOfStep()
+end;
+
+function  TTestSequence.CurIndexOfStep(): integer;
+begin
+  if ((i_curindex >= 0) and (i_curindex < length(a_steps))) then result := a_steps[i_curindex]
+  else result := -1;
+end;
+
+function  TTestSequence.NextIndexOfStep(): integer;
+begin
+  if ((i_curindex >= 0) and (i_curindex < length(a_steps))) then inc(i_curindex);
+  result := CurIndexOfStep()
+end;
+
 procedure TTestSequence.UpdateCase(const caseidx: byte);
 var i, i_curcase, i_steps, i_curstep: integer; 
     t_case: TStepGroup; t_step: TTestStep;
@@ -456,6 +487,7 @@ begin
         SetLength(a_steps, i_curstep + i_steps);
         for i := t_case.IndexFrom to t_case.IndexTo do begin
           a_steps[i_curstep] := i;
+          inc(i_curstep);
           t_step := t_container.StepByIndex(i);
           if assigned(t_step) then t_stepnrs.Add(t_step.GetFieldValue(SF_NR));
         end;

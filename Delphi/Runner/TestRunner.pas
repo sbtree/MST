@@ -36,7 +36,8 @@ type
     function  StepSave(const val: string): boolean; virtual;
     function  StepFinal(const val: string): boolean; virtual;
 
-    function RunCurStep(step: TTestStep): boolean;
+    function RunStepT(tstep: TTestStep): boolean;
+    function RunCaseT(tcase: TStepGroup): boolean;
 
   public
     constructor Create();
@@ -46,8 +47,10 @@ type
     property Messenger: TTextMessenger read t_messenger write t_messenger;
     property StepContainer: TStepContainer read t_container write t_container;
 
-    function RunStep(const stepnr: string): boolean;
-    function RunCase(const casenr: string): boolean;
+    function RunStep(const stepnr: string): boolean; overload;
+    function RunStep(const stepidx: integer): boolean; overload;
+    function RunCase(const casenr: string): boolean; overload;
+    function RunCase(const caseidx: integer): boolean; overload;
     function RunSequence(const csincl, csexcl: string): boolean;
   end;
 
@@ -139,60 +142,79 @@ begin
 end;
 
 
-function TTestRunner.RunCurStep(step: TTestStep): boolean;
+function TTestRunner.RunStepT(tstep: TTestStep): boolean;
 begin
   result := false;
-  if assigned(step) then begin
-    t_curstep := step;
+  if assigned(tstep) then begin
+    t_curstep := tstep;
     //todo: 1. initialize this step and execute statements of 'init' or 'r_on'
-    result := StepInit(step.GetFieldValue(SF_INIT));
+    result := StepInit(tstep.GetFieldValue(SF_INIT));
     //todo: 2. read information of 'm' and control the execution of this step
-    if result then result := StepInputM(step.GetFieldValue(SF_M));
+    if result then result := StepInputM(tstep.GetFieldValue(SF_M));
     //todo: 3. call script function to execute 'fct' with 'par'
-    if result then result := StepFunc(step.GetFieldValue(SF_FCT), step.GetFieldValue(SF_PAR));
+    if result then result := StepFunc(tstep.GetFieldValue(SF_FCT), tstep.GetFieldValue(SF_PAR));
     //t_fcaller.CallFunction('','');
     //4. save result string of this step //todo: consider of result pattern here
     //t_curstep.StepResult.ResultString := t_fcaller.ResultString;
 
     //todo: 5. evaluate the resualt of calling function with 'tol'
-    if result then result := StepEval(step.GetFieldValue(SF_TOL_A));
+    if result then result := StepEval(tstep.GetFieldValue(SF_TOL_A));
     //todo: 6. finalize this step 'final' or 'r_off'
-    if result then result := StepFinal(step.GetFieldValue(SF_FINAL));
+    if result then result := StepFinal(tstep.GetFieldValue(SF_FINAL));
     //t_curstep.StepResult.Resulted := result;
-    AddMessage(format('The step (%s) is done successfully.', [step.GetFieldValue(SF_NR)]));
+    AddMessage(format('The step (%s) is done successfully.', [tstep.GetFieldValue(SF_NR)]));
+  end;
+end;
+
+function TTestRunner.RunCaseT(tcase: TStepGroup): boolean;
+var i: integer;
+begin
+  result := false;
+  if (assigned(tcase) and assigned(t_container)) then begin
+    for i := tcase.IndexFrom to tcase.IndexTo do begin
+      result := RunStepT(t_container.StepByIndex(i));
+      if (not result) then break;
+    end;
   end;
 end;
 
 function TTestRunner.RunStep(const stepnr: string): boolean;
 begin
   result := false;
-  if assigned(t_container) then  result := RunCurStep(t_container.TestStepByNr(stepnr));
+  if assigned(t_container) then  result := RunStepT(t_container.StepByNr(stepnr));
+end;
+
+function TTestRunner.RunStep(const stepidx: integer): boolean;
+begin
+  result := false;
+  if assigned(t_container) then  result := RunStepT(t_container.StepByIndex(stepidx));
 end;
 
 function TTestRunner.RunCase(const casenr: string): boolean;
-var i: integer; t_steps: TStepGroup; s_casenr: string;
 begin
   result := false;
-  if assigned(t_container) then begin
-    t_steps := t_container.TestCaseByNr(casenr);
-    if assigned(t_steps) then begin
-      for i := t_steps.IndexFrom to t_steps.IndexTo do begin
-        result := RunCurStep(t_container.TestStepByIndex(i));
-        if (not result) then break;
-      end;
-    end;
-  end;
+  if assigned(t_container) then
+    result := RunCaseT(t_container.CaseByNr(casenr));
+end;
+
+function TTestRunner.RunCase(const caseidx: integer): boolean;
+begin
+  result := false;
+  if assigned(t_container) then
+    result := RunCaseT(t_container.CaseByIndex(caseidx));
 end;
 
 function TTestRunner.RunSequence(const csincl, csexcl: string): boolean;
-var t_cases: TStrings; i: integer; s_casenr: string;
+var i_stepidx: integer;
 begin
   result := false;
   if assigned(t_container) then begin
-    t_cases := t_container.TestSequence(csincl, csexcl);
-    for i := 0 to t_cases.Count - 1 do begin
-      result := RunCase(t_cases[i]);
+    t_container.UpdateSequence(csincl, csexcl);
+    i_stepidx := t_container.TestSequence.FirstStepIndex;
+    while (i_stepidx >= 0) do begin
+      result := RunStepT(t_container.StepByIndex(i_stepidx));
       if (not result) then break;
+      i_stepidx := t_container.TestSequence.NextStepIndex;
     end;
   end;
 end;

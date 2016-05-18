@@ -15,31 +15,31 @@ object Form2: TForm2
   PixelsPerInch = 96
   TextHeight = 13
   object lblInclusive: TLabel
-    Left = 449
-    Top = 274
+    Left = 337
+    Top = 303
     Width = 25
     Height = 13
     Caption = 'Incl.:'
   end
   object lblExclusive: TLabel
-    Left = 449
-    Top = 301
+    Left = 337
+    Top = 332
     Width = 27
     Height = 13
     Caption = 'Excl.:'
   end
   object btnRunStepByNr: TButton
-    Left = 321
-    Top = 267
-    Width = 75
+    Left = 257
+    Top = 298
+    Width = 64
     Height = 25
-    Caption = 'RunStepByNr'
+    Caption = 'RunStep'
     TabOrder = 0
     OnClick = btnRunStepByNrClick
   end
   object txtStepNr: TEdit
-    Left = 266
-    Top = 269
+    Left = 202
+    Top = 300
     Width = 49
     Height = 21
     TabOrder = 1
@@ -64,18 +64,18 @@ object Form2: TForm2
   object btnReadScript: TButton
     Left = 8
     Top = 267
-    Width = 75
+    Width = 50
     Height = 25
-    Caption = 'ReadScript'
+    Caption = 'Read'
     TabOrder = 4
     OnClick = btnReadScriptClick
   end
   object btnSaveScript: TButton
-    Left = 89
+    Left = 64
     Top = 267
-    Width = 75
+    Width = 50
     Height = 25
-    Caption = 'SaveScript'
+    Caption = 'Save'
     TabOrder = 5
   end
   object memInfo: TMemo
@@ -89,7 +89,7 @@ object Form2: TForm2
   end
   object txtField: TEdit
     Left = 8
-    Top = 298
+    Top = 300
     Width = 74
     Height = 21
     TabOrder = 7
@@ -105,8 +105,8 @@ object Form2: TForm2
     OnClick = btnGetFieldClick
   end
   object btnPrevious: TButton
-    Left = 410
-    Top = 267
+    Left = 522
+    Top = 327
     Width = 16
     Height = 25
     Hint = 'previous test step'
@@ -115,34 +115,35 @@ object Form2: TForm2
     OnClick = btnPreviousClick
   end
   object btnNext: TButton
-    Left = 426
-    Top = 267
+    Left = 538
+    Top = 327
     Width = 16
     Height = 25
     Hint = 'next test step'
     Caption = '>'
     TabOrder = 10
+    OnClick = btnNextClick
   end
   object txtCase: TEdit
-    Left = 266
-    Top = 298
-    Width = 96
+    Left = 202
+    Top = 329
+    Width = 49
     Height = 21
     TabOrder = 11
     Text = '11'
   end
   object btnRunCase: TButton
-    Left = 368
-    Top = 298
-    Width = 74
+    Left = 257
+    Top = 327
+    Width = 64
     Height = 25
     Caption = 'RunCase'
     TabOrder = 12
     OnClick = btnRunCaseClick
   end
   object txtInclusive: TEdit
-    Left = 480
-    Top = 271
+    Left = 368
+    Top = 300
     Width = 74
     Height = 21
     Hint = 'inclusive test cases'
@@ -150,17 +151,17 @@ object Form2: TForm2
     Text = 'all'
   end
   object btnSequence: TButton
-    Left = 449
-    Top = 327
-    Width = 105
+    Left = 448
+    Top = 298
+    Width = 68
     Height = 25
-    Caption = 'RunSequence'
+    Caption = 'Sequence'
     TabOrder = 14
     OnClick = btnSequenceClick
   end
   object txtExclusive: TEdit
-    Left = 480
-    Top = 297
+    Left = 368
+    Top = 329
     Width = 74
     Height = 21
     Hint = 'exclusive test cases'
@@ -184,9 +185,9 @@ object Form2: TForm2
     TabOrder = 17
   end
   object btnClear: TButton
-    Left = 167
+    Left = 129
     Top = 267
-    Width = 75
+    Width = 50
     Height = 25
     Caption = 'Clear'
     TabOrder = 18
@@ -206,5 +207,23 @@ object Form2: TForm2
     Height = 17
     Caption = 'Append'
     TabOrder = 20
+  end
+  object btnRunFirst: TButton
+    Left = 448
+    Top = 327
+    Width = 68
+    Height = 25
+    Caption = 'RunFirst'
+    TabOrder = 21
+    OnClick = btnRunFirstClick
+  end
+  object btnRunSequence: TButton
+    Left = 522
+    Top = 296
+    Width = 32
+    Height = 25
+    Caption = 'Run'
+    TabOrder = 22
+    OnClick = btnRunSequenceClick
   end
 end

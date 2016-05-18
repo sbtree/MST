@@ -24,7 +24,7 @@ object frmScriptTester: TfrmScriptTester
   end
   object lblExclusive: TLabel
     Left = 361
-    Top = 332
+    Top = 331
     Width = 27
     Height = 13
     Caption = 'Excl.:'
@@ -57,7 +57,7 @@ object frmScriptTester: TfrmScriptTester
   end
   object txtStepIndex: TEdit
     Left = 7
-    Top = 299
+    Top = 300
     Width = 49
     Height = 21
     TabOrder = 3
@@ -124,9 +124,9 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnGetFieldClick
   end
   object btnPrevious: TButton
-    Left = 8
+    Left = 7
     Top = 326
-    Width = 48
+    Width = 20
     Height = 25
     Hint = 'previous test step'
     Caption = '<'
@@ -134,9 +134,9 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnPreviousClick
   end
   object btnNext: TButton
-    Left = 104
+    Left = 36
     Top = 326
-    Width = 48
+    Width = 20
     Height = 25
     Hint = 'next test step'
     Caption = '>'
@@ -231,11 +231,20 @@ object frmScriptTester: TfrmScriptTester
   end
   object btnSequenceSteps: TButton
     Left = 469
-    Top = 327
+    Top = 326
     Width = 85
     Height = 25
     Caption = 'Sequence Steps'
     TabOrder = 23
     OnClick = btnSequenceStepsClick
+  end
+  object btnCurrentCase: TButton
+    Left = 62
+    Top = 326
+    Width = 90
+    Height = 25
+    Caption = 'Current Case'
+    TabOrder = 24
+    OnClick = btnCurrentCaseClick
   end
 end
