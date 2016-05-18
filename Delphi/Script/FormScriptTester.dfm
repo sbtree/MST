@@ -17,14 +17,14 @@ object frmScriptTester: TfrmScriptTester
   TextHeight = 13
   object lblInclusive: TLabel
     Left = 361
-    Top = 276
+    Top = 303
     Width = 25
     Height = 13
     Caption = 'Incl.:'
   end
   object lblExclusive: TLabel
     Left = 361
-    Top = 303
+    Top = 332
     Width = 27
     Height = 13
     Caption = 'Excl.:'
@@ -81,20 +81,20 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnOpenScriptClick
   end
   object btnReadScript: TButton
-    Left = 479
+    Left = 383
     Top = 270
-    Width = 75
+    Width = 50
     Height = 25
-    Caption = 'ReadScript'
+    Caption = 'Read'
     TabOrder = 6
     OnClick = btnReadScriptClick
   end
   object btnSaveScript: TButton
-    Left = 479
-    Top = 298
-    Width = 75
+    Left = 448
+    Top = 270
+    Width = 50
     Height = 25
-    Caption = 'SaveScript'
+    Caption = 'Save'
     TabOrder = 7
     OnClick = btnSaveScriptClick
   end
@@ -103,6 +103,7 @@ object frmScriptTester: TfrmScriptTester
     Top = 8
     Width = 546
     Height = 224
+    ScrollBars = ssBoth
     TabOrder = 8
   end
   object txtField: TEdit
@@ -161,26 +162,26 @@ object frmScriptTester: TfrmScriptTester
   end
   object txtInclusive: TEdit
     Left = 392
-    Top = 273
-    Width = 74
+    Top = 300
+    Width = 71
     Height = 21
     Hint = 'inclusive test cases'
     TabOrder = 15
     Text = 'all'
   end
-  object btnSequence: TButton
-    Left = 361
-    Top = 327
-    Width = 105
+  object btnSequenceCases: TButton
+    Left = 469
+    Top = 298
+    Width = 85
     Height = 25
-    Caption = 'GetSequence'
+    Caption = 'Sequence Cases'
     TabOrder = 16
-    OnClick = btnSequenceClick
+    OnClick = btnSequenceCasesClick
   end
   object txtExclusive: TEdit
     Left = 391
-    Top = 299
-    Width = 74
+    Top = 328
+    Width = 72
     Height = 21
     Hint = 'exclusive test cases'
     TabOrder = 17
@@ -204,9 +205,9 @@ object frmScriptTester: TfrmScriptTester
     OnClick = btnVariableClick
   end
   object btnClear: TButton
-    Left = 479
-    Top = 326
-    Width = 75
+    Left = 504
+    Top = 270
+    Width = 50
     Height = 25
     Caption = 'Clear'
     TabOrder = 20
@@ -227,5 +228,14 @@ object frmScriptTester: TfrmScriptTester
     Height = 17
     Caption = 'Append'
     TabOrder = 22
+  end
+  object btnSequenceSteps: TButton
+    Left = 469
+    Top = 327
+    Width = 85
+    Height = 25
+    Caption = 'Sequence Steps'
+    TabOrder = 23
+    OnClick = btnSequenceStepsClick
   end
 end

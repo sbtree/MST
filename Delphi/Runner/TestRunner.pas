@@ -148,7 +148,7 @@ begin
     result := StepInit(step.GetFieldValue(SF_INIT));
     //todo: 2. read information of 'm' and control the execution of this step
     if result then result := StepInputM(step.GetFieldValue(SF_M));
-    //todo: 3. call script function to execute 'fkt' with 'par'
+    //todo: 3. call script function to execute 'fct' with 'par'
     if result then result := StepFunc(step.GetFieldValue(SF_FCT), step.GetFieldValue(SF_PAR));
     //t_fcaller.CallFunction('','');
     //4. save result string of this step //todo: consider of result pattern here

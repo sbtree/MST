@@ -349,7 +349,7 @@ function  TScriptReader.CheckTestStep(): boolean;
 begin
   result := false;
   if assigned(t_container) then begin
-    result := t_container.AddTestStep(a_fieldvals);
+    result := t_container.AddStep(a_fieldvals);
     if result then begin
       t_sentry.i_row := i_rowindex; //update row and column for each idle state
       t_sentry.i_col := i_colindex;
