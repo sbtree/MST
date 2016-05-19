@@ -11,8 +11,16 @@ object frmGeneralTester: TfrmGeneralTester
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
+  object imgTest: TImage
+    Left = 56
+    Top = 40
+    Width = 41
+    Height = 33
+    Stretch = True
+  end
   object btnTest: TButton
     Left = 544
     Top = 256

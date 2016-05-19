@@ -36,6 +36,8 @@ type
     property  TimeStamp: boolean read b_tstamp write b_tstamp;
 
     procedure AddMessage(const text: string; const sender: string = ''; const level: EMessageLevel = ML_INFO);
+    procedure ExportMessages(const fname: string);
+    procedure Clear(const bextern: boolean = false);
   end;
 
 implementation
@@ -76,6 +78,17 @@ begin
     t_msgintern.Add(s_msg);
     if (t_msgextern <> t_msgintern) then t_msgextern.Add(s_msg);
   end;
+end;
+
+procedure TTextMessenger.ExportMessages(const fname: string);
+begin
+  t_msgintern.SaveToFile(fname);
+end;
+
+procedure TTextMessenger.Clear(const bextern: boolean);
+begin
+  t_msgintern.Clear();
+  if (bextern) then t_msgextern.Clear();
 end;
 
 procedure TTextMessenger.SetMessages(const msgs: TStrings);

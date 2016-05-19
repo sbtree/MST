@@ -99,11 +99,11 @@ var e_field: EStepField; s_fval: string;
 begin
   t_tstep := t_container.CurrentStep;
   if assigned(t_tstep) then begin
-    if t_sreader.FieldNameChecker.FindName(trim(txtField.Text), e_field) then begin
+    if t_sreader.FieldNameChecker.IsNameValid(trim(txtField.Text), e_field) then begin
       s_fval := t_tstep.GetFieldValue(e_field);
-      t_messenger.AddMessage('Field value: ' + CSTR_FIELD_NAMES_V01[e_field] + '=' + s_fval);
+      t_messenger.AddMessage('Field value: ' + t_sreader.FieldNameChecker.FieldName(e_field) + '=' + s_fval);
     end else
-      t_messenger.AddMessage('Field is NOT found');
+      t_messenger.AddMessage(format('The field(%s) is NOT found.', [trim(txtField.Text)]));
   end else
     t_messenger.AddMessage('Please select a test step, firstly.');
 end;

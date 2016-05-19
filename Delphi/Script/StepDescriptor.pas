@@ -46,17 +46,20 @@ type
   // a base class for terminology in a step: Nr, T, R_on, Fkt, Par, R_off, Tol(A, Min, Max)
   TStepField = class
   protected
-    s_input:  string; //to save original input string
-    s_evalst: string; //to save string, which is evaluated using the statical information in the configuration
-    s_evaldy: string; //to save string, which is evaluated using the dynamical inforation in the run
+    s_input:    string;   //to save original input string
+    //t_strlist:  TStrings; //to save string values, which are extracted and evaluated from s_input
+    //c_separator:char;     //char as separator for evaluating s_input
+    //s_evalst: string;   //to save string, which is evaluated using the statical information in the configuration
+    //s_evaldy: string;   //to save string, which is evaluated using the dynamical inforation in the run
   protected
-    function  GetEvaluatedStr(): string;
+    procedure SetInputStr(const val: string);
+    procedure EvalInputStr();
+
   public
     constructor Create();
     destructor Destroy(); override;
 
-    property  InputString: string read s_input write s_input;
-    property  EvalString: string read GetEvaluatedStr;
+    property  InputString: string read s_input write SetInputStr;
     procedure Assign(const source: TStepField);
   end;
 
@@ -66,73 +69,37 @@ type
     a_fields:   StepFieldArray;
     t_result:   TStepResult;
   protected
-    procedure   FreeFields();
+    procedure FreeFields();
+    function  IsMinusStepNr(): boolean;
+    procedure AssignResult(const source: TStepResult);
 
   public
     constructor Create();
     destructor Destroy(); override;
 
-    procedure AssignResult(const source: TStepResult);
-    //property  StepFields: StepFieldArray read a_fields write a_fields;
     property  StepResult: TStepResult read t_result write AssignResult;
+    property  IsMinusStep: boolean read IsMinusStepNr;
+    
     procedure InputFields(const fields: FieldStringArray);
     function  GetField(const esf: EStepField): TStepField;
     function  GetFieldName(const esf: EStepField): string;
     function  GetFieldValue(const esf: EStepField): string;
     procedure SetFieldValue(const esf: EStepField; const sval: string);
     procedure Assign(const source: TTestStep);
-    //function  FieldString(const field: EStepField): string;
   end;
-  
-const
-  CSTR_FIELD_NAMES_V01 :  FieldStringArray = (
-                        'NR',
-                        'T',
-                        'R_ON',
-                        'FKT',
-                        'M',
-                        'PAR',
-                        'R_OFF',
-                        'TOL',
-                        'A',
-                        'MIN',
-                        'MAX'
-                      );
-{
-  CSTR_FIELD_NAMES_V02  :  FieldStringArray = (
-                        'NR',
-                        'T',
-                        'INIT',
-                        'FCT',
-                        'M',
-                        'PAR',
-                        'FINAL',
-                        'VALID',
-                        'A',
-                        'MIN',
-                        'MAX'
-                      );
 
-  CSTR_FIELD_NAMES_V03  :  FieldStringArray = (
-                        'NR',
-                        'T',
-                        'INIT',
-                        'FCT',
-                        'M',
-                        'PAR',
-                        'FINAL',
-                        'TOL',
-                        'A',
-                        'MIN',
-                        'MAX'
-                      );
-}
 implementation
 uses SysUtils, StrUtils;
 
-function  TStepField.GetEvaluatedStr(): string;
+procedure TStepField.SetInputStr(const val: string);
 begin
-  result := s_evaldy;
+  s_input := val;
+  EvalInputStr();
+end;
+
+procedure TStepField.EvalInputStr();
+begin
+  //todo:
 end;
 
 constructor TStepField.Create();
@@ -149,7 +116,6 @@ procedure TStepField.Assign(const source: TStepField);
 begin
   if assigned(source) then begin
     s_input := source.InputString;
-    s_evalst := source.EvalString;
   end;
 end;
 
@@ -158,6 +124,14 @@ var i: EStepField;
 begin
   for i := Low(EStepField) to High(EStepField) do
     if assigned(a_fields[i]) then FreeAndNil(a_fields[i]);
+end;
+
+function  TTestStep.IsMinusStepNr(): boolean;
+var f_stepnr: single; s_stepnr: string;
+begin
+  result := false;
+  s_stepnr := ReplaceStr(GetFieldValue(SF_NR), '.', DecimalSeparator);
+  if TryStrToFloat(s_stepnr, f_stepnr) then result := (f_stepnr < 0.0);
 end;
 
 constructor TTestStep.Create();

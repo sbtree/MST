@@ -18,13 +18,11 @@ type
      p_ptinfo:   PTypeInfo;    //a pointer to type info of EParseState
 
   protected
-
-    t_curcase:  TStepGroup;
-    t_curstep:  TTestStep;
     t_fcaller:  TFunctionCaller;
     e_exemode:  EExecutionMode;
     t_container:TStepContainer;
     t_messenger:TTextMessenger;
+    b_jumpmstep:boolean; //indicate, whether to run the steps, which have minus step number, e.g. '-11.02'
   protected
     procedure SetExecutionMode(const em: EExecutionMode);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
@@ -38,6 +36,7 @@ type
 
     function RunStepT(tstep: TTestStep): boolean;
     function RunCaseT(tcase: TStepGroup): boolean;
+    function RunSequenceT(tsequence: TTestSequence): boolean;
 
   public
     constructor Create();
@@ -46,12 +45,16 @@ type
     property ExecutionMode: EExecutionMode read e_exemode write SetExecutionMode;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
     property StepContainer: TStepContainer read t_container write t_container;
+    property JumpMinusStep: boolean read b_jumpmstep write b_jumpmstep;
 
     function RunStep(const stepnr: string): boolean; overload;
     function RunStep(const stepidx: integer): boolean; overload;
     function RunCase(const casenr: string): boolean; overload;
     function RunCase(const caseidx: integer): boolean; overload;
     function RunSequence(const csincl, csexcl: string): boolean;
+    function RepeatStep(): boolean;
+    function RepeatCase(): boolean;
+    function RepeatSequence(): boolean;
   end;
 
 implementation
@@ -62,6 +65,7 @@ begin
   inherited Create();
   t_fcaller := TFunctionCaller.Create();
   t_fcaller.Messenger := self.Messenger;
+  b_jumpmstep := true;
   ExecutionMode := EM_NORMAL;
 end;
 
@@ -143,26 +147,34 @@ end;
 
 
 function TTestRunner.RunStepT(tstep: TTestStep): boolean;
+var b_runstep: boolean;
 begin
   result := false;
   if assigned(tstep) then begin
-    t_curstep := tstep;
-    //todo: 1. initialize this step and execute statements of 'init' or 'r_on'
-    result := StepInit(tstep.GetFieldValue(SF_INIT));
-    //todo: 2. read information of 'm' and control the execution of this step
-    if result then result := StepInputM(tstep.GetFieldValue(SF_M));
-    //todo: 3. call script function to execute 'fct' with 'par'
-    if result then result := StepFunc(tstep.GetFieldValue(SF_FCT), tstep.GetFieldValue(SF_PAR));
-    //t_fcaller.CallFunction('','');
-    //4. save result string of this step //todo: consider of result pattern here
-    //t_curstep.StepResult.ResultString := t_fcaller.ResultString;
+    if tstep.IsMinusStep then b_runstep := (not b_jumpmstep)
+    else b_runstep := true;
 
-    //todo: 5. evaluate the resualt of calling function with 'tol'
-    if result then result := StepEval(tstep.GetFieldValue(SF_TOL_A));
-    //todo: 6. finalize this step 'final' or 'r_off'
-    if result then result := StepFinal(tstep.GetFieldValue(SF_FINAL));
-    //t_curstep.StepResult.Resulted := result;
-    AddMessage(format('The step (%s) is done successfully.', [tstep.GetFieldValue(SF_NR)]));
+    if b_runstep then begin
+      //todo: 1. initialize this step and execute statements of 'init' or 'r_on'
+      result := StepInit(tstep.GetFieldValue(SF_INIT));
+      //todo: 2. read information of 'm' and control the execution of this step
+      if result then result := StepInputM(tstep.GetFieldValue(SF_M));
+      //todo: 3. call script function to execute 'fct' with 'par'
+      if result then result := StepFunc(tstep.GetFieldValue(SF_FCT), tstep.GetFieldValue(SF_PAR));
+      //t_fcaller.CallFunction('','');
+      //4. save result string of this step //todo: consider of result pattern here
+      //t_curstep.StepResult.ResultString := t_fcaller.ResultString;
+
+      //todo: 5. evaluate the resualt of calling function with 'tol'
+      if result then result := StepEval(tstep.GetFieldValue(SF_TOL_A));
+      //todo: 6. finalize this step 'final' or 'r_off'
+      if result then result := StepFinal(tstep.GetFieldValue(SF_FINAL));
+      //t_curstep.StepResult.Resulted := result;
+      AddMessage(format('The step (%s) is done successfully.', [tstep.GetFieldValue(SF_NR)]));
+    end else begin
+      result := true;
+      AddMessage(format('The minus step (%s) is jumped.', [tstep.GetFieldValue(SF_NR)]));
+    end;
   end;
 end;
 
@@ -171,6 +183,7 @@ var i: integer;
 begin
   result := false;
   if (assigned(tcase) and assigned(t_container)) then begin
+    b_jumpmstep := false;
     for i := tcase.IndexFrom to tcase.IndexTo do begin
       result := RunStepT(t_container.StepByIndex(i));
       if (not result) then break;
@@ -178,45 +191,91 @@ begin
   end;
 end;
 
-function TTestRunner.RunStep(const stepnr: string): boolean;
-begin
-  result := false;
-  if assigned(t_container) then  result := RunStepT(t_container.StepByNr(stepnr));
-end;
-
-function TTestRunner.RunStep(const stepidx: integer): boolean;
-begin
-  result := false;
-  if assigned(t_container) then  result := RunStepT(t_container.StepByIndex(stepidx));
-end;
-
-function TTestRunner.RunCase(const casenr: string): boolean;
-begin
-  result := false;
-  if assigned(t_container) then
-    result := RunCaseT(t_container.CaseByNr(casenr));
-end;
-
-function TTestRunner.RunCase(const caseidx: integer): boolean;
-begin
-  result := false;
-  if assigned(t_container) then
-    result := RunCaseT(t_container.CaseByIndex(caseidx));
-end;
-
-function TTestRunner.RunSequence(const csincl, csexcl: string): boolean;
+function TTestRunner.RunSequenceT(tsequence: TTestSequence): boolean;
 var i_stepidx: integer;
 begin
   result := false;
   if assigned(t_container) then begin
-    t_container.UpdateSequence(csincl, csexcl);
-    i_stepidx := t_container.TestSequence.FirstStepIndex;
+    b_jumpmstep := true;
+    i_stepidx := tsequence.FirstStepIndex;
     while (i_stepidx >= 0) do begin
       result := RunStepT(t_container.StepByIndex(i_stepidx));
       if (not result) then break;
-      i_stepidx := t_container.TestSequence.NextStepIndex;
+      i_stepidx := tsequence.NextStepIndex;
     end;
   end;
+end;
+
+function TTestRunner.RunStep(const stepnr: string): boolean;
+var t_step: TTestStep;
+begin
+  result := false;
+  if assigned(t_container) then  begin
+    b_jumpmstep := false;
+    t_step := t_container.StepByNr(stepnr);
+    result := RunStepT(t_step);
+  end;
+end;
+
+function TTestRunner.RunStep(const stepidx: integer): boolean;
+var t_step: TTestStep;
+begin
+  result := false;
+  if assigned(t_container) then begin
+    b_jumpmstep := false;
+    t_step := t_container.StepByIndex(stepidx);
+    result := RunStepT(t_step);
+  end;
+end;
+
+function TTestRunner.RunCase(const casenr: string): boolean;
+var t_case: TStepGroup;
+begin
+  result := false;
+  if assigned(t_container) then begin
+    t_case := t_container.CaseByNr(casenr);
+    result := RunCaseT(t_case);
+  end;
+end;
+
+function TTestRunner.RunCase(const caseidx: integer): boolean;
+var t_case: TStepGroup;
+begin
+  result := false;
+  if assigned(t_container) then begin
+    t_case := t_container.CaseByIndex(caseidx);
+    result := RunCaseT(t_case);
+  end;
+end;
+
+function TTestRunner.RunSequence(const csincl, csexcl: string): boolean;
+begin
+  result := false;
+  if assigned(t_container) then begin
+    t_container.UpdateSequence(csincl, csexcl);
+    result := RunSequenceT(t_container.TestSequence);
+  end;
+end;
+
+function TTestRunner.RepeatStep(): boolean;
+begin
+  result := false;
+  if assigned(t_container) then
+    result := RunStepT(t_container.CurrentStep);
+end;
+
+function TTestRunner.RepeatCase(): boolean;
+begin
+  result := false;
+  if assigned(t_container) then
+    result := RunCaseT(t_container.CurrentCase);
+end;
+
+function TTestRunner.RepeatSequence(): boolean;
+begin
+  result := false;
+  if assigned(t_container) then
+    result := RunSequenceT(t_container.TestSequence);
 end;
 
 end.

@@ -288,10 +288,10 @@ end;
 // =============================================================================
 function  TScriptReader.CheckFieldName(const name: string): boolean;
 begin
-  result := t_fnchecker.FindName(name, e_lastfield);
+  result := t_fnchecker.IsNameValid(name, e_lastfield);
   if result then begin
     if (t_fnchecker.IsNameUsed(e_lastfield)) then begin
-      AddMessage(format('Dopplicated field name (%s).', [name]),ML_ERROR);
+      AddMessage(format('Dopplicated field name (%s).', [t_fnchecker.FieldName(e_lastfield)]),ML_ERROR);
       result := false
     end else  t_fnchecker.SetNameUsed(e_lastfield, true);
   end else AddMessage(format('Invalid field name (%s).', [name]),ML_ERROR);

@@ -308,7 +308,10 @@ end;
 function  TStepContainer.CaseByIndex(const caseidx: integer): TStepGroup;
 begin
   result := nil;
-  if ((caseidx >= 0) and (caseidx < t_cases.Count)) then result := TStepGroup(t_cases.Items[caseidx]);
+  if ((caseidx >= 0) and (caseidx < t_cases.Count)) then begin
+    result := TStepGroup(t_cases.Items[caseidx]);
+    if assigned(result) then StepByIndex(result.IndexFrom);
+  end;
 end;
 
 function  TStepContainer.CaseByNr(const casenr: string): TStepGroup;

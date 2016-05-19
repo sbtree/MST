@@ -15,21 +15,21 @@ object Form2: TForm2
   PixelsPerInch = 96
   TextHeight = 13
   object lblInclusive: TLabel
-    Left = 337
+    Left = 154
     Top = 303
     Width = 25
     Height = 13
     Caption = 'Incl.:'
   end
   object lblExclusive: TLabel
-    Left = 337
+    Left = 154
     Top = 332
     Width = 27
     Height = 13
     Caption = 'Excl.:'
   end
   object btnRunStepByNr: TButton
-    Left = 257
+    Left = 64
     Top = 298
     Width = 64
     Height = 25
@@ -38,7 +38,7 @@ object Form2: TForm2
     OnClick = btnRunStepByNrClick
   end
   object txtStepNr: TEdit
-    Left = 202
+    Left = 8
     Top = 300
     Width = 49
     Height = 21
@@ -87,102 +87,69 @@ object Form2: TForm2
     ScrollBars = ssBoth
     TabOrder = 6
   end
-  object txtField: TEdit
-    Left = 8
-    Top = 300
-    Width = 74
-    Height = 21
-    TabOrder = 7
-    Text = 'FKT'
-  end
-  object btnGetField: TButton
-    Left = 89
-    Top = 298
-    Width = 90
-    Height = 25
-    Caption = 'GetField'
-    TabOrder = 8
-    OnClick = btnGetFieldClick
-  end
   object btnPrevious: TButton
-    Left = 522
+    Left = 380
     Top = 327
-    Width = 16
+    Width = 25
     Height = 25
-    Hint = 'previous test step'
+    Hint = 'run previous test step'
     Caption = '<'
-    TabOrder = 9
+    TabOrder = 7
     OnClick = btnPreviousClick
   end
   object btnNext: TButton
-    Left = 538
+    Left = 424
     Top = 327
-    Width = 16
+    Width = 25
     Height = 25
-    Hint = 'next test step'
+    Hint = 'run next test step'
     Caption = '>'
-    TabOrder = 10
+    TabOrder = 8
     OnClick = btnNextClick
   end
   object txtCase: TEdit
-    Left = 202
+    Left = 8
     Top = 329
     Width = 49
     Height = 21
-    TabOrder = 11
+    TabOrder = 9
     Text = '11'
   end
   object btnRunCase: TButton
-    Left = 257
+    Left = 64
     Top = 327
     Width = 64
     Height = 25
     Caption = 'RunCase'
-    TabOrder = 12
+    TabOrder = 10
     OnClick = btnRunCaseClick
   end
   object txtInclusive: TEdit
-    Left = 368
+    Left = 185
     Top = 300
-    Width = 74
+    Width = 92
     Height = 21
     Hint = 'inclusive test cases'
-    TabOrder = 13
+    TabOrder = 11
     Text = 'all'
   end
   object btnSequence: TButton
-    Left = 448
+    Left = 283
     Top = 298
-    Width = 68
+    Width = 81
     Height = 25
     Caption = 'Sequence'
-    TabOrder = 14
+    TabOrder = 12
     OnClick = btnSequenceClick
   end
   object txtExclusive: TEdit
-    Left = 368
+    Left = 185
     Top = 329
-    Width = 74
+    Width = 92
     Height = 21
     Hint = 'exclusive test cases'
-    TabOrder = 15
+    TabOrder = 13
     Text = '10-80'
-  end
-  object txtVariable: TEdit
-    Left = 8
-    Top = 329
-    Width = 74
-    Height = 21
-    TabOrder = 16
-    Text = 'Include'
-  end
-  object btnVariable: TButton
-    Left = 88
-    Top = 327
-    Width = 90
-    Height = 25
-    Caption = 'GetVariable'
-    TabOrder = 17
   end
   object btnClear: TButton
     Left = 129
@@ -190,7 +157,8 @@ object Form2: TForm2
     Width = 50
     Height = 25
     Caption = 'Clear'
-    TabOrder = 18
+    TabOrder = 14
+    OnClick = btnClearClick
   end
   object chkForce: TCheckBox
     Left = 449
@@ -198,7 +166,7 @@ object Form2: TForm2
     Width = 45
     Height = 17
     Caption = 'Force'
-    TabOrder = 19
+    TabOrder = 15
   end
   object chkAppend: TCheckBox
     Left = 500
@@ -206,24 +174,51 @@ object Form2: TForm2
     Width = 54
     Height = 17
     Caption = 'Append'
-    TabOrder = 20
+    TabOrder = 16
   end
   object btnRunFirst: TButton
-    Left = 448
-    Top = 327
+    Left = 380
+    Top = 298
     Width = 68
     Height = 25
     Caption = 'RunFirst'
-    TabOrder = 21
+    TabOrder = 17
     OnClick = btnRunFirstClick
   end
   object btnRunSequence: TButton
-    Left = 522
-    Top = 296
+    Left = 283
+    Top = 327
     Width = 32
     Height = 25
     Caption = 'Run'
-    TabOrder = 22
+    TabOrder = 18
     OnClick = btnRunSequenceClick
+  end
+  object btnRepeatSequence: TButton
+    Left = 321
+    Top = 327
+    Width = 43
+    Height = 25
+    Caption = 'Repeat'
+    TabOrder = 19
+    OnClick = btnRepeatSequenceClick
+  end
+  object btnRepeatStep: TButton
+    Left = 479
+    Top = 298
+    Width = 75
+    Height = 25
+    Caption = 'Repeat Step'
+    TabOrder = 20
+    OnClick = btnRepeatStepClick
+  end
+  object btnRepeatCase: TButton
+    Left = 479
+    Top = 329
+    Width = 75
+    Height = 25
+    Caption = 'Repeat Case'
+    TabOrder = 21
+    OnClick = btnRepeatCaseClick
   end
 end

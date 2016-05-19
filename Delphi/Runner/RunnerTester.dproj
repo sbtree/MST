@@ -45,6 +45,7 @@
     <DCCReference Include="FormRunnerTester.pas">
       <Form>Form2</Form>
     </DCCReference>
+    <DCCReference Include="TestDebugger.pas" />
     <DCCReference Include="TestRunner.pas" />
   </ItemGroup>
 </Project>

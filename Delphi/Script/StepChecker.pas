@@ -22,7 +22,7 @@ type
 
     procedure ResetUnused();
     function  SetFieldNames(const names: FieldStringArray): boolean;
-    function  FindName(const field: string; var idx: EStepField): boolean;
+    function  IsNameValid(const field: string; var idx: EStepField): boolean;
     function  FieldName(const index: EstepField): string;
     procedure SetNameUsed(const index: EstepField; const used: boolean);
     function  IsNameUsed(const index: EstepField): boolean;
@@ -58,7 +58,49 @@ type
 
 implementation
 uses SysUtils, StrUtils;
+const
+  CSTR_FIELD_NAMES_V01 :  FieldStringArray = (
+                        'NR',
+                        'T',
+                        'R_ON',
+                        'FKT',
+                        'M',
+                        'PAR',
+                        'R_OFF',
+                        'TOL',
+                        'A',
+                        'MIN',
+                        'MAX'
+                      );
+{
+  CSTR_FIELD_NAMES_V02  :  FieldStringArray = (
+                        'NR',
+                        'T',
+                        'INIT',
+                        'FCT',
+                        'M',
+                        'PAR',
+                        'FINAL',
+                        'VALID',
+                        'A',
+                        'MIN',
+                        'MAX'
+                      );
 
+  CSTR_FIELD_NAMES_V03  :  FieldStringArray = (
+                        'NR',
+                        'T',
+                        'INIT',
+                        'FCT',
+                        'M',
+                        'PAR',
+                        'FINAL',
+                        'TOL',
+                        'A',
+                        'MIN',
+                        'MAX'
+                      );
+}
 //reduplicated key is not allowed
 function  TFieldNameChecker.CheckNames(const names: FieldStringArray): boolean;
 var i, j: integer;
@@ -99,7 +141,7 @@ begin
   if result then for i := Low(EStepField) to High(EStepField) do a_keys[i] := names[i];
 end;
 
-function TFieldNameChecker.FindName(const field: string; var idx: EStepField): boolean;
+function TFieldNameChecker.IsNameValid(const field: string; var idx: EStepField): boolean;
 var i_index: integer;
 begin
   i_index := IndexText(field, a_keys);

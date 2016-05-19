@@ -39,8 +39,9 @@ type
     property ExecutionMode: EExecutionMode read e_exemode write e_exemode;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
     property Aborted: boolean read b_aborted write SetAborted;
-    
+
     function LoadParameter(const par: string): boolean; virtual;
+    function LoadParameters(const pars: TStrings): boolean; virtual;
     function Execute(): boolean; virtual;
   end;
   TFunctionClass = class of TFunctionBase;
@@ -73,6 +74,12 @@ end;
 function TFunctionBase.LoadParameter(const par: string): boolean;
 begin
   s_par := trim(par);
+  AddMessage('"LoadParameter" is not specified and its basic function is called.');
+  result := true;
+end;
+
+function TFunctionBase.LoadParameters(const pars: TStrings): boolean;
+begin
   AddMessage('"LoadParameter" is not specified and its basic function is called.');
   result := true;
 end;

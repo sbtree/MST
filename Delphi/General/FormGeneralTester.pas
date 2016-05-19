@@ -4,12 +4,14 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, DataBuffer, StdCtrls;
+  Dialogs, DataBuffer, StdCtrls, ExtCtrls;
 
 type
   TfrmGeneralTester = class(TForm)
     btnTest: TButton;
+    imgTest: TImage;
     procedure btnTestClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private-Deklarationen }
   public
@@ -26,6 +28,11 @@ implementation
 procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
 var chbuffer: TCharBuffer;  t: cardinal; n:integer;
 begin
+  imgTest.Picture.LoadFromFile('N:\SW_INBE\DIS2_230_SW3.2\Kundenlogos\Logo-Lenze.bmp');
+  ShowMessage(format('imgTest.ClientRect=[%d, %d, %d, %d]',
+            [imgTest.ClientRect.Left, imgTest.ClientRect.Top, imgTest.ClientRect.Right, imgTest.ClientRect.Bottom]));
+  //imgTest.Picture.Bitmap.Canvas.StretchDraw (imgTest.ClientRect, imgTest.Picture.Bitmap);
+
   chbuffer := TCharBuffer.Create();
   chbuffer.Resize(10);
   t:=GetTickCount;
@@ -53,6 +60,13 @@ begin
   ShowMessage(format('HistoryHex=%s',[chbuffer.HistoryHex()]));
 
   FreeAndNil(chbuffer);
+end;
+
+procedure TfrmGeneralTester.FormCreate(Sender: TObject);
+begin
+  imgTest.Picture.LoadFromFile('N:\SW_INBE\DIS2_230_SW3.2\Kundenlogos\Logo_BuR.bmp');
+  //imgTest.Picture.LoadFromFile('N:\SW_INBE\DIS2_230_SW3.2\Kundenlogos\Logo-Lenze.bmp');
+  //imgTest.Picture.Bitmap.Canvas.StretchDraw (imgTest.ClientRect, imgTest.Picture.Bitmap);
 end;
 
 end.

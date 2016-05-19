@@ -17,8 +17,6 @@ type
     btnReadScript: TButton;
     btnSaveScript: TButton;
     memInfo: TMemo;
-    txtField: TEdit;
-    btnGetField: TButton;
     btnPrevious: TButton;
     btnNext: TButton;
     txtCase: TEdit;
@@ -26,26 +24,29 @@ type
     txtInclusive: TEdit;
     btnSequence: TButton;
     txtExclusive: TEdit;
-    txtVariable: TEdit;
-    btnVariable: TButton;
     btnClear: TButton;
     chkForce: TCheckBox;
     chkAppend: TCheckBox;
     btnRunFirst: TButton;
     btnRunSequence: TButton;
+    btnRepeatSequence: TButton;
+    btnRepeatStep: TButton;
+    btnRepeatCase: TButton;
     procedure FormCreate(Sender: TObject);
     procedure btnReadScriptClick(Sender: TObject);
     procedure btnRunStepByNrClick(Sender: TObject);
-    procedure btnGetFieldClick(Sender: TObject);
     procedure btnRunCaseClick(Sender: TObject);
     procedure btnSequenceClick(Sender: TObject);
     procedure btnPreviousClick(Sender: TObject);
     procedure btnNextClick(Sender: TObject);
     procedure btnRunFirstClick(Sender: TObject);
     procedure btnRunSequenceClick(Sender: TObject);
+    procedure btnRepeatSequenceClick(Sender: TObject);
+    procedure btnRepeatStepClick(Sender: TObject);
+    procedure btnRepeatCaseClick(Sender: TObject);
+    procedure btnClearClick(Sender: TObject);
   private
     { Private-Deklarationen }
-    t_tstep:    TTestStep;
     t_sreader:  TScriptReader;
     t_messenger:TTextMessenger;
     t_container:TStepContainer;
@@ -62,18 +63,9 @@ implementation
 
 {$R *.dfm}
 
-procedure TForm2.btnGetFieldClick(Sender: TObject);
-var e_field: EStepField; s_fval: string;
+procedure TForm2.btnClearClick(Sender: TObject);
 begin
-  t_tstep := t_container.CurrentStep;
-  if assigned(t_tstep) then begin
-    if t_sreader.FieldNameChecker.FindName(trim(txtField.Text), e_field) then begin
-      s_fval := t_tstep.GetFieldValue(e_field);
-      t_messenger.AddMessage('Field value: ' + trim(txtField.Text) + '=' + s_fval);
-    end else
-      t_messenger.AddMessage('Field is NOT found');
-  end else
-    t_messenger.AddMessage('Please select a test step, firstly.');
+  t_sreader.Clear();
 end;
 
 procedure TForm2.btnNextClick(Sender: TObject);
@@ -119,6 +111,21 @@ begin
 
   if s_casenrs <> '' then t_messenger.AddMessage('Sequence Cases: ' + s_casenrs)
   else t_messenger.AddMessage('Test Sequence: no case')
+end;
+
+procedure TForm2.btnRepeatCaseClick(Sender: TObject);
+begin
+  t_runner.RepeatCase();
+end;
+
+procedure TForm2.btnRepeatSequenceClick(Sender: TObject);
+begin
+  t_runner.RepeatSequence();
+end;
+
+procedure TForm2.btnRepeatStepClick(Sender: TObject);
+begin
+  t_runner.RepeatStep();
 end;
 
 procedure TForm2.FormCreate(Sender: TObject);
