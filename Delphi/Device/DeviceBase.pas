@@ -92,7 +92,7 @@ type
 
     function ConfigDevice(const ini: TMemIniFile): Boolean; virtual;abstract;
     function ReleaseDevice(): Boolean; virtual;
-    function TryToReady: boolean; virtual;
+    function TryToReady(): boolean; virtual;
     function Connect(): Boolean; virtual;
     function Disconnect: boolean; virtual;
     function ActiveConn(const ct: EConnectionType): boolean; virtual;

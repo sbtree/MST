@@ -10,7 +10,9 @@ type
   TfrmDeviceManager = class(TForm)
     btnFR: TButton;
     trvDevices: TTreeView;
+    btnCreateTree: TButton;
     procedure btnFRClick(Sender: TObject);
+    procedure btnCreateTreeClick(Sender: TObject);
   private
     { Private-Deklarationen }
   public
@@ -23,6 +25,36 @@ var
 implementation
 
 {$R *.dfm}
+
+procedure TfrmDeviceManager.btnCreateTreeClick(Sender: TObject);
+var
+  MyTreeNode1, MyTreeNode2: TTreeNode;
+begin
+  with trvDevices.Items do
+  begin
+    Clear; { remove any existing nodes }
+    MyTreeNode1 := Add(nil, 'RootTreeNode1'); { Add a root node }
+    { Add a child node to the node just added }
+    AddChild(MyTreeNode1,'ChildNode1');
+
+    {Add another root node}
+    MyTreeNode2 := Add(MyTreeNode1, 'RootTreeNode2');
+    {Give MyTreeNode2 to a child }
+    AddChild(MyTreeNode2,'ChildNode2');
+
+    {Change MyTreeNode2 to ChildNode2 }
+    { and add a child node to it}
+    MyTreeNode2 := trvDevices.Items[3];
+    AddChild(MyTreeNode2,'ChildNode2a');
+
+    {Add another child to ChildNode2, after ChildNode2a }
+    Add(MyTreeNode2,'ChildNode2b');
+
+    {add another root node}
+    Add(MyTreeNode1, 'RootTreeNode3');
+  end;
+
+end;
 
 procedure TfrmDeviceManager.btnFRClick(Sender: TObject);
 var fIni: TMemIniFile; fr: TFlashRunner; bOk: boolean; sTmp: string;

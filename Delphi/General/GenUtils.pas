@@ -11,11 +11,10 @@ interface
 uses Forms, Windows, IniFiles, Contnrs;
 
   //file path
-  function GetRelativeFilePath(filePath, basePath: string ): string;
-  function GetAbsoluteFilePath(filePath, basePath: string): string;
+  function GetRelativeFilePath(const filePath, basePath: string ): string;
+  function GetAbsoluteFilePath(const filePath, basePath: string): string;
 
   //string and array
-  //function IndexOfStr(const aArray: array of string; const S: string): integer;
   function StrToCharArray(const sData: string; var aData: array of char): integer;
   function StrFromCharArray(const aData: array of char): string;
   function IsHexStr(const sData: string): boolean;
@@ -43,7 +42,7 @@ uses SysUtils, StrUtils, Math;
 // First author : 2015-09-14 /bsu/
 // History      :
 // =============================================================================
-function GetRelativeFilePath(filePath, basePath: string ): string;
+function GetRelativeFilePath(const filePath, basePath: string ): string;
 var s_filepath: string;
 begin
   s_filepath := GetAbsoluteFilePath(filePath, basePath);
@@ -61,7 +60,7 @@ end;
 // First author : 2015-09-14 /bsu/
 // History      :
 // =============================================================================
-function GetAbsoluteFilePath(filePath, basePath: string): string;
+function GetAbsoluteFilePath(const filePath, basePath: string): string;
 begin
   if ExtractFileDrive(filePath) <> '' then result := ExpandFileName(filePath)
   else if LeftStr(filePath,1) = SysUtils.PathDelim then result := ExpandFileName(ExtractFileDrive(basePath) + filePath)
@@ -86,28 +85,6 @@ begin
   until (GetTickCount() > i_tcount);
 end;
 
-// =============================================================================
-// Class        : --
-// Function     : IndexOfStr
-//                return index of a string in an array
-// Parameter    : aArray, in which the string is searched
-//                S, string to search
-// Return       : index of string in the array. -1 is returnd, if not found
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      : 2016-03-01 /bsu/ same as IndexText in StrUtils
-// =============================================================================
-{function IndexOfStr(const aArray: array of string; const S: string): integer;
-var I: Integer;
-begin
-  Result := -1;
-  for I := Low(aArray) to High(aArray) do
-    if SameText(S, aArray[I]) then begin
-      Result := I;
-      Break;
-    end;
-end;
-}
 // =============================================================================
 // Class        : --
 // Function     : StrToCharArray
@@ -163,11 +140,12 @@ var i, iLen: integer;
 begin
   result := true;
   iLen := length(sData);
-  for i := 1 to iLen do
+  for i := 1 to iLen do begin
     if not (sData[i] in C_HEX_CHARS) then begin
       result := false;
       break;
     end;
+  end;
 end;
 
 // =============================================================================

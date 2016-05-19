@@ -31,4 +31,13 @@ object frmDeviceManager: TfrmDeviceManager
     ReadOnly = True
     TabOrder = 1
   end
+  object btnCreateTree: TButton
+    Left = 472
+    Top = 268
+    Width = 75
+    Height = 25
+    Caption = 'Create Tree'
+    TabOrder = 2
+    OnClick = btnCreateTreeClick
+  end
 end

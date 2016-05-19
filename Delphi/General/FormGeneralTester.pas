@@ -4,14 +4,17 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, DataBuffer, StdCtrls, ExtCtrls;
+  Dialogs, DataBuffer, StdCtrls, ExtCtrls, ComCtrls;
 
 type
   TfrmGeneralTester = class(TForm)
     btnTest: TButton;
     imgTest: TImage;
+    trvDevices: TTreeView;
+    btnCreateTree: TButton;
     procedure btnTestClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure btnCreateTreeClick(Sender: TObject);
   private
     { Private-Deklarationen }
   public
@@ -25,12 +28,41 @@ implementation
 
 {$R *.dfm}
 
+procedure TfrmGeneralTester.btnCreateTreeClick(Sender: TObject);
+var
+  MyTreeNode1, MyTreeNode2: TTreeNode;
+begin
+  with trvDevices.Items do
+  begin
+    Clear; { remove any existing nodes }
+    MyTreeNode1 := Add(nil, 'RootTreeNode1'); { Add a root node }
+    { Add a child node to the node just added }
+    AddChild(MyTreeNode1,'ChildNode1');
+
+    {Add another root node}
+    MyTreeNode2 := Add(MyTreeNode1, 'RootTreeNode2');
+    {Give MyTreeNode2 to a child }
+    AddChild(MyTreeNode2,'ChildNode2');
+
+    {Change MyTreeNode2 to ChildNode2 }
+    { and add a child node to it}
+    MyTreeNode2 := trvDevices.Items[3];
+    AddChild(MyTreeNode2,'ChildNode2a');
+
+    {Add another child to ChildNode2, after ChildNode2a }
+    Add(MyTreeNode2,'ChildNode2b');
+
+    {add another root node}
+    Add(MyTreeNode1, 'RootTreeNode3');
+  end;
+end;
+
 procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
 var chbuffer: TCharBuffer;  t: cardinal; n:integer;
 begin
-  imgTest.Picture.LoadFromFile('N:\SW_INBE\DIS2_230_SW3.2\Kundenlogos\Logo-Lenze.bmp');
-  ShowMessage(format('imgTest.ClientRect=[%d, %d, %d, %d]',
-            [imgTest.ClientRect.Left, imgTest.ClientRect.Top, imgTest.ClientRect.Right, imgTest.ClientRect.Bottom]));
+  //imgTest.Picture.LoadFromFile('N:\SW_INBE\DIS2_230_SW3.2\Kundenlogos\Logo-Lenze.bmp');
+  //ShowMessage(format('imgTest.ClientRect=[%d, %d, %d, %d]',
+  //          [imgTest.ClientRect.Left, imgTest.ClientRect.Top, imgTest.ClientRect.Right, imgTest.ClientRect.Bottom]));
   //imgTest.Picture.Bitmap.Canvas.StretchDraw (imgTest.ClientRect, imgTest.Picture.Bitmap);
 
   chbuffer := TCharBuffer.Create();
@@ -64,7 +96,7 @@ end;
 
 procedure TfrmGeneralTester.FormCreate(Sender: TObject);
 begin
-  imgTest.Picture.LoadFromFile('N:\SW_INBE\DIS2_230_SW3.2\Kundenlogos\Logo_BuR.bmp');
+  //imgTest.Picture.LoadFromFile('N:\SW_INBE\DIS2_230_SW3.2\Kundenlogos\Logo_BuR.bmp');
   //imgTest.Picture.LoadFromFile('N:\SW_INBE\DIS2_230_SW3.2\Kundenlogos\Logo-Lenze.bmp');
   //imgTest.Picture.Bitmap.Canvas.StretchDraw (imgTest.ClientRect, imgTest.Picture.Bitmap);
 end;

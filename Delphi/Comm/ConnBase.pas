@@ -39,12 +39,12 @@ type
   end; }
 
   ICommuInterf = interface
-    function  SendStr(const str: string): boolean;
-    function  RecvStr(var str: string): integer;
-    function  RecvStrTimeout(var str: string; const tend: cardinal): integer;
-    function  RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
-    function  RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean): integer;
-    function  WaitForReading(const tend: cardinal): boolean;
+//    function  SendStr(const str: string): boolean;
+//    function  RecvStr(var str: string): integer;
+//    function  RecvStrTimeout(var str: string; const tend: cardinal): integer;
+//    function  RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
+//    function  RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean): integer;
+//    function  WaitForReading(const tend: cardinal): boolean;
   end;
 
   TConnBase = class(TComponent, ICommuInterf)
