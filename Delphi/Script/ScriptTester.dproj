@@ -45,7 +45,7 @@
     <DCCReference Include="..\Function\FuncBase.pas" />
     <DCCReference Include="..\Function\FuncMat.pas" />
     <DCCReference Include="..\General\GenType.pas" />
-    <DCCReference Include="..\General\NamedStrings.pas" />
+    <DCCReference Include="..\General\PairStrings.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="FormScriptTester.pas">
       <Form>frmScriptTester</Form>

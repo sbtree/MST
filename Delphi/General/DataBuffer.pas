@@ -123,7 +123,7 @@ end;
 
 function TCharBuffer.IsHexString(const str: string): boolean;
 begin
-  result := IsHexStr(str);
+  result := TGenUtils.IsHexText(str);
 end;
 
 constructor TCharBuffer.Create();

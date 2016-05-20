@@ -12,7 +12,7 @@ uses
   StepResult in 'StepResult.pas',
   StepChecker in 'StepChecker.pas',
   StepContainer in 'StepContainer.pas',
-  NamedStrings in '..\General\NamedStrings.pas';
+  PairStrings in '..\General\PairStrings.pas';
 
 {$R *.res}
 

@@ -13,7 +13,7 @@ uses
   StepContainer in '..\Script\StepContainer.pas',
   StepDescriptor in '..\Script\StepDescriptor.pas',
   StepResult in '..\Script\StepResult.pas',
-  NamedStrings in '..\General\NamedStrings.pas',
+  PairStrings in '..\General\PairStrings.pas',
   TestDebugger in 'TestDebugger.pas';
 
 {$R *.res}

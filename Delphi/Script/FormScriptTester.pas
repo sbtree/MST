@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage, StepContainer, NamedStrings;
+  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage, StepContainer, PairStrings;
 
 type
   TfrmScriptTester = class(TForm)
@@ -56,7 +56,7 @@ type
     t_tstep:    TTestStep;
     t_messenger:TTextMessenger;
     t_container:TStepContainer;
-    t_vars:     TNamedStrings;
+    t_vars:     TPairStrings;
   public
     { Public-Deklarationen }
   end;
@@ -202,7 +202,7 @@ procedure TfrmScriptTester.btnVariableClick(Sender: TObject);
 var s_varname, s_varval: string;
 begin
   s_varname := trim(txtVariable.Text);
-  if (t_vars.GetNamedString(s_varname, s_varval)) then
+  if (t_vars.GetPairValue(s_varname, s_varval)) then
     t_messenger.AddMessage(format('Variable: name=%s, value=%s', [s_varname, s_varval]))
   else
     t_messenger.AddMessage(format('Variable NOT found: name=%s', [s_varname]))
@@ -213,7 +213,7 @@ begin
   t_sreader := TScriptReader.Create();
   t_messenger := TTextMessenger.Create();
   t_container := TStepContainer.Create();
-  t_vars := TNamedStrings.Create();
+  t_vars := TPairStrings.Create();
   t_messenger.Messages := memInfo.Lines;
   t_sreader.Messenger := t_messenger;
   t_sreader.StepContainer := t_container;

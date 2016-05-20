@@ -425,7 +425,7 @@ begin
     c_time := GetTickCount() + C_RESET_MSEC;
     t_conns[e_actconn].Disconnect();
     repeat
-      Delay();
+      TGenUtils.Delay();
       result := t_conns[e_actconn].Connect();
     until ((GetTickCount() > c_time) or result);
   end;

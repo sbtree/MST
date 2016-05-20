@@ -7,7 +7,7 @@ uses
   FormGeneralTester in 'FormGeneralTester.pas' {frmGeneralTester},
   TextMessage in 'TextMessage.pas',
   GenType in 'GenType.pas',
-  NamedStrings in 'NamedStrings.pas';
+  PairStrings in 'PairStrings.pas';
 
 {$R *.res}
 

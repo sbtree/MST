@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, DataBuffer, StdCtrls, ExtCtrls, ComCtrls;
+  Dialogs, DataBuffer, StdCtrls, ExtCtrls, ComCtrls, GenUtils;
 
 type
   TfrmGeneralTester = class(TForm)
@@ -25,8 +25,8 @@ var
   frmGeneralTester: TfrmGeneralTester;
 
 implementation
-
 {$R *.dfm}
+uses PairStrings;
 
 procedure TfrmGeneralTester.btnCreateTreeClick(Sender: TObject);
 var
@@ -58,8 +58,46 @@ begin
 end;
 
 procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
-var chbuffer: TCharBuffer;  t: cardinal; n:integer;
+var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TPairStrings; sNames, sValues: TStrings;//tComPorts: TStrings;
 begin
+  sNames := TStringList.Create();
+  sValues := TStringList.Create();
+  tPairs := TPairStrings.Create();
+
+  tPairs.AddPair('Test1', 'text1');
+  tPairs.AddPair('Test2', 'text2');
+  tPairs.AddPair('Test3', 'text3');
+
+  tPairs.GetPairNames(sNames);
+  tPairs.GetPairValues(sValues);
+  ShowMessage(format('all names: %s; all values: %s', [sNames.DelimitedText, sValues.DelimitedText]));
+
+  tPairs.SetPairValue('Test2', '');
+  tPairs.GetPairNames(sNames);
+  tPairs.GetPairValues(sValues);
+  ShowMessage(format('all names: %s; all values: %s', [sNames.DelimitedText, sValues.DelimitedText]));
+
+  FreeAndNil(tPairs);
+  FreeAndNil(sValues);
+  FreeAndNil(sNames);
+ {
+  tComPorts := TStringList.Create();
+  //TGenUtils.EnumComPorts(tComPorts);
+  //ShowMessage(tComPorts.DelimitedText);
+  tComPorts.Add('Test1=');
+  tComPorts.Add('Test2=text of test2');
+
+  ShowMessage(format('Index of Test1 = %d, index of Test2 = %d', [tComPorts.IndexOf('Test1='), tComPorts.IndexOf('Test2=text of test2')]));
+  n := tComPorts.IndexOfName('Test1');
+  ShowMessage(format('Test1 (Name): Index = %d, value = "%s"; Test2 (Name): index = %d',
+          [n, tComPorts.ValueFromIndex[n], tComPorts.IndexOfName('Test2')]));
+
+  n := tComPorts.IndexOfName('Test2');
+  tComPorts.ValueFromIndex[n] := '';
+  ShowMessage(format('Index of Test2 = %d, index of Test2 (Name) = %d', [tComPorts.IndexOf('Test2=text of test2'), tComPorts.IndexOfName('Test2')]));
+
+  FreeAndNil(tComPorts);
+
   //imgTest.Picture.LoadFromFile('N:\SW_INBE\DIS2_230_SW3.2\Kundenlogos\Logo-Lenze.bmp');
   //ShowMessage(format('imgTest.ClientRect=[%d, %d, %d, %d]',
   //          [imgTest.ClientRect.Left, imgTest.ClientRect.Top, imgTest.ClientRect.Right, imgTest.ClientRect.Bottom]));
@@ -91,7 +129,7 @@ begin
   ShowMessage(format('HistoryStr=%s',[chbuffer.HistoryStr()]));
   ShowMessage(format('HistoryHex=%s',[chbuffer.HistoryHex()]));
 
-  FreeAndNil(chbuffer);
+  FreeAndNil(chbuffer); }
 end;
 
 procedure TfrmGeneralTester.FormCreate(Sender: TObject);

@@ -24,7 +24,7 @@ type
   TFunctionBase = class(TPersistent)
   protected
     t_messenger:TTextMessenger; //a pointer, which can be asssigned through property Messager
-    e_exemode:  EExecutionMode; //execution mode, which can be changed through property ExecutionMode
+    e_exemode:  EExecMode;      //execution mode, which can be changed through property ExecutionMode
     b_aborted:  boolean;        //indicates if current execution should be aborted
     s_par:      string;         //saves parameter string of this function object
     s_result:   string;         //a string to save result
@@ -36,7 +36,7 @@ type
     destructor Destroy; override;
 
     property ResultString: string read s_result write s_result;
-    property ExecutionMode: EExecutionMode read e_exemode write e_exemode;
+    property ExecutionMode: EExecMode read e_exemode write e_exemode;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
     property Aborted: boolean read b_aborted write SetAborted;
 

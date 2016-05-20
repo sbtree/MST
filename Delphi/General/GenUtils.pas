@@ -8,33 +8,38 @@
 unit GenUtils;
 
 interface
-uses Forms, Windows, IniFiles, Contnrs;
+uses Classes;
 
-  //file path
-  function GetRelativeFilePath(const filePath, basePath: string ): string;
-  function GetAbsoluteFilePath(const filePath, basePath: string): string;
+type
 
-  //string and array
-  function StrToCharArray(const sData: string; var aData: array of char): integer;
-  function StrFromCharArray(const aData: array of char): string;
-  function IsHexStr(const sData: string): boolean;
-  function HexStrToCharArray(const sData: string; var aData: array of char): integer;
-  function HexStrFromCharArray(const aData: array of char; const len: integer = -1): string;
-  function IsValidAscii(const str: string): boolean;
+  TGenUtils = class
+    //file path
+    class function  GetRelativeFilePath(const filePath, basePath: string ): string;
+    class function  GetAbsoluteFilePath(const filePath, basePath: string): string;
 
-  //process, thread and windows message
-  procedure Delay(const msec: Cardinal = 10);
+    //string and array
+    class function  StrToCharArray(const sData: string; var aData: array of char): integer;
+    class function  StrFromCharArray(const aData: array of char): string;
+    class function  IsHexText(const sData: string): boolean;
+    class function  HexTextToCharArray(const sData: string; var aData: array of char): integer;
+    class function  HexTextFromCharArray(const aData: array of char; const len: integer = -1): string;
+    class function  IsAsciiValid(const str: string): boolean;
+
+    //process, thread, windows message and so on
+    class procedure Delay(const msec: Cardinal = 10);
+    class function  EnumComPorts(var sports: TStrings): integer;
+    class function  IsComPortValid(const sport: string; var iport: integer): boolean;
+  end;
 
 const
   C_DELAY_ONCE: Cardinal = 20;      //delay 20 milli seconds for communication in oneshot
 
 implementation
-uses SysUtils, StrUtils, Math;
+uses Forms, SysUtils, StrUtils, Math,Windows, Registry;
 
 // =============================================================================
-// Class        : --
-// Function     : GetRelativeFilePath
-//                returns a relative file path referring to the give path
+// Class        : TGenUtils
+// Function     : returns a relative file path referring to the give path
 // Parameter    : filePath, a file path
 //                basePath, a reference path
 // Return       : a file path in a string
@@ -42,7 +47,7 @@ uses SysUtils, StrUtils, Math;
 // First author : 2015-09-14 /bsu/
 // History      :
 // =============================================================================
-function GetRelativeFilePath(const filePath, basePath: string ): string;
+class function TGenUtils.GetRelativeFilePath(const filePath, basePath: string ): string;
 var s_filepath: string;
 begin
   s_filepath := GetAbsoluteFilePath(filePath, basePath);
@@ -50,9 +55,8 @@ begin
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : GetAbsoluteFilePath
-//                returns a absolute file path referring to the give path
+// Class        : TGenUtils
+// Function     : returns a absolute file path referring to the give path
 // Parameter    : filePath, a file path
 //                basePath, a reference path
 // Return       : a file path in a string
@@ -60,7 +64,7 @@ end;
 // First author : 2015-09-14 /bsu/
 // History      :
 // =============================================================================
-function GetAbsoluteFilePath(const filePath, basePath: string): string;
+class function TGenUtils.GetAbsoluteFilePath(const filePath, basePath: string): string;
 begin
   if ExtractFileDrive(filePath) <> '' then result := ExpandFileName(filePath)
   else if LeftStr(filePath,1) = SysUtils.PathDelim then result := ExpandFileName(ExtractFileDrive(basePath) + filePath)
@@ -68,27 +72,25 @@ begin
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : Delay
-//                calls ProcessMessages in a loop till the give milliseconds escapes
+// Class        : TGenUtils
+// Function     : calls ProcessMessages in a loop till the give milliseconds escapes
 // Parameter    : msec, count of milli seconds. Defaut is 10 milli seconds
 // Return       : --
 // Exceptions   : --
 // First author : 2015-09-14 /bsu/
 // History      :
 // =============================================================================
-procedure Delay(const msec: Cardinal);
-var i_tcount: Cardinal;
+class procedure TGenUtils.Delay(const msec: Cardinal);
+var iTimeout: Cardinal;
 begin
-  i_tcount := GetTickCount() + msec;
+  iTimeout := GetTickCount() + msec;
   repeat Application.ProcessMessages();
-  until (GetTickCount() > i_tcount);
+  until (GetTickCount() > iTimeout);
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : StrToCharArray
-//                copies a string into an array
+// Class        : TGenUtils
+// Function     : copies a string into an array
 // Parameter    : sData, a source string to copy
 // Return       : count of chars, which are copied
 //                -1, size of aData is too small
@@ -96,7 +98,7 @@ end;
 // First author : 2015-09-14 /bsu/
 // History      :
 // =============================================================================
-function StrToCharArray(const sData: string; var aData: array of char): integer;
+class function TGenUtils.StrToCharArray(const sData: string; var aData: array of char): integer;
 var iLen : integer;
 begin
   iLen := length(aData);
@@ -108,31 +110,29 @@ begin
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : StrFromCharArray
-//                return a string from an array with null-terminal back
-// Parameter    : aData, an array
+// Class        : TGenUtils
+// Function     : returns a string from an array with null-terminal back
+// Parameter    : aData, an array of chars
 // Return       : string
 // Exceptions   : --
 // First author : 2015-09-14 /bsu/
 // History      :
 // =============================================================================
-function StrFromCharArray(const aData: array of char): string;
+class function TGenUtils.StrFromCharArray(const aData: array of char): string;
 begin
   result := PChar(@aData);
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : IsHexStr
-//                checks, whether all bytes in sData are hexadicmal digits
+// Class        : TGenUtils
+// Function     : checks, whether all bytes in sData are hexadicmal digits
 // Parameter    : sData, a string to check
 // Return       : true if all bytes are hexadicimal digits. Otherwise false
 // Exceptions   : --
 // First author : 2015-09-14 /bsu/
 // History      :
 // =============================================================================
-function IsHexStr(const sData: string): boolean;
+class function TGenUtils.IsHexText(const sData: string): boolean;
 const C_HEX_CHARS: set of char = ['0','1','2','3','4','5','6','7','8','9',
                                   'A','B','C','D','E','F',
                                   'a','b','c','d','e','f'];
@@ -149,9 +149,8 @@ begin
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : HexStrToCharArray
-//                converts a string from hexadecimal format to an array of char
+// Class        : TGenUtils
+// Function     : converts a string from hexadecimal format to an array of char
 // Parameter    : sData, a string in hexadecimal format, e.g.: '303132414243'
 //                aData to output, in which the result is saved, e.g. result of
 //                '303132414243' is:
@@ -164,10 +163,10 @@ end;
 // First author : 2015-09-14 /bsu/
 // History      :
 // =============================================================================
-function HexStrToCharArray(const sData: string; var aData: array of char): integer;
+class function TGenUtils.HexTextToCharArray(const sData: string; var aData: array of char): integer;
 var i, iLen, iChar, iLow: integer; sBuf, sHex: string;
 begin
-  if IsHexStr(sData) then begin
+  if IsHexText(sData) then begin
     iLen := length(sData);
     if (iLen mod 2) <> 0 then sBuf := '0' + sData //fulfills a '0' if the length of sData is odd
     else sBuf := sData;
@@ -185,9 +184,8 @@ begin
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : HexStrFromCharArray
-//                gets a string from a char array. The result is composed of
+// Class        : TGenUtils
+// Function     : gets a string from a char array. The result is composed of
 //                hexadecimal digits.
 // Parameter    : aData, an source array of char
 //                len, maximal count of the chars, which should be catch from aData. Defaut
@@ -197,7 +195,7 @@ end;
 // First author : 2015-09-14 /bsu/
 // History      :
 // =============================================================================
-function HexStrFromCharArray(const aData: array of char; const len: integer): string;
+class function TGenUtils.HexTextFromCharArray(const aData: array of char; const len: integer): string;
 var i, iLen: integer;
 begin
   result := '';
@@ -207,9 +205,8 @@ begin
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : IsValidAscii
-//                exames if all chars of the given string are valid ascii char
+// Class        : TGenUtils
+// Function     : exames if all chars of the given string are valid ascii chars
 // Parameter    : str, string to be examed
 // Return       : true, if all chars are ascii char.
 //                false, otherwise
@@ -217,7 +214,7 @@ end;
 // First author : 2015-11-06 /bsu/
 // History      :
 // =============================================================================
-function IsValidAscii(const str: string): boolean;
+class function TGenUtils.IsAsciiValid(const str: string): boolean;
 var i: integer;
 begin
   result := true;
@@ -226,6 +223,68 @@ begin
       result := false;
       break;
     end;
+  end;
+end;
+
+// =============================================================================
+// Class        : TGenUtils
+// Function     : enumerates all serial ports from Windows-Registry
+// Parameter    : sports, an ouput string list in which all ports are found, e.g.
+//                ('COM1', 'COM2' ...)
+// Return       : integer, count of the found ports
+// Exceptions   : --
+// First author : 2016-05-20 /bsu/
+// History      :
+// =============================================================================
+class function TGenUtils.EnumComPorts(var sports: TStrings): integer;
+var tReg: TRegistry; sPortNames: TStrings; sVal: string; i: integer;
+begin
+  sports.Clear;
+  tReg := TRegistry.Create;
+  with tReg do begin
+    RootKey := HKEY_LOCAL_MACHINE;
+    if OpenKeyReadOnly('Hardware\DeviceMap\SerialComm') then begin
+      sPortNames := TStringList.Create;
+      GetValueNames(sPortNames);
+      for i := 0 to sPortNames.Count - 1 do begin
+        sVal := ReadString(sPortNames[i]);
+        sVal := UpperCase(trim(sVal));
+        if sVal <> '' then sports.Add(sVal);
+      end;
+      sPortNames.Clear;
+      FreeAndNil(sPortNames);
+      CloseKey();
+    end;
+  end;
+  FreeAndNil(tReg);
+  result := sports.Count;
+end;
+
+// =============================================================================
+// Class        : TGenUtils
+// Function     : checks if the given string is a valid  number of serial port.
+//                saves it in iport if valid. Otherwise assigns iport = -1
+// Parameter    : s, pointer of a TSerial to be set
+//                sval, string for port to be set
+// Return       : true, if the string is a valid number of the port on this comuputer
+//                false, otherwise
+// Exceptions   : --
+// First author : 2016-05-20 /bsu/
+// History      :
+// =============================================================================
+class function TGenUtils.IsComPortValid(const sport: string; var iport: integer): boolean;
+var sComPorts: TStrings; sPortname: string; iPortnr: integer;
+begin
+  result := false;
+  iport := -1;
+  if TryStrToInt(sport, iPortnr) then begin
+    sPortname := 'COM' + IntToStr(iportnr);
+    sComPorts := TStringList.Create;
+    EnumComPorts(sComPorts);
+    result := (sComPorts.IndexOf(sPortname) >= 0 );
+    if result then iport := iPortnr;
+    sComPorts.Clear;
+    FreeAndNil(sComPorts);
   end;
 end;
 
