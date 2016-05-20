@@ -58,15 +58,26 @@ begin
 end;
 
 procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
-var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TPairStrings; sNames, sValues: TStrings;//tComPorts: TStrings;
+var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TPairStrings;
+    sNames, sValues, tComPorts: TStrings;
 begin
   sNames := TStringList.Create();
   sValues := TStringList.Create();
   tPairs := TPairStrings.Create();
+  tComPorts := TStringList.Create();
+
+  sNames.Add('Test1=text1=1');
+//  sNames.Add('Test1=text1+text1');
+  n := sNames.IndexOfName('Test1');
+  ShowMessage(format('sNames: count=%d; Test1: index=%d, value=%s',
+              [sNames.Count, n, sNames.ValueFromIndex[n] ]));
 
   tPairs.AddPair('Test1', 'text1');
   tPairs.AddPair('Test2', 'text2');
   tPairs.AddPair('Test3', 'text3');
+  tPairs.AddPair('Test4=');
+  tPairs.AddPair('Test5');
+  tPairs.AddPair('=text6');
 
   tPairs.GetPairNames(sNames);
   tPairs.GetPairValues(sValues);
@@ -77,11 +88,14 @@ begin
   tPairs.GetPairValues(sValues);
   ShowMessage(format('all names: %s; all values: %s', [sNames.DelimitedText, sValues.DelimitedText]));
 
-  FreeAndNil(tPairs);
-  FreeAndNil(sValues);
-  FreeAndNil(sNames);
+  tComPorts.Add('Test7=text7');
+  tComPorts.Add('Test8=8');
+  tPairs.AddPairs(tComPorts);
+  tPairs.GetPairNames(sNames);
+  tPairs.GetPairValues(sValues);
+  ShowMessage(format('all names: %s; all values: %s', [sNames.DelimitedText, sValues.DelimitedText]));
+
  {
-  tComPorts := TStringList.Create();
   //TGenUtils.EnumComPorts(tComPorts);
   //ShowMessage(tComPorts.DelimitedText);
   tComPorts.Add('Test1=');
@@ -96,7 +110,6 @@ begin
   tComPorts.ValueFromIndex[n] := '';
   ShowMessage(format('Index of Test2 = %d, index of Test2 (Name) = %d', [tComPorts.IndexOf('Test2=text of test2'), tComPorts.IndexOfName('Test2')]));
 
-  FreeAndNil(tComPorts);
 
   //imgTest.Picture.LoadFromFile('N:\SW_INBE\DIS2_230_SW3.2\Kundenlogos\Logo-Lenze.bmp');
   //ShowMessage(format('imgTest.ClientRect=[%d, %d, %d, %d]',
@@ -130,6 +143,10 @@ begin
   ShowMessage(format('HistoryHex=%s',[chbuffer.HistoryHex()]));
 
   FreeAndNil(chbuffer); }
+  FreeAndNil(tPairs);
+  FreeAndNil(sValues);
+  FreeAndNil(sNames);
+  FreeAndNil(tComPorts);
 end;
 
 procedure TfrmGeneralTester.FormCreate(Sender: TObject);

@@ -30,7 +30,7 @@ Type
   end;
 
 implementation
-uses SysUtils;
+uses SysUtils, StrUtils;
 
 function TPairStrings.GetCount(): integer;
 begin
@@ -58,13 +58,16 @@ begin
 end;
 
 function  TPairStrings.AddPair(const nameval: string; bcover: boolean): boolean;
-var t_pair: TStrings;
+var s_pair, s_name, s_value: string; i_pos: integer;
 begin
-  result := false;
-  t_pair := TStringList.Create();
-  if (ExtractStrings([t_namevals.NameValueSeparator], [' '], PChar(nameval), t_pair) = 2) then
-    result := AddPair(t_pair[0], t_pair[1]);
-  FreeAndNil(t_pair);
+  s_pair := trim(nameval);
+  s_name := ''; s_value := '';
+  i_pos := Pos(t_namevals.NameValueSeparator, s_pair);
+  if (i_pos > 1) then begin //name is not empty
+    s_name := LeftStr(s_pair, i_pos - 1);
+    s_value := RightStr(s_pair, length(s_pair) - i_pos);
+  end else if (i_pos = 0) then s_name := s_pair; //separator is not found, only name is given
+  result := AddPair(s_name, s_value);
 end;
 
 function TPairStrings.AddPairs(const names, vals: TStrings; bcover: boolean): integer;
@@ -73,8 +76,7 @@ begin
   result := 0;
   if (names.Count = vals.Count) then begin
     for i := 0 to names.Count - 1 do begin
-      if (not AddPair(names[i], vals[i], bcover)) then break;
-      inc(result);
+      if AddPair(names[i], vals[i], bcover) then inc(result);
     end;
   end;
 end;
@@ -84,8 +86,7 @@ var i: integer;
 begin
   result := 0;
   for i := 0 to namevals.Count - 1 do begin
-    if (not AddPair(namevals[i])) then break;
-    inc(result);
+    if AddPair(namevals[i], bcover) then inc(result);
   end;
 end;
 
@@ -103,13 +104,16 @@ end;
 function  TPairStrings.SetPairValue(const sname, sval: string): boolean;
 var i_index: integer; s_pair: string;
 begin
-  i_index := t_namevals.IndexOfName(sname);
-  s_pair := sname + t_namevals.NameValueSeparator + sval;
-  if (i_index >= 0) then begin
-    t_namevals.Delete(i_index);
-    t_namevals.Insert(i_index, s_pair);
-  end else i_index := t_namevals.Add(s_pair);
-  result := (i_index >= 0);
+  result := false;
+  if sname <> '' then begin
+    i_index := t_namevals.IndexOfName(sname);
+    s_pair := sname + t_namevals.NameValueSeparator + sval;
+    if (i_index >= 0) then begin
+      t_namevals.Delete(i_index);
+      t_namevals.Insert(i_index, s_pair);
+    end else i_index := t_namevals.Add(s_pair);
+    result := (i_index >= 0);
+  end;
 end;
 
 function  TPairStrings.GetPairNames(var names: TStrings): integer;
