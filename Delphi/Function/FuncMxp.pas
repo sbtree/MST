@@ -9,7 +9,7 @@
 unit FuncMxp;
 
 interface
-uses Classes, FunctionBase, TextMessage;
+uses Classes, FuncBase, TextMessage;
 
 implementation
 

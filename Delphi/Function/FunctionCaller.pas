@@ -10,18 +10,18 @@ type
   TFunctionCaller = class
   protected
     t_func:       TFunctionBase;
-    e_exemode:    EExecutionMode;
+    e_exemode:    EExecMode;
     s_result:     string;
     t_messenger:  TTextMessenger;
   protected
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
-    procedure SetExecutionMode(const em: EExecutionMode);
+    procedure SetExecutionMode(const em: EExecMode);
     function  FindFunction(const func: string): TFunctionBase; virtual;
   public
     constructor Create();
     destructor Destroy(); override;
     
-    property  ExecutionMode: EExecutionMode read e_exemode write SetExecutionMode;
+    property  ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     property  Messenger: TTextMessenger read t_messenger write t_messenger;
     property  ResultString: string read s_result write s_result;
     function  CallFunction(const func, par: string): boolean;
@@ -35,7 +35,7 @@ begin
   //todo:
 end;
 
-procedure TFunctionCaller.SetExecutionMode(const em: EExecutionMode);
+procedure TFunctionCaller.SetExecutionMode(const em: EExecMode);
 begin
   e_exemode := em;
   if assigned(t_messenger) then begin

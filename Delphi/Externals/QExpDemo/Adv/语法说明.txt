@@ -1,0 +1,535 @@
+QExp表达式解释器语法说明
+========================
+1、语法要素
+  本部分描述的语法要素为QExp默认实现规则，子类可以重载TQExprParser的InternalParse
+函数来实现不同的语法解析。  
+  1.1、标志符
+  QExp的变量或函数名可以是_、英文字母，中文，也可以包含数字，但数字不能打头。标志
+符的长度没有限制，理论上不超过1GB。
+  1.2、变量
+  脚本中的变量，如果没有特殊定义，均位于Locals分组下。程序定义的不受脚本解析限制
+的变量或函数位于根分组下。
+  在脚本中可以直接为Result变量赋值，对Result变量的赋值将会做为执行结果。如果不设
+置Result变量的值，则最后一句代码的计算结果被当作结果值。
+  一般变量的值，除非遇到赋值语句，否则其值不会改变。但对于一些特殊的变量，如果在
+每次访问其值时都有可能改变，则应设置其Mutable属性为True。
+　QExp表达式变量均为弱类型，即其类型取决于值的类型。
+  1.3、函数
+  系统中的函数分类两类，一类是由脚本直接编写的函数，另一类是由程序实现的固定函数。
+  通过脚本直接编写的函数必需在使用之前定义，否则会发生解析错误。
+  通过程序实现的固定函数必需注册到TQExprParser对象，并且不能注册到Locals分组下，
+以避免在解析代码时被清除。
+  函数调用时，如果没有参数，也必需包括左右括号，如：Now()。
+  1.3.1、函数声明
+  脚本定义函数时，必需以关键字function开始，后跟函数名和参数声明，格式如下：
+    function 函数名(参数列表)
+    {
+    }
+  其中，参数列表之间以“,”分隔，如果参数数目不固定，可以用"..."来代表可变参数部分。
+而在代码中，使用函数Params函数来获取附加参数的值，总参数个数可以通过ParamCount函
+数获取（注意这两个函数作用域仅限于函数内部）。
+  可以在函数中进一步定义子函数，如下面的代码是合法的：
+  function F1(x,y)
+  {
+  function F2(a,b)
+    {
+    Result=a*b;
+    }
+  Result=F2(2,x)+F2(3,y);
+  }
+  子函数只要在其被调用前定义即可，并不要求一定在函数开始。  
+  当一个函数直接赋给一个变量时，函数的名称可以省略，如果函数没有任何参数时，函数
+声明关键字function也可以省略。以下语法在QExp中是合法的：
+  a=function(x,y)
+    {
+    Result=x+y;
+    };
+  a(1,2);
+  上面的代码能够正确的解析，其结果是3。
+  a={
+    x=1;
+    y=2;
+    Result=x+y;
+    };
+  同样是合法的，其结果同样为3.
+  1.3.2、可变参数的函数
+  函数支持不定数目的参数，用户自定义函数声明时，不定参数部分使用"..."用来代替后
+面的不定参数，如下面的声明：
+  function DoSum(v1,...)
+  其中，v1被当做必需传递的参数，后面的...代表可以后跟任意个不定数目的参数。
+  脚本中要获取参数的个数，可以使用ParamCount()函数，要访问每个参数的值，可以使用
+Params(AParamIndex)函数，注意上述两个函数均包含固定参数，并不只适应于变参函数。
+  [注意]{}中间的代码在QExp中也被当做一个匿名函数来执行，因此，如果在{}中调用
+ParamCount将始终返回0，而Params将抛出索引越界错误。
+  1.4、作用域
+  函数中定义的变量或子函数的作用域仅限函数自己，超出该作用域函数即告无效。系统注
+册到TQExprParser对象的变量或函数为全局变量，始终有效。
+  1.5、运算符及其优先级
+  QExp中的运算符有不同的优先级，高优先级的运算符会优先计算后再与低优先级的运算符
+相结合。要先运算低优先级的运算符，请使用()将要运算的表达式内容进行优先级提升。
+  
+    运算符 优先级 备注
+    
+    语句分隔符
+    ,       0     逗号运算符，用于分隔参数
+    ;       0     分号用来标记语句结束
+    
+    赋值运算符
+    =       1     赋值运算符
+    
+    自运算符，计算结果被赋值给自己，如a+=2相当于a=a+2。
+    +=      1     自加运算符
+    -=      1     自减运算符 
+    *=      1     自乘运算符
+    /=      1     自除运算符
+    \=      1     自除取整运算符，将除法运算的结果再取整后赋给自己
+    %=      1     自余运算符
+    &=      1     自位与运算符
+    |=      1     自位或运算符
+    ^=      1     自位非运算符
+    <<=     1     自左移位运算符
+    >>=     1     自右移位运算符
+    ++      9     自增运算符，等价于+=1
+    --      9     自减运算符，等价于-=1               
+    
+    逻辑运算符
+    &&      2     逻辑与（并且）
+    ||      2     逻辑或（或者）
+    !       2     逻辑非
+    
+    位运算符
+    &       3     位与
+    |       3     位或
+    ^       3     异或
+    ~       3     位非
+    
+    比较操作符
+    ==      4     等于
+    !=      4     不等于
+    <>      4     不等于（与!=等价）
+    <       4     小于
+    <=      4     小于等于
+    >       4     大于
+    >=      4     大于等于
+    
+    移位操作符
+    <<      5     左移位运算符
+    >>      5     右移位运算符
+    
+    算术运算符
+    +       6     加
+    -       6     减
+    *       7     乘
+    /       7     除
+    \       7     整除
+    %       7     求余
+    **      8     幂运算符
+    ++      9     自增运算符
+    --      9     自减运算符      
+  
+  1.6、流程控制
+  QExp的脚本的流程控制使用五个辅助函数实现：
+  IfThen 检查第一个参数条件是否符合，如果符合，执行参数2的代码，如果不符合，执行
+参数3代码。
+  Goto 跳转到指定的代码行，参数为代码行号（注意脚本函数定义部分不计算代码行）
+  Exit 中止代码执行退出
+  While 循环直到条件不满足
+  Break 中断循环中后续语句的执行并跳出循环(目前仅限while)，Goto不受限制
+
+  1.7、数据类型
+  系统支持以下数据类型：
+  字符串　以""包含起来的内容，如果中间包含双引号，则以两个引号或\"代替。
+  整数    包含32位或64位整数
+  浮点数　双精度浮点数
+  日期时间　日期时间格式可以只包含日期或只包含时间，必需用引号包含起来。格式固定
+          为yyyy-mm-dd hh:nn:ss.zzz
+  [注]十六进制只支持整数，可以是Delphi或C样式的十六进制表示法  
+  
+  1.8、复合语句
+  QExp支持复合语句，使用{和}分别代表复合语句的开始和结束。复合语句的执行结果可以
+直接赋值给变量。  
+  
+  1.9、注释
+
+  QExp的注释使用C++默认的行注释符//和块注释符/**/，意义相同。
+
+2、系统内置函数
+  QExp表达式解析器默认内置了常用的基本函数，这些函数均为超全局函数，如果局部函数
+与其重名，则会覆盖默认实现。这些超全局函数都不是通过脚本实现的，脚本实现的函数只
+能是局部函数。
+  QExp的超全局函数可以在任何TQExprParser及其子类实例中使用，受限于源码长度，目前
+仅提供以下函数实现：
+  2.1、日期时间
+  (1)、DateAdd(ADate,APart,ADelta)
+  参数说明：
+    ADate : 已有日期时间值
+    APart : 要变量的日期部分，可以是合法的字符串标志，或者整数值，参考下表：
+      名称          整数值   对应日期部分
+      year或y        1       年
+      month或m       2       月
+      day或d         3       日
+      hour或h        4       时
+      minute或n      5       分
+      second或s      6       秒
+      millsecond或ms 7       毫秒
+    ADelta : 要增加的部分，如果要减小，则设置为负值即可
+  返回值：
+    返回计算后的日期时间值
+  (2)、DateDiff(AFirstDate,ASecondDate,APart)
+  参数说明:
+    AFirstDate : 第一个日期时间
+    ASecondDate : 第二个日期时间
+    APart 要比较差异的部分
+  返回值：
+    返回两个日期之间的差值
+  (3)、DatePart(ADate,APart)
+  参数说明：
+    ADate : 日期时间值
+    APart : 要获取的部分，参考DateAdd中APart参数说明
+  返回值：
+    返回日期指定部分的值
+  (4)、Now()
+  返回值：
+    返回当前日期时间
+  (5)、Date()
+  返回值：
+    返回当前日期
+  (6)、Time()
+  返回值：
+    返回当前时间
+  (7)、MonthDays(AYear,AMonth)
+  参数说明：
+    AYear : 年份
+    AMonth : 月份
+  返回值:
+    返回指定月份的天数
+  (8)、IsLeapYear(AYear)
+  参数说明：
+    AYear : 年份
+  返回值：
+    如果指定的年份是闰年，返回True，否则，返回False
+  (9)、EncodeDate(AYear,AMonth,ADay)
+  参数说明:
+    AYear : 年份
+    AMonth : 月份
+    ADay : 日
+  返回值:
+    返回编码后的日期值
+  (10)、Encodetime(AHour,AMinute,ASecond,AMillSecond)
+  参数说明:
+    AHour : 时
+    AMinute : 分
+    ASecond : 秒
+    AMillSecond : 毫秒
+  返回值:
+    返回编码后的时间值
+  (11)、Today()
+  等价于Date
+  (12)、Yesterday()
+  返回值：
+    返回昨天的日期值
+  (13)、Tomorrow()
+  返回值：
+    返回明天的日期值
+  (14)、IsToday(ADate)
+  参数:
+    ADate : 要判断的日期
+  返回值:
+    如果指定的日期为今天，返回True，否则返回False
+  (15)、DateStart(ADate,ARange)
+  参数：
+    ADate : 日期值
+    ARange : 日期范围，可以是合法的字符串或整数值，取值如下表所示：
+      名称          整数值   对应日期部分
+      century或cent  1       世纪
+      year或y        2       年
+      month或m       3       月
+      day或d         4       日
+      hour或h        5       时
+      minute或n      6       分
+      second或s      7       秒
+  返回值:
+    返回指定日期所属时间段的起始值
+  (16)、DateEnd(ADate,ARange)
+  参数:
+    ADate : 日期值
+    ARange : 日期范围，可以是合法的字符串或整数值，参考DateStart
+  返回值:
+    返回指定日期所属时间段的结束值
+  (17)、DateReplace(ADate,APart,ANewVal)
+  参数:
+    ADate : 要替换日期值
+    APart : 要替换的日期部分，参考DateAdd
+    ANewVal : 新值
+  返回值:
+    返回替换完成后的日期值
+  2.2、数学函数
+  (1)、Avg(...)
+  返回值：
+    返回所有参数值的平均值
+  (2)、Sum(...)
+  返回值：
+    返回所有参数值的和
+  (3)、Count(Distinct,...)
+  参数：
+    Distinct : 统计时是否剔除相同的值
+  返回值：
+    返回元素个数
+  (4)、Max(...)
+  返回值：
+    返回一组数中的最大值
+  (5)、Min(...)
+  返回值：
+    返回一组数中的最小值
+  (6)、StdDev(...)
+  返回值：
+    返回一组数的标准方差（也称偏差）
+  (7)、Round(AValue,ADigit)
+  参数：
+    AValue : 要舍入的数值
+    ADigit : 要保留的精度
+  返回值：
+    返回四舍五入后的值
+  (8)、BandRound(AValue,ADigit)
+  参数：
+    AValue : 要舍入的数值
+    ADigit : 要保留的精度
+  返回值：
+    返回按银行家算法舍入后的值
+  
+  2.3、字符串函数
+  (1)、Left(AValue,ACount)
+  参数：
+    AValue : 字符串
+    ACount : 要截取的最大数量
+  返回值:
+    返回从左开始截取的字符串
+  (2)、Right(AValue,ACount)
+  参数：
+    AValue : 字符串
+    ACount : 要截取的最大数量
+  返回值:
+    返回从右开始截取的字符串
+  (3)、UpperCase(AValue)
+  参数：
+    AValue : 字符串
+  返回值:
+    返回指定字符串的大写
+  (4)、LowerCase(AValue)
+  参数：
+    AValue : 字符串
+  返回值：
+    返回指定字符串的小写表示
+  (5)、StrCmp(AFirst,AFirstLen,ASecond,ASecondLen,AIgnoreCase)
+  参数：
+    AFirst : 首个字符串
+    AFirstLen : 首个字符串长度
+    ASecond : 第二个字符串
+    ASecondLen : 第二个字符串长度
+    AIgnoreCase : 是否比较时忽略大小写
+  返回值：
+    返回指定字符串的比较结果
+    AFirst>ASecond  返回值大于0
+    AFirst=ASecond  返回值等于0
+    AFirst<ASecond  返回值小于0
+  (6)、QuotedStr(AValue,AQuoter)
+  参数：
+    AValue : 字符串
+    AQuoter : 引号字符，字符串中对应的字符会以两个同样的字符代替
+  返回值：
+    返回加上引号的字符串
+  (7)、DequoteStr(AValue,AQouter)
+  参数：
+    AValue : 字符串
+    AQuoter : 引号字符，字符串中两个同样的字符会转换为1个
+  返回值：
+    返回去掉引号后的字符串
+  (8)、Pos(ASubStr,AStr,AIgnoreCase)
+  参数：
+    ASubStr : 子串
+    AStr : 要搜索的字符串
+    AIgnoreCase : 比较时是否忽略大小写
+  返回值:
+    返回子串出现的位置，如果没找到，返回0,否则返回以1开始计数的位置索引
+  (9)、Length(AStr)
+  参数：
+    AStr : 字符串
+  返回值：
+    返回字符串的Unicode 16长度（注意不是字符数）
+  (10)、SubString(AStr,AStartPos,ACount)
+  参数：
+    AStr : 字符串
+    AStartPos : 起始位置，从1开始计数
+    ACount : 最大字符数
+  返回值：
+    返回截取后的子串
+  (11)、Like(AStr,APat,AIgnoreCase)
+  参数：
+    AStr : 字符串
+    APat : 匹配模式，支持*或?
+    AIgnoreCase : 是否忽略大小写
+  返回值：
+    如果模式匹配，则返回True，否则返回False
+  (12)、StartWith(AStr,ASub,AIgnoreCase)
+  参数：
+    AStr : 字符串
+    ASub : 子串
+    AIgnoreCase : 是否区分大小写
+  返回值：
+    如果字符串以指定的子串开始，则返回True，否则返回False
+  (13)、EndWith(AStr,ASub,AIgnoreCase)
+  参数：
+    AStr : 字符串
+    ASub : 子串
+    AIgnoreCase : 是否区分大小写
+  返回值：
+    如果字符串以指定的子串结束，则返回True，否则返回False
+  (14)、RegexMatch(AStr,APat,AStartOffset)
+  参数：
+    AStr : 字符串
+    APat : 匹配模式
+    AStartOffset : 起始偏移量
+  返回值:
+    如果匹配成功，返回匹配的字符串，如果失败，返回空字符串
+  备注：
+    本函数需要编译时打开QEXP_REGEX开关，否则与正则相关的函数(Regex...)均不可用
+  （下同）。
+    要获取本次匹配的字符串长度和位置信息，使用RegexLastLength和RegexLastOffset函
+  数。
+    APat对应的匹配模式字符串开关支持i/m/s/x/Z/U/n，其具体含义参考PCRE正则表达式的
+  相关文档（下同）。如忽略大小写：
+    RegexMatch("My home work is done by myself.","/my/i",1,False);
+  (15)、RegexMatchNext()
+  返回值：
+    返回再一次匹配的结果
+  (16)、RegexLastOffset()
+  返回值：
+    返回末次匹配的起始位置
+  (17)、RegexLastLength
+  返回值：
+    返回末次匹配的字符串长度
+  (18)、RegexSplit(AStr,APat,ALimit,AIncEmpty,AIncGroup)
+  参数：
+    AStr : 字符串
+    APat : 匹配模式
+    ALimit : 最大匹配次数
+    AIncEmpty : 是否包含空的匹配结果
+    AIncGroup : 是否包含命名分组
+  返回值:
+    返回使用正则表达式分割的子串个数
+  (19)、RegexSplitCount
+  返回值：
+    返回末次正则表达式侵害的子串个数
+  (20)、RegexSplitText(AIndex)
+  参数：
+    AIndex : 子串索引，从0开始
+  返回值：
+    返回子串内容
+  (21)、RegexSplitOffset(AIndex)
+  参数：
+    AIndex : 子串索引，从0开始
+  返回值：
+    返回子串的起始偏移
+  (22)、RegexReplace(AStr,APat,AReplace,ALimit)
+  参数：
+    AStr : 字符串
+    APat : 匹配模式
+    ARepalce : 要替换的表达式
+    ALimit : 最大匹配次数
+  返回值：
+    返回替换后的子串
+  (23)、DecodeToken(AStrVar,ADelimiters,AQuoter,AIgnoreCase)
+  参数：
+    AStrVar : 要分解的字符串
+    ADelimiters : 分隔符
+    AQuoter : 引号字符，引号引起的内容即使包含分隔符也不会被切分
+    AIgnoreCase : 是否忽略大小写
+  返回值：
+    返回分解到的第一个字符串
+  备注：
+    AStrVar中被分解的内容将被移除
+  2.4、辅助函数
+  (1)、MessageBox(ATitle,AMsg,AButtons)
+  参数：
+    ATitle : 消息框标题
+    AMsg : 消息内容
+    AButtons : 按钮列表，参考Windows API的MessageBox说明
+  返回值：
+    返回用户选择的按钮
+  (2)、IfThen(ACondition,AExp1,AExp2)
+  参数：
+    ACondtion : 判断条件
+    AExpr1 : 第一个表达式，条件为True时执行
+    AExpr2 : 第二个表达式，条件为False时执行
+  返回值：
+    返回执行的子表达式的结果
+  (3)、Goto(ALineNo)
+  参数：
+    ALineNo : 目标行号
+  返回值：
+    无
+  (4)、Exit(ACode)
+  参数：
+    ACode : 退出时返回值
+  返回值：
+    ACode指定的值
+  (5)、While(ACondition,AExp)
+  参数：
+    ACondition : 循环判断条件
+    AExp : 要执行的代码，可以是复合语句
+  返回值：
+    返回最后一个非空语句的值
+  (6)、Break()
+  功能：中断当前循环执行
+
+  (7)、Eval(AExprText)
+  参数：
+    AExprText : 要执行的代码
+  返回值：
+    返回代码执行结果
+  (8)、String(AExpr)
+  功能：将指定的表达式结果转换为字符串表示
+  参数：
+    AExpr : 表达式
+  返回值：返回转换后的字符串
+  (9)、Integer(AExpr)
+  功能：将指定的表达式转换为整数
+  参数：
+    AExpr : 表达式
+  返回值：返回转换后的整数值
+  (10)、Int64(AExpr)
+  功能：将指定的表达式转换为64位整数
+  参数：
+    AExpr : 表达式
+  返回值：返回转换后的64位整数值
+  (11)、Float(AExpr)
+  功能：将指定的表达式转换为浮点数
+  参数：
+    AExpr : 表达式
+  返回值：返回转换后的浮点数
+  (13)、DateTime(AExpr)
+  功能：将指定的表达式转换为日期时间值
+  参数：
+    AExpr : 表达式
+  返回值：返回转换后的日期时间值
+  (14)、String(AExpr)
+  功能：将指定的表达式转换为字符串
+  参数：
+    AExpr : 表达式
+  返回值：返回转换后的字符串
+  (15)、Char(AExpr)
+  功能：将指定的UTF16编码整数值转换为字符
+  参数：
+    AExpr : 表达式
+  返回值：返回转换后的字符
+  2.5、二进制(说明暂略)
+  (1)、Bytes.FromHex(AByteStr)
+  (2)、Bytes.Insert(AVar,AIndex,AInserted)
+  (3)、Bytes.Append(AVar,AInserted)
+  (4)、Bytes.FromStr(AStr,ATargetEncode)
+  (5)、Bytes.SaveToFile(AFileName,ABytes)
+  (6)、Bytes.LoadFromFile(AFileName)
+  (7)、Bytes.SetByte(AVar,AIndex,AValue)
+  (8)、Bytes.GetByte(AVar,AIndex)
+  (9)、Bytes.ByteSize(AVar)
+  (10)、Bytes.ReadText(AVar)

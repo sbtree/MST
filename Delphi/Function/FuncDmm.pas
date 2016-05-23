@@ -9,7 +9,7 @@
 unit FuncDmm;
 
 interface
-uses Classes, FunctionBase, TextMessage;
+uses Classes, FuncBase, TextMessage;
 
 implementation
 

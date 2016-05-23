@@ -10,7 +10,7 @@
 unit FuncSwt;
 
 interface
-uses Classes, Windows, FunctionBase, TextMessage;
+uses Classes, Windows, FuncBase, TextMessage;
 
 type
   ExecConsoleCmd = class(TFunctionBase)

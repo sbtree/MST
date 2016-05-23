@@ -87,6 +87,7 @@ end;
 function TFunctionBase.Execute(): boolean;
 begin
   AddMessage('"Execute" is not specified and its basic function is called.');
+  b_aborted := false;
   result := true;
 end;
 

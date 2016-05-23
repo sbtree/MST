@@ -1,7 +1,7 @@
 unit StepContainer;
 
 interface
-uses Classes, Contnrs, IniFiles, StepDescriptor;
+uses Classes, Contnrs, StepDescriptor;
 
 type
   TStepGroup = class;
@@ -386,18 +386,13 @@ end;
 //    History      :
 // =============================================================================
 procedure TStepContainer.SaveFile(const sfile: string);
-var i: integer; s_line: string; j:EStepField;
-    t_stepvals: TStringList; t_step: TTestStep; t_field: TStepField;
+var i: integer; s_line: string; j:EStepField; t_stepvals: TStringList; t_step: TTestStep;
 begin
   t_stepvals := TStringList.Create();
   for i := 0 to t_steps.Count - 1 do begin
     t_step := TTestStep(t_steps.Items[i]);
-    t_field := t_step.GetField(SF_NR);
-    if assigned(t_field) then s_line := t_field.InputString;
-    for j := SF_T to High(EStepField) do begin
-      t_field := t_step.GetField(j);
-      if assigned(t_field) then s_line := s_line + ';' + #9 + t_field.InputString;
-    end;
+    s_line := t_step.GetFieldValue(SF_NR);
+    for j := SF_T to High(EStepField) do s_line := s_line + ';' + #9 + t_step.GetFieldValue(j);
     t_stepvals.Add(s_line);
   end;
   t_stepvals.SaveToFile(sfile);

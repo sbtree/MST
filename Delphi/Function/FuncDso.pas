@@ -9,7 +9,7 @@
 unit FuncDso;
 
 interface
-uses Classes, FunctionBase, TextMessage;
+uses Classes, FuncBase, TextMessage;
 
 implementation
 

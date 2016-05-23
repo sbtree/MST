@@ -46,9 +46,9 @@ type
   // a base class for terminology in a step: Nr, T, R_on, Fkt, Par, R_off, Tol(A, Min, Max)
   TStepField = class
   protected
-    s_input:    string;   //to save original input string
-    //t_strlist:  TStrings; //to save string values, which are extracted and evaluated from s_input
-    //c_separator:char;     //char as separator for evaluating s_input
+    s_input:  string;   //to save original input string
+    //t_parts:  TStrings; //to save string values, which are split from s_input by method Split
+    //c_separ:  char;     //char as separator for splitting s_input
     //s_evalst: string;   //to save string, which is evaluated using the statical information in the configuration
     //s_evaldy: string;   //to save string, which is evaluated using the dynamical inforation in the run
   protected
@@ -60,14 +60,18 @@ type
     destructor Destroy(); override;
 
     property  InputString: string read s_input write SetInputStr;
+
     procedure Assign(const source: TStepField);
+    //function  SplitStrings(const separator: char): TStrings;
   end;
 
   StepFieldArray = array[EStepField] of TStepField;
+
   TTestStep = class
   protected
     a_fields:   StepFieldArray;
     t_result:   TStepResult;
+    t_fvalues:  TStrings;     //to save the list of a field value, which is split. See SplitFieldValues
   protected
     procedure FreeFields();
     function  IsMinusStepNr(): boolean;
@@ -85,6 +89,7 @@ type
     function  GetFieldName(const esf: EStepField): string;
     function  GetFieldValue(const esf: EStepField): string;
     procedure SetFieldValue(const esf: EStepField; const sval: string);
+    function  SplitFieldValues(const esf: EStepField; const separator: char): TStrings;
     procedure Assign(const source: TTestStep);
   end;
 
@@ -137,12 +142,14 @@ end;
 constructor TTestStep.Create();
 begin
   inherited Create();
+  t_fvalues := TStringList.Create();
 end;
 
 destructor TTestStep.Destroy();
 begin
   if assigned(t_result) then t_result.Free();
   FreeFields();
+  t_fvalues.Free();
   inherited Destroy();
 end;
 
@@ -181,6 +188,15 @@ begin
     a_fields[esf] := TStepField.Create();
     a_fields[esf].InputString := sval;
   end;
+end;
+
+function  TTestStep.SplitFieldValues(const esf: EStepField; const separator: char): TStrings;
+var s_value: string;
+begin
+  t_fvalues.Clear();
+  s_value := GetFieldValue(esf);
+  if (s_value <> '') then ExtractStrings([separator], [' ', Char(9)], PChar(s_value), t_fvalues);
+  result := t_fvalues;
 end;
 
 procedure TTestStep.Assign(const source: TTestStep);

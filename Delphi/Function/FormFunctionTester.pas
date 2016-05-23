@@ -3,7 +3,7 @@ unit FormFunctionTester;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Windows, TextMessage, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, FunctionCaller, GenType;
 
 type
@@ -11,8 +11,11 @@ type
     btnTest: TButton;
     memInfo: TMemo;
     procedure btnTestClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
     { Private-Deklarationen }
+    t_messenger: TTextMessenger;
   public
     { Public-Deklarationen }
   end;
@@ -36,7 +39,7 @@ begin
   ShowMessage(format('length = %d, %s', [length(s_show), s_show]));
   t_fcaller := TFunctionCaller.Create;
   t_fcaller.ExecutionMode := EM_DIAGNOSE;
-  t_fcaller.Messages := memInfo.Lines;
+  t_fcaller.Messenger := t_messenger;
   t_fcaller.CallFunction('ExecConsoleCmd', 'N:\SW_INBE\DIS-2\Tools\flash_over_jtag.exe');
   t_fcaller.CallFunction('Nil', 'abc');
   t_fcaller.CallFunction('abcd', 'abc');
@@ -48,6 +51,17 @@ begin
   t_fr_set_dm.Initilize('');
   t_fr_set_dm.Execute('');
   FreeAndNil(t_fr_set_dm);  }
+end;
+
+procedure TFormFTMain.FormCreate(Sender: TObject);
+begin
+  t_messenger := TTextMessenger.Create();
+  t_messenger.Messages := memInfo.Lines;
+end;
+
+procedure TFormFTMain.FormDestroy(Sender: TObject);
+begin
+  t_messenger.Free();
 end;
 
 end.

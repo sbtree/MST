@@ -14,7 +14,9 @@ uses
   StepDescriptor in '..\Script\StepDescriptor.pas',
   StepResult in '..\Script\StepResult.pas',
   PairStrings in '..\General\PairStrings.pas',
-  TestDebugger in 'TestDebugger.pas';
+  TestDebugger in 'TestDebugger.pas',
+  PseudoInstructor in 'PseudoInstructor.pas',
+  LoopControl in 'LoopControl.pas';
 
 {$R *.res}
 

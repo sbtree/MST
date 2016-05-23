@@ -9,7 +9,7 @@
 unit FuncSys;
 
 interface
-uses Classes, FunctionBase, TextMessage;
+uses Classes, FuncBase, TextMessage;
 
 type
   LoopBegin = class(TFunctionBase)
