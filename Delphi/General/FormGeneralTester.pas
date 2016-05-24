@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, DataBuffer, StdCtrls, ExtCtrls, ComCtrls, GenUtils;
+  Dialogs, DataBuffer, StdCtrls, ExtCtrls, ComCtrls, GenUtils, QExp;
 
 type
   TfrmGeneralTester = class(TForm)
@@ -17,6 +17,7 @@ type
     procedure btnCreateTreeClick(Sender: TObject);
   private
     { Private-Deklarationen }
+    //t_expr: TQExprParser;
   public
     { Public-Deklarationen }
   end;
@@ -61,6 +62,7 @@ procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
 var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TPairStrings;
     sNames, sValues, tComPorts: TStrings;
 begin
+  QExp_TestCase();
   sNames := TStringList.Create();
   sValues := TStringList.Create();
   tPairs := TPairStrings.Create();
