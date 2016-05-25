@@ -38,6 +38,7 @@
     <DelphiCompile Include="GeneralTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Externals\QExp.pas" />
     <DCCReference Include="DataBuffer.pas" />
     <DCCReference Include="FormGeneralTester.pas">
       <Form>frmGeneralTester</Form>
@@ -49,8 +50,14 @@
     <None Include="ModelSupport_GeneralTester\DataBuffer\default.txvpck" />
     <None Include="ModelSupport_GeneralTester\default.txaPackage" />
     <None Include="ModelSupport_GeneralTester\default.txvpck" />
+    <None Include="ModelSupport_GeneralTester\FormGeneralTester\default.txvpck" />
     <None Include="ModelSupport_GeneralTester\GeneralTester\default.txvpck" />
+    <None Include="ModelSupport_GeneralTester\GenType\default.txvpck" />
     <None Include="ModelSupport_GeneralTester\GenUtils\default.txvpck" />
     <None Include="ModelSupport_GeneralTester\GTMain\default.txvpck" />
+    <None Include="ModelSupport_GeneralTester\PairStrings\default.txvpck" />
+    <None Include="ModelSupport_GeneralTester\QExp\default.txaPackage" />
+    <None Include="ModelSupport_GeneralTester\QExp\default.txvpck" />
+    <None Include="ModelSupport_GeneralTester\TextMessage\default.txvpck" />
   </ItemGroup>
 </Project>

@@ -48,10 +48,14 @@
       <Form>FrmBootTester</Form>
     </DCCReference>
     <DCCReference Include="MtxDownloader.pas" />
+    <None Include="ModelSupport_BootTester\BootTesterMain\default.txvpck" />
     <None Include="ModelSupport_BootTester\BootTester\default.txvpck" />
     <None Include="ModelSupport_BootTester\default.txaPackage" />
     <None Include="ModelSupport_BootTester\default.txvpck" />
+    <None Include="ModelSupport_BootTester\GenUtils\default.txvpck" />
     <None Include="ModelSupport_BootTester\MtxDownloader\default.txaPackage" />
     <None Include="ModelSupport_BootTester\MtxDownloader\default.txvpck" />
+    <None Include="ModelSupport_BootTester\NewProgressbar\default.txvpck" />
+    <None Include="ModelSupport_BootTester\Serial3\default.txvpck" />
   </ItemGroup>
 </Project>

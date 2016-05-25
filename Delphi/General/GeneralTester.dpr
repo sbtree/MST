@@ -7,7 +7,8 @@ uses
   FormGeneralTester in 'FormGeneralTester.pas' {frmGeneralTester},
   TextMessage in 'TextMessage.pas',
   GenType in 'GenType.pas',
-  PairStrings in 'PairStrings.pas';
+  PairStrings in 'PairStrings.pas',
+  QExp in '..\Externals\QExp.pas';
 
 {$R *.res}
 
