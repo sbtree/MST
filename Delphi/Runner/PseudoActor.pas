@@ -82,12 +82,12 @@ const
                 //pseudo-strings, which must be calculated or updated in real time
                 'ArithInt16',
                 'ArithInt32',
-                'Echo',
-                'VoltSupply',
-                'NormStromU',
-                'NormStromV',
-                'StromOffsetU',
-                'StromOffsetV',
+                'Echo', //cooper device ?
+                'VoltSupply', //???
+                'NormStromU', //???
+                'NormStromV', //???
+                'StromOffsetU',//???
+                'StromOffsetV',//???
                 'I_KorrFaktor',
                 'Msg'
                 );
