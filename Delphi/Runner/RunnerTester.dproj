@@ -46,7 +46,7 @@
       <Form>Form2</Form>
     </DCCReference>
     <DCCReference Include="LoopControl.pas" />
-    <DCCReference Include="PseudoInstructor.pas" />
+    <DCCReference Include="PseudoActor.pas" />
     <DCCReference Include="TestDebugger.pas" />
     <DCCReference Include="TestRunner.pas" />
     <None Include="ModelSupport_RunnerTester\default.txaPackage" />

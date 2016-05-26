@@ -10,6 +10,8 @@ Type
     t_namevals: TStrings;
   protected
     function GetCount(): integer;
+    function Rename(const sname: string): string;
+
   public
     constructor Create();
     destructor Destroy(); override;
@@ -37,6 +39,19 @@ begin
   result := t_namevals.Count;
 end;
 
+//if sname is given in format name[n], it will be renamed in format name_n
+function TPairStrings.Rename(const sname: string): string;
+var i_pos: integer;
+begin
+  result := trim(sname);
+  i_pos := Pos('[', result);
+  if (i_pos > 1) then result[i_pos] := '_';
+  if (EndsText(']', result)) then begin
+    result := LeftStr(result, length(result) - 1);
+    result := trim(result);
+  end;
+end;
+
 constructor TPairStrings.Create();
 begin
   t_namevals := TStringList.Create();
@@ -47,13 +62,17 @@ begin
 end;
 
 function TPairStrings.FindPair(const sname: string): boolean;
+var s_name: string;
 begin
-  result := (t_namevals.IndexOfName(sname) >= 0);
+  s_name := Rename(sname);
+  result := (t_namevals.IndexOfName(s_name) >= 0);
 end;
 
 function TPairStrings.AddPair(const sname, sval: string; bcover: boolean): boolean;
+var s_name: string;
 begin
-  if ((bcover) or (t_namevals.IndexOfName(sname) < 0)) then result := SetPairValue(sname, sval)
+  s_name := Rename(sname);
+  if ((bcover) or (t_namevals.IndexOfName(s_name) < 0)) then result := SetPairValue(s_name, sval)
   else result := false;
 end;
 
@@ -67,7 +86,7 @@ begin
     s_name := LeftStr(s_pair, i_pos - 1);
     s_value := RightStr(s_pair, length(s_pair) - i_pos);
   end else if (i_pos = 0) then s_name := s_pair; //separator is not found, only name is given
-  result := AddPair(s_name, s_value);
+  result := AddPair(s_name, s_value, bcover);
 end;
 
 function TPairStrings.AddPairs(const names, vals: TStrings; bcover: boolean): integer;
@@ -91,23 +110,24 @@ begin
 end;
 
 function  TPairStrings.GetPairValue(const sname: string; var sval: string): boolean;
-var i_index: integer;
+var i_index: integer; s_name: string;
 begin
-  result := false; sval := '';
-  if sname <> '' then begin
-    i_index := t_namevals.IndexOfName(sname);
+  result := false;
+  sval := ''; s_name := Rename(sname);
+  if s_name <> '' then begin
+    i_index := t_namevals.IndexOfName(s_name);
     result := (i_index >= 0);
     sval := t_namevals.ValueFromIndex[i_index];
   end;
 end;
 
 function  TPairStrings.SetPairValue(const sname, sval: string): boolean;
-var i_index: integer; s_pair: string;
+var i_index: integer; s_pair, s_name: string;
 begin
-  result := false;
-  if sname <> '' then begin
-    i_index := t_namevals.IndexOfName(sname);
-    s_pair := sname + t_namevals.NameValueSeparator + sval;
+  result := false; s_name := Rename(sname);
+  if s_name <> '' then begin
+    i_index := t_namevals.IndexOfName(s_name);
+    s_pair := s_name + t_namevals.NameValueSeparator + sval;
     if (i_index >= 0) then begin
       t_namevals.Delete(i_index);
       t_namevals.Insert(i_index, s_pair);

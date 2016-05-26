@@ -24,6 +24,12 @@ type
 
   EvalExprBool = class(TEvalExprBase)
   end;
+
+  IntToHexStr = class(TFunctionBase)
+  public
+    function LoadParameter(const par: string): boolean; override;
+    function Execute(): boolean; override;
+  end;
 var
   g_expr: TQExprParser;
 
@@ -53,6 +59,18 @@ begin
   //3. set returned value
   result := true
 end;
+
+function IntToHexStr.LoadParameter(const par: string): boolean;
+begin
+  //todo:
+  result := true;
+end;
+function IntToHexStr.Execute(): boolean;
+begin
+  //todo:
+  result := true;
+end;
+
 
 initialization
   g_expr := TQExprParser.Create();

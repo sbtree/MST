@@ -26,7 +26,8 @@ type
     t_messenger:TTextMessenger; //a pointer, which can be asssigned through property Messager
     e_exemode:  EExecMode;      //execution mode, which can be changed through property ExecutionMode
     b_aborted:  boolean;        //indicates if current execution should be aborted
-    s_par:      string;         //saves parameter string of this function object
+    //s_par:      string;         //saves parameter string of this function object
+    t_pars:     TStrings;       //tos save parameters
     s_result:   string;         //a string to save result
   protected
      procedure SetAborted(const aborted: boolean);
@@ -46,6 +47,8 @@ type
   end;
   TFunctionClass = class of TFunctionBase;
 
+  
+
 implementation
 uses SysUtils;
 
@@ -54,11 +57,13 @@ begin
 	inherited Create;
   e_exemode := EM_NORMAL;
   b_aborted := false;
+  t_pars := TStringList.Create();
 end;
 
 destructor TFunctionBase.Destroy;
 begin
 	inherited Destroy;
+  t_pars.Free();
 end;
 
 procedure TFunctionBase.SetAborted(const aborted: boolean);
@@ -73,20 +78,23 @@ end;
 
 function TFunctionBase.LoadParameter(const par: string): boolean;
 begin
-  s_par := trim(par);
-  AddMessage('"LoadParameter" is not specified and its basic function is called.');
-  result := true;
+  //AddMessage('"LoadParameter" is not specified and its basic function is called.');
+  t_pars.Clear();
+  result := (ExtractStrings([' '], [' ', #9], PChar(par), t_pars) > 0);
 end;
 
 function TFunctionBase.LoadParameters(const pars: TStrings): boolean;
+var i: integer;
 begin
-  AddMessage('"LoadParameter" is not specified and its basic function is called.');
+  //AddMessage('"LoadParameter" is not specified and its basic function is called.');
+  t_pars.Clear();
+  for i := 0 to pars.Count - 1 do t_pars.Insert(i, pars.Strings[i]);
   result := true;
 end;
 
 function TFunctionBase.Execute(): boolean;
 begin
-  AddMessage('"Execute" is not specified and its basic function is called.');
+  //AddMessage('"Execute" is not specified and its basic function is called.');
   b_aborted := false;
   result := true;
 end;
