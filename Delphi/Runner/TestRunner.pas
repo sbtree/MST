@@ -19,12 +19,12 @@ type
 
   protected
     t_fcaller:  TFunctionCaller;
-    e_exemode:  EExecutionMode;
+    e_exemode:  EExecMode;
     t_container:TStepContainer;
     t_messenger:TTextMessenger;
     b_jumpmstep:boolean; //indicate, whether to run the steps, which have minus step number, e.g. '-11.02'
   protected
-    procedure SetExecutionMode(const em: EExecutionMode);
+    procedure SetExecutionMode(const em: EExecMode);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
 
     function  StepInit(const val: string): boolean; virtual;
@@ -42,7 +42,7 @@ type
     constructor Create();
     destructor  Destroy(); override;
 
-    property ExecutionMode: EExecutionMode read e_exemode write SetExecutionMode;
+    property ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
     property StepContainer: TStepContainer read t_container write t_container;
     property JumpMinusStep: boolean read b_jumpmstep write b_jumpmstep;
@@ -75,7 +75,7 @@ begin
   inherited Destroy();
 end;
 
-procedure TTestRunner.SetExecutionMode(const em: EExecutionMode);
+procedure TTestRunner.SetExecutionMode(const em: EExecMode);
 begin
   e_exemode := em;
   if assigned(t_messenger) then begin

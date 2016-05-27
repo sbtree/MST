@@ -18,18 +18,20 @@ type
 
 const
   CCHR_SPECIAL_PSEUDOS : Array of string = (
-                'BOOTLOADER_', //file of bootloader
-                'BL_UPDATER_',
-                'FIRMWARE_',
-                'PARA_',
-                'TX_FILE_',
-                'FRS_',
+                //Pseudo-String without beginning char '@'
+                'BOOTLOADER_', //file of boot loader, e.g.: BOOTLOADER_0001
+                'BL_UPDATER_', //file of bool loader updater, e.g.: BL_UPDATER_0001
+                'FIRMWARE_',   //file of firmware, e.g.: FIRMWARW_0001
+                'PARA_',       //file of parameter set, e.g.: PARA_0001
+                'TX_FILE_',    //eeprom file, e.g.: TX_FILE_0001
+                'FRS_',        //file name of flash runner, e.g.: FRS_0001
                 'TIMEOUT_',
                 'BATCH_',
                 'SonderRel_'
                 );
 
   CCHR_STATIC_PSEUDOS : array of string = (
+                //Pseudo-Strings with beginning char '@'
                 //Pseudo-strings in array, which are not changed after selection of a product variant any more
                 'TxVer',
                 'BLVersion',
@@ -89,14 +91,15 @@ const
                 'StromOffsetU',//???
                 'StromOffsetV',//???
                 'I_KorrFaktor',
-                'Msg'
-                );
+                'Msg',
 
-  CSTR_DYNAMIC_PSEUDOS : array of string = ( //
+                //Pseudo-strings, which are changed only through a call-function in the script
                 'VarStr',
                 'VarInt',
                 'VarReal',
                 'VarBool',
+
+                //Pseudo-strings, which are changed by running each test step
                 'LastStr',
                 'LastInt',
                 'LastReal',
