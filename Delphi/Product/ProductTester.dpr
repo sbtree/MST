@@ -11,7 +11,8 @@ uses
   ProtocolBase in '..\Comm\ProtocolBase.pas',
   DeviceBase in '..\Device\DeviceBase.pas',
   DataBuffer in '..\General\DataBuffer.pas',
-  GenUtils in '..\General\GenUtils.pas';
+  GenUtils in '..\General\GenUtils.pas',
+  ProductConfig in 'ProductConfig.pas';
 
 {$R *.res}
 

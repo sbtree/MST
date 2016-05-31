@@ -13,7 +13,8 @@ uses
   DataBuffer in '..\General\DataBuffer.pas',
   RS232 in '..\Comm\RS232.pas',
   PowerSupply in 'PowerSupply.pas',
-  Thermometer in 'Thermometer.pas';
+  Thermometer in 'Thermometer.pas',
+  DeviceConfig in 'DeviceConfig.pas';
 
 {$R *.res}
 

@@ -53,6 +53,7 @@
     <DCCReference Include="MtxARS2000.pas" />
     <DCCReference Include="MtxDIS2.pas" />
     <DCCReference Include="MtxProduct.pas" />
+    <DCCReference Include="ProductConfig.pas" />
     <None Include="ModelSupport_ProductTester\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\default.txvpck" />
     <None Include="ModelSupport_ProductTester\Main\default.txvpck" />

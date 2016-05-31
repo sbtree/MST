@@ -49,6 +49,7 @@
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="DeviceBase.pas" />
+    <DCCReference Include="DeviceConfig.pas" />
     <DCCReference Include="FlashRunner.pas" />
     <DCCReference Include="FormDeviceManager.pas">
       <Form>frmDeviceManager</Form>
