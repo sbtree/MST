@@ -229,7 +229,7 @@ end;
 // =============================================================================
 // Class        : TGenUtils
 // Function     : enumerates all serial ports from Windows-Registry
-// Parameter    : sports, an ouput string list in which all ports are found, e.g.
+// Parameter    : sports, an output string list in which all ports are found, e.g.
 //                ('COM1', 'COM2' ...)
 // Return       : integer, count of the found ports
 // Exceptions   : --
@@ -240,7 +240,7 @@ class function TGenUtils.EnumComPorts(var sports: TStrings): integer;
 var tReg: TRegistry; sPortNames: TStrings; sVal: string; i: integer;
 begin
   sports.Clear;
-  tReg := TRegistry.Create;
+  tReg := TRegistry.Create();
   with tReg do begin
     RootKey := HKEY_LOCAL_MACHINE;
     if OpenKeyReadOnly('Hardware\DeviceMap\SerialComm') then begin
@@ -251,7 +251,7 @@ begin
         sVal := UpperCase(trim(sVal));
         if sVal <> '' then sports.Add(sVal);
       end;
-      sPortNames.Clear;
+      sPortNames.Clear();
       FreeAndNil(sPortNames);
       CloseKey();
     end;
@@ -264,9 +264,9 @@ end;
 // Class        : TGenUtils
 // Function     : checks if the given string is a valid  number of serial port.
 //                saves it in iport if valid. Otherwise assigns iport = -1
-// Parameter    : s, pointer of a TSerial to be set
-//                sval, string for port to be set
-// Return       : true, if the string is a valid number of the port on this comuputer
+// Parameter    : sport, port number represented in string
+//                iport, output of the port number represented in integer if sport is valid
+// Return       : true, if sport is a valid number of the serial port on this comuputer
 //                false, otherwise
 // Exceptions   : --
 // First author : 2016-05-20 /bsu/
@@ -275,15 +275,14 @@ end;
 class function TGenUtils.IsComPortValid(const sport: string; var iport: integer): boolean;
 var sComPorts: TStrings; sPortname: string; iPortnr: integer;
 begin
-  result := false;
-  iport := -1;
+  result := false; iport := -1;
   if TryStrToInt(sport, iPortnr) then begin
     sPortname := 'COM' + IntToStr(iportnr);
-    sComPorts := TStringList.Create;
+    sComPorts := TStringList.Create();
     EnumComPorts(sComPorts);
     result := (sComPorts.IndexOf(sPortname) >= 0 );
     if result then iport := iPortnr;
-    sComPorts.Clear;
+    sComPorts.Clear();
     FreeAndNil(sComPorts);
   end;
 end;

@@ -2,7 +2,6 @@ program DeviceManager;
 
 uses
   Forms,
-  FlashRunner in 'FlashRunner.pas',
   DeviceBase in 'DeviceBase.pas',
   Multimeter in 'Multimeter.pas',
   Oscilloscope in 'Oscilloscope.pas',

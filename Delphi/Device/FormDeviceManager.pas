@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, FlashRunner, IniFiles, StdCtrls, ComCtrls;
+  Dialogs, IniFiles, StdCtrls, ComCtrls;
 
 type
   TfrmDeviceManager = class(TForm)
@@ -28,9 +28,10 @@ implementation
 
 procedure TfrmDeviceManager.btnCreateTreeClick(Sender: TObject);
 var
-  MyTreeNode1, MyTreeNode2: TTreeNode;
+  MyTreeNode1, MyTreeNode2: TTreeNode; tNodes: TTreeNodes;
 begin
-  with trvDevices.Items do
+  tNodes := TTreeNodes.Create(Nil);
+  with tNodes do
   begin
     Clear; { remove any existing nodes }
     MyTreeNode1 := Add(nil, 'RootTreeNode1'); { Add a root node }
@@ -53,13 +54,14 @@ begin
     {add another root node}
     Add(MyTreeNode1, 'RootTreeNode3');
   end;
+  trvDevices.Items := tNodes
 
 end;
 
 procedure TfrmDeviceManager.btnFRClick(Sender: TObject);
-var fIni: TMemIniFile; fr: TFlashRunner; bOk: boolean; sTmp: string;
+//var fIni: TMemIniFile; fr: TFlashRunner; bOk: boolean; sTmp: string;
 begin
-  fIni := TMemIniFile.Create('FlashRunner.ini');
+  {fIni := TMemIniFile.Create('FlashRunner.ini');
   fr := TFlashRunner.Create(self);
   
   bOk := fr.ConfigDevice(fIni);
@@ -67,7 +69,7 @@ begin
   bOk := fr.SetDynamicMem(0,12345);
   bOk := fr.RunScript('bt_24v.frs', 30000);
   FreeAndNil(fr);
-  FreeAndNil(fIni);
+  FreeAndNil(fIni);}
 end;
 
 end.

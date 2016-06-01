@@ -8,10 +8,8 @@ uses
   FuncMat in '..\Function\FuncMat.pas',
   FormScriptTester in 'FormScriptTester.pas' {frmScriptTester},
   ScriptReader in 'ScriptReader.pas',
-  StepDescriptor in 'StepDescriptor.pas',
-  StepResult in 'StepResult.pas',
+  StepDescriptor in '..\CoreData\StepDescriptor.pas',
   StepChecker in 'StepChecker.pas',
-  StepContainer in 'StepContainer.pas',
   PairStrings in '..\General\PairStrings.pas';
 
 {$R *.res}

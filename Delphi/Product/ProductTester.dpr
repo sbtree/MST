@@ -12,7 +12,8 @@ uses
   DeviceBase in '..\Device\DeviceBase.pas',
   DataBuffer in '..\General\DataBuffer.pas',
   GenUtils in '..\General\GenUtils.pas',
-  ProductConfig in 'ProductConfig.pas';
+  ProductManager in 'ProductManager.pas',
+  PairStrings in '..\General\PairStrings.pas';
 
 {$R *.res}
 

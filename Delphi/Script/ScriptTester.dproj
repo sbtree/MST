@@ -42,6 +42,7 @@
     <DelphiCompile Include="ScriptTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\CoreData\StepDescriptor.pas" />
     <DCCReference Include="..\Function\FuncBase.pas" />
     <DCCReference Include="..\Function\FuncMat.pas" />
     <DCCReference Include="..\General\GenType.pas" />
@@ -52,8 +53,5 @@
     </DCCReference>
     <DCCReference Include="ScriptReader.pas" />
     <DCCReference Include="StepChecker.pas" />
-    <DCCReference Include="StepContainer.pas" />
-    <DCCReference Include="StepDescriptor.pas" />
-    <DCCReference Include="StepResult.pas" />
   </ItemGroup>
 </Project>

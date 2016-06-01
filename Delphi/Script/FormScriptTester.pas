@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage, StepContainer, PairStrings;
+  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage, PairStrings;
 
 type
   TfrmScriptTester = class(TForm)

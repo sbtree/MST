@@ -77,7 +77,7 @@
 unit ScriptReader;
 
 interface
-uses  Classes, Contnrs, StepDescriptor, StepChecker, StepContainer, TextMessage,
+uses  Classes, Contnrs, StepDescriptor, StepChecker, TextMessage,
       TypInfo, PairStrings;
 
 type
