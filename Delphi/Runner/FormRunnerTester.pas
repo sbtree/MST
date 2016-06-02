@@ -45,6 +45,7 @@ type
     procedure btnRepeatStepClick(Sender: TObject);
     procedure btnRepeatCaseClick(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
+    procedure btnOpenScriptClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_sreader:  TScriptReader;
@@ -71,6 +72,20 @@ end;
 procedure TForm2.btnNextClick(Sender: TObject);
 begin
   t_runner.RunStep(t_container.TestSequence.NextStepIndex);
+end;
+
+procedure TForm2.btnOpenScriptClick(Sender: TObject);
+var
+  t_dialog : TOpenDialog;    // Save dialog variable
+begin
+  t_dialog := TOpenDialog.Create(self); // Create the save dialog object - assign to our save dialog variable
+  t_dialog.Title := 'Open a Test Script'; // Give the dialog a title
+  t_dialog.InitialDir := GetCurrentDir;// Set up the starting directory to be the current one
+  t_dialog.Filter := 'Text file|*.txt|All files|*.*'; // Allow only .txt and .doc file types to be saved
+  t_dialog.DefaultExt := 'txt';// Set the default extension
+  t_dialog.FilterIndex := 1; // Select text files as the starting filter type
+  if t_dialog.Execute then txtScriptFile.Text:=t_dialog.FileName; // Display the open file dialog
+  t_dialog.Free; // Free up the dialog
 end;
 
 procedure TForm2.btnPreviousClick(Sender: TObject);

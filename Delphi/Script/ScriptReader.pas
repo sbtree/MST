@@ -705,7 +705,7 @@ begin
     i_cases := t_container.CountCase;
     t_container.Clear();
   end;
-  if b_info then AddMessage(format('All existing variables (%d), test steps (%d) in %d case(s) were unloaded.', [i_vars, i_steps, i_cases]));
+  if b_info then AddMessage(format('All existing variables (%d), test steps (%d) in %d case(s) are unloaded.', [i_vars, i_steps, i_cases]));
 end;
 
 // =============================================================================

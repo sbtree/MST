@@ -35,8 +35,7 @@ type
     function  StepFinal(const val: string): boolean; virtual;
 
     function RunStepT(tstep: TTestStep): boolean;
-    function RunCaseT(tcase: TStepGroup): boolean;
-    function RunSequenceT(tsequence: TTestSequence): boolean;
+    function RunStepGroup(tgroup: TStepGroup): boolean;
 
   public
     constructor Create();
@@ -125,7 +124,7 @@ end;
 
 function  TTestRunner.StepFunc(const func, par: string): boolean;
 begin
-  result := t_fcaller.CallFunction(func, par);
+  result := true; //todo: t_fcaller.CallFunction(func, par);
   //AddMessage(format('The function (%s) with parameter (%s) is executed.', [func, par]));
 end;
 
@@ -183,30 +182,16 @@ begin
   end;
 end;
 
-function TTestRunner.RunCaseT(tcase: TStepGroup): boolean;
-var i: integer;
+function TTestRunner.RunStepGroup(tgroup: TStepGroup): boolean;
+var i_curidx: integer;
 begin
   result := false;
-  if (assigned(tcase) and assigned(t_container)) then begin
-    b_jumpmstep := false;
-    for i := tcase.IndexFrom to tcase.IndexTo do begin
-      result := RunStepT(t_container.StepByIndex(i));
+  if (assigned(tgroup) and assigned(t_container)) then begin
+    i_curidx := tgroup.FirstStepIndex;
+    while (i_curidx >= 0) do begin
+      result := RunStepT(t_container.StepByIndex(i_curidx));
       if (not result) then break;
-    end;
-  end;
-end;
-
-function TTestRunner.RunSequenceT(tsequence: TTestSequence): boolean;
-var i_stepidx: integer;
-begin
-  result := false;
-  if assigned(t_container) then begin
-    b_jumpmstep := true;
-    i_stepidx := tsequence.FirstStepIndex;
-    while (i_stepidx >= 0) do begin
-      result := RunStepT(t_container.StepByIndex(i_stepidx));
-      if (not result) then break;
-      i_stepidx := tsequence.NextStepIndex;
+      i_curidx := tgroup.NextStepIndex;
     end;
   end;
 end;
@@ -216,7 +201,6 @@ var t_step: TTestStep;
 begin
   result := false;
   if assigned(t_container) then  begin
-    b_jumpmstep := false;
     t_step := t_container.StepByNr(stepnr);
     result := RunStepT(t_step);
   end;
@@ -227,7 +211,6 @@ var t_step: TTestStep;
 begin
   result := false;
   if assigned(t_container) then begin
-    b_jumpmstep := false;
     t_step := t_container.StepByIndex(stepidx);
     result := RunStepT(t_step);
   end;
@@ -239,7 +222,7 @@ begin
   result := false;
   if assigned(t_container) then begin
     t_case := t_container.CaseByNr(casenr);
-    result := RunCaseT(t_case);
+    result := RunStepGroup(t_case);
   end;
 end;
 
@@ -249,7 +232,7 @@ begin
   result := false;
   if assigned(t_container) then begin
     t_case := t_container.CaseByIndex(caseidx);
-    result := RunCaseT(t_case);
+    result := RunStepGroup(t_case);
   end;
 end;
 
@@ -258,7 +241,7 @@ begin
   result := false;
   if assigned(t_container) then begin
     t_container.UpdateSequence(csincl, csexcl);
-    result := RunSequenceT(t_container.TestSequence);
+    result := RunStepGroup(t_container.TestSequence);
   end;
 end;
 
@@ -272,15 +255,13 @@ end;
 function TTestRunner.RepeatCase(): boolean;
 begin
   result := false;
-  if assigned(t_container) then
-    result := RunCaseT(t_container.CurrentCase);
+  if assigned(t_container) then result := RunStepGroup(t_container.CurrentCase);
 end;
 
 function TTestRunner.RepeatSequence(): boolean;
 begin
   result := false;
-  if assigned(t_container) then
-    result := RunSequenceT(t_container.TestSequence);
+  if assigned(t_container) then result := RunStepGroup(t_container.TestSequence);
 end;
 
 end.

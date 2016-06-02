@@ -60,6 +60,7 @@ object Form2: TForm2
     Height = 21
     Caption = '...'
     TabOrder = 3
+    OnClick = btnOpenScriptClick
   end
   object btnReadScript: TButton
     Left = 8
