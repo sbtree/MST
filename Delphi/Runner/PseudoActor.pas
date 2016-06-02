@@ -17,7 +17,7 @@ type
   end;
 
 const
-  CCHR_SPECIAL_PSEUDOS : Array of string = (
+  CCHR_SPECIAL_PSEUDOS : array[0..8] of string = (
                 //Pseudo-String without beginning char '@'
                 'BOOTLOADER_', //file of boot loader, e.g.: BOOTLOADER_0001
                 'BL_UPDATER_', //file of bool loader updater, e.g.: BL_UPDATER_0001
@@ -30,7 +30,7 @@ const
                 'SonderRel_'
                 );
 
-  CCHR_STATIC_PSEUDOS : array of string = (
+  CCHR_STATIC_PSEUDOS : array[0..60] of string = (
                 //Pseudo-Strings with beginning char '@'
                 //Pseudo-strings in array, which are not changed after selection of a product variant any more
                 'TxVer',
@@ -107,6 +107,23 @@ const
                 );
 
 implementation
+
+constructor TPseudoActor.Create();
+begin
+  inherited Create();
+  //todo:
+end;
+
+destructor TPseudoActor.Destroy();
+begin
+  //todo:
+  inherited Destroy();
+end;
+
+function TPseudoActor.UpdateStaticPseudos(const vars: TPairStrings): integer;
+begin
+  result := 0;
+end;
 
 function TPseudoActor.ReplacePseudos(const instr: string; var outstr: string): integer;
 begin

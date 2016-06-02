@@ -777,7 +777,7 @@ begin
         i_cases := 0;
       end;
       if (t_tsteps.Count > 0) then begin
-        AddMessage(format('%d variable(s), %d step(s) and %d case(s) are now loaded.', [i_vars, i_steps, i_cases]), ML_INFO);
+        AddMessage(format('%d variable(s) and %d step(s) in %d case(s) are now loaded.', [i_vars, i_steps, i_cases]), ML_INFO);
         if ((i_cases - 1) > CINT_CASES_MAX) then AddMessage(format('The count (%d) of test cases is over the limit (%d).', [i_cases, CINT_CASES_MAX + 1]), ML_WARNING);
       end else AddMessage('No valid line is loaded from the test script.', ML_WARNING);
     end;

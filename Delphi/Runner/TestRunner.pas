@@ -2,7 +2,7 @@ unit TestRunner;
 
 interface
 
-uses  Classes, TypInfo, StepDescriptor, StepResult, StepContainer, TextMessage,
+uses  Classes, TypInfo, StepDescriptor, TextMessage,
       FunctionCaller, GenType;
 
 type
@@ -107,6 +107,9 @@ function  TTestRunner.StepInit(const val: string): boolean;
 begin
   result := true;
   //todo:
+  //1. turn on relay
+  //2. check relays
+  //3. call other procedures if needed
   //AddMessage(format('The value (%s) of field (r_on) is accepted.', [val]));
 end;
 
@@ -114,17 +117,19 @@ function  TTestRunner.StepInputM(const val: string): boolean;
 begin
   result := true;
   //todo:
+  //1. repeat mode, timeout or count, minus
+  //2. do it with minus number
+  //3. unit to display for result
   //AddMessage(format('The value (%s) of field (M) is accepted.', [val]));
 end;
 
-function  TTestRunner.StepFunc(const func, par: string): boolean; 
+function  TTestRunner.StepFunc(const func, par: string): boolean;
 begin
-  result := true;
-  //todo:
+  result := t_fcaller.CallFunction(func, par);
   //AddMessage(format('The function (%s) with parameter (%s) is executed.', [func, par]));
 end;
 
-function  TTestRunner.StepEval(const val: string): boolean; 
+function  TTestRunner.StepEval(const val: string): boolean;
 begin
   result := true;
   //todo:

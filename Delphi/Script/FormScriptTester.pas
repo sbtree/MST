@@ -73,7 +73,7 @@ begin
 end;
 
 procedure TfrmScriptTester.btnCurrentCaseClick(Sender: TObject);
-var t_sgroup: TStepGroup;
+var t_sgroup: TTestCase;
 begin
   t_sgroup := t_container.CurrentCase;
   if assigned(t_sgroup) then
@@ -83,7 +83,7 @@ begin
 end;
 
 procedure TfrmScriptTester.btnGetCaseClick(Sender: TObject);
-var t_sgroup: TStepGroup;
+var t_sgroup: TTestCase;
 begin
   if (t_container.CountCase > 0) then begin
     t_sgroup := t_container.CaseByNr(trim(txtCase.Text));

@@ -41,7 +41,6 @@
     <DCCReference Include="..\Script\ScriptReader.pas" />
     <DCCReference Include="..\Script\StepChecker.pas" />
     <DCCReference Include="..\Script\StepContainer.pas" />
-    <DCCReference Include="..\Script\StepResult.pas" />
     <DCCReference Include="FormRunnerTester.pas">
       <Form>Form2</Form>
     </DCCReference>
@@ -52,10 +51,13 @@
     <None Include="ModelSupport_RunnerTester\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\default.txvpck" />
     <None Include="ModelSupport_RunnerTester\FuncBase\default.txvpck" />
+    <None Include="ModelSupport_RunnerTester\RunnerTester\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\RunnerTester\default.txvpck" />
     <None Include="ModelSupport_RunnerTester\StepContainer\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\StepContainer\default.txvpck" />
     <None Include="ModelSupport_RunnerTester\StepDescriptor\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\StepDescriptor\default.txvpck" />
+    <None Include="ModelSupport_RunnerTester\TestDebugger\default.txaPackage" />
+    <None Include="ModelSupport_RunnerTester\TestRunner\default.txaPackage" />
   </ItemGroup>
 </Project>

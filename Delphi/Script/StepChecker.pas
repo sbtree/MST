@@ -58,21 +58,8 @@ type
 
 implementation
 uses SysUtils, StrUtils;
-const
-  CSTR_FIELD_NAMES_V01 :  FieldStringArray = (
-                        'NR',
-                        'T',
-                        'R_ON',
-                        'FKT',
-                        'M',
-                        'PAR',
-                        'R_OFF',
-                        'TOL',
-                        'A',
-                        'MIN',
-                        'MAX'
-                      );
-{
+{const
+
   CSTR_FIELD_NAMES_V02  :  FieldStringArray = (
                         'NR',
                         'T',
@@ -119,7 +106,7 @@ end;
 constructor TFieldNameChecker.Create();
 begin
   inherited Create();
-  SetFieldNames(CSTR_FIELD_NAMES_V01);
+  SetFieldNames(CSTR_FIELD_NAMES);
   ResetUnused();
 end;
 
