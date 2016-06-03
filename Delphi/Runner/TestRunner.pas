@@ -193,6 +193,7 @@ begin
       if (not result) then break;
       i_curidx := tgroup.NextStepIndex;
     end;
+    t_container.TestSequence.UpdateCurStepIndex();
   end;
 end;
 

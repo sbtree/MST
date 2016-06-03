@@ -40,7 +40,6 @@
     <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="..\Script\ScriptReader.pas" />
     <DCCReference Include="..\Script\StepChecker.pas" />
-    <DCCReference Include="..\Script\StepContainer.pas" />
     <DCCReference Include="FormRunnerTester.pas">
       <Form>Form2</Form>
     </DCCReference>
@@ -50,6 +49,7 @@
     <DCCReference Include="TestRunner.pas" />
     <None Include="ModelSupport_RunnerTester\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\default.txvpck" />
+    <None Include="ModelSupport_RunnerTester\FormRunnerTester\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\FuncBase\default.txvpck" />
     <None Include="ModelSupport_RunnerTester\RunnerTester\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\RunnerTester\default.txvpck" />

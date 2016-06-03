@@ -73,22 +73,22 @@ begin
 end;
 
 procedure TfrmScriptTester.btnCurrentCaseClick(Sender: TObject);
-var t_sgroup: TTestCase;
+var t_tcase: TTestCase;
 begin
-  t_sgroup := t_container.CurrentCase;
-  if assigned(t_sgroup) then
-    t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, index from=%d, index to=%d', [t_sgroup.GroupNr, t_sgroup.GroupTitle, t_sgroup.IndexFrom, t_sgroup.IndexTo]))
+  t_tcase := t_container.CurrentCase;
+  if assigned(t_tcase) then
+    t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, index from=%d, index to=%d', [t_tcase.CaseNr, t_tcase.CaseTitle, t_tcase.IndexFrom, t_tcase.IndexTo]))
   else
     t_messenger.AddMessage(format('Test Case (Nr=%s) is NOT found.', [trim(txtCase.Text)]));
 end;
 
 procedure TfrmScriptTester.btnGetCaseClick(Sender: TObject);
-var t_sgroup: TTestCase;
+var t_tcase: TTestCase;
 begin
   if (t_container.CountCase > 0) then begin
-    t_sgroup := t_container.CaseByNr(trim(txtCase.Text));
-    if assigned(t_sgroup) then
-      t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, index from=%d, index to=%d', [t_sgroup.GroupNr, t_sgroup.GroupTitle, t_sgroup.IndexFrom, t_sgroup.IndexTo]))
+    t_tcase := t_container.CaseByNr(trim(txtCase.Text));
+    if assigned(t_tcase) then
+      t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, index from=%d, index to=%d', [t_tcase.CaseNr, t_tcase.CaseTitle, t_tcase.IndexFrom, t_tcase.IndexTo]))
     else
       t_messenger.AddMessage(format('Test Case (Nr=%s) is NOT found.', [trim(txtCase.Text)]));
   end else t_messenger.AddMessage('No case is loaded', '', ML_WARNING);

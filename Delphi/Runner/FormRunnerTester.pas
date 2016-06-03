@@ -17,8 +17,6 @@ type
     btnReadScript: TButton;
     btnSaveScript: TButton;
     memInfo: TMemo;
-    btnPrevious: TButton;
-    btnNext: TButton;
     txtCase: TEdit;
     btnRunCase: TButton;
     txtInclusive: TEdit;
@@ -27,25 +25,37 @@ type
     btnClear: TButton;
     chkForce: TCheckBox;
     chkAppend: TCheckBox;
-    btnRunFirst: TButton;
     btnRunSequence: TButton;
     btnRepeatSequence: TButton;
+    GroupBox1: TGroupBox;
+    btnRunFirstStep: TButton;
     btnRepeatStep: TButton;
+    btnPreviousStep: TButton;
+    btnNextStep: TButton;
+    GroupBox2: TGroupBox;
     btnRepeatCase: TButton;
+    btnRunPrevCase: TButton;
+    btnRunNextCase: TButton;
+    btnRunFirstCase: TButton;
+    chkJump: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure btnReadScriptClick(Sender: TObject);
     procedure btnRunStepByNrClick(Sender: TObject);
     procedure btnRunCaseClick(Sender: TObject);
     procedure btnSequenceClick(Sender: TObject);
-    procedure btnPreviousClick(Sender: TObject);
-    procedure btnNextClick(Sender: TObject);
-    procedure btnRunFirstClick(Sender: TObject);
+    procedure btnPreviousStepClick(Sender: TObject);
+    procedure btnNextStepClick(Sender: TObject);
+    procedure btnRunFirstStepClick(Sender: TObject);
     procedure btnRunSequenceClick(Sender: TObject);
     procedure btnRepeatSequenceClick(Sender: TObject);
     procedure btnRepeatStepClick(Sender: TObject);
     procedure btnRepeatCaseClick(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
     procedure btnOpenScriptClick(Sender: TObject);
+    procedure btnRunFirstCaseClick(Sender: TObject);
+    procedure btnRunPrevCaseClick(Sender: TObject);
+    procedure btnRunNextCaseClick(Sender: TObject);
+    procedure chkJumpClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_sreader:  TScriptReader;
@@ -69,7 +79,7 @@ begin
   t_sreader.Clear();
 end;
 
-procedure TForm2.btnNextClick(Sender: TObject);
+procedure TForm2.btnNextStepClick(Sender: TObject);
 begin
   t_runner.RunStep(t_container.TestSequence.NextStepIndex);
 end;
@@ -88,7 +98,7 @@ begin
   t_dialog.Free; // Free up the dialog
 end;
 
-procedure TForm2.btnPreviousClick(Sender: TObject);
+procedure TForm2.btnPreviousStepClick(Sender: TObject);
 begin
   t_runner.RunStep(t_container.TestSequence.PreviousStepIndex);
 end;
@@ -103,7 +113,12 @@ begin
   t_runner.RunCase(trim(txtCase.Text));
 end;
 
-procedure TForm2.btnRunFirstClick(Sender: TObject);
+procedure TForm2.btnRunFirstCaseClick(Sender: TObject);
+begin
+  t_runner.RunCase(t_container.TestSequence.FirstCaseIndex);
+end;
+
+procedure TForm2.btnRunFirstStepClick(Sender: TObject);
 begin
   t_runner.RunStep(t_container.TestSequence.FirstStepIndex);
 end;
@@ -128,9 +143,24 @@ begin
   else t_messenger.AddMessage('Test Sequence: no case')
 end;
 
+procedure TForm2.chkJumpClick(Sender: TObject);
+begin
+  t_runner.JumpMinusStep := chkJump.Checked;
+end;
+
+procedure TForm2.btnRunNextCaseClick(Sender: TObject);
+begin
+  t_runner.RunCase(t_container.TestSequence.NextCaseIndex)
+end;
+
+procedure TForm2.btnRunPrevCaseClick(Sender: TObject);
+begin
+  t_runner.RunCase(t_container.TestSequence.PreviousCaseIndex)
+end;
+
 procedure TForm2.btnRepeatCaseClick(Sender: TObject);
 begin
-  t_runner.RepeatCase();
+  t_runner.RunCase(t_container.TestSequence.CurrentCaseIndex);
 end;
 
 procedure TForm2.btnRepeatSequenceClick(Sender: TObject);
