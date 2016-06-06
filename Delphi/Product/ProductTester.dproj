@@ -41,20 +41,13 @@
     <DelphiCompile Include="ProductTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
-    <DCCReference Include="..\Comm\ConnBase.pas" />
-    <DCCReference Include="..\Comm\ProtocolBase.pas" />
-    <DCCReference Include="..\Comm\RS232.pas" />
-    <DCCReference Include="..\Device\DeviceBase.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="..\General\PairStrings.pas" />
     <DCCReference Include="FormProdTester.pas">
       <Form>frmProdTester</Form>
     </DCCReference>
-    <DCCReference Include="MtxARS2000.pas" />
-    <DCCReference Include="MtxDIS2.pas" />
-    <DCCReference Include="MtxProduct.pas" />
-    <DCCReference Include="ProductManager.pas" />
+    <DCCReference Include="ProductConfig.pas" />
     <None Include="ModelSupport_ProductTester\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\default.txvpck" />
     <None Include="ModelSupport_ProductTester\Main\default.txvpck" />

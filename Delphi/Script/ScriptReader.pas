@@ -117,8 +117,8 @@ type
     s_curtoken: string;       //save token string, which is found till now
     i_rowindex: integer;      //index of row, which is being parsed
     i_colindex: integer;      //index of column, which is being parsed
-    s_srcfile:  string;       //file name
-    t_fstemp:   TDateTime;    //save time stemp of last changing for s_srcfile
+    t_srcfiles: TStrings;     //to save file names , which are loaded
+    a_fstemps:  array of TDateTime; //to save time stemps of the loaded files
     s_curtext:  string;       //to save current step text or line of 'var=value', which is parsed
     b_allowvar: boolean;      //indicates if a variable is allowed with the format 'var=value' till now
     t_fnchecker:TFieldNameChecker;  // a help object for parsing
@@ -649,7 +649,7 @@ begin
   t_sentry.e_state := e_curstate;
   t_sentry.i_row := 0;
   t_sentry.i_col := 0;
-  t_fstemp := -1;
+  t_srcfiles := TStringList.Create();
   b_allowvar := true;
   t_states := TStack.Create();
   t_tsteps := TStringList.Create();
@@ -667,7 +667,9 @@ end;
 destructor TScriptReader.Destroy();
 begin
 	inherited Destroy;
-  while(t_states.Count > 0) do PopState();
+  ClearStates();
+  t_srcfiles.Free();
+  SetLength(a_fstemps, 0);
   t_states.Free();
   t_tsteps.Free();
   t_fnchecker.Free();
@@ -682,14 +684,14 @@ end;
 //    History      :
 // =============================================================================
 procedure TScriptReader.Clear();
-var i_vars, i_steps, i_cases: integer; b_info: boolean;
+var i, i_vars, i_steps, i_cases: integer; b_info: boolean;
 begin
   i_vars := 0; i_steps := 0; i_cases := 0;
   b_info := (t_tsteps.Count > 0);
   e_curstate := PS_IDLE;
   ClearStates();
-  t_fstemp := -1;
-  s_srcfile := '';
+  t_srcfiles.Clear();
+  SetLength(a_fstemps, 0);
   s_curtext := '';
   s_curtoken := '';
   b_allowvar := true;
@@ -795,14 +797,15 @@ end;
 //    History      :
 // =============================================================================
 function TScriptReader.ReadFromFile(const srcfile: string; const bforce: boolean; const bappend: boolean): boolean;
-var t_lines: TStringList; b_update, b_append: boolean; t_fdatetime: TDateTime;
+var t_lines: TStringList; b_update, b_append: boolean; t_fdatetime: TDateTime; i_idx: integer;
 begin
   result := FileExists(srcfile);
   if result then begin
     FileAge(srcfile, t_fdatetime);
     b_append := bappend;
-    if SameText(s_srcfile, srcfile) then begin
-      b_update := (t_fdatetime <> t_fstemp);
+    i_idx := t_srcfiles.IndexOf(srcfile);
+    if (i_idx >= 0) then begin
+      b_update := (t_fdatetime <> a_fstemps[i_idx]);
       b_append := false;
     end else b_update := true;
 
@@ -812,9 +815,9 @@ begin
       t_lines.LoadFromFile(srcfile);
       result := ReadFromList(t_lines, b_append);
       if result then begin
-        s_srcfile := srcfile;
-        if result then t_fstemp := t_fdatetime
-        else t_fstemp := -1;
+        t_srcfiles.Add(srcfile);
+        SetLength(a_fstemps, t_srcfiles.Count);
+        a_fstemps[t_srcfiles.Count - 1] := t_fdatetime;
       end else AddMessage(format('Failed to read this file (%s)', [srcfile]), ML_ERROR);
       t_lines.Free();
     end else AddMessage('This file is already loaded.', ML_INFO);
@@ -833,10 +836,10 @@ var s_fname, s_ext: string;
 begin
   result := false;
   s_fname := destfile;
-  if destfile = '' then begin
-    if (length(s_srcfile) > 4) then begin
-      s_ext := ExtractFileExt(s_srcfile);
-      s_fname := LeftStr(s_srcfile, length(s_srcfile) - length(s_ext)) + '_clear' + s_ext;
+  if ((destfile = '') and (t_srcfiles.Count > 0)) then begin
+    if (length(t_srcfiles[0]) > 4) then begin
+      s_ext := ExtractFileExt(t_srcfiles[0]);
+      s_fname := LeftStr(t_srcfiles[0], length(t_srcfiles[0]) - length(s_ext)) + '_clear' + s_ext;
     end;
   end;
   if s_fname <> '' then begin

@@ -17,6 +17,7 @@ Type
     destructor Destroy(); override;
 
     property  Count: integer read GetCount;
+    property  Pairs: TStrings read t_namevals;
 
     function  FindPair(const sname: string): boolean;
     function  AddPair(const sname, sval: string; bcover: boolean = true): boolean; overload;

@@ -51,6 +51,13 @@ type
                 SS_OK       //state for ok if the step is succesfully executed completely
                 );
 
+  //enumation: indicates whether pseudo-strings exist in field
+  EFieldEvalLevel = (
+                FEL_SPSEUDO,//static Pseudo-string exists in input
+                FEL_DPSEUDO,//dynamic Pseudo-string exists in input
+                FEL_FINAL   //final string (all pseudo-strings are replaced)
+                );
+
   FieldStringArray = array[EStepField] of string;
   TStepResult = class;
   TTestCase = class;
@@ -62,22 +69,21 @@ type
   TStepField = class
   protected
     s_input:  string;   //to save original input string
-    //t_parts:  TStrings; //to save string values, which are split from s_input by method Split
-    //c_separ:  char;     //char as separator for splitting s_input
-    //s_evalst: string;   //to save string, which is evaluated using the statical information in the configuration
-    //s_evaldy: string;   //to save string, which is evaluated using the dynamical inforation in the run
+    e_fel:    EFieldEvalLevel;
+    t_evals:  TStrings; //to save string values, which are evaluated, if a pseudo-sting exists
   protected
     procedure SetInputStr(const val: string);
-    procedure EvalInputStr();
+    procedure SetEvalStrings(const vals: TStrings);
 
   public
     constructor Create();
     destructor Destroy(); override;
 
     property  InputString: string read s_input write SetInputStr;
+    property  EvalLevel: EFieldEvalLevel read e_fel write e_fel;
+    property  EvalStrings: TStrings read t_evals write SetEvalStrings;
 
     procedure Assign(const source: TStepField);
-    //function  SplitStrings(const separator: char): TStrings;
   end;
   StepFieldArray = array[EStepField] of TStepField;
 
@@ -294,21 +300,24 @@ uses SysUtils, StrUtils, Variants;
 procedure TStepField.SetInputStr(const val: string);
 begin
   s_input := val;
-  EvalInputStr();
 end;
 
-procedure TStepField.EvalInputStr();
+procedure TStepField.SetEvalStrings(const vals: TStrings);
 begin
-  //todo:
+  t_evals.Clear();
+  t_evals.AddStrings(vals);
 end;
 
 constructor TStepField.Create();
 begin
   inherited Create();
+  e_fel := FEL_SPSEUDO;
+  t_evals := TStringList.Create();
 end;
 
 destructor TStepField.Destroy();
 begin
+  t_evals.Free();
   inherited Destroy();
 end;
 
@@ -316,6 +325,8 @@ procedure TStepField.Assign(const source: TStepField);
 begin
   if assigned(source) then begin
     s_input := source.InputString;
+    e_fel := source.EvalLevel;
+    SetEvalStrings(source.EvalStrings);
   end;
 end;
 
