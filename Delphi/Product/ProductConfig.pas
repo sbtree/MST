@@ -33,7 +33,7 @@ type
     property ChildCount: integer read GetChildren;
     property Children[idx: integer]: TConfigItem read GetChild;
 
-    function AddChild(const sname: string): boolean;
+    function AddChild(const sname: string): TConfigItem;
     function HasChildren(): boolean;
     function IsLeaf(): boolean;
     function GetOwnConfig(const secname: string; var conf: TPairStrings): boolean;
@@ -64,7 +64,7 @@ type
   end;
 
 implementation
-uses SysUtils;
+uses SysUtils, IniFiles, StrUtils;
 const
   CSTR_ARTICLE: string = 'ARTICLE_NR_';
   CSTR_VARIANT: string = 'VARIANTE_';
@@ -116,6 +116,8 @@ begin
   s_confname := confname;
   t_parent := parent;
   t_children := TStringList.Create();
+  t_children.CaseSensitive := false;
+  t_children.Duplicates := dupError;
   t_config := TPairStrings.Create();
 end;
 
@@ -127,12 +129,16 @@ begin
   inherited Destroy();
 end;
 
-function TConfigItem.AddChild(const sname: string): boolean;
+function TConfigItem.AddChild(const sname: string): TConfigItem;
 var t_citem: TConfigItem;
 begin
+  result := nil;
   t_citem := TConfigItem.Create(sname, self);
-  result := (t_children.AddObject(sname, t_citem) >= 0);
-  if (not result) then t_citem.Free();
+  try
+    if (t_children.AddObject(sname, t_citem) >= 0) then result := t_citem;
+  except
+    t_citem.Free();
+  end;
 end;
 
 function TConfigItem.HasChildren(): boolean;
@@ -186,19 +192,57 @@ begin
 end;
 
 function TConfigReader.AddConfigItem(const myname, parentname: string): boolean;
-var t_ciparent: TConfigItem;
+var t_ciparent, t_citem: TConfigItem;
 begin
   result := (t_names.IndexOf(myname) < 0);
   if result then begin
     if (not t_croot.FindConfigItem(parentname, t_ciparent)) then t_ciparent := t_croot;
-    result := t_ciparent.AddChild(myname);
+    t_citem := t_ciparent.AddChild(myname);
+    result := assigned(t_citem);
+    if result then t_names.AddObject(myname, t_citem); //for linearly searching
   end;
 end;
 
 function TConfigReader.ReadFromIni(const sfile: string): boolean;
+var t_fdatetime: TDateTime; t_inifile: TIniFile; i_idx: integer; b_overwrite: boolean;
+    t_secnames, t_secvals: TStrings; s_name, s_parent: string; i: integer;
 begin
-  result := false;
-  //todo:
+  result := FileExists(sfile);
+  if result then begin
+    FileAge(sfile, t_fdatetime);
+    i_idx := t_cfgfiles.IndexOf(sfile);
+    if (i_idx >= 0) then b_overwrite := (t_fdatetime <> a_fstemps[i_idx])
+    else b_overwrite := false;
+
+    t_inifile := TIniFile.Create(sfile);
+    t_secnames := TStringList.Create();
+    t_secvals := TStringList.Create();
+
+    t_inifile.ReadSections(t_secnames);
+    for i := 0 to t_secnames.Count - 1 do begin
+      if (StartsText(CSTR_VARIANT, t_secnames[i]) or StartsText(CSTR_ARTICLE, t_secnames[i])) then begin
+      
+      end;
+
+    end;
+
+
+    t_secvals.Free();
+    t_secnames.Free();
+    t_inifile.Free();
+    //todo:
+  end;
+  {  if (bforce or b_update) then begin
+
+      t_inifile.ReadSections();
+      if result then begin
+        t_cfgfiles.Add(sfile);
+        SetLength(a_fstemps, t_cfgfiles.Count);
+        a_fstemps[t_cfgfiles.Count - 1] := t_fdatetime;
+      end else AddMessage(format('Failed to read this file (%s)', [sfile]), ML_ERROR);
+      
+    end else AddMessage('This file is already loaded.', ML_INFO);
+  end else AddMessage(format('This file is NOT found (%s).', [sfile]), ML_WARNING); }
 end;
 
 function TConfigReader.WriteToIni(var slines: TStrings; const bRoot: boolean): boolean;
