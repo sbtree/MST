@@ -55,7 +55,9 @@ type
     t_croot:    TConfigItem;
     t_cfgfiles: TStrings;           //to save file names , which are loaded
     a_fstemps:  array of TDateTime; //to save time stemps of the loaded files
-    t_names:    TStringList;           //to save all names, in order to check dopplicated name
+    t_names:    TStringList;        //to arrange in order with names
+    t_ids:      TStringList;        //to arrange in order with id_string
+    t_curconf:  TPairStrings;       //to save a settings for the current selection
 
   protected
     function AddConfigItem(const confname: string; const vals: TStrings): boolean;
@@ -66,6 +68,8 @@ type
     function WriteToXML(const sfile: string; const bRoot: boolean = false): boolean;
     function GetConfigItem(const name: string): TConfigItem; overload;
     function GetConfigItem(const idx: integer): TConfigItem; overload;
+    function GetConfigOwn(const name: string): TPairStrings;
+    function GetConfigAll(const name: string): TPairStrings;
     function GetCount(): integer;
 
   public
@@ -74,6 +78,8 @@ type
 
     property ConfigRoot: TConfigItem read t_croot;
     property ConfigItem[const name: string]: TConfigItem read GetConfigItem;
+    property ConfigOwn[const name: string]: TPairStrings read GetConfigOwn;
+    property ConfigAll[const name: string]: TPairStrings read GetConfigAll;
     property Count: integer read GetCount;
 
     function ReadFromFile(const cfgfile: string; const bforce: boolean = false; const bappend: boolean = false): boolean; virtual;
@@ -88,7 +94,8 @@ const
   CSTR_ARTICLE: string = 'ARTICLE_NR_';
   CSTR_VARIANT: string = 'VARIANTE_';
   CSTR_PARENT:  string = 'PSETTINGS';
-  CSTR_ARTCLE_PARENT: string = 'Variant';
+  CSTR_ARTICLE_PARENT:  string = 'VARIANT';
+  CSTR_ID_STRING:       string = 'ID_STRING';
 
 function TConfigItem.FindConfigItem(const sname: string): TConfigItem;
 var i, i_idx: integer; t_child: TConfigItem;
@@ -268,7 +275,7 @@ procedure TConfigItem.ResetParent(parent: TConfigItem);
 begin
   if ((t_parent <> parent) and assigned(parent)) then begin
     if assigned(t_parent) then t_parent.RemoveChild(self);
-    if assigned(parent) then parent.AddChild(self);
+    parent.AddChild(self);
   end;
 end;
 
@@ -280,12 +287,15 @@ end;
 
 //add a config section into root firstly. They will arranged by BuildConfigTree() later
 function TConfigReader.AddConfigItem(const confname: string; const vals: TStrings): boolean;
-var t_citem: TConfigItem; i_idx: integer;
+var t_citem: TConfigItem; i_idx: integer; s_id: string;
 begin
+  s_id := vals.Values[CSTR_ID_STRING];
+  //result := ((not t_names.Find(confname, i_idx)) and (not t_ids.Find(s_id, i_idx)));
   result := (not t_names.Find(confname, i_idx));
   if result then begin
     t_citem := t_croot.AddChild(confname);
     t_names.AddObject(confname, t_citem);
+    t_ids.AddObject(s_id, t_citem);
     t_citem.UpdateConfig(vals);
   end;
 end;
@@ -306,7 +316,7 @@ begin
       t_inifile.ReadSectionValues(s_name, t_secvals);
       s_parent := t_secvals.Values[CSTR_PARENT]; //remove line of setting for parent
       t_secvals.Values[CSTR_PARENT] := '';
-      if StartsText(CSTR_ARTICLE, t_secnames[i]) then t_secvals.Values[CSTR_ARTCLE_PARENT] := ''; //remove line of setting for parent
+      if StartsText(CSTR_ARTICLE, t_secnames[i]) then t_secvals.Values[CSTR_ARTICLE_PARENT] := ''; //remove line of setting for parent
       result := AddConfigItem(s_name, t_secvals);
       if not result then break;
     end;
@@ -327,7 +337,7 @@ begin
     t_citem := TConfigItem(t_names.Objects[i]);
     t_secvals.Clear();
     ini.ReadSectionValues(s_name, t_secvals);
-    if StartsText(CSTR_ARTICLE, s_name) then s_parent := t_secvals.Values[CSTR_ARTCLE_PARENT]
+    if StartsText(CSTR_ARTICLE, s_name) then s_parent := t_secvals.Values[CSTR_ARTICLE_PARENT]
     else s_parent := t_secvals.Values[CSTR_PARENT];
 
     t_parent := GetConfigItem(s_parent);
@@ -375,6 +385,24 @@ begin
   if (idx >=0) and (idx < t_names.Count) then result := TConfigItem(t_names.Objects[idx]);
 end;
 
+function TConfigReader.GetConfigOwn(const name: string): TPairStrings;
+var t_citem: TConfigItem;
+begin
+  t_citem := GetConfigItem(name);
+  t_curconf.Clear();
+  if assigned(t_citem) then t_curconf.AddPairs(t_citem.Config.Pairs);
+  result := t_curconf;
+end;
+
+function TConfigReader.GetConfigAll(const name: string): TPairStrings;
+var t_citem: TConfigItem;
+begin
+  t_citem := GetConfigItem(name);
+  t_curconf.Clear();
+  if assigned(t_citem) then t_citem.GetCompleteConfig(t_curconf);
+  result := t_curconf;
+end;
+
 function TConfigReader.GetCount(): integer;
 begin
   result := t_names.Count;
@@ -387,6 +415,10 @@ begin
   t_names := TStringList.Create();
   t_names.CaseSensitive := false;
   t_names.Sorted := true;
+  t_ids := TStringList.Create();
+  t_ids.CaseSensitive := false;
+  t_ids.Sorted := true;
+  t_curconf := TPairStrings.Create();
 end;
 
 destructor TConfigReader.Destroy();
@@ -394,6 +426,8 @@ begin
   t_croot.Free();
   t_cfgfiles.Free();
   t_names.Free();
+  t_ids.Free();
+  t_curconf.Free();
 end;
 
 function TConfigReader.ReadFromFile(const cfgfile: string; const bforce: boolean; const bappend: boolean): boolean;
@@ -447,7 +481,9 @@ begin
   t_croot.Clear();
   t_cfgfiles.Clear;
   t_names.Clear();
+  t_ids.Clear();
   SetLength(a_fstemps, 0);
+  t_curconf.Clear();
 end;
 
 end.

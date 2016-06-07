@@ -57,6 +57,7 @@ constructor TPairStrings.Create();
 begin
   t_namevals := TStringList.Create();
 end;
+
 destructor TPairStrings.Destroy();
 begin
   t_namevals.Free();

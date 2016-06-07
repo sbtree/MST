@@ -8,19 +8,22 @@ uses
 
 type
   TfrmProdTester = class(TForm)
-    btnTest: TButton;
     trvProduct: TTreeView;
     txtScriptFile: TEdit;
     btnOpenIni: TButton;
     btnLoad: TButton;
-    procedure btnTestClick(Sender: TObject);
+    lstVar: TListBox;
+    chkShowAll: TCheckBox;
     procedure btnOpenIniClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnLoadClick(Sender: TObject);
+    procedure chkShowAllClick(Sender: TObject);
+    procedure trvProductChange(Sender: TObject; Node: TTreeNode);
   private
     { Private-Deklarationen }
     t_confreader: TConfigReader;
+    procedure UpdateConfig();
   public
     { Public-Deklarationen }
   end;
@@ -30,10 +33,12 @@ var
 
 implementation
 {$R *.dfm}
+uses PairStrings;
 
 procedure TfrmProdTester.btnLoadClick(Sender: TObject);
 begin
   t_confreader.Clear();
+  trvProduct.Items.Clear();
   if t_confreader.ReadFromFile(txtScriptFile.Text) then
     t_confreader.BuildTreeView(trvProduct);
 end;
@@ -52,41 +57,9 @@ begin
   t_dialog.Free; // Free up the dialog
 end;
 
-procedure TfrmProdTester.btnTestClick(Sender: TObject);
-var pch: PChar; str: string; i: integer; t_slist: TStringList;
+procedure TfrmProdTester.chkShowAllClick(Sender: TObject);
 begin
-  t_slist := TStringList.Create();
-  t_slist.CaseSensitive := false;
-  t_slist.Sorted := true;
-  t_slist.AddObject('aaa', TStringList.Create());
-  t_slist.AddObject('fff', TStringList.Create());
-  t_slist.AddObject('eee', TStringList.Create());
-  t_slist.AddObject('bbb', TStringList.Create());
-  t_slist.AddObject('ddd', TStringList.Create());
-  t_slist.AddObject('ccc', TStringList.Create());
-  ShowMessage('before Delete: t_slist = ' + t_slist.CommaText);
-  if t_slist.Find('eee', i) then t_slist.Delete(i);
-  ShowMessage('after Delete: t_slist = ' + t_slist.CommaText);
-{
-  if True then
-
-  t_slist.Free();
-  str := 'ABCDE';
-  pch := PChar(str);
-  for i := 0 to length(str) -1 do begin
-    pch := 'A';
-    inc(pch);
-  end;
-  pch := PChar(str);
-  ShowMessage(pch);
-  ShowMessage(str);
-
-  str[2]:= 'A';
-  str[3]:= 'A';
-  str[4]:= 'A';
-  str[5]:= 'A';
-  ShowMessage(pch);
-  ShowMessage(str);  }
+  UpdateConfig();
 end;
 
 procedure TfrmProdTester.FormCreate(Sender: TObject);
@@ -97,6 +70,18 @@ end;
 procedure TfrmProdTester.FormDestroy(Sender: TObject);
 begin
   t_confreader.Free();
+end;
+
+procedure TfrmProdTester.trvProductChange(Sender: TObject; Node: TTreeNode);
+begin
+  UpdateConfig();
+end;
+
+procedure TfrmProdTester.UpdateConfig();
+begin
+  lstVar.Clear();
+  if chkShowAll.Checked then lstVar.Items.AddStrings(t_confreader.ConfigAll[trvProduct.Selected.Text].Pairs)
+  else lstVar.Items.AddStrings(t_confreader.ConfigOwn[trvProduct.Selected.Text].Pairs);
 end;
 
 end.
