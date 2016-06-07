@@ -30,8 +30,8 @@ procedure TfrmDeviceManager.btnCreateTreeClick(Sender: TObject);
 var
   MyTreeNode1, MyTreeNode2: TTreeNode; tNodes: TTreeNodes;
 begin
-  tNodes := TTreeNodes.Create(Nil);
-  with tNodes do
+  //tNodes := TTreeNodes.Create(Nil);
+  with trvDevices.Items do
   begin
     Clear; { remove any existing nodes }
     MyTreeNode1 := Add(nil, 'RootTreeNode1'); { Add a root node }
@@ -54,7 +54,7 @@ begin
     {add another root node}
     Add(MyTreeNode1, 'RootTreeNode3');
   end;
-  trvDevices.Items := tNodes
+  //trvDevices.Items := tNodes
 
 end;
 
