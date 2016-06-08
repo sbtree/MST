@@ -2,9 +2,6 @@ unit ProductConfig;
 
 interface
 uses Classes, IniFiles, PairStrings, GenUtils, ComCtrls;
-const
-  CSTR_ROOT = 'ROOT';
-
 type
   EConfigFormat = (
                 CF_UNKNOWN,
@@ -39,11 +36,10 @@ type
 
     function AddChild(const sname: string): TConfigItem; overload;
     function AddChild(citem: TConfigItem): TConfigItem; overload;
-    function RemoveChild(const sname: string): TConfigItem; overload;
-    function RemoveChild(const citem: TConfigItem): TConfigItem; overload;
+    function MoveChildTo(const sname: string; citem: TConfigItem): TConfigItem;
     function HasChildren(): boolean;
     function GetOwnConfig(const secname: string; var conf: TPairStrings): boolean;
-    function GetCompleteConfig(var conf: TPairStrings): boolean;
+    function GetFullConfig(var conf: TPairStrings): boolean;
     function SaveConfig(var slines: TStrings; const cf: EConfigFormat): boolean;
     function BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode): boolean;
     function IsVisible(): boolean;
@@ -74,12 +70,12 @@ type
     function WriteToXML(const sfile: string; const bRoot: boolean = false): boolean;
     function GetConfigItem(const name: string): TConfigItem; overload;
     function GetConfigItem(const idx: integer): TConfigItem; overload;
-    function GetConfigOwn(const name: string): TPairStrings; overload;
-    function GetConfigOwn(const citem: TConfigItem): TPairStrings; overload;
-    function GetConfigFull(const name: string): TPairStrings; overload;
-    function GetConfigFull(const citem: TConfigItem): TPairStrings; overload;
-    function GetCurConfigOwn(): TPairStrings;
-    function GetCurConfigFull(): TPairStrings;
+    function GetOwnConfig(const name: string): TPairStrings; overload;
+    function GetOwnConfig(const citem: TConfigItem): TPairStrings; overload;
+    function GetFullConfig(const name: string): TPairStrings; overload;
+    function GetFullConfig(const citem: TConfigItem): TPairStrings; overload;
+    function GetOwnCurConfig(): TPairStrings;
+    function GetFullCurConfig(): TPairStrings;
     function GetCount(): integer;
 
   public
@@ -88,11 +84,11 @@ type
 
     property ConfigRoot: TConfigItem read t_croot;
     property ConfigItem[const name: string]: TConfigItem read GetConfigItem;
-    property ConfigOwn[const name: string]: TPairStrings read GetConfigOwn;
-    property ConfigFull[const name: string]: TPairStrings read GetConfigFull;
+    property OwnConfig[const name: string]: TPairStrings read GetOwnConfig;
+    property FullConfig[const name: string]: TPairStrings read GetFullConfig;
     property CurConfigItem: TConfigItem read t_curitem;
-    property CurConfigOwn: TPairStrings read GetCurConfigOwn;
-    property CurConfigFull: TPairStrings read GetCurConfigFull;
+    property OwnCurConfig: TPairStrings read GetOwnCurConfig;
+    property FullCurConfig: TPairStrings read GetFullCurConfig;
     property Count: integer read GetCount;
     property FilterVar: string read s_filtervar write s_filtervar;
 
@@ -108,9 +104,10 @@ type
 implementation
 uses SysUtils, StrUtils, Dialogs;
 const
-  CSTR_ARTICLE: string = 'ARTICLE_NR_';
+  CSTR_ARTICLE: string = 'ARTICLE_';
   CSTR_VARIANT: string = 'VARIANTE_';
-  CSTR_PARENT:  string = 'PSETTINGS';
+  CSTR_FAMILY:  string = 'FAMILY_';
+  CSTR_VARIANT_PARENT:  string = 'FAMILY';
   CSTR_ARTICLE_PARENT:  string = 'VARIANT';
   CSTR_ID_STRING:       string = 'ID_STRING';
 
@@ -153,7 +150,10 @@ function TConfigItem.WriteToIni(var slines: TStrings): boolean;
 var i: integer; t_citem: TConfigItem;
 begin
   slines.Add('[' + s_confname + ']');
-  if assigned(t_parent) then slines.Add(CSTR_PARENT + t_parent.ConfigName);
+  if assigned(t_parent) then begin
+    if StartsText(CSTR_ARTICLE, s_confname) then slines.Add(CSTR_ARTICLE_PARENT + '=' + t_parent.ConfigName)
+    else slines.Add(CSTR_VARIANT_PARENT + '=' + t_parent.ConfigName)
+  end;
   slines.AddStrings(t_config.Pairs);
   result := true;
 
@@ -176,7 +176,6 @@ begin
   t_parent := parent;
   t_children := TStringList.Create();
   t_children.CaseSensitive := false;
-  //t_children.Duplicates := dupError;
   t_children.Sorted := true;
   t_config := TPairStrings.Create();
   b_visible := true;
@@ -216,24 +215,14 @@ begin
   end;
 end;
 
-function TConfigItem.RemoveChild(const sname: string): TConfigItem;
+function TConfigItem.MoveChildTo(const sname: string; citem: TConfigItem): TConfigItem;
 var i_idx: integer;
 begin
   result := GetChild(sname, i_idx);
-  if assigned(result) then begin
+  if (assigned(result) and assigned(citem)) then begin
     t_children.Delete(i_idx);
-    result.Parent := nil;
+    citem.AddChild(result);
   end;
-end;
-
-function TConfigItem.RemoveChild(const citem: TConfigItem): TConfigItem;
-var i_idx: integer;
-begin
-  if t_children.Find(citem.ConfigName, i_idx) then begin
-    t_children.Delete(i_idx);
-    citem.Parent := nil;
-  end;
-  result := citem;
 end;
 
 function TConfigItem.HasChildren(): boolean;
@@ -253,10 +242,10 @@ begin
   end;
 end;
 
-function TConfigItem.GetCompleteConfig(var conf: TPairStrings): boolean;
+function TConfigItem.GetFullConfig(var conf: TPairStrings): boolean;
 begin
   result := true;
-  if assigned(t_parent) then result := t_parent.GetCompleteConfig(conf);
+  if assigned(t_parent) then result := t_parent.GetFullConfig(conf);
   conf.AddPairs(t_config.Pairs, true);
 end;
 
@@ -309,8 +298,7 @@ end;
 procedure TConfigItem.ResetParent(parent: TConfigItem);
 begin
   if ((t_parent <> parent) and assigned(parent)) then begin
-    if assigned(t_parent) then t_parent.RemoveChild(self);
-    parent.AddChild(self);
+    if assigned(t_parent) then t_parent.MoveChildTo(s_confname, parent);
   end;
 end;
 
@@ -348,19 +336,19 @@ end;
 function TProdConfigurator.AddConfigItem(const confname: string; const vals: TStrings): boolean;
 var t_citem: TConfigItem; i_idx: integer; s_id: string;
 begin
-  s_id := vals.Values[CSTR_ID_STRING];
-  //result := ((not t_names.Find(confname, i_idx)) and (not t_ids.Find(s_id, i_idx)));
   result := (not t_names.Find(confname, i_idx));
   if result then begin
     t_citem := t_croot.AddChild(confname);
     t_names.AddObject(confname, t_citem);
-    t_ids.AddObject(s_id, t_citem);
     t_citem.UpdateConfig(vals);
+    s_id := vals.Values[CSTR_ID_STRING];
+    if (not t_ids.Find(s_id, i_idx)) then t_ids.AddObject(s_id, t_citem)
+    else ; //todo: dupplicated id, warning??
   end;
 end;
 
 function TProdConfigurator.ReadFromIni(const sfile: string; const bcover: boolean): boolean;
-var t_inifile: TIniFile; t_secnames, t_secvals: TStrings; s_name, s_parent: string; i: integer;
+var t_inifile: TIniFile; t_secnames, t_secvals: TStrings; s_name: string; i: integer;
 begin
   result := false;
   t_inifile := TIniFile.Create(sfile);
@@ -369,13 +357,15 @@ begin
 
   t_inifile.ReadSections(t_secnames);
   for i := 0 to t_secnames.Count - 1 do begin
-    if (StartsText(CSTR_VARIANT, t_secnames[i]) or StartsText(CSTR_ARTICLE, t_secnames[i])) then begin
+    if (StartsText(CSTR_VARIANT, t_secnames[i]) or
+        StartsText(CSTR_ARTICLE, t_secnames[i]) or
+        StartsText(CSTR_FAMILY, t_secnames[i])) then
+    begin
       s_name := t_secnames[i];
       t_secvals.Clear();
       t_inifile.ReadSectionValues(s_name, t_secvals);
-      s_parent := t_secvals.Values[CSTR_PARENT]; //remove line of setting for parent
-      t_secvals.Values[CSTR_PARENT] := '';
-      if StartsText(CSTR_ARTICLE, t_secnames[i]) then t_secvals.Values[CSTR_ARTICLE_PARENT] := ''; //remove line of setting for parent
+      if StartsText(CSTR_ARTICLE, t_secnames[i]) then t_secvals.Values[CSTR_ARTICLE_PARENT] := '' //remove line of setting for article parent
+      else t_secvals.Values[CSTR_VARIANT_PARENT] := ''; //remove line of setting for variant parent
       result := AddConfigItem(s_name, t_secvals);
       if not result then break;
     end;
@@ -397,7 +387,7 @@ begin
     t_secvals.Clear();
     ini.ReadSectionValues(s_name, t_secvals);
     if StartsText(CSTR_ARTICLE, s_name) then s_parent := t_secvals.Values[CSTR_ARTICLE_PARENT]
-    else s_parent := t_secvals.Values[CSTR_PARENT];
+    else s_parent := t_secvals.Values[CSTR_VARIANT_PARENT];
 
     t_parent := GetConfigItem(s_parent);
     if assigned(t_parent) then t_citem.ResetParent(t_parent);
@@ -444,38 +434,38 @@ begin
   if (idx >=0) and (idx < t_names.Count) then result := TConfigItem(t_names.Objects[idx]);
 end;
 
-function TProdConfigurator.GetConfigOwn(const name: string): TPairStrings;
+function TProdConfigurator.GetOwnConfig(const name: string): TPairStrings;
 begin
-  result := GetConfigOwn(GetConfigItem(name));
+  result := GetOwnConfig(GetConfigItem(name));
 end;
 
-function TProdConfigurator.GetConfigOwn(const citem: TConfigItem): TPairStrings;
+function TProdConfigurator.GetOwnConfig(const citem: TConfigItem): TPairStrings;
 begin
   t_curconf.Clear();
   if assigned(citem) then t_curconf.AddPairs(citem.Config.Pairs);
   result := t_curconf;
 end;
 
-function TProdConfigurator.GetConfigFull(const name: string): TPairStrings;
+function TProdConfigurator.GetFullConfig(const name: string): TPairStrings;
 begin
-  result := GetConfigFull(GetConfigItem(name));
+  result := GetFullConfig(GetConfigItem(name));
 end;
 
-function TProdConfigurator.GetConfigFull(const citem: TConfigItem): TPairStrings;
+function TProdConfigurator.GetFullConfig(const citem: TConfigItem): TPairStrings;
 begin
   t_curconf.Clear();
-  if assigned(citem) then citem.GetCompleteConfig(t_curconf);
+  if assigned(citem) then citem.GetFullConfig(t_curconf);
   result := t_curconf;
 end;
 
-function TProdConfigurator.GetCurConfigOwn(): TPairStrings;
+function TProdConfigurator.GetOwnCurConfig(): TPairStrings;
 begin
-  result := GetConfigOwn(t_curitem);
+  result := GetOwnConfig(t_curitem);
 end;
 
-function TProdConfigurator.GetCurConfigFull(): TPairStrings;
+function TProdConfigurator.GetFullCurConfig(): TPairStrings;
 begin
-  result := GetConfigFull(t_curitem);
+  result := GetFullConfig(t_curitem);
 end;
 
 function TProdConfigurator.GetCount(): integer;
@@ -485,7 +475,7 @@ end;
 
 constructor TProdConfigurator.Create();
 begin
-  t_croot := TConfigItem.Create(CSTR_ROOT);
+  t_croot := TConfigItem.Create('ROOT');
   t_cfgfiles := TStringList.Create();
   t_names := TStringList.Create();
   t_names.CaseSensitive := false;
@@ -552,8 +542,8 @@ var t_litem: TListItem; t_names: TStrings; s_value: string; i: integer;
 begin
   lsv.Enabled := false;
   if bclear then lsv.Items.Clear();
-  if bfull then GetCurConfigFull()
-  else GetCurConfigOwn();
+  if bfull then GetFullCurConfig()
+  else GetOwnCurConfig();
 
   t_names := TStringList.Create();
   TStringList(t_names).CaseSensitive := false;

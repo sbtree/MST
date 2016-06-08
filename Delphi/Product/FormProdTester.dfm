@@ -27,7 +27,7 @@ object frmProdTester: TfrmProdTester
     TabOrder = 0
     OnChange = trvProductChange
   end
-  object txtScriptFile: TEdit
+  object txtConfigFile: TEdit
     Left = 8
     Top = 436
     Width = 317
@@ -118,6 +118,7 @@ object frmProdTester: TfrmProdTester
     ItemHeight = 13
     ItemIndex = 0
     TabOrder = 9
+    Text = 'ID_STRING'
     OnChange = cmbFilterNameChange
     Items.Strings = (
       'ID_STRING'

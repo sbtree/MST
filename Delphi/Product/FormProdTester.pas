@@ -9,7 +9,7 @@ uses
 type
   TfrmProdTester = class(TForm)
     trvProduct: TTreeView;
-    txtScriptFile: TEdit;
+    txtConfigFile: TEdit;
     btnOpenIni: TButton;
     btnLoad: TButton;
     chkShowAll: TCheckBox;
@@ -63,7 +63,7 @@ procedure TfrmProdTester.btnLoadClick(Sender: TObject);
 begin
   t_confreader.Clear();
   trvProduct.Items.Clear();
-  if t_confreader.ReadFromFile(txtScriptFile.Text) then
+  if t_confreader.ReadFromFile(txtConfigFile.Text) then
     t_confreader.UpdateTreeView(trvProduct);
 end;
 
@@ -77,7 +77,7 @@ begin
   t_dialog.Filter := 'Config File|*.ini|All files|*.*'; // Allow only .txt and .doc file types to be saved
   t_dialog.DefaultExt := 'txt';// Set the default extension
   t_dialog.FilterIndex := 1; // Select text files as the starting filter type
-  if t_dialog.Execute then txtScriptFile.Text:=t_dialog.FileName; // Display the open file dialog
+  if t_dialog.Execute then txtConfigFile.Text:=t_dialog.FileName; // Display the open file dialog
   t_dialog.Free; // Free up the dialog
 end;
 
