@@ -63,8 +63,7 @@ procedure TfrmProdTester.btnLoadClick(Sender: TObject);
 begin
   t_confreader.Clear();
   trvProduct.Items.Clear();
-  if t_confreader.ReadFromFile(txtConfigFile.Text) then
-    t_confreader.UpdateTreeView(trvProduct);
+  if t_confreader.ReadFromFile(txtConfigFile.Text) then UpdateFilter();
 end;
 
 procedure TfrmProdTester.btnOpenIniClick(Sender: TObject);

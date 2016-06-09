@@ -23,6 +23,7 @@ type
     function GetChild(const sname: string; var idx: integer): TConfigItem; overload;
     function WriteToIni(var slines: TStrings): boolean;
     function WriteToXML(const destfile): boolean;
+    function IsVisible(): boolean;
 
   public
     constructor Create(const confname: string; const parent: TConfigItem = nil);
@@ -30,6 +31,7 @@ type
 
     property ConfigName: string read s_confname write s_confname;
     property Config: TPairStrings read t_config;
+    property Visible: boolean read IsVisible write b_visible;
     property Parent: TConfigItem read t_parent write t_parent;
     property ChildCount: integer read GetChildren;
     property Children[idx: integer]: TConfigItem read GetChild;
@@ -42,7 +44,6 @@ type
     function GetFullConfig(var conf: TPairStrings): boolean;
     function SaveConfig(var slines: TStrings; const cf: EConfigFormat): boolean;
     function BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode): boolean;
-    function IsVisible(): boolean;
     procedure Clear();
     procedure ResetParent(parent: TConfigItem);
     procedure UpdateConfig(const vals: TStrings);
@@ -107,6 +108,7 @@ const
   CSTR_ARTICLE: string = 'ARTICLE_';
   CSTR_VARIANT: string = 'VARIANTE_';
   CSTR_FAMILY:  string = 'FAMILY_';
+  CSTR_ROOT_NAME:       string = 'DEFAULT_SETTINGS';
   CSTR_VARIANT_PARENT:  string = 'FAMILY';
   CSTR_ARTICLE_PARENT:  string = 'VARIANT';
   CSTR_ID_STRING:       string = 'ID_STRING';
@@ -264,7 +266,7 @@ begin
   result := true;
   for i := 0 to ChildCount - 1 do begin
     t_citem := TConfigItem(t_children.Objects[i]);
-    if t_citem.IsVisible() then begin
+    if t_citem.Visible then begin
       if assigned(trvNode) then t_curnode := trvnodes.AddChild(trvNode, t_citem.ConfigName)
       else t_curnode := trvnodes.Add(nil, t_citem.ConfigName);
       result := t_citem.BuildTreeNode(trvnodes, t_curnode);
@@ -279,7 +281,7 @@ begin
   if not b_visible then begin
     for i := 0 to t_children.Count - 1 do begin
       t_citem := TConfigItem(t_children.Objects[i]);
-      if t_citem.IsVisible() then begin
+      if t_citem.Visible then begin
         result := true;
         break;
       end;
@@ -311,14 +313,18 @@ end;
 procedure TConfigItem.Filter(const varname, filtertext: string);
 var s_value: string; i: integer; t_citem: TConfigItem;
 begin
+  //set if it is visible by itself
   if (filtertext = '') then b_visible := true
   else begin
     t_config.GetPairValue(varname, s_value);
     b_visible := ContainsText(s_value, filtertext);
   end;
+
+  //set if its children are visible
   for i := 0 to t_children.Count - 1 do begin
     t_citem := TConfigItem(t_children.Objects[i]);
-    t_citem.Filter(varname, filtertext);
+    if t_citem.Config.FindPair(varname) then t_citem.Filter(varname, filtertext) //if it has its own value of this variable
+    else t_citem.Visible := b_visible; //otherwise its visibility is same as its parent
   end;
 end;
 
@@ -356,6 +362,8 @@ begin
   t_secvals := TStringList.Create();
 
   t_inifile.ReadSections(t_secnames);
+  t_inifile.ReadSectionValues(CSTR_ROOT_NAME, t_secvals);
+  t_croot.UpdateConfig(t_secvals);
   for i := 0 to t_secnames.Count - 1 do begin
     if (StartsText(CSTR_VARIANT, t_secnames[i]) or
         StartsText(CSTR_ARTICLE, t_secnames[i]) or
@@ -577,9 +585,15 @@ begin
 end;
 
 procedure TProdConfigurator.Filter(const ftext: string);
+var i: integer; t_citem: TConfigItem;
 begin
   if (ftext = '') then t_croot.Unfilter()
-  else t_croot.Filter(s_filtervar, ftext);
+  else begin
+    for i := 0 to t_croot.ChildCount - 1 do begin
+      t_citem := t_croot.GetChild(i);
+      if assigned(t_citem) then t_citem.Filter(s_filtervar, ftext);
+    end;
+  end;
 end;
 
 procedure TProdConfigurator.Clear();
