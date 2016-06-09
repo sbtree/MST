@@ -42,9 +42,12 @@ type
     function HasChildren(): boolean;
     function GetOwnConfig(const secname: string; var conf: TPairStrings): boolean;
     function GetFullConfig(var conf: TPairStrings): boolean;
+    function GetValue(const varname: string; var varval: string): boolean;
+    function GetValueFromParent(const varname: string; var varval: string): boolean;
     function SaveConfig(var slines: TStrings; const cf: EConfigFormat): boolean;
     function BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode): boolean;
     procedure Clear();
+    procedure CleanConfig();
     procedure ResetParent(parent: TConfigItem);
     procedure UpdateConfig(const vals: TStrings);
     procedure Filter(const varname, filtertext: string);
@@ -66,9 +69,9 @@ type
     function AddConfigItem(const confname: string; const vals: TStrings): boolean;
     function ReadFromIni(const sfile: string; const bcover: boolean = false): boolean;
     function BuildTreeFromIni(const ini: TIniFile): boolean;
-    function WriteToIni(var slines: TStrings; const bRoot: boolean = false): boolean;
+    function WriteToIni(var slines: TStrings; const bRoot: boolean = true): boolean;
     function ReadFromXML(const sfile: string; const bcover: boolean = false): boolean;
-    function WriteToXML(const sfile: string; const bRoot: boolean = false): boolean;
+    function WriteToXML(const sfile: string; const bRoot: boolean = true): boolean;
     function GetConfigItem(const name: string): TConfigItem; overload;
     function GetConfigItem(const idx: integer): TConfigItem; overload;
     function GetOwnConfig(const name: string): TPairStrings; overload;
@@ -99,6 +102,9 @@ type
     procedure UpdateListView(var lsv: TListView; const bfull: boolean = false; const bsorted: boolean = false; const bclear: boolean = true);
     procedure Select(const sname: string);
     procedure Filter(const ftext: string);
+    procedure CleanCurConfig();
+    procedure CleanAllConfig();
+    //procedure Optimize(); //todo
     procedure Clear();
   end;
 
@@ -151,6 +157,7 @@ end;
 function TConfigItem.WriteToIni(var slines: TStrings): boolean;
 var i: integer; t_citem: TConfigItem;
 begin
+  slines.Add('');
   slines.Add('[' + s_confname + ']');
   if assigned(t_parent) then begin
     if StartsText(CSTR_ARTICLE, s_confname) then slines.Add(CSTR_ARTICLE_PARENT + '=' + t_parent.ConfigName)
@@ -251,6 +258,20 @@ begin
   conf.AddPairs(t_config.Pairs, true);
 end;
 
+function TConfigItem.GetValue(const varname: string; var varval: string): boolean;
+begin
+  result := Config.GetPairValue(varname, varval);
+end;
+
+function TConfigItem.GetValueFromParent(const varname: string; var varval: string): boolean;
+begin
+  result := false;
+  if Assigned(t_parent) then begin
+    result := t_parent.GetValue(varname, varval);
+    if (not result) then result :=t_parent.GetValueFromParent(varname, varval);
+  end;
+end;
+
 function TConfigItem.SaveConfig(var slines: TStrings; const cf: EConfigFormat): boolean;
 begin
   result := false;
@@ -295,6 +316,24 @@ begin
   t_config.Clear();
   for i := 0 to t_children.Count - 1 do t_children.Objects[i].Free();
   t_children.Clear();
+end;
+
+procedure TConfigItem.CleanConfig();
+var i: integer; t_child: TConfigItem; s_myval, s_parentval: string;
+begin
+  //clean settings in its own config
+  for i := t_config.Count - 1 downto 0  do begin
+    t_config.GetPairValue(i, s_myval);
+    if GetValueFromParent(t_config.PairName[i], s_parentval) then begin
+      if SameText(s_myval, s_parentval) then t_config.RemovePair(i);
+    end;
+  end;
+
+  //clean settings in the config of its children
+  for i := 0 to t_children.Count - 1 do begin
+    t_child := TConfigItem(t_children.Objects[i]);
+    t_child.CleanConfig();
+  end;
 end;
 
 procedure TConfigItem.ResetParent(parent: TConfigItem);
@@ -408,6 +447,14 @@ function TProdConfigurator.WriteToIni(var slines: TStrings; const bRoot: boolean
 var i: integer;
 begin
   result := false;
+  slines.Add(';======================================================================================');
+  slines.Add('; This file is created by MST automatically.');
+  slines.Add('; (c) Metronix 2016');
+  slines.Add('; ' + DateTimeToStr(Now()));
+  slines.Add(';======================================================================================');
+  slines.Add('[revision]');
+  slines.Add('MST_VERSION=4.1.0.1.1');
+  slines.Add('FILE_VISION=$Revision: 1.1$');
   if bRoot then  result := t_croot.WriteToIni(slines)
   else begin
     for i := 0 to t_croot.ChildCount - 1 do begin
@@ -483,7 +530,7 @@ end;
 
 constructor TProdConfigurator.Create();
 begin
-  t_croot := TConfigItem.Create('ROOT');
+  t_croot := TConfigItem.Create(CSTR_ROOT_NAME);
   t_cfgfiles := TStringList.Create();
   t_names := TStringList.Create();
   t_names.CaseSensitive := false;
@@ -540,6 +587,7 @@ begin
   if bclear then begin
     trv.ClearSelection();
     trv.Items.Clear();
+    t_curitem := nil;
   end;
   t_croot.BuildTreeNode(trv.Items, nil);
   trv.Enabled := true;
@@ -570,13 +618,16 @@ end;
 function TProdConfigurator.SaveToFile(const destfile: string; const cf: EConfigFormat): boolean;
 var t_lines: TStrings;
 begin
-  t_lines := TStringList.Create();
   case cf of
-    CF_INI: result := t_croot.WriteToIni(t_lines);
-    CF_XML: result := t_croot.WriteToXML(destfile);
+    CF_INI: begin
+      t_lines := TStringList.Create();
+      result := WriteToIni(t_lines);
+      t_lines.SaveToFile(destfile);
+      t_lines.Free();
+    end;
+    CF_XML: result := WriteToXML(destfile);
     else result := false;
   end;
-  t_lines.Free();
 end;
 
 procedure TProdConfigurator.Select(const sname: string);
@@ -594,6 +645,16 @@ begin
       if assigned(t_citem) then t_citem.Filter(s_filtervar, ftext);
     end;
   end;
+end;
+
+procedure TProdConfigurator.CleanCurConfig();
+begin
+  if assigned(t_curitem) then t_curitem.CleanConfig();
+end;
+
+procedure TProdConfigurator.CleanAllConfig();
+begin
+  t_croot.CleanConfig();
 end;
 
 procedure TProdConfigurator.Clear();

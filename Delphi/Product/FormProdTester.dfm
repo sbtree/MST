@@ -148,4 +148,22 @@ object frmProdTester: TfrmProdTester
     TabOrder = 11
     OnClick = btnExpandClick
   end
+  object btnClean: TButton
+    Left = 440
+    Top = 471
+    Width = 57
+    Height = 25
+    Caption = 'Clean'
+    TabOrder = 12
+    OnClick = btnCleanClick
+  end
+  object btnCleanAll: TButton
+    Left = 503
+    Top = 471
+    Width = 66
+    Height = 25
+    Caption = 'Clean All'
+    TabOrder = 13
+    OnClick = btnCleanAllClick
+  end
 end

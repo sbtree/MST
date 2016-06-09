@@ -20,6 +20,8 @@ type
     cmbFilterName: TComboBox;
     btnCollapse: TButton;
     btnExpand: TButton;
+    btnClean: TButton;
+    btnCleanAll: TButton;
     procedure btnOpenIniClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -33,6 +35,8 @@ type
     procedure cmbFilterNameChange(Sender: TObject);
     procedure btnCollapseClick(Sender: TObject);
     procedure btnExpandClick(Sender: TObject);
+    procedure btnCleanClick(Sender: TObject);
+    procedure btnCleanAllClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_confreader: TProdConfigurator;
@@ -48,6 +52,18 @@ var
 implementation
 {$R *.dfm}
 uses PairStrings;
+
+procedure TfrmProdTester.btnCleanAllClick(Sender: TObject);
+begin
+  t_confreader.CleanAllConfig();
+  UpdateConfig();
+end;
+
+procedure TfrmProdTester.btnCleanClick(Sender: TObject);
+begin
+  t_confreader.CleanCurConfig();
+  UpdateConfig();
+end;
 
 procedure TfrmProdTester.btnCollapseClick(Sender: TObject);
 begin

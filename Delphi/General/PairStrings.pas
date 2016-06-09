@@ -11,6 +11,8 @@ Type
   protected
     function GetCount(): integer;
     function Rename(const sname: string): string;
+    function GetPairName(idx: integer): string;
+    function CleanValue(const val: string): string;
 
   public
     constructor Create();
@@ -18,17 +20,20 @@ Type
 
     property  Count: integer read GetCount;
     property  Pairs: TStrings read t_namevals;
+    property  PairName[idx: integer]: string read GetPairName;
 
     function  FindPair(const sname: string): boolean;
     function  AddPair(const sname, sval: string; bcover: boolean = true): boolean; overload;
     function  AddPair(const nameval: string; bcover: boolean = true): boolean; overload;
     function  AddPairs(const names, vals: TStrings; bcover: boolean = true): integer; overload;
     function  AddPairs(const namevals: TStrings; bcover: boolean = true): integer; overload;
-    function  GetPairValue(const sname: string; var sval: string): boolean;
+    function  GetPairValue(const sname: string; var sval: string): boolean; overload;
+    function  GetPairValue(const idx: integer; var sval: string): boolean; overload;
     function  SetPairValue(const sname, sval: string): boolean;
     function  GetPairNames(var names: TStrings): integer;
     function  GetPairValues(var values: TStrings): integer;
-    procedure RemovePair(const sname: string);
+    procedure RemovePair(const idx: integer); overload;
+    procedure RemovePair(const sname: string); overload;
     procedure Clear();
   end;
 
@@ -51,6 +56,28 @@ begin
     result := LeftStr(result, length(result) - 1);
     result := trim(result);
   end;
+end;
+
+function TPairStrings.GetPairName(idx: integer): string;
+begin
+  result := '';
+  if ((idx >= 0) and (idx < t_namevals.Count)) then result := t_namevals.Names[idx];
+end;
+
+
+function TPairStrings.CleanValue(const val: string): string;
+var t_strs: TStrings; i: integer;
+begin
+  //clean combined value, which is composed of more through strings and separated through '|'
+  //e.g. 'string1  |string2  |  string3'.
+  //Every string of the combined value will be cleaned using trim() in this function
+  if (Pos('|', val) > 0) then begin
+    t_strs := TStringList.Create();
+    ExtractStrings(['|'], [], PChar(val), t_strs);
+    result := trim(t_strs[0]);
+    for i := 1 to t_strs.Count - 1 do result := result + '|' + trim(t_strs[i]);
+    t_strs.Free();
+  end else result := trim(val); //clean single value
 end;
 
 constructor TPairStrings.Create();
@@ -118,18 +145,26 @@ begin
   sval := ''; s_name := Rename(sname);
   if s_name <> '' then begin
     i_index := t_namevals.IndexOfName(s_name);
-    result := (i_index >= 0);
-    sval := t_namevals.ValueFromIndex[i_index];
+    result := GetPairValue(i_index, sval);
   end;
 end;
 
-function  TPairStrings.SetPairValue(const sname, sval: string): boolean;
-var i_index: integer; s_pair, s_name: string;
+function  TPairStrings.GetPairValue(const idx: integer; var sval: string): boolean;
 begin
-  result := false; s_name := Rename(sname);
+  sval := '';
+  result := ((idx >= 0) and (idx < t_namevals.Count));
+  if result then sval := t_namevals.ValueFromIndex[idx];
+end;
+
+function  TPairStrings.SetPairValue(const sname, sval: string): boolean;
+var i_index: integer; s_pair, s_name, s_value: string;
+begin
+  result := false;
+  s_name := Rename(sname);
+  s_value := CleanValue(sval);
   if s_name <> '' then begin
     i_index := t_namevals.IndexOfName(s_name);
-    s_pair := s_name + t_namevals.NameValueSeparator + sval;
+    s_pair := s_name + t_namevals.NameValueSeparator + s_value;
     if (i_index >= 0) then begin
       t_namevals.Delete(i_index);
       t_namevals.Insert(i_index, s_pair);
@@ -154,11 +189,16 @@ begin
   result := values.Count;
 end;
 
+procedure TPairStrings.RemovePair(const idx: integer);
+begin
+  if ((idx >= 0) and (idx < t_namevals.Count)) then t_namevals.Delete(idx);
+end;
+
 procedure TPairStrings.RemovePair(const sname: string);
 var i_index: integer;
 begin
   i_index := t_namevals.IndexOfName(sname);
-  if (i_index >= 0) then t_namevals.Delete(i_index);
+  RemovePair(i_index);
 end;
 
 procedure TPairStrings.Clear();
