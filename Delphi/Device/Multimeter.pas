@@ -24,6 +24,7 @@ type
                     MA_PERI,    //measure period
                     MA_TEMP     //measure temperature
                     );
+
   TMultimeter = class(TDeviceBase)
   type Channels = 1..40;
   protected
@@ -45,6 +46,7 @@ type
 
     function CloseRelays(const relays: string): boolean; virtual;
     function OpenRelays(const relays: string): boolean; virtual;
+    function QueryRelays(): string; virtual;
     function MeasureR(): real; virtual;
     function MeasureDCV(): real; virtual;
     function MeasureACV(): real; virtual;
@@ -55,6 +57,35 @@ type
     function MeasureT(): real; virtual;
   end;
 implementation
+
+const
+  // Keithley-Multimert 2700
+  C_MULTIMETER_BEEP_OFF       = 'SYST:BEEP 0';         // Beep off
+  C_MULTIMETER_OPTIONEN       = '*OPT?';               // Optionen erfragen
+  C_MULTIMETER_CLEAR_ERROR    = '*CLS';                // alle 'Event register' und 'error queue' loeschen
+  C_MULTIMETER_SELF_TEST      = '*TST?';               // Eigentest
+  C_MULTIMETER_OPEN_ALL       = 'ROUT:OPEN:ALL';       // alle Relais oeffnen
+  C_MULTIMETER_OPEN           = 'ROUT:MULT:OPEN (@%s)'; //n relays to open. %s: relay numbers with separator ','
+  C_MULTIMETER_CLOSE          = 'ROUT:MULT:CLOS (@%s)'; //n relays to clase. %s: relay numbers with separator ','
+  C_MULTIMETER_CLOSE_ASK      = 'ROUT:CLOS?';           // geschlossene Relais erfragen
+  C_MULTIMETER_FORMAT_ELEMENT = 'FORM:ELEM READ';       // Datenformat spezifizieren
+  C_MULTIMETER_MEAS_ONE       = 'INIT:CONT OFF';        // one-shot measurement mode
+  C_MULTIMETER_MEAS_READ      = 'READ?';                // Einzelmessung triggern
+  C_MULTIMETER_MEAS_CONTINU   = 'INIT:CONT ON';         // continuouse measurement mode
+  C_MULTIMETER_DATA_ASK       = 'DATA?';                // Daten lesen
+  C_MULTIMETER_SET_FUNC       = 'FUNC "%s"';            // set function to messure
+  C_MULTIMETER_FUNC_ASK       = 'FUNC?';                // ask for the current function of the messurement
+
+  C_MESSURE_FUNC: array[EMeasureAction] of string = (
+                  'RES',
+                  'VOLT:DC',
+                  'VOLT:AC',
+                  'CURR:DC',
+                  'CURR:AC',
+                  'FREQ',
+                  'PER',
+                  'TEMP'
+                  );
 
 function TMultimeter.GetClosedRelays(): string;
 begin
