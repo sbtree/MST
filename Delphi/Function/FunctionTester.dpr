@@ -7,7 +7,6 @@ uses
   TextMessage in '..\General\TextMessage.pas',
   FuncBase in 'FuncBase.pas',
   GenType in '..\General\GenType.pas',
-  FuncMat in 'FuncMat.pas',
   FuncDmm in 'FuncDmm.pas',
   FuncDso in 'FuncDso.pas',
   FuncSwt in 'FuncSwt.pas',

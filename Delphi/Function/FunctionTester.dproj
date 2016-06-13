@@ -51,7 +51,6 @@
     <DCCReference Include="FuncBase.pas" />
     <DCCReference Include="FuncDmm.pas" />
     <DCCReference Include="FuncDso.pas" />
-    <DCCReference Include="FuncMat.pas" />
     <DCCReference Include="FuncMxp.pas" />
     <DCCReference Include="FuncSwt.pas" />
     <DCCReference Include="FuncSys.pas" />

@@ -69,8 +69,7 @@ type
 
     //t_rbuf, t_wbuf: TCharBuffer; //buffer for receiving and sending data
     t_rbuf, t_wbuf: array [0..1023] of char; //buffer for receiving and sending data
-
-  strict private
+  private
     function GetStateText : string;
 
   protected
@@ -80,6 +79,7 @@ type
     //function VerifySendingData(): boolean; virtual; abstract;
     //function VerifyReceivedData(): boolean; virtual; abstract;
     function ConfigConnections(const ini: TMemIniFile; const secname: string): integer; virtual;
+    function GetCurConnect(): TConnBase;
 
   public
     constructor Create(owner: TComponent); override;
@@ -89,6 +89,7 @@ type
     property StateText : string read GetStateText;
     property HexComm : boolean read b_comhex write b_comhex;
     property Timeout : cardinal read c_timeout write c_timeout;
+    property CurConnect: TConnBase read GetCurConnect;
 
     function ConfigDevice(const ini: TMemIniFile): Boolean; virtual;abstract;
     function ReleaseDevice(): Boolean; virtual;
@@ -322,6 +323,11 @@ begin
       end;
     end;
   end;
+end;
+
+function TDeviceBase.GetCurConnect(): TConnBase;
+begin
+  result := t_conns[e_actconn];
 end;
 
 // =============================================================================

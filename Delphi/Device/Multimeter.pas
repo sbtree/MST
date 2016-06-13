@@ -28,8 +28,9 @@ type
   TMultimeter = class(TDeviceBase)
   type Channels = 1..40;
   protected
-    e_cont : EContinueMode; //indicate if continue mode is shut on
-    w_cards: word; //count of installed model 7700 switching module
+    e_cont :  EContinueMode;  //indicate if continue mode is shut on
+    e_curma:  EMeasureAction; //current setting for the measurement
+    w_cards:  word; //count of installed model 7700 switching module
 
   protected
     function GetClosedRelays(): string; virtual;
@@ -46,15 +47,15 @@ type
 
     function CloseRelays(const relays: string): boolean; virtual;
     function OpenRelays(const relays: string): boolean; virtual;
-    function QueryRelays(): string; virtual;
-    function MeasureR(): real; virtual;
-    function MeasureDCV(): real; virtual;
-    function MeasureACV(): real; virtual;
-    function MeasureDCI(): real; virtual;
-    function MeasureACI(): real; virtual;
-    function MeasureF(): real; virtual;
-    function MeasureP(): real; virtual;
-    function MeasureT(): real; virtual;
+    function QueryRelays(var relnrs: string): string; virtual;
+    function MeasureR(var val: real): boolean; virtual;
+    function MeasureDCV(var val: real): boolean; virtual;
+    function MeasureACV(var val: real): boolean; virtual;
+    function MeasureDCI(var val: real): boolean; virtual;
+    function MeasureACI(var val: real): boolean; virtual;
+    function MeasureF(var val: real): boolean; virtual;
+    function MeasureP(var val: real): boolean; virtual;
+    function MeasureT(var val: real): boolean; virtual;
   end;
 implementation
 
@@ -128,52 +129,66 @@ begin
   result := false;
 end;
 
-function TMultimeter.MeasureR(): real; 
+function TMultimeter.QueryRelays(var relnrs: string): boolean;
 begin
-  //todo
-  result := 0.0;
+  result := false;
+  //todo:
 end;
 
-function TMultimeter.MeasureDCV(): real;
+function TMultimeter.MeasureR(var val: real): boolean;
 begin
+  result := false;
   //todo
-  result := 0.0;
+  val := 0.0;
 end;
 
-function TMultimeter.MeasureACV(): real;
+function TMultimeter.MeasureDCV(var val: real): boolean;
 begin
+  result := false;
   //todo
-  result := 0.0;
+  val := 0.0;
 end;
 
-function TMultimeter.MeasureDCI(): real;
+function TMultimeter.MeasureACV(var val: real): boolean;
 begin
+  result := false;
   //todo
-  result := 0.0;
+  val := 0.0;
 end;
 
-function TMultimeter.MeasureACI(): real;
+function TMultimeter.MeasureDCI(var val: real): boolean;
 begin
+  result := false;
   //todo
-  result := 0.0;
+  val := 0.0;
 end;
 
-function TMultimeter.MeasureF(): real;
+function TMultimeter.MeasureACI(var val: real): boolean;
 begin
+  result := false;
   //todo
-  result := 0.0;
+  val := 0.0;
 end;
 
-function TMultimeter.MeasureP(): real;
+function TMultimeter.MeasureF(var val: real): boolean;
 begin
+  result := false;
   //todo
-  result := 0.0;
+  val := 0.0;
 end;
 
-function TMultimeter.MeasureT(): real;
+function TMultimeter.MeasureP(var val: real): boolean;
 begin
+  result := false;
   //todo
-  result := 0.0;
+  val := 0.0;
+end;
+
+function TMultimeter.MeasureT(var val: real): boolean;
+begin
+  result := false;
+  //todo
+  val := 0.0;
 end;
 
 end.

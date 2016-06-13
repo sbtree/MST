@@ -31,22 +31,30 @@ type
     function Execute(): boolean; override;
   end;
 var
-  g_expr: TQExprParser;
+  g_exprparser: TQExprParser;
 
 implementation
+uses TextMessage;
+
 function TEvalExprBase.LoadParameter(const par: string): boolean;
 begin
   //todo:
   //1. replace pseudo strings with their actual values, e.g. @LastInt, @LastReal, @VarInt, @VarReal
-  //2. call g_expr.parse in block of try ... catch ...
+  //2. call g_exprparser.parse in block of try ... except ...
   //3. set returned value
-  result := true;
+  try
+
+    result := true;
+  except
+    AddMessage('The given expression can not be parsed.', ML_ERROR);
+    result := false;
+  end;
 end;
 
 function TEvalExprBase.Execute(): boolean;
 begin
   //todo:
-  //1. call g_expr.calc in block of try ... catch ...
+  //1. call g_exprparser.calc in block of try ... except ...
   //2. set result string and returned value
   result := true;
 end;
@@ -55,7 +63,7 @@ function EvalExprStr.LoadParameter(const par: string): boolean;
 begin
   //todo:
   //1. replace pseudo strings with their actual values in double quotation, e.g. '"0010:00030002"' for @LastStr
-  //2. call g_expr.parse in block of try ... catch ...
+  //2. call g_exprparser.parse in block of try ... except ...
   //3. set returned value
   result := true
 end;
@@ -73,7 +81,18 @@ end;
 
 
 initialization
-  g_expr := TQExprParser.Create();
+  g_exprparser := TQExprParser.Create();
+  Classes.RegisterClass(EvalExprStr);
+  Classes.RegisterClass(EvalExprInt);
+  Classes.RegisterClass(EvalExprReal);
+  Classes.RegisterClass(EvalExprBool);
+  Classes.RegisterClass(IntToHexStr);
+
 finalization
-  g_expr.Free();
+  g_exprparser.Free();
+  Classes.UnregisterClass(EvalExprStr);
+  Classes.UnregisterClass(EvalExprInt);
+  Classes.UnregisterClass(EvalExprReal);
+  Classes.UnregisterClass(EvalExprBool);
+  Classes.UnregisterClass(IntToHexStr);
 end.

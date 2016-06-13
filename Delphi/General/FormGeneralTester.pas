@@ -88,7 +88,7 @@ var
 begin
 AExpr:=TQExprParser.Create;
 //表达式测试用例
-//AExpr.AddConst('answer', '0101:00000064:C513');
+AExpr.AddConst('answer', '0101:00000064:C513');
 //sExpr := 'sexpr="0x" + SubString(answer, 10, 4); Eval("100+2**3+" + sexpr);';
 sExpr := 'sexpr="0x" + SubString(answer, 10, 4); Eval("(0x40 & " + sexpr);';
 sExpr := ReplaceStr(sExpr, 'answer', '"0101:00000064:C513"');
@@ -424,7 +424,7 @@ procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
 var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TPairStrings;
     sNames, sValues, tComPorts: TStrings; v: variant; iInt64: int64; r: double;
 begin
-  //QExp_TestCase();
+  QExp_TestCase();
   v := 1;
   v := '12.5';
   if (VarType(v) = varString) then v := ReplaceStr(v, '.', DecimalSeparator);

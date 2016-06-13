@@ -1,5 +1,5 @@
 // =============================================================================
-// Module name  : $RCSfile: ConnectBase.pas,v $
+// Module name  : $RCSfile: ConnBase.pas,v $
 // description  : This unit implements a basis methodes and properties of a class
 //                for connection FlashRunner. The types of connection includes Jtag
 //                RS232, USB, GPIB, CAN-bus and Profil-Bus.
@@ -10,10 +10,9 @@
 unit ConnBase;
 
 interface
-uses  Classes, Windows{, DataBuffer};
+uses Classes, TextMessage, IniFiles, Serial3;
 type
-
-  EConnectionType = (
+  EConnectType = (  CT_UNKNOWN, //unknown connection
                     CT_RS232,   //rs232
                     CT_USB,     //usb
                     CT_GPIB,    //GPIB (IEEE 488)
@@ -23,10 +22,9 @@ type
                     CT_PROFIL   //profil-bus
                     );
 
-  EConnectionState = (
-                    CS_NONE,
-                    CS_CONFIGURED,
-                    CS_CONNECTED
+  EConnectState = ( CS_UNKNOWN,   //unknown state
+                    CS_CONFIGURED,//connection is configurated
+                    CS_CONNECTED  //connection is connected and in use
                     );
 
 {  ICommuInterf = interface
@@ -47,41 +45,52 @@ type
 //    function  WaitForReading(const tend: cardinal): boolean;
   end;
 
-  TConnBase = class(TComponent, ICommuInterf)
-  protected
-    e_type    : EConnectionType;
-    i_lasterr : integer;
-    s_lastmsg : string;
+  TConnBase = class(TComponent)
+  class function GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
+  class function GetConnectTypeName(const etype: EConnectType): string;
 
-  strict private
-    function GetLastErrorText(): string; virtual;
+  protected
+    e_type:     EConnectType;
+    t_connobj:  TObject;
+    e_state:    EConnectState;  //connection state
+    i_timeout : cardinal;       //timeout in milli seconds
+    t_messenger:TTextMessenger;
+
+  protected
+    function  IsConnected(): boolean; virtual;
+    function  GetTypeName(): string; virtual;
+    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
     
-  protected
-    function IsConnected(): boolean; virtual; abstract;
-
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
-    property  ConnectionType : EConnectionType read e_type;
-    property  LastError : integer read i_lasterr;
-    property  LastErrorText : string read GetLastErrorText;
-    property  Connected : boolean read IsConnected;
+    property Connected: boolean read IsConnected;
+    property Messenger: TTextMessenger read t_messenger write t_messenger;
+    property ConnectType: EConnectType read e_type;
+    property ConnectTypeName: string read GetTypeName;
+    property ConnectState: EConnectState read e_state;
+    property Timeout: cardinal read i_timeout write i_timeout;
 
-    function  Config(const sconf: string): boolean; virtual; abstract;
-    function  Connect(): boolean; virtual; abstract;
-    function  Disconnect: boolean; virtual; abstract;
-
-    function SendData(const sbuf: array of char; const len: longword; const tend: cardinal): boolean; virtual; abstract;
-    function RecvData(var rbuf: array of char; const tend: cardinal): longword; virtual; abstract;
-    function RecvExpect(var rbuf: array of char; const expects: TStringList; const tend: cardinal): longword; virtual; abstract;
-    //function SendData(const sbuf: TCharBuffer; const timeout: cardinal): integer; virtual; abstract;
-    //function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer;virtual; abstract;
+    function Config(const sconf: string): boolean; overload; virtual; abstract;
+    function Config(const sconfs: TStrings): boolean; overload; virtual; abstract;
+    function Connect(): boolean; virtual;
+    function Disconnect: boolean; virtual;
+    function SendPacket(const a: array of char): boolean; virtual;
+    function RecvPacket(var a: array of char; const tend: cardinal): boolean; virtual;
+    function SendStr(const str: string): boolean; virtual;
+    function RecvStr(var str: string; const bwait: boolean = true): integer; virtual;
+    function RecvStrTimeout(var str: string; const tend: cardinal): integer; virtual;
+    function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer; virtual;
+    function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; virtual;
+    function WaitForReading(const tend: cardinal): boolean; virtual;
   end;
   PConnBase = ^TConnBase;
 
 const
-  CSTR_CONN_KEYS : array[EConnectionType] of string = (
+  CSTR_CONN_KEYS : array[EConnectType] of string = (
+                    'UNKNOWN',
                     'RS232',
                     'USB',
                     'GPIB',
@@ -90,39 +99,141 @@ const
                     'CAN',
                     'PROFIL'
                     );
-
-  C_CONN_NO_ERR   =$0;
-  C_CONN_ERR_CONF =$1;
-  C_CONN_ERR_CONN =$2;
-  C_CONN_ERR_DISC =$3;
-  C_CONN_ERR_SEND =$4;
-  C_CONN_ERR_RECV =$5;
-  C_CONN_ERR_TOUT =$6;
+  CINT_TIMEOUT_DEFAULT = 1000;//default timeout in milliseconds
+  CINT_RECV_INTERVAL = 50;    //milliseconds 
 
 implementation
+uses SysUtils, StrUtils, Windows, Registry;
 
-function TConnBase.GetLastErrorText(): string;
+class function TConnBase.GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
+var i_idx: integer;
 begin
-  case i_lasterr of
-    C_CONN_NO_ERR:    result := 'no error exists';
-    C_CONN_ERR_CONF:  result := 'an error exists in configuration';
-    C_CONN_ERR_CONN:  result := 'failed to connect to device';
-    C_CONN_ERR_DISC:  result := 'failed to disconnect from device';
-    C_CONN_ERR_SEND:  result := 'failed to send data';
-    C_CONN_ERR_RECV:  result := 'failed to receive data';
-    C_CONN_ERR_TOUT:  result := 'time is out in last transmission';
+  i_idx := IndexText(conkey, CSTR_CONN_KEYS);
+  if ((i_idx >= Ord(Low(EConnectType))) and (i_idx <= Ord(High(EConnectType)))) then begin
+    val := EConnectType(i_idx);
+    result := true;
+  end else result := false;
+end;
+
+class function TConnBase.GetConnectTypeName(const etype: EConnectType): string;
+begin
+  result := CSTR_CONN_KEYS[etype];
+end;
+
+function TConnBase.IsConnected(): boolean;
+begin
+  result := false;
+  AddMessage('Virtual function ''IsConnected'' should be reimplemented.', ML_WARNING);
+end;
+
+function  TConnBase.GetTypeName(): string;
+begin
+  result := TConnBase.GetConnectTypeName(e_type);
+end;
+
+procedure TConnBase.AddMessage(const text: string; const level: EMessageLevel);
+begin
+  if assigned(t_messenger) then begin
+    t_messenger.AddMessage(format('%s', [text]), ClassName(), level);
   end;
-  if s_lastmsg<>'' then result := ' [' + s_lastmsg + ']';
+end;
+
+procedure TConnBase.UpdateMessage(const text: string; const level: EMessageLevel);
+begin
+  if assigned(t_messenger) then begin
+    t_messenger.UpdateMessage(format('%s', [text]), ClassName(), level);
+  end;
 end;
 
 constructor TConnBase.Create(owner: TComponent);
 begin
-	inherited Create(owner);
+  inherited Create(owner);
+  e_type := CT_UNKNOWN;
+  t_connobj := nil;
+  e_state := CS_UNKNOWN;
+  i_timeout := CINT_TIMEOUT_DEFAULT;
+  //todo:
 end;
 
 destructor TConnBase.Destroy;
 begin
-	inherited Destroy;
+  //todo:
+  inherited Destroy();
+end;
+
+//function TConnBase.Config(const sconf: string): boolean;
+//begin
+//  result := false;
+//  AddMessage('Virtual function ''Config'' should be reimplemented.', ML_WARNING);
+//end;
+
+function TConnBase.Connect(): boolean;
+begin
+  result := false;
+  AddMessage('Virtual function ''Connect'' should be reimplemented.', ML_WARNING);
+end;
+
+
+function TConnBase.Disconnect: boolean;
+begin
+  result := false;
+  AddMessage('Virtual function ''Disconnect'' should be reimplemented.', ML_WARNING);
+end;
+
+
+function TConnBase.SendPacket(const a: array of char): boolean;
+begin
+  result := false;
+  AddMessage('Virtual function ''SendPacket'' should be reimplemented.', ML_WARNING);
+end;
+
+
+function TConnBase.RecvPacket(var a: array of char; const tend: cardinal): boolean;
+begin
+  result := false;
+  AddMessage('Virtual function ''RecvPacket'' should be reimplemented.', ML_WARNING);
+end;
+
+
+function TConnBase.SendStr(const str: string): boolean;
+begin
+  result := false;
+  AddMessage('Virtual function ''SendStr'' should be reimplemented.', ML_WARNING);
+end;
+
+
+function TConnBase.RecvStr(var str: string; const bwait: boolean = true): integer;
+begin
+  result := 0;
+  AddMessage('Virtual function ''RecvStr'' should be reimplemented.', ML_WARNING);
+end;
+
+
+function TConnBase.RecvStrTimeout(var str: string; const tend: cardinal): integer;
+begin
+  result := 0;
+  AddMessage('Virtual function ''RecvStrTimeout'' should be reimplemented.', ML_WARNING);
+end;
+
+
+function TConnBase.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
+begin
+  result := 0;
+  AddMessage('Virtual function ''RecvStrInterval'' should be reimplemented.', ML_WARNING);
+end;
+
+
+function TConnBase.RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean): integer;
+begin
+  result := 0;
+  AddMessage('Virtual function ''RecvStrExpected'' should be reimplemented.', ML_WARNING);
+end;
+
+
+function TConnBase.WaitForReading(const tend: cardinal): boolean;
+begin
+  result := false;
+  AddMessage('Virtual function ''WaitForReading'' should be reimplemented.', ML_WARNING);
 end;
 
 end.

@@ -11,6 +11,7 @@ unit FuncTmm;
 interface
 uses Classes, FuncBase, TextMessage;
 
+
 implementation
 
 initialization

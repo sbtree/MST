@@ -1,7 +1,7 @@
 unit RS232;
 
 interface
-uses  Classes, Serial3, ConnBase, RegExpr, DataBuffer;
+uses  Classes, Serial3, ConnBase, RegExpr, TextMessage;
 
 type
   ESerialProperty = (
@@ -12,41 +12,80 @@ type
                     SP_STOPBITS,
                     SP_FLOWCONTROL
                     );
+  PSerial = ^TSerial;
+
   TConnRS232 = class(TConnBase)
-  class function EnumSerialPort(var sports: TStringList): integer;
   protected
     t_ser : TSerial;
   protected
     function IsConnected(): boolean; override;
-    function ReadAll(var rbuf: array of char): longword; virtual;
-    //procedure ReadAll(var rbuf: TCharBuffer); virtual;
+    function ReadAll(var rbuf: array of char): integer; virtual;
+    function RecvChars(var str: string): integer;
 
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
-    function Config(const sconf: string): boolean;override;
-    function Connect(): boolean;override;
-    function Disconnect: boolean;override;
-    function SendData(const sbuf: array of char; const len: longword; const tend: cardinal): boolean; override;
-    function RecvData(var rbuf: array of char; const tend: cardinal): longword; override;
-    function RecvExpect(var rbuf: array of char; const expects: TStringList; const tend: cardinal): longword; override;
-    //function SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer; override;
-    //function RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer; override;
+    function Config(const sconf: string): boolean; overload; override;
+    function Config(const sconfs: TStrings): boolean; overload; override;
+    function Connect(): boolean; override;
+    function Disconnect: boolean; override;
+    function SendPacket(const a: array of char): boolean; override;
+    function RecvPacket(var a: array of char; const tend: cardinal): boolean; override;
+    function SendStr(const str: string): boolean; override;
+    function RecvStr(var str: string; const bwait: boolean = true): integer; override;
+    function RecvStrTimeout(var str: string; const tend: cardinal): integer; override;
+    function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = CINT_RECV_INTERVAL): integer; override;
+    function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; override;
+    function WaitForReading(const tend: cardinal): boolean; override;
   end;
   PConnRS232 = ^TConnRS232;
 
 implementation
-uses SysUtils, StrUtils, Windows, GenUtils, Registry;
+uses SysUtils, StrUtils, Windows, GenUtils, Registry, Forms;
 
 type
-  PSerial = ^TSerial;
   SetSerialProperty = function(pser: PSerial; const sval: string): boolean;
 
 const CSTR_RS232_KEYS: array[ESerialProperty] of string =
                   ('PORT', 'BAUDRATE', 'PARITY', 'DATABITS', 'STOPBITS', 'FLOWCONTROL');
 
 var PSerialPropertyCalls: array [ESerialProperty] of SetSerialProperty;
+
+// =============================================================================
+// Class        : TConnRS232
+// Function     : EnumSerialPort, class function, enumerates all serial ports
+//                from Windows-Registry
+// Parameter    : sports, an ouput string list in which all ports are found, e.g.
+//                ('COM1', 'COM2' ...)
+// Return       : integer, count of the found ports
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
+function EnumSerialPort(var sports: TStringList): integer;
+var t_registry: TRegistry; s_names: TStringList; s_value: string; i: integer;
+begin
+  sports.Clear;
+  t_registry := TRegistry.Create;
+  with t_registry do begin
+    RootKey := HKEY_LOCAL_MACHINE;
+    if OpenKeyReadOnly('Hardware\DeviceMap\SerialComm') then begin
+      s_names := TStringList.Create;
+      GetValueNames(s_names);
+      for i := 0 to s_names.Count - 1 do begin
+        s_value := ReadString(s_names[i]);
+        s_value := UpperCase(trim(s_value));
+        sports.Add(s_value);
+      end;
+      s_names.Clear;
+      FreeAndNil(s_names);
+      CloseKey();
+    end;
+  end;
+  FreeAndNil(t_registry);
+  result := sports.Count;
+end;
 
 // =============================================================================
 // Class        : --
@@ -68,7 +107,7 @@ begin
   if TryStrToInt(s_in, i_port) then begin
     s_portname := 'COM' + sval;
     t_ports := TStringList.Create;
-    TConnRS232.EnumSerialPort(t_ports);
+    EnumSerialPort(t_ports);
     result := (t_ports.IndexOf(s_portname) >= 0 );
     if result then pser^.Port := i_port;
     t_ports.Clear;
@@ -210,41 +249,6 @@ end;
 
 // =============================================================================
 // Class        : TConnRS232
-// Function     : EnumSerialPort, class function, enumerates all serial ports
-//                from Windows-Registry
-// Parameter    : sports, an ouput string list in which all ports are found, e.g.
-//                ('COM1', 'COM2' ...)
-// Return       : integer, count of the found ports
-// Exceptions   : --
-// First author : 2015-09-11 /bsu/
-// History      :
-// =============================================================================
-class function TConnRS232.EnumSerialPort(var sports: TStringList): integer;
-var t_registry: TRegistry; s_names: TStringList; s_value: string; i: integer;
-begin
-  sports.Clear;
-  t_registry := TRegistry.Create;
-  with t_registry do begin
-    RootKey := HKEY_LOCAL_MACHINE;
-    if OpenKeyReadOnly('Hardware\DeviceMap\SerialComm') then begin
-      s_names := TStringList.Create;
-      GetValueNames(s_names);
-      for i := 0 to s_names.Count - 1 do begin
-        s_value := ReadString(s_names[i]);
-        s_value := UpperCase(trim(s_value));
-        sports.Add(s_value);
-      end;
-      s_names.Clear;
-      FreeAndNil(s_names);
-      CloseKey();
-    end;
-  end;
-  FreeAndNil(t_registry);
-  result := sports.Count;
-end;
-
-// =============================================================================
-// Class        : TConnRS232
 // Function     : ReadAll, read all chars from buffer of TSerial and save them in rbuf
 // Parameter    : sports, an ouput string list in which all ports are found, e.g.
 //                ('COM1', 'COM2' ...)
@@ -253,24 +257,38 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function TConnRS232.ReadAll(var rbuf: array of char): longword;
-var idx: integer; len: longword; ch: char;
+function TConnRS232.ReadAll(var rbuf: array of char): integer;
+var i_len: integer; ch: char;
 begin
   result := 0;
-  len := length(rbuf); idx := LOW(rbuf);
-  while ((t_ser.RxWaiting > 0) and (result < len)) do 
+  i_len := Length(rbuf);
+  while (t_ser.RxWaiting > 0) do begin
     if t_ser.ReadChar(ch) = 1 then begin
-      rbuf[idx] := ch;
-      inc(result);
+      if (result < i_len) then rbuf[result] := ch;
+      Inc(result);
     end;
+    Application.ProcessMessages();
+  end;
+  if (result > i_len) then else AddMessage('The buffer is overflow by ReadAll().', ML_WARNING);
 end;
 
-{procedure TConnRS232.ReadAll(var rbuf: TCharBuffer);
-var ch: char;
+function  TConnRS232.RecvChars(var str: string): integer;
+var c_recv: char; i_nullcount: integer;
 begin
-  while (t_ser.RxWaiting > 0) do
-    if t_ser.ReadChar(ch) = 1 then rbuf.WriteChar(ch);
-end; }
+  str := ''; i_nullcount := 0;
+  while (t_ser.RxWaiting > 0) do begin
+    if (t_ser.ReadChar(c_recv) = 1) then begin
+      if c_recv = char(0) then begin
+        c_recv := char(13); //replace char(0) with #13
+        Inc(i_nullcount);
+      end;
+      str := str + c_recv;
+    end;
+    Application.ProcessMessages();
+  end;
+  result := length(str);
+  if (i_nullcount > 0) then AddMessage(format('%d Null(s) was replaced by char (13)', [i_nullcount]), ML_WARNING);
+end;
 
 // =============================================================================
 // Class        : TConnRS232
@@ -301,6 +319,7 @@ begin
   inherited Create(owner);
   e_type := CT_RS232;
   t_ser := TSerial.Create(self);
+  t_connobj := t_ser;
 
   //default settings
   t_ser.CheckParity := false;
@@ -320,6 +339,7 @@ end;
 destructor TConnRS232.Destroy;
 begin
   FreeAndNil(t_ser);
+  t_connobj := nil;
   inherited Destroy();
 end;
 
@@ -356,6 +376,28 @@ begin
   result := (result and b_settings[SP_PORT] and b_settings[SP_BAUDRATE]);
 end;
 
+function TConnRS232.Config(const sconfs: TStrings): boolean;
+var s_conf: string; i: ESerialProperty; i_idx: integer; t_confs: TStringList;
+    b_settings: array[ESerialProperty] of boolean;
+begin
+  result := false;
+  t_confs := TStringList.Create();
+  t_confs.Sorted := true;
+  t_confs.CaseSensitive := false;
+  t_confs.AddStrings(sconfs);
+  for i := LOW(ESerialProperty) to HIGH(ESerialProperty) do begin
+    b_settings[i]:=false;
+    if t_confs.Find(CSTR_RS232_KEYS[i], i_idx) then begin
+      s_conf := t_confs.ValueFromIndex[i_idx];
+      result := (PSerialPropertyCalls[i](@t_ser, s_conf));
+      b_settings[i]:= result;
+      if not result then break;
+    end;
+  end;
+  FreeAndNil(t_confs);
+  result := (result and b_settings[SP_PORT] and b_settings[SP_BAUDRATE]);
+end;
+
 // =============================================================================
 // Class        : TConnRS232
 // Function     : Connect
@@ -370,7 +412,7 @@ end;
 function TConnRS232.Connect(): boolean;
 begin
   t_ser.Active := true;
-  result := Connected;
+  result := t_ser.Active;
 end;
 
 // =============================================================================
@@ -387,66 +429,111 @@ end;
 function TConnRS232.Disconnect: boolean;
 begin
   t_ser.Active := false;
-  result := (not Connected);
+  result := (not t_ser.Active);
 end;
 
-function TConnRS232.SendData(const sbuf: array of char; const len: longword; const tend: cardinal): boolean;
+function TConnRS232.SendPacket(const a: array of char): boolean;
 begin
   result := false;
-  //todo
+  //todo:
 end;
 
-function TConnRS232.RecvData(var rbuf: array of char; const tend: cardinal): longword;
+function TConnRS232.RecvPacket(var a: array of char; const tend: cardinal): boolean;
 begin
-  result := 0;
-  //todo
+  result := false;
+  //todo:
 end;
 
-function TConnRS232.RecvExpect(var rbuf: array of char; const expects: TStringList; const tend: cardinal): longword;
+function TConnRS232.SendStr(const str: string): boolean;
+var c_time: cardinal; s_recv: string;
 begin
-  result := 0;
-  //todo
+  RecvStr(s_recv, false); //clear reading buffer of the serial interface
+  c_time := GetTickCount() + i_timeout;
+  t_ser.WriteString(str);
+  while ((t_ser.TxWaiting > 0) and (GetTickCount() < c_time)) do TGenUtils.Delay(C_DELAY_ONCE);
+  result := (t_ser.TxWaiting <= 0);
+  AddMessage(format('Sending: %s', [DateTimeToStr(Now()), str]));
 end;
 
-{function TConnRS232.SendData(const sbuf: TCharBuffer; const timeout: cardinal): Integer;
-var i_len, i_sent: integer; c_time: cardinal; ch: char;
+function TConnRS232.RecvStr(var str: string; const bwait: boolean): integer;
 begin
-  i_sent := 0; i_len := sbuf.CountUsed();
-  c_time := GetTickCount() + timeout;
-  while ((i_sent < i_len) and (GetTickCount() < c_time)) do begin //send data
-    if sbuf.ReadChar(ch) then begin
-      t_ser.WriteChar(ch);
-      inc(i_sent);
-    end else break;
-  end;
-  while ((t_ser.TxWaiting > 0) and (GetTickCount() < c_time)) do Delay(C_DELAY_MSEC);//wait for finishing to send data
-  result := (i_sent - t_ser.TxWaiting);
+  str := '';
+  if bwait then WaitForReading(GetTickCount() + i_timeout);
+  result := RecvChars(str);
+  AddMessage(format('Receiving: %s', [str]));
 end;
 
-function TConnRS232.RecvData(var rbuf: TCharBuffer; const timeout: cardinal): Integer;
-var ch: char; c_time: cardinal;
+function TConnRS232.RecvStrTimeout(var str: string; const tend: cardinal): integer;
+var s_recv: string; i_len: integer;
 begin
-  result := 0; c_time := GetTickCount() + timeout;
-  if (t_ser.RxWaiting <= 0) then Delay(C_DELAY_MSEC * 5 );//wait a moment (100 ms) if there is no data, maybe it comes later
+  str := '';
+  repeat
+    s_recv := '';
+    WaitForReading(tend);
+    i_len := RecvChars(s_recv);
+    if (i_len > 0) then  str := str + s_recv;
+  until (tend <= GetTickCount());
+  result := length(str);
+  AddMessage(format('Receiving:%s', [str]));
+end;
 
-  while ((t_ser.RxWaiting > 0) and (GetTickCount() < c_time)) do begin
-    if (not rbuf.IsFull()) then begin
-      if (t_ser.ReadChar(ch) = 1) then begin
-        rbuf.WriteChar(ch);
-        inc(result);
-      end else Delay();
+function TConnRS232.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
+var b_break, b_timeout: boolean; s_recv: string; i_len: integer; c_time: cardinal;
+begin
+  result := 0; str := '';
+  repeat
+    s_recv := '';
+    c_time := GetTickCount() + interv;
+    if (tend < c_time) then c_time := tend;
+    b_break := (not WaitForReading(c_time));
+    i_len := RecvChars(s_recv);
+    if ( i_len> 0) then begin
+      str := str + s_recv;
+      result := result + i_len;
+    end;
+    b_timeout := (tend <= GetTickCount());
+  until (b_timeout or b_break);
+  AddMessage(format('Receiving: %s', [str]));
+end;
+
+function TConnRS232.RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
+var s_temp: string; b_found: boolean; b_timeout: boolean;
+begin
+  str := '';
+  repeat
+    s_temp := ''; RecvStrInterval(s_temp, tend, CINT_RECV_INTERVAL);
+    str := str + s_temp;
+    if bcase then b_found := ContainsStr(str, exstr)
+    else b_found := ContainsText(str, exstr);
+    b_timeout := (tend <= GetTickCount());
+  until (b_timeout or b_found);
+  result := length(str);
+end;
+
+function TConnRS232.WaitForReading(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal;
+begin
+  c_tcur := GetTickCount(); c_count := c_tcur;
+  s_lastmsg := 'Waiting for reading: %ds';
+  AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+  while ((t_ser.RxWaiting <= 0) and (c_tcur <= tend)) do begin
+    Application.ProcessMessages();
+    c_tcur := GetTickCount();
+    if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
+      UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+      c_count := c_tcur;
     end;
   end;
-end; }
-
+  result := (t_ser.RxWaiting > 0);
+end;
 
 initialization
-  PSerialPropertyCalls[SP_PORT]       := RS232.SetPort;
-  PSerialPropertyCalls[SP_BAUDRATE]   := RS232.SetBaudrate;
-  PSerialPropertyCalls[SP_PARITY]     := RS232.SetParity;
-  PSerialPropertyCalls[SP_DATABITS]   := RS232.SetDataBits;
-  PSerialPropertyCalls[SP_STOPBITS]   := RS232.SetStopBits;
-  PSerialPropertyCalls[SP_FLOWCONTROL]:= RS232.SetFlowControl;
+  PSerialPropertyCalls[SP_PORT]       := SetPort;
+  PSerialPropertyCalls[SP_BAUDRATE]   := SetBaudrate;
+  PSerialPropertyCalls[SP_PARITY]     := SetParity;
+  PSerialPropertyCalls[SP_DATABITS]   := SetDataBits;
+  PSerialPropertyCalls[SP_STOPBITS]   := SetStopBits;
+  PSerialPropertyCalls[SP_FLOWCONTROL]:= SetFlowControl;
 
 end.
 

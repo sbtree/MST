@@ -27,6 +27,7 @@ type
     b_tstamp:     boolean; //indicats, whether the time stamp should be prepended, default true
   protected
     procedure SetMessages(const msgs: TStrings);
+    function FormatMsg(const text: string; const sender: string; const level: EMessageLevel; var msg: string): boolean;
   public
     constructor Create();
     destructor  Destroy(); override;
@@ -36,6 +37,7 @@ type
     property  TimeStamp: boolean read b_tstamp write b_tstamp;
 
     procedure AddMessage(const text: string; const sender: string = ''; const level: EMessageLevel = ML_INFO);
+    procedure UpdateMessage(const text: string; const sender: string = ''; const level: EMessageLevel = ML_INFO);
     procedure ExportMessages(const fname: string);
     procedure Clear(const bextern: boolean = false);
   end;
@@ -70,13 +72,23 @@ end;
 procedure TTextMessenger.AddMessage(const text: string; const sender: string; const level: EMessageLevel);
 var s_msg: string;
 begin
-  if ((level >= e_threshold) and (text <> '')) then begin
-    if (sender <> '' ) then s_msg := '[' + sender + ']' + text
-    else s_msg := text;
-    s_msg := '[' + CSTR_MLKEYS[level] + ']' + s_msg;
-    if b_tstamp then s_msg := '[' + DateTimeToStr(Now()) + ']: ' + s_msg;
+  if (FormatMsg(text, sender, level, s_msg)) then begin
     t_msgintern.Add(s_msg);
     if (t_msgextern <> t_msgintern) then t_msgextern.Add(s_msg);
+  end;
+end;
+
+procedure TTextMessenger.UpdateMessage(const text: string; const sender: string; const level: EMessageLevel);
+var s_msg: string;
+begin
+  if (FormatMsg(text, sender, level, s_msg)) then begin
+    if (t_msgintern.Count > 0) then begin
+      t_msgintern[t_msgintern.Count - 1] := s_msg;
+      if ((t_msgextern <> t_msgintern) and (t_msgextern.Count > 0)) then t_msgextern[t_msgextern.Count - 1] := s_msg;
+    end else begin
+      t_msgintern.Add(s_msg);
+      if (t_msgextern <> t_msgintern) then t_msgextern.Add(s_msg);
+    end;
   end;
 end;
 
@@ -95,6 +107,17 @@ procedure TTextMessenger.SetMessages(const msgs: TStrings);
 begin
   if assigned(msgs) then t_msgextern := msgs
   else t_msgextern := t_msgintern;
+end;
+
+function TTextMessenger.FormatMsg(const text: string; const sender: string; const level: EMessageLevel; var msg: string): boolean;
+begin
+  if (level >= e_threshold) then begin
+    result := true;
+    if (sender <> '' ) then msg := '[' + sender + ']' + text
+    else msg := text;
+    msg := '[' + CSTR_MLKEYS[level] + ']' + msg;
+    if b_tstamp then msg := '[' + DateTimeToStr(Now()) + ']: ' + msg;
+  end else result := false;
 end;
 
 end.

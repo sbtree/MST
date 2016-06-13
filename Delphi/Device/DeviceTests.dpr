@@ -25,7 +25,8 @@ uses
   ProtocolBase in '..\Comm\ProtocolBase.pas',
   RS232 in '..\Comm\RS232.pas',
   DataBuffer in '..\General\DataBuffer.pas',
-  GenUtils in '..\General\GenUtils.pas';
+  GenUtils in '..\General\GenUtils.pas',
+  DeviceBase in 'DeviceBase.pas';
 
 {$R *.RES}
 

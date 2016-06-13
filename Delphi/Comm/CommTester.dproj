@@ -44,11 +44,9 @@
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="ConnBase.pas" />
-    <DCCReference Include="ConnectorBase.pas" />
     <DCCReference Include="FormCommTester.pas">
       <Form>frmCommTester</Form>
     </DCCReference>
-    <DCCReference Include="ProtocolBase.pas" />
     <DCCReference Include="RS232.pas" />
     <None Include="ModelSupport_CommTester\CommTester\default.txvpck" />
     <None Include="ModelSupport_CommTester\ConnBase\default.txaPackage" />
