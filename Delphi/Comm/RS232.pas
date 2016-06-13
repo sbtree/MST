@@ -1,7 +1,7 @@
 unit RS232;
 
 interface
-uses  Classes, Serial3, ConnBase, RegExpr, TextMessage;
+uses  Classes, Serial3, ConnBase, RegExpr;
 
 type
   ESerialProperty = (
@@ -42,7 +42,7 @@ type
   PConnRS232 = ^TConnRS232;
 
 implementation
-uses SysUtils, StrUtils, Windows, GenUtils, Registry, Forms;
+uses SysUtils, StrUtils, Windows, GenUtils, Registry, Forms, TextMessage;
 
 type
   SetSerialProperty = function(pser: PSerial; const sval: string): boolean;
@@ -374,6 +374,7 @@ begin
   end;
   FreeAndNil(t_regexp);
   result := (result and b_settings[SP_PORT] and b_settings[SP_BAUDRATE]);
+  if result then e_state := CS_CONFIGURED;
 end;
 
 function TConnRS232.Config(const sconfs: TStrings): boolean;
@@ -396,6 +397,7 @@ begin
   end;
   FreeAndNil(t_confs);
   result := (result and b_settings[SP_PORT] and b_settings[SP_BAUDRATE]);
+  if result then e_state := CS_CONFIGURED;
 end;
 
 // =============================================================================
@@ -413,6 +415,7 @@ function TConnRS232.Connect(): boolean;
 begin
   t_ser.Active := true;
   result := t_ser.Active;
+  if result then e_state := CS_CONNECTED;
 end;
 
 // =============================================================================
@@ -430,6 +433,7 @@ function TConnRS232.Disconnect: boolean;
 begin
   t_ser.Active := false;
   result := (not t_ser.Active);
+  if result then e_state := CS_CONFIGURED;
 end;
 
 function TConnRS232.SendPacket(const a: array of char): boolean;

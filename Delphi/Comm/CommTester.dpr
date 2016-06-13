@@ -7,7 +7,8 @@ uses
   RS232 in 'RS232.pas',
   GenUtils in '..\General\GenUtils.pas',
   TextMessage in '..\General\TextMessage.pas',
-  ConnBase in 'ConnBase.pas';
+  ConnBase in 'ConnBase.pas',
+  CAN in 'CAN.pas';
 
 {$R *.res}
 

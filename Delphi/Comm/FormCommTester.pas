@@ -30,7 +30,7 @@ var s_conf: string; s_send, s_recv: string;
 begin
   t_conn := TConnRS232.Create(self);
   //t_rs232.Config('Port:1|baudrate:115200');
-  s_conf := 'Port:5|baudrate:9600';
+  s_conf := 'Port:2|baudrate:9600';
   if t_conn.Config(s_conf) then ShowMessage('RS232 is configured' + ' [' + s_conf + ']')
   else ShowMessage('RS232 is NOT configured' + ' [' + s_conf + ']');
   

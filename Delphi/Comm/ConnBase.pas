@@ -27,24 +27,6 @@ type
                     CS_CONNECTED  //connection is connected and in use
                     );
 
-{  ICommuInterf = interface
-    function  Send(const buf: Array of Char): boolean;
-    function  Recv(var buf: Array of Char; const bwait: boolean): integer;
-    function  RecvTimeout(var buf: Array of Char; const tend: cardinal): integer;
-    function  RecvInterval(var buf: Array of Char; const tend: cardinal; const interv: cardinal): integer;
-    function  RecvStrExpected(var buf: Array of Char; const exchars: Array of Char; tend: cardinal): integer;
-    function  WaitForReading(const tend: cardinal): boolean;
-  end; }
-
-  ICommuInterf = interface
-//    function  SendStr(const str: string): boolean;
-//    function  RecvStr(var str: string): integer;
-//    function  RecvStrTimeout(var str: string; const tend: cardinal): integer;
-//    function  RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
-//    function  RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean): integer;
-//    function  WaitForReading(const tend: cardinal): boolean;
-  end;
-
   TConnBase = class(TComponent)
   class function GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
   class function GetConnectTypeName(const etype: EConnectType): string;
