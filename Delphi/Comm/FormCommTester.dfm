@@ -22,4 +22,13 @@ object frmCommTester: TfrmCommTester
     TabOrder = 0
     OnClick = btnRS232Click
   end
+  object btnCan: TButton
+    Left = 456
+    Top = 233
+    Width = 75
+    Height = 25
+    Caption = 'Test &CAN'
+    TabOrder = 1
+    OnClick = btnCanClick
+  end
 end
