@@ -33,7 +33,7 @@ type
     function SendPacket(const a: array of char): boolean; override;
     function RecvPacket(var a: array of char; const tend: cardinal): boolean; override;
     function SendStr(const str: string): boolean; override;
-    function RecvStr(var str: string; const bwait: boolean = true): integer; override;
+    function RecvStr(var str: string; const bwait: boolean = false): integer; override;
     function RecvStrTimeout(var str: string; const tend: cardinal): integer; override;
     function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = CINT_RECV_INTERVAL): integer; override;
     function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; override;
@@ -473,9 +473,10 @@ begin
   str := '';
   repeat
     s_recv := '';
-    WaitForReading(tend);
-    i_len := RecvChars(s_recv);
-    if (i_len > 0) then  str := str + s_recv;
+    if (WaitForReading(tend)) then begin
+      i_len := RecvChars(s_recv);
+      if (i_len > 0) then str := str + s_recv;
+    end;
   until (tend <= GetTickCount());
   result := length(str);
   AddMessage(format('Receiving:%s', [str]));
@@ -505,7 +506,8 @@ var s_temp: string; b_found: boolean; b_timeout: boolean;
 begin
   str := '';
   repeat
-    s_temp := ''; RecvStrInterval(s_temp, tend, CINT_RECV_INTERVAL);
+    s_temp := '';
+    RecvStrInterval(s_temp, tend, CINT_RECV_INTERVAL);
     str := str + s_temp;
     if bcase then b_found := ContainsStr(str, exstr)
     else b_found := ContainsText(str, exstr);

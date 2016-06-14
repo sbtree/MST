@@ -62,7 +62,7 @@ type
     function SendPacket(const a: array of char): boolean; virtual;
     function RecvPacket(var a: array of char; const tend: cardinal): boolean; virtual;
     function SendStr(const str: string): boolean; virtual;
-    function RecvStr(var str: string; const bwait: boolean = true): integer; virtual;
+    function RecvStr(var str: string; const bwait: boolean = false): integer; virtual;
     function RecvStrTimeout(var str: string; const tend: cardinal): integer; virtual;
     function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer; virtual;
     function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; virtual;
@@ -184,7 +184,7 @@ begin
 end;
 
 
-function TConnBase.RecvStr(var str: string; const bwait: boolean = true): integer;
+function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
 begin
   result := 0;
   AddMessage('Virtual function ''RecvStr'' should be reimplemented.', ML_WARNING);
@@ -192,23 +192,43 @@ end;
 
 
 function TConnBase.RecvStrTimeout(var str: string; const tend: cardinal): integer;
+var s_recv: string;
 begin
-  result := 0;
-  AddMessage('Virtual function ''RecvStrTimeout'' should be reimplemented.', ML_WARNING);
+  result := 0; str := '';
+  repeat
+    s_recv := '';
+    if WaitForReading(tend) then begin
+      result := result + RecvStr(s_recv);
+      str := str + s_recv;
+    end;
+  until (tend <= GetTickCount());
 end;
-
 
 function TConnBase.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
+var i_time: cardinal; s_recv: string; b_break: boolean;
 begin
-  result := 0;
-  AddMessage('Virtual function ''RecvStrInterval'' should be reimplemented.', ML_WARNING);
+  result := 0; str := '';
+  repeat
+    s_recv := '';
+    result := result + RecvStr(s_recv);
+    str := str + s_recv;
+    i_time := GetTickCount() + interv;
+    if (i_time > tend) then i_time := tend;
+    b_break := WaitForReading(i_time);
+  until (b_break or (tend <= GetTickCount()));
 end;
 
-
 function TConnBase.RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean): integer;
+var b_break: boolean; s_recv: string;
 begin
-  result := 0;
-  AddMessage('Virtual function ''RecvStrExpected'' should be reimplemented.', ML_WARNING);
+  result := 0; str := '';
+  repeat
+    s_recv := '';
+    result := result + RecvStr(s_recv);
+    str := str + s_recv;
+    if bcase then b_break := ContainsStr(str, exstr)
+    else b_break := ContainsText(str, exstr);
+  until (b_break or (tend <= GetTickCount()));
 end;
 
 

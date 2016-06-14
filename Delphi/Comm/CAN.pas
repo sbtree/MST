@@ -311,13 +311,12 @@ type
     function RecvPacket(var a: array of char; const tend: cardinal): boolean; override;
     function SendStr(const str: string): boolean; override;
     function RecvStr(var str: string; const bwait: boolean = true): integer; override;
-    function RecvStrTimeout(var str: string; const tend: cardinal): integer; override;
-    function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = CINT_RECV_INTERVAL): integer; override;
-    function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; override;
     function WaitForReading(const tend: cardinal): boolean; override;
 
   protected
-    Init:  CAN_INIT;
+    CanFunc: array[EPCanFunction] of Pointer;
+
+    {Init:  CAN_INIT;
     Close: CAN_CLOSE;
     Status:CAN_STATUS;
     Write: CAN_WRITE;
@@ -331,7 +330,7 @@ type
     ResetFilter:     CAN_RESETFILTER;
     SetUsbDeviceNr:  CAN_SETUSBDEVICENR;
     GetUsbDeviceNr:  CAN_GETUSBDEVICENR;
-    SetRcvEvent:     CAN_SETRCVEVENT;
+    SetRcvEvent:     CAN_SETRCVEVENT; }
   end;
   PConnPCanUsb = ^TConnPCanUsb;
 
@@ -473,7 +472,7 @@ const
   C_CANMSG_LENGTH_MAX = 8;
 
 implementation
-uses Windows, SysUtils, StrUtils, RegExpr, TextMessage;
+uses Windows, SysUtils, StrUtils, RegExpr, TextMessage, TypInfo;
 type
   SetPCanProperty = function(ppcan: PConnPCanUsb; const sval: string): boolean;
 const  CSTR_PCAN_KEYS: array[EPCanProperty] of string = (
@@ -493,13 +492,20 @@ begin
 end;
 
 function TConnPCanUsb.LoadDll(const fncnames: PCanFunctionNames; const sdll: string): boolean;
+var i: EPCanFunction;
 begin
   try
     UnloadDll();
     h_dll := LoadLibrary(PChar(sdll));
     result := (h_dll <> 0);
     if result then begin
-      Init := GetProcAddress(h_dll, PChar(fncnames[PCF_INIT]));
+      for i := Low(EPCanFunction) to High(EPCanFunction) do begin
+        CanFunc[i] := GetProcAddress(h_dll, PChar(fncnames[i]));
+        result := assigned(CanFunc[i]);
+        if (not result) then break;
+      end;
+      
+      {Init := GetProcAddress(h_dll, PChar(fncnames[PCF_INIT]));
       Close := GetProcAddress(h_dll, PChar(fncnames[PCF_CLOSE]));
       Status := GetProcAddress(h_dll, PChar(fncnames[PCF_STATUS]));
       Write := GetProcAddress(h_dll, PChar(fncnames[PCF_WRITE]));
@@ -520,7 +526,7 @@ begin
                 assigned(VersionInfo) and assigned(DllVersionInfo) and assigned(SpecialFunction) and
                 assigned(ResetClient) and assigned(MsgFilter) and assigned(ResetFilter) and
                 assigned(SetUsbDeviceNr) and assigned(GetUsbDeviceNr) and assigned(SetRcvEvent)
-                );
+                ); }
       if (not result) then UnloadDll();
     end;
   except
@@ -542,6 +548,8 @@ begin
       s_dllfile := sdll;
     end;
   end;
+  if result then AddMessage(format('%s is loaded for [%s], successfully', [sdll, GetEnumName(TypeInfo(EDllInterface), integer(e_dllinterf))]))
+  else AddMessage(format('Failed to load: %s', [sdll]), ML_ERROR);
 end;
 
 function TConnPCanUsb.LoadDefaultDll(const edll: EDllInterface): boolean;
@@ -552,9 +560,12 @@ begin
   DI_CAN2: result := LoadDll(CSTR_CANUSB2_NAMES, CSTR_DLL_FILENAMES[edll]);
   else
   end;
+  if result then AddMessage(format('Succeeded to load default dll: %s for [%s]', [CSTR_DLL_FILENAMES[edll], GetEnumName(TypeInfo(EDllInterface), integer(edll))]))
+  else AddMessage(format('Failed to load default dll: %s', [CSTR_DLL_FILENAMES[edll]]), ML_ERROR);
 end;
 
 procedure TConnPCanUsb.UnloadDll();
+var i: EPCanFunction;
 begin
   if (h_dll <> 0) then begin
     Disconnect();
@@ -562,7 +573,8 @@ begin
       s_dllfile := '';
       e_dllinterf := DI_NONE;
       h_dll := 0;
-      Init := nil;
+      for i := Low(EPCanFunction) to High(EPCanFunction) do CanFunc[i] := nil;
+      {Init := nil;
       Close := nil;
       Status := nil;
       Write := nil;
@@ -576,7 +588,7 @@ begin
       ResetFilter := nil;
       SetUsbDeviceNr := nil;
       GetUsbDeviceNr := nil;
-      SetRcvEvent := nil;
+      SetRcvEvent := nil;}
     end;
   end;
 end;
@@ -621,7 +633,7 @@ begin
     if TryStrToInt('$' + s_nodenr, i_nodenr) then begin
       s_data := trim(RightStr(msg, i_len - i_pos));
       i_len := length(s_data);
-      if ((i_len mod 2) <> 0) then s_data := '0' + s_data; //add '0' at beginning of the string if it has a half byte
+      if ((i_len mod 2) <> 0) then s_data := '0' + s_data; //add prefix '0' if a half byte exists in the string
       i_len := Round(i_len / 2);
       if i_len > C_CANMSG_LENGTH_MAX then i_len := C_CANMSG_LENGTH_MAX;
       for i := 0 to i_len - 1 do begin
@@ -648,13 +660,15 @@ begin
 end;
 
 constructor TConnPCanUsb.Create(owner: TComponent);
+var i: EPCanFunction;
 begin
   inherited Create(owner);
   s_dllfile := '';
   e_dllinterf := DI_NONE;
   e_baud := PCB_500K;
   h_dll := 0;
-  Init := nil;
+  for i := Low(EPCanFunction) to High(EPCanFunction) do CanFunc[i] := nil;
+  {Init := nil;
   Close := nil;
   Status := nil;
   Write := nil;
@@ -668,7 +682,7 @@ begin
   ResetFilter := nil;
   SetUsbDeviceNr := nil;
   GetUsbDeviceNr := nil;
-  SetRcvEvent := nil;
+  SetRcvEvent := nil; }
   t_wbuf.MSGTYPE := MSGTYPE_STANDARD;
   e_type := CT_CAN;
 end;
@@ -746,33 +760,47 @@ end;
 function TConnPCanUsb.Connect(): boolean;
 var lw_ret: longword;
 begin
-  lw_ret := Init(C_PCAN_BAUDRATES[e_baud], CAN_INIT_TYPE_ST);
+  //lw_ret := Init(C_PCAN_BAUDRATES[e_baud], CAN_INIT_TYPE_ST);
+  lw_ret := CAN_INIT(CanFunc[PCF_INIT])(C_PCAN_BAUDRATES[e_baud], CAN_INIT_TYPE_ST);
   result := (lw_ret = CAN_ERR_OK);
-  if result then GetUsbDeviceNr(lw_devnr)
+  //if result then GetUsbDeviceNr(lw_devnr)
+  if result then CAN_GETUSBDEVICENR(CanFunc[PCF_GET_DEVICENR])(lw_devnr)
   else AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
 end;
 
 function TConnPCanUsb.Disconnect: boolean;
 var lw_ret: longword;
 begin
-  lw_ret := Close(); lw_devnr := 0;
+  //lw_ret := self.Close();
+  lw_ret := CAN_CLOSE(CanFunc[PCF_CLOSE])();
+  lw_devnr := 0;
   result := (lw_ret = CAN_ERR_OK);
 end;
 
 function TConnPCanUsb.SendPacket(const a: array of char): boolean;
 var lw_ret: longword;
 begin
-  //todo:
-  result := (lw_ret = CAN_ERR_OK);
-  if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
+  result := false;
+  if length(a) >= sizeof(t_wbuf) then begin
+    Move(a, t_wbuf, sizeof(t_wbuf));
+    //lw_ret := self.Write(t_wbuf);
+    lw_ret := CAN_WRITE(CanFunc[PCF_WRITE])(t_wbuf);
+    result := (lw_ret = CAN_ERR_OK);
+    if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
+  end else AddMessage('The size of the array is not suitable for CAN-message.', ML_ERROR);
 end;
 
 function TConnPCanUsb.RecvPacket(var a: array of char; const tend: cardinal): boolean;
 var lw_ret: longword;
 begin
-  //todo:
-  result := (lw_ret = CAN_ERR_OK);
-  if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
+  result := false;
+  if length(a) >= sizeof(t_rbuf) then begin
+    //lw_ret := self.Read(t_rbuf);
+    lw_ret := CAN_READ(CanFunc[PCF_READ])(t_rbuf);
+    Move(t_rbuf, a, sizeof(t_rbuf));
+    result := (lw_ret = CAN_ERR_OK);
+    if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
+  end else AddMessage('The size of the array is not suitable for CAN-message.', ML_ERROR);
 end;
 
 function TConnPCanUsb.SendStr(const str: string): boolean;
@@ -780,7 +808,8 @@ var lw_ret: longword;
 begin
   result := FillSendMsg(str);
   if result then begin
-    lw_ret := self.Write(t_wbuf);
+    //lw_ret := self.Write(t_wbuf);
+    lw_ret := CAN_WRITE(CanFunc[PCF_WRITE])(t_wbuf);
     result := (lw_ret = CAN_ERR_OK);
     if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
   end;
@@ -790,34 +819,19 @@ function TConnPCanUsb.RecvStr(var str: string; const bwait: boolean): integer;
 var lw_ret: longword;
 begin
   result := 0;
-  lw_ret := self.Read(t_rbuf);
+  if bwait then WaitForReading(GetTickCount() + i_timeout);
+
+  //lw_ret := self.Read(t_rbuf);
+  lw_ret := CAN_READ(CanFunc[PCF_READ])(t_rbuf);
   if (lw_ret = CAN_ERR_OK) then begin
     BuildRecvMsg(str);
     result := t_rbuf.LEN;
-  end;
+  end else AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
 end;
 
-function TConnPCanUsb.RecvStrTimeout(var str: string; const tend: cardinal): integer;
+function TConnPCanUsb.WaitForReading(const tend: cardinal): boolean;
 begin
-  result := 0;
-  //todo:
-end;
-
-function TConnPCanUsb.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
-begin
-  result := 0;
-  //todo:
-end;
-
-function TConnPCanUsb.RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean): integer;
-begin
-  result := 0;
-  //todo:
-end;
-
-function TConnPCanUsb.WaitForReading(const tend: cardinal): boolean; 
-begin
-  result := false;
+  result := true;
   //todo:
 end;
 
