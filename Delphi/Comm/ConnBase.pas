@@ -12,20 +12,38 @@ unit ConnBase;
 interface
 uses Classes, TextMessage, IniFiles, Serial3;
 type
-  EConnectType = (  CT_UNKNOWN, //unknown connection
-                    CT_RS232,   //rs232
-                    CT_USB,     //usb
-                    CT_GPIB,    //GPIB (IEEE 488)
-                    CT_ETHERNET,//ethernet
-                    CT_JTAG,    //jtag
-                    CT_CAN,     //can-bus
-                    CT_PROFIL   //profil-bus
-                    );
+  EConnectType = (CT_UNKNOWN, //unknown connection
+                  CT_RS232,   //rs232
+                  CT_USB,     //usb
+                  CT_GPIB,    //GPIB (IEEE 488)
+                  CT_ETHERNET,//ethernet
+                  CT_JTAG,    //jtag
+                  CT_CAN,     //can-bus
+                  CT_PROFIL   //profil-bus
+                  );
 
   EConnectState = ( CS_UNKNOWN,   //unknown state
                     CS_CONFIGURED,//connection is configurated
                     CS_CONNECTED  //connection is connected and in use
-                    );
+                   );
+
+  {ICommWithString = interface
+    function SendStr(const str: string): boolean;
+    function RecvStr(var str: string; const bwait: boolean = false): integer;
+    function RecvStrTimeout(var str: string; const tend: cardinal): integer;
+    function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
+    function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
+    function WaitForReading(const tend: cardinal): boolean;
+  end;
+
+  ICommWithBytes = interface
+    function SendBytes(const a: array of byte): boolean;
+    function RecvBytes(var a: array of byte; const bwait: boolean = false): boolean;
+    function RecvStrTimeout(var str: array of byte; const tend: cardinal): integer;
+    function RecvStrInterval(var str: array of byte; const tend: cardinal; const interv: cardinal): integer;
+    function RecvStrExpected(var str: array of byte; const exstr: array of byte; tend: cardinal; const bcase: boolean = false): integer;
+    function WaitForReading(const tend: cardinal): boolean;
+  end; }
 
   TConnBase = class(TComponent)
   class function GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
@@ -43,7 +61,7 @@ type
     function  GetTypeName(): string; virtual;
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
-    
+
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
@@ -155,13 +173,11 @@ begin
   AddMessage('Virtual function ''Connect'' should be reimplemented.', ML_WARNING);
 end;
 
-
 function TConnBase.Disconnect: boolean;
 begin
   result := false;
   AddMessage('Virtual function ''Disconnect'' should be reimplemented.', ML_WARNING);
 end;
-
 
 function TConnBase.SendPacket(const a: array of char): boolean;
 begin
@@ -169,13 +185,11 @@ begin
   AddMessage('Virtual function ''SendPacket'' should be reimplemented.', ML_WARNING);
 end;
 
-
 function TConnBase.RecvPacket(var a: array of char; const tend: cardinal): boolean;
 begin
   result := false;
   AddMessage('Virtual function ''RecvPacket'' should be reimplemented.', ML_WARNING);
 end;
-
 
 function TConnBase.SendStr(const str: string): boolean;
 begin
@@ -183,13 +197,11 @@ begin
   AddMessage('Virtual function ''SendStr'' should be reimplemented.', ML_WARNING);
 end;
 
-
 function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
 begin
   result := 0;
   AddMessage('Virtual function ''RecvStr'' should be reimplemented.', ML_WARNING);
 end;
-
 
 function TConnBase.RecvStrTimeout(var str: string; const tend: cardinal): integer;
 var s_recv: string;
@@ -230,7 +242,6 @@ begin
     else b_break := ContainsText(str, exstr);
   until (b_break or (tend <= GetTickCount()));
 end;
-
 
 function TConnBase.WaitForReading(const tend: cardinal): boolean;
 begin

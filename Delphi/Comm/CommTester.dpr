@@ -8,7 +8,7 @@ uses
   GenUtils in '..\General\GenUtils.pas',
   TextMessage in '..\General\TextMessage.pas',
   ConnBase in 'ConnBase.pas',
-  CAN in 'CAN.pas';
+  PCAN in 'PCAN.pas';
 
 {$R *.res}
 

@@ -25,13 +25,13 @@ var
 implementation
 
 {$R *.dfm}
-uses RS232, CAN;
+uses RS232, PCAN;
 
 procedure TfrmCommTester.btnCanClick(Sender: TObject);
 var s_conf: string; s_send, s_recv: string;
 begin
-  t_conn := TConnPCanUsb.Create(self);
-  s_conf := 'PCANDLL:PCAN_USB.dll|baudrate:1M';
+  t_conn := TPCanLightUsb.Create(self);
+  s_conf := 'HWT:USB1CH|PCANDLL:PCAN_USB.dll|baudrate:1M';
   if t_conn.Config(s_conf) then ShowMessage('PCAN is configured' + ' [' + s_conf + ']')
   else ShowMessage('PCAN is NOT configured' + ' [' + s_conf + ']');
 
