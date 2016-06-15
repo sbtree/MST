@@ -257,11 +257,21 @@ type
                   PCF_RESETCLIENT,
                   PCF_MSGFILTER,
                   PCF_RESETFILTER,
+                  PCF_SETRCVEVENT,
                   PCF_SETUSBDEVICENR,
-                  PCF_GETUSBDEVICENR,
-                  PCF_SETRCVEVENT
+                  PCF_GETUSBDEVICENR
                   );
   PCanFunctionNames = array[EPCanFunction] of string;
+
+  EPCanProperty = (
+                  PCP_HWT,
+                  PCP_DLL,
+                  PCP_BAUD,
+                  PCP_CANVER,
+                  PCP_SUBHW,
+                  PCP_IOPORT,
+                  PCP_IRQ
+                  );
 
   EPCanHardwareType = (
                       PCH_NONE,
@@ -289,10 +299,9 @@ type
                   PCB_5K
                   );
 
-  EPCanProperty = (
-                  PCP_HWT,
-                  PCP_DLL,
-                  PCP_BAUD
+  EPCanVersion = (
+                  PCV_STD,   //can standard with 11-bit id
+                  PCV_EXT    //can 2.0B extend with 29-bit id
                   );
 
   EPCanNPnPType = (
@@ -310,14 +319,16 @@ type
   protected
     e_hwt:    EPCanHardwareType;
     e_baud:   EPCanBaudrate;
+    e_canver: EPCanVersion;
     h_dll:    THandle;
     s_dllfile:string;
     t_rbuf:   TPCANMsg;
     t_wbuf:   TPCANMsg;
 
-    i_npnp:     integer;
+    lw_devnr:   longword;
+    e_subtype:  EPCanNPnPType;
     lw_ioport:  longword;
-    w_interrupt:word;
+    w_irq:      word;
 
     a_pcanfnt: array[EPCanFunction] of Pointer;
   protected
@@ -329,7 +340,16 @@ type
     function FillSendMsg(const msg: string): boolean; virtual;
     function BuildRecvMsg(var msg: string): boolean; virtual;
     function IsValidFunction(const canfnt: EPCanFunction; var errnr: longword): boolean;
-    function SetNPnP(itype: integer; ioport: longword; interr: word): boolean;
+    function SetNPnP(etype: EPCanNPnPType; ioport: longword; irq: word): boolean;
+
+    function SetProperty(const eprop: EPCanProperty; const sval: string): boolean;
+    function SetHardwareType(const hwt: string): boolean;
+    function SetBaudrate(const sbaud: string): boolean;
+    function SetCanVersion(const sver: string): boolean;
+    function GetHardwareTypeText(): string;
+    function GetBaudrateText(): string;
+    procedure SetMsgVersion(ecanver: EPCanVersion);
+    procedure SetDeviceNr(devnr: longword);
 
     function CanInitPnP(wBR: Word; CANMsgType: Integer): longword; virtual;
     function CanInitNPnP(wBR: Word; CANMsgType: Integer; CANHwType: Integer; IO_Port: LongWord; Interupt: Word): longword; virtual;
@@ -345,16 +365,24 @@ type
     function CanMsgFilter(FromID, ToID: LongWord; _Type: Integer): longword; virtual;
     function CanResetFilter(): longword; virtual;
     function CanSetRcvEvent(hEvent: THandle): longword; virtual;
+    function CanSetUsbDeviceNr(DevNum: LongWord): longword;
+    function CanGetUsbDeviceNr(var DevNum: LongWord): longword;
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy(); override;
 
-    function GetHardwareType(): string;
-    function SetHardwareType(hwt: string): boolean;
-    function SetDllFile(const sdll: string): boolean;
-    function SetBaudrate(const sbaud: string): boolean;
-    function GetBaudrate(var sbaud: string): boolean;
+    property HardwareType: EPCanHardwareType read e_hwt write e_hwt;
+    property HardwareTypeText: string read GetHardwareTypeText;
+    property DllFile: string read s_dllfile;
+    property Baudrate: EPCanBaudrate read e_baud write e_baud;
+    property BaudrateText: string read GetBaudrateText;
+    property MsgVersion: EPCanVersion read e_canver write SetMsgVersion;
+    property HardwareSubType: EPCanNPnPType read e_subtype write e_subtype;
+    property IoPort: longword read lw_ioport write lw_ioport;
+    property Irq: word read w_irq write w_irq;
+    property UsbDeviceNr: longword read lw_devnr write SetDeviceNr;
 
+    function SetDllFile(const sdll: string): boolean;
     function Config(const sconf: string): boolean; overload; override;
     function Config(const sconfs: TStrings): boolean; overload; override;
     function Connect(): boolean; override;
@@ -364,21 +392,6 @@ type
     function SendStr(const str: string): boolean; override;
     function RecvStr(var str: string; const bwait: boolean = true): integer; override;
     function WaitForReading(const tend: cardinal): boolean; override;
-  end;
-
-  TPCanLightUsb = class(TPCanLight)
-  protected
-    lw_devnr:   longword;
-
-  protected
-    function CanSetUsbDeviceNr(DevNum: LongWord): longword;
-    function CanGetUsbDeviceNr(var DevNum: LongWord): longword;
-    procedure SetUsbDeviceNr(devnr: longword);
-  public
-    property UsbDeviceNr: longword read lw_devnr write SetUsbDeviceNr;
-
-    function Connect(): boolean; override;
-    function Disconnect: boolean; override;
   end;
 
 const
@@ -447,19 +460,30 @@ const
   ERR_HARDWARE_TYPE = $FFFD; // hardware typ is not given
   ERR_PCAN_FNT      = $FFFE; // Function pointer of pcan-light is null
   ERR_NO_DLL        = $FFFF; // No dll is loaded
+
+  CSTR_PCAN_PROPERTIES: array[EPCanProperty] of string = (
+                        'HWT',      //hardware type
+                        'PCANDLL',  //config name for the dll file
+                        'BAUDRATE', //config name for the baudrate of can bus
+                        'CANVER',   //version of can bus: 11 or 29 bits
+                        'SUBHW',    //sub type of None-PnP device
+                        'IOPORT',   //IO port
+                        'IRQ'       //number of interruption
+                        );
+
   CSTR_PCAN_HWTS: array[EPCanHardwareType] of string = (
-                      'NONE',
-                      'ISA1CH',		// ISA 1 Channel
-                      'ISA2CH',		// ISA 2 Channels
-											'PCI1CH',		// PCI 1 Channel
-											'PCI2CH',		// PCI 2 Channels
-											'PCC1CH',		// PCC 1 Channel
-											'PCC2CH',		// PCC 2 Channels
-											'USB1CH',		// USB 1st Channel
-                      'USB2CH',   // USB 2nd Channel
-											'DNP',		  // DONGLE PRO
-											'DNG'		 		// DONGLE
-                      );
+                  'NONE',
+                  'ISA1CH',		// ISA 1 Channel
+                  'ISA2CH',		// ISA 2 Channels
+									'PCI1CH',		// PCI 1 Channel
+									'PCI2CH',		// PCI 2 Channels
+									'PCC1CH',		// PCC 1 Channel
+									'PCC2CH',		// PCC 2 Channels
+									'USB1CH',		// USB 1st Channel
+                  'USB2CH',   // USB 2nd Channel
+									'DNP',		  // DONGLE PRO
+									'DNG'		 		// DONGLE
+                  );
 
   CSTR_PCAN_DLLFILES: array[EPCanHardwareType] of string = (
                       '',
@@ -475,6 +499,34 @@ const
 											'PCAN_DNG.dll'		// DONGLE
                       );
 
+  CINT_PCAN_BAUDRATES: array[EPCanBaudrate] of Word = (
+                       CAN_BAUD_1M,
+                       CAN_BAUD_500K,
+                       CAN_BAUD_250K,
+                       CAN_BAUD_125K,
+                       CAN_BAUD_100K,
+                       CAN_BAUD_50K,
+                       CAN_BAUD_20K,
+                       CAN_BAUD_10K,
+                       CAN_BAUD_5K
+                       );
+
+  CSTR_PCAN_BAUDRATES: array[EPCanBaudrate] of string = (
+                       '1M',
+                       '500K',
+                       '250K',
+                       '125K',
+                       '100K',
+                       '50K',
+                       '20K',
+                       '10K',
+                       '5K'
+                       );
+  CSTR_PCAN_VERSIONS: array[EPCanVersion] of string = (
+                      'STD',
+                      'EXT'
+                      );
+
   CSTR_PCAN1CH_NAMES: PCanFunctionNames = (
                 'CAN_Init',
                 'CAN_Close',
@@ -488,9 +540,9 @@ const
                 'CAN_ResetClient',
                 'CAN_MsgFilter',
                 'CAN_ResetFilter',
+                'CAN_SetRcvEvent',
                 'SetUSBDeviceNr',
-                'GetUSBDeviceNr',
-                'CAN_SetRcvEvent'
+                'GetUSBDeviceNr'
                 );
 
   CSTR_PCAN2CH_NAMES: PCanFunctionNames = (
@@ -506,34 +558,10 @@ const
                 'CAN2_ResetClient',
                 'CAN2_MsgFilter',
                 'CAN2_ResetFilter',
+                'CAN2_SetRcvEvent',
                 'SetUSB2DeviceNr',
-                'GetUSB2DeviceNr',
-                'CAN2_SetRcvEvent'
+                'GetUSB2DeviceNr'
                 );
-
-  C_PCAN_BAUDRATES: array[EPCanBaudrate] of Word = (
-                    CAN_BAUD_1M,
-                    CAN_BAUD_500K,
-                    CAN_BAUD_250K,
-                    CAN_BAUD_125K,
-                    CAN_BAUD_100K,
-                    CAN_BAUD_50K,
-                    CAN_BAUD_20K,
-                    CAN_BAUD_10K,
-                    CAN_BAUD_5K
-                    );
-
-  CSTR_PCAN_BAUDNAMES: array[EPCanBaudrate] of string = (
-                    '1M',
-                    '500K',
-                    '250K',
-                    '125K',
-                    '100K',
-                    '50K',
-                    '20K',
-                    '10K',
-                    '5K'
-                    );
 
   C_CANMSG_LENGTH_MAX = 8;
 
@@ -554,31 +582,9 @@ type
   CAN_RESETCLIENT = CAN_CLOSE;
   CAN_MSGFILTER = function(FromID, ToID: LongWord; _Type: Integer): longword; stdcall;
   CAN_RESETFILTER = CAN_CLOSE;
+  CAN_SETRCVEVENT = function(hEvent: THandle): longword; stdcall;
   CAN_SETUSBDEVICENR = function(DevNum: LongWord): longword; stdcall;
   CAN_GETUSBDEVICENR = function(var DevNum: LongWord): longword; stdcall;
-  CAN_SETRCVEVENT = function(hEvent: THandle): longword; stdcall;
-
-const  CSTR_PCAN_KEYS: array[EPCanProperty] of string = (
-                'HWT',
-                'PCANDLL',  //config name for the dll file
-                'BAUDRATE'   //config name for the baudrate of can bus
-                );
-var PPCanPropertyCalls: array [EPCanProperty] of SetPCanProperty;
-
-function SetPCanHardware(pcan: TPCanLight; const hwt: string): boolean;
-begin
-  result := pcan.SetHardwareType(hwt);
-end;
-
-function SetPCanDLL(pcan: TPCanLight; const sdll: string): boolean;
-begin
-  result := pcan.SetDllFile(trim(sdll));
-end;
-
-function SetPCanBaudrate(pcan: TPCanLight; const sbaud: string): boolean;
-begin
-  result := pcan.SetBaudrate(trim(sbaud));;
-end;
 
 class function TPCanLight.FindHardware(const shwt: string; var ehwt: EPCanHardwareType): boolean;
 var i_idx: integer;
@@ -710,7 +716,6 @@ begin
       end;
       if result then begin
         t_wbuf.ID := i_nodenr;
-        t_wbuf.MSGTYPE := MSGTYPE_STANDARD;
         t_wbuf.LEN := byte(i_len);
       end;
     end;
@@ -754,12 +759,77 @@ begin
   end;
 end;
 
-function TPCanLight.SetNPnP(itype: integer; ioport: longword; interr: word): boolean;
+function TPCanLight.SetNPnP(etype: EPCanNPnPType; ioport: longword; irq: word): boolean;
 begin
-  i_npnp := itype;
+  e_subtype := etype;
   lw_ioport := ioport;
-  w_interrupt := interr;
+  w_irq := irq;
   result := true;
+end;
+
+function TPCanLight.SetProperty(const eprop: EPCanProperty; const sval: string): boolean;
+begin
+  result := false;
+  case eprop of
+    PCP_HWT:    result := SetHardwareType(sval);
+    PCP_DLL:    result := SetDllFile(sval);
+    PCP_BAUD:   result := SetBaudrate(sval);
+    PCP_CANVER: result := SetCanVersion(sval);
+    PCP_SUBHW:  result := true; //todo
+    PCP_IOPORT: result := true; //todo
+    PCP_IRQ:    result := true; //todo  
+  end;
+end;
+
+function TPCanLight.SetHardwareType(const hwt: string): boolean;
+var e_htype: EPCanHardwareType;
+begin
+  result := TPCanLight.FindHardware(hwt, e_htype);
+  if result then e_hwt := e_htype;
+end;
+
+function TPCanLight.SetBaudrate(const sbaud: string): boolean;
+var i_idx: integer;
+begin
+  result := false;
+  i_idx := IndexText(sbaud, CSTR_PCAN_BAUDRATES);
+  if ((i_idx >= Ord(Low(EPCanBaudrate))) and (i_idx <= Ord(High(EPCanBaudrate)))) then begin
+    e_baud := EPCanBaudrate(i_idx);
+    result := true;
+  end;
+end;
+
+function TPCanLight.SetCanVersion(const sver: string): boolean;
+var i_idx: integer;
+begin
+  result := false;
+  i_idx := IndexText(sver, CSTR_PCAN_VERSIONS);
+  if ((i_idx >= Ord(Low(EPCanVersion))) and (i_idx <= Ord(High(EPCanVersion)))) then begin
+    e_canver := EPCanVersion(i_idx);
+    result := true;
+  end;
+end;
+
+function TPCanLight.GetHardwareTypeText(): string;
+begin
+  result := CSTR_PCAN_HWTS[e_hwt];
+end;
+
+function TPCanLight.GetBaudrateText(): string;
+begin
+  result := CSTR_PCAN_BAUDRATES[e_baud];
+end;
+
+procedure TPCanLight.SetMsgVersion(ecanver: EPCanVersion);
+begin
+  e_canver := ecanver;
+  if (e_canver = PCV_STD) then t_wbuf.MSGTYPE := MSGTYPE_STANDARD
+  else t_wbuf.MSGTYPE := MSGTYPE_EXTENDED;
+end;
+
+procedure TPCanLight.SetDeviceNr(devnr: longword);
+begin
+  CanSetUsbDeviceNr(devnr);
 end;
 
 function TPCanLight.CanInitPnP(wBR: Word; CANMsgType: Integer): longword;
@@ -846,17 +916,31 @@ begin
     result := CAN_SETRCVEVENT(a_pcanfnt[PCF_SETRCVEVENT])(hEvent);
 end;
 
+function TPCanLight.CanSetUsbDeviceNr(DevNum: LongWord): longword;
+begin
+  if IsValidFunction(PCF_SETUSBDEVICENR, result) then
+    result := CAN_SETUSBDEVICENR(a_pcanfnt[PCF_SETUSBDEVICENR])(DevNum);
+end;
+
+function TPCanLight.CanGetUsbDeviceNr(var DevNum: LongWord): longword;
+begin
+  if IsValidFunction(PCF_GETUSBDEVICENR, result) then
+    result := CAN_GETUSBDEVICENR(a_pcanfnt[PCF_GETUSBDEVICENR])(DevNum);
+end;
+
 constructor TPCanLight.Create(owner: TComponent);
 var i: EPCanFunction;
 begin
   inherited Create(owner);
+  e_type := CT_CAN;
   e_hwt := PCH_NONE;
   e_baud := PCB_1M;
   h_dll := 0;
   s_dllfile := '';
+  e_canver := PCV_STD;
   t_wbuf.MSGTYPE := MSGTYPE_STANDARD;
   for i := Low(EPCanFunction) to High(EPCanFunction) do a_pcanfnt[i] := nil;
-  SetNPnP(1, 0, 0);
+  SetNPnP(HW_ISA, 0, 0);
 end;
 
 destructor TPCanLight.Destroy();
@@ -865,38 +949,9 @@ begin
   inherited Destroy();
 end;
 
-function TPCanLight.GetHardwareType(): string;
-begin
-  result := CSTR_PCAN_HWTS[e_hwt];
-end;
-
-function TPCanLight.SetHardwareType(hwt: string): boolean;
-var e_htype: EPCanHardwareType;
-begin
-  result := TPCanLight.FindHardware(hwt, e_htype);
-  if result then e_hwt := e_htype;
-end;
-
 function TPCanLight.SetDllFile(const sdll: string): boolean;
 begin
   result := LoadDll(sdll);
-end;
-
-function TPCanLight.SetBaudrate(const sbaud: string): boolean;
-var i_idx: integer;
-begin
-  result := false;
-  i_idx := IndexText(sbaud, CSTR_PCAN_BAUDNAMES);
-  if ((i_idx >= Ord(Low(EPCanBaudrate))) and (i_idx <= Ord(High(EPCanBaudrate)))) then begin
-    e_baud := EPCanBaudrate(i_idx);
-    result := true;
-  end;
-end;
-
-function TPCanLight.GetBaudrate(var sbaud: string): boolean;
-begin
-  sbaud := CSTR_PCAN_BAUDNAMES[e_baud];
-  result := true;
 end;
 
 function TPCanLight.Config(const sconf: string): boolean;
@@ -906,9 +961,9 @@ begin
   s_conf := UpperCase(sconf);
   t_regexp := TRegExpr.Create;
   for i := LOW(EPCanProperty) to HIGH(EPCanProperty) do begin
-    t_regexp.Expression := '(^|\|)[\t\ ]*' + CSTR_PCAN_KEYS[i] + '\b[\t\ ]*:([^\|$]*)';
+    t_regexp.Expression := '(^|\|)[\t\ ]*' + CSTR_PCAN_PROPERTIES[i] + '\b[\t\ ]*:([^\|$]*)';
     if t_regexp.Exec(s_conf) then  begin
-      result := (PPCANPropertyCalls[i](self, t_regexp.Match[2]));
+      result := SetProperty(i, t_regexp.Match[2]);
       if not result then break;
     end;
   end;
@@ -925,9 +980,9 @@ begin
   t_confs.CaseSensitive := false;
   t_confs.AddStrings(sconfs);
   for i := LOW(EPCanProperty) to HIGH(EPCanProperty) do begin
-    if t_confs.Find(CSTR_PCAN_KEYS[i], i_idx) then begin
+    if t_confs.Find(CSTR_PCAN_PROPERTIES[i], i_idx) then begin
       s_conf := t_confs.ValueFromIndex[i_idx];
-      result := (PPCanPropertyCalls[i](@self, s_conf));
+      result := SetProperty(i, s_conf);
       if not result then break;
     end;
   end;
@@ -938,12 +993,12 @@ end;
 function TPCanLight.Connect(): boolean;
 var lw_ret: longword;
 begin
-  //lw_ret := Init(C_PCAN_BAUDRATES[e_baud], CAN_INIT_TYPE_ST);
   if (e_hwt in [PCH_ISA1CH, PCH_ISA2CH, PCH_DNP, PCH_DNG]) then
-    lw_ret := CanInitNPnP(C_PCAN_BAUDRATES[e_baud], CAN_INIT_TYPE_ST, i_npnp, lw_ioport, w_interrupt)
+    lw_ret := CanInitNPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver), Ord(e_subtype), lw_ioport, w_irq)
   else
-    lw_ret := CanInitPnP(C_PCAN_BAUDRATES[e_baud], CAN_INIT_TYPE_ST);
+    lw_ret := CanInitPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver));
   result := (lw_ret = CAN_ERR_OK);
+  if result then CanGetUsbDeviceNr(lw_devnr);
 end;
 
 function TPCanLight.Disconnect: boolean;
@@ -951,6 +1006,7 @@ var lw_ret: longword;
 begin
   lw_ret := CanClose();
   result := (lw_ret = CAN_ERR_OK);
+  lw_devnr := 0;
 end;
 
 function TPCanLight.SendPacket(const a: array of char): boolean;
@@ -959,7 +1015,6 @@ begin
   result := false;
   if length(a) >= sizeof(t_wbuf) then begin
     Move(a, t_wbuf, sizeof(t_wbuf));
-    //lw_ret := self.Write(t_wbuf);
     lw_ret := CanWrite(t_wbuf);
     result := (lw_ret = CAN_ERR_OK);
     if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
@@ -1007,37 +1062,4 @@ begin
   //todo:
 end;
 
-function TPCanLightUsb.CanSetUsbDeviceNr(DevNum: LongWord): longword;
-begin
-  if IsValidFunction(PCF_SETUSBDEVICENR, result) then
-    result := CAN_SETUSBDEVICENR(a_pcanfnt[PCF_SETUSBDEVICENR])(DevNum);
-end;
-
-function TPCanLightUsb.CanGetUsbDeviceNr(var DevNum: LongWord): longword;
-begin
-  if IsValidFunction(PCF_GETUSBDEVICENR, result) then
-    result := CAN_GETUSBDEVICENR(a_pcanfnt[PCF_GETUSBDEVICENR])(DevNum);
-end;
-
-procedure TPCanLightUsb.SetUsbDeviceNr(devnr: longword);
-begin
-  if (CanSetUsbDeviceNr(devnr) = CAN_ERR_OK) then lw_devnr := devnr;
-end;
-
-function TPCanLightUsb.Connect(): boolean;
-begin
-  result := inherited Connect();
-  if result then CanGetUsbDeviceNr(lw_devnr);
-end;
-
-function TPCanLightUsb.Disconnect: boolean;
-begin
-  result := inherited Disconnect();
-  lw_devnr := 0;
-end;
-
-initialization
-  PPCanPropertyCalls[PCP_HWT] := SetPCanHardware;
-  PPCanPropertyCalls[PCP_DLL] := SetPCanDll;
-  PPCanPropertyCalls[PCP_BAUD]:= SetPCanBaudrate;
 end.

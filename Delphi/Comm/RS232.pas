@@ -15,6 +15,7 @@ type
   PSerial = ^TSerial;
 
   TConnRS232 = class(TConnBase)
+  class function EnumSerialPort(var sports: TStringList): integer;
   protected
     t_ser : TSerial;
   protected
@@ -47,7 +48,7 @@ uses SysUtils, StrUtils, Windows, GenUtils, Registry, Forms, TextMessage;
 type
   SetSerialProperty = function(pser: PSerial; const sval: string): boolean;
 
-const CSTR_RS232_KEYS: array[ESerialProperty] of string =
+const CSTR_RS232_PROPERTIES: array[ESerialProperty] of string =
                   ('PORT', 'BAUDRATE', 'PARITY', 'DATABITS', 'STOPBITS', 'FLOWCONTROL');
 
 var PSerialPropertyCalls: array [ESerialProperty] of SetSerialProperty;
@@ -63,7 +64,7 @@ var PSerialPropertyCalls: array [ESerialProperty] of SetSerialProperty;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function EnumSerialPort(var sports: TStringList): integer;
+class function TConnRS232.EnumSerialPort(var sports: TStringList): integer;
 var t_registry: TRegistry; s_names: TStringList; s_value: string; i: integer;
 begin
   sports.Clear;
@@ -107,7 +108,7 @@ begin
   if TryStrToInt(s_in, i_port) then begin
     s_portname := 'COM' + sval;
     t_ports := TStringList.Create;
-    EnumSerialPort(t_ports);
+    TConnRS232.EnumSerialPort(t_ports);
     result := (t_ports.IndexOf(s_portname) >= 0 );
     if result then pser^.Port := i_port;
     t_ports.Clear;
@@ -364,7 +365,7 @@ begin
   s_conf := UpperCase(sconf);
   t_regexp := TRegExpr.Create;
   for i := LOW(ESerialProperty) to HIGH(ESerialProperty) do begin
-    t_regexp.Expression := '(^|\|)[\t\ ]*' + CSTR_RS232_KEYS[i] + '\b[\t\ ]*:([^\|$]*)';
+    t_regexp.Expression := '(^|\|)[\t\ ]*' + CSTR_RS232_PROPERTIES[i] + '\b[\t\ ]*:([^\|$]*)';
     b_settings[i]:=false;
     if t_regexp.Exec(s_conf) then  begin
       result := (PSerialPropertyCalls[i](@t_ser, t_regexp.Match[2]));
@@ -388,7 +389,7 @@ begin
   t_confs.AddStrings(sconfs);
   for i := LOW(ESerialProperty) to HIGH(ESerialProperty) do begin
     b_settings[i]:=false;
-    if t_confs.Find(CSTR_RS232_KEYS[i], i_idx) then begin
+    if t_confs.Find(CSTR_RS232_PROPERTIES[i], i_idx) then begin
       s_conf := t_confs.ValueFromIndex[i_idx];
       result := (PSerialPropertyCalls[i](@t_ser, s_conf));
       b_settings[i]:= result;
