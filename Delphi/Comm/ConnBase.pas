@@ -161,12 +161,6 @@ begin
   inherited Destroy();
 end;
 
-//function TConnBase.Config(const sconf: string): boolean;
-//begin
-//  result := false;
-//  AddMessage('Virtual function ''Config'' should be reimplemented.', ML_WARNING);
-//end;
-
 function TConnBase.Connect(): boolean;
 begin
   result := false;
