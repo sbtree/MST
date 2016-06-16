@@ -53,7 +53,9 @@ type
     e_type:     EConnectType;
     t_connobj:  TObject;
     e_state:    EConnectState;  //connection state
-    i_timeout : cardinal;       //timeout in milli seconds
+    c_timeout : cardinal;       //timeout in milli seconds
+    c_rpause:   cardinal;       //maximal interval by reading in milli seconds
+    b_rpause:   boolean;        //to indicate if reading pause is aktive
     t_messenger:TTextMessenger;
 
   protected
@@ -71,7 +73,9 @@ type
     property ConnectType: EConnectType read e_type;
     property ConnectTypeName: string read GetTypeName;
     property ConnectState: EConnectState read e_state;
-    property Timeout: cardinal read i_timeout write i_timeout;
+    property Timeout: cardinal read c_timeout write c_timeout;
+    property ReadingPause: cardinal read c_rpause write c_rpause;
+    property
 
     function Config(const sconf: string): boolean; overload; virtual; abstract;
     function Config(const sconfs: TStrings): boolean; overload; virtual; abstract;
@@ -151,7 +155,7 @@ begin
   e_type := CT_UNKNOWN;
   t_connobj := nil;
   e_state := CS_UNKNOWN;
-  i_timeout := CINT_TIMEOUT_DEFAULT;
+  c_timeout := CINT_TIMEOUT_DEFAULT;
   //todo:
 end;
 

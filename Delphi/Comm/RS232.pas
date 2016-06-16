@@ -453,7 +453,7 @@ function TConnRS232.SendStr(const str: string): boolean;
 var c_time: cardinal; s_recv: string;
 begin
   RecvStr(s_recv, false); //clear reading buffer of the serial interface
-  c_time := GetTickCount() + i_timeout;
+  c_time := GetTickCount() + c_timeout;
   t_ser.WriteString(str);
   while ((t_ser.TxWaiting > 0) and (GetTickCount() < c_time)) do TGenUtils.Delay(C_DELAY_ONCE);
   result := (t_ser.TxWaiting <= 0);
@@ -463,7 +463,7 @@ end;
 function TConnRS232.RecvStr(var str: string; const bwait: boolean): integer;
 begin
   str := '';
-  if bwait then WaitForReading(GetTickCount() + i_timeout);
+  if bwait then WaitForReading(GetTickCount() + c_timeout);
   result := RecvChars(str);
   AddMessage(format('Receiving: %s', [str]));
 end;

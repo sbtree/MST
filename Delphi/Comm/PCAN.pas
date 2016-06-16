@@ -890,7 +890,7 @@ begin
     //todo: thread-safe??
     result := CAN_READ(a_pcanfnt[PCF_READ])(MsgBuff);
     if (result = CAN_ERR_BUSOFF) then begin // initilize the controller again if it has this error
-      self.Connect();
+      Connect();
       AddMessage('Reconnected by error: ' + BuildMessage(MsgBuff));
     end else if (result = CAN_ERR_OK) then begin
       AddMessage('Received: ' + BuildMessage(MsgBuff));
@@ -900,7 +900,7 @@ end;
 
 function TPCanLight.CanReadEx(var MsgBuff: TPCANMsg; var RcvTime: TPCANTimestamp): longword;
 begin
-    Inc(lw_recvcnt);
+      Inc(lw_recvcnt);
   if IsValidFunction(PCF_READEX, result) then begin
     result := CAN_READEX(a_pcanfnt[PCF_READEX])(MsgBuff, RcvTime);
     if (result = CAN_ERR_BUSOFF) then begin // initilize the controller again if it has this error
