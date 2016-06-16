@@ -54,8 +54,8 @@ type
     t_connobj:  TObject;
     e_state:    EConnectState;  //connection state
     c_timeout : cardinal;       //timeout in milli seconds
-    c_rpause:   cardinal;       //maximal interval by reading in milli seconds
-    b_rpause:   boolean;        //to indicate if reading pause is aktive
+    c_rinterval:cardinal;       //maximal interval by reading in milli seconds
+    b_rinterval:boolean;        //to indicate if interval is allowed by reading
     t_messenger:TTextMessenger;
 
   protected
@@ -74,8 +74,8 @@ type
     property ConnectTypeName: string read GetTypeName;
     property ConnectState: EConnectState read e_state;
     property Timeout: cardinal read c_timeout write c_timeout;
-    property ReadingPause: cardinal read c_rpause write c_rpause;
-    property
+    property ReadingInterval: cardinal read c_rinterval write c_rinterval;
+    property ReadingIntervalEnabled: boolean read b_rinterval write b_rinterval;
 
     function Config(const sconf: string): boolean; overload; virtual; abstract;
     function Config(const sconfs: TStrings): boolean; overload; virtual; abstract;
@@ -85,6 +85,7 @@ type
     function RecvPacket(var a: array of char; const tend: cardinal): boolean; virtual;
     function SendStr(const str: string): boolean; virtual;
     function RecvStr(var str: string; const bwait: boolean = false): integer; virtual;
+    
     function RecvStrTimeout(var str: string; const tend: cardinal): integer; virtual;
     function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer; virtual;
     function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; virtual;
