@@ -8,7 +8,7 @@
 // Author       : 2016-06-14 /bsu/
 // History      :
 
-unit PCAN;
+unit CAN;
 
 interface
 uses  Classes, ConnBase;
@@ -327,6 +327,7 @@ type
     t_rbuf:   TPCANMsg;
     t_wbuf:   TPCANMsg;
     lw_sendcnt, lw_recvcnt: longword;
+    b_connected: boolean;
 
     lw_devnr:   longword;
     e_subtype:  EPCanNPnPType;
@@ -336,6 +337,7 @@ type
 
     a_pcanfnt: array[EPCanFunction] of Pointer;
   protected
+    function IsConnected(): boolean; override;
     function LoadDll(const sdll: string): boolean; virtual;
     function LoadDefaultDll(const hwt: EPCanHardwareType): boolean; overload;
     function LoadDefaultDll(const shwt: string): boolean; overload;
@@ -391,16 +393,16 @@ type
 
     function SetDllFile(const sdll: string): boolean;
     function BuildMessage(const canmsg: TPCANMsg): string;
-    function Config(const sconf: string): boolean; overload; override;
     function Config(const sconfs: TStrings): boolean; overload; override;
     function Connect(): boolean; override;
     function Disconnect: boolean; override;
-    function SendPacket(const a: array of char): boolean; override;
-    function RecvPacket(var a: array of char; const tend: cardinal): boolean; override;
+    function SendBuf(const buf: PChar; const len: longword): boolean; override;
+    function RecvBuf(var buf: PChar; const len: longword): integer; override;
     function SendStr(const str: string): boolean; override;
     function RecvStr(var str: string; const bwait: boolean = false): integer; override;
     function WaitForReading(const tend: cardinal): boolean; override;
   end;
+  PPCanLight = ^TPCanLight;
 
   TPCanReadThread = class(TThread)
   protected
@@ -585,7 +587,7 @@ const
   C_CANMSG_LENGTH_MAX = 8;
 
 implementation
-uses Windows, SysUtils, StrUtils, RegExpr, TextMessage, TypInfo, Forms;
+uses Windows, SysUtils, StrUtils, TextMessage, TypInfo, Forms;
 type
   SetPCanProperty = function(ppcan: TPCanLight; const sval: string): boolean;
   CAN_INIT_PNP = function(wBR: Word; CANMsgType: Integer): longword; stdcall;
@@ -616,6 +618,11 @@ begin
   end;
 end;
 
+function TPCanLight.IsConnected(): boolean;
+begin
+  result := b_connected;
+end;
+
 function TPCanLight.LoadDll(const sdll: string): boolean;
 var i: EPCanFunction;
 begin
@@ -641,8 +648,11 @@ begin
         end;
         else
         end;
-        result := false;
-        for i := Low(EPCanFunction) to High(EPCanFunction) do result := (result or assigned(a_pcanfnt[i]));
+        //check if the primary functions are found
+        result := assigned(a_pcanfnt[PCF_INIT]) and
+                  assigned(a_pcanfnt[PCF_WRITE]) and
+                  assigned(a_pcanfnt[PCF_READ]) and
+                  assigned(a_pcanfnt[PCF_READEX]);
         if result then s_dllfile := sdll
         else begin
           UnloadDll();
@@ -850,14 +860,14 @@ end;
 
 function TPCanLight.CanInitPnP(wBR: Word; CANMsgType: Integer): longword;
 begin
-  if IsValidFunction(PCF_INIT, result) then
-    result := CAN_INIT_PNP(a_pcanfnt[PCF_INIT])(wBR, CANMsgType);
+  //if IsValidFunction(PCF_INIT, result) then
+  result := CAN_INIT_PNP(a_pcanfnt[PCF_INIT])(wBR, CANMsgType);
 end;
 
 function TPCanLight.CanInitNPnP(wBR: Word; CANMsgType: Integer; CANHwType: Integer; IO_Port: LongWord; Interupt: Word): longword;
 begin
-  if IsValidFunction(PCF_INIT, result) then
-    result := CAN_INIT_NPNP(a_pcanfnt[PCF_INIT])(wBR, CANMsgType, CANHwType, IO_Port, Interupt);
+  //if IsValidFunction(PCF_INIT, result) then
+  result := CAN_INIT_NPNP(a_pcanfnt[PCF_INIT])(wBR, CANMsgType, CANHwType, IO_Port, Interupt);
 end;
 
 function TPCanLight.CanClose(): longword;
@@ -874,42 +884,42 @@ end;
 
 function TPCanLight.CanWrite(var MsgBuff: TPCANMsg): longword;
 begin
-  if IsValidFunction(PCF_WRITE, result) then begin
+  //if IsValidFunction(PCF_WRITE, result) then begin
     result := CAN_WRITE(a_pcanfnt[PCF_WRITE])(MsgBuff);
     if (result = CAN_ERR_OK) then begin
       AddMessage('Sent: ' + BuildMessage(MsgBuff));
       Inc(lw_recvcnt);
     end else AddMessage('Error: ' + BuildMessage(MsgBuff));
-  end;
+  //end;
 end;
 
 function TPCanLight.CanRead(var MsgBuff: TPCANMsg): longword;
 begin
-      Inc(lw_recvcnt);
-  if IsValidFunction(PCF_READ, result) then begin
+  //if IsValidFunction(PCF_READ, result) then begin
     //todo: thread-safe??
     result := CAN_READ(a_pcanfnt[PCF_READ])(MsgBuff);
     if (result = CAN_ERR_BUSOFF) then begin // initilize the controller again if it has this error
       Connect();
       AddMessage('Reconnected by error: ' + BuildMessage(MsgBuff));
     end else if (result = CAN_ERR_OK) then begin
+      Inc(lw_recvcnt);
       AddMessage('Received: ' + BuildMessage(MsgBuff));
     end else AddMessage('Error: ' + BuildMessage(MsgBuff));
-  end;
+  //end;
 end;
 
 function TPCanLight.CanReadEx(var MsgBuff: TPCANMsg; var RcvTime: TPCANTimestamp): longword;
 begin
-      Inc(lw_recvcnt);
-  if IsValidFunction(PCF_READEX, result) then begin
+  //if IsValidFunction(PCF_READEX, result) then begin
     result := CAN_READEX(a_pcanfnt[PCF_READEX])(MsgBuff, RcvTime);
     if (result = CAN_ERR_BUSOFF) then begin // initilize the controller again if it has this error
       self.Connect();
       AddMessage('Reconnected by error: ' + BuildMessage(MsgBuff));
     end else if (result = CAN_ERR_OK) then begin
+      Inc(lw_recvcnt);
       AddMessage('Received: ' + BuildMessage(MsgBuff));
     end else AddMessage('Error: ' + BuildMessage(MsgBuff));
-  end;
+  //end;
 end;
 
 function TPCanLight.CanVersionInfo(lpszTextBuff: PAnsiChar): longword;
@@ -978,6 +988,7 @@ begin
   b_wait := true;
   e_canver := PCV_STD;
   t_wbuf.MSGTYPE := MSGTYPE_STANDARD;
+  b_connected := false;
   lw_sendcnt := 0;
   lw_recvcnt := 0;
   for i := Low(EPCanFunction) to High(EPCanFunction) do a_pcanfnt[i] := nil;
@@ -1004,39 +1015,14 @@ begin
   else result := format('%.3x:%s', [canmsg.ID, s_data]);
 end;
 
-function TPCanLight.Config(const sconf: string): boolean;
-var s_conf: string; i: EPCanProperty; t_regexp: TRegExpr;
-begin
-  result := false;
-  s_conf := UpperCase(sconf);
-  t_regexp := TRegExpr.Create;
-  for i := LOW(EPCanProperty) to HIGH(EPCanProperty) do begin
-    t_regexp.Expression := '(^|\|)[\t\ ]*' + CSTR_PCAN_PROPERTIES[i] + '\b[\t\ ]*:([^\|$]*)';
-    if t_regexp.Exec(s_conf) then  begin
-      result := SetProperty(i, t_regexp.Match[2]);
-      if not result then break;
-    end;
-  end;
-  FreeAndNil(t_regexp);
-  if result then e_state := CS_CONFIGURED;
-end;
-
 function TPCanLight.Config(const sconfs: TStrings): boolean;
-var t_confs: TStringList; i: EPCanProperty; s_conf: string; i_idx: integer;
+var i: EPCanProperty; s_conf: string;
 begin
-  result := false;
-  t_confs := TStringList.Create();
-  t_confs.Sorted := true;
-  t_confs.CaseSensitive := false;
-  t_confs.AddStrings(sconfs);
   for i := LOW(EPCanProperty) to HIGH(EPCanProperty) do begin
-    if t_confs.Find(CSTR_PCAN_PROPERTIES[i], i_idx) then begin
-      s_conf := t_confs.ValueFromIndex[i_idx];
-      result := SetProperty(i, s_conf);
-      if not result then break;
-    end;
+    s_conf := sconfs.Values[CSTR_PCAN_PROPERTIES[i]];
+    result := SetProperty(i, s_conf);
+    if not result then break;
   end;
-  FreeAndNil(t_confs);
   if result then e_state := CS_CONFIGURED;
 end;
 
@@ -1048,6 +1034,7 @@ begin
   else
     lw_ret := CanInitPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver));
   result := (lw_ret = CAN_ERR_OK);
+  b_connected := result;
   if result then begin
     CanGetUsbDeviceNr(lw_devnr);
     if (h_rcveve = 0) then begin
@@ -1069,6 +1056,7 @@ var lw_ret: longword;
 begin
   lw_ret := CanClose();
   result := (lw_ret = CAN_ERR_OK);
+  b_connected := false;
   lw_devnr := 0;
   if assigned(t_thread) then begin
     t_thread.Terminate;
@@ -1082,28 +1070,28 @@ begin
   end;
 end;
 
-function TPCanLight.SendPacket(const a: array of char): boolean;
+function TPCanLight.SendBuf(const buf: PChar; const len: longword): boolean;
 var lw_ret: longword;
 begin
   result := false;
-  if length(a) >= sizeof(t_wbuf) then begin
-    Move(a, t_wbuf, sizeof(t_wbuf));
+  if len = sizeof(TPCANMsg) then begin
+    Move(buf, t_wbuf, len);
     lw_ret := CanWrite(t_wbuf);
     result := (lw_ret = CAN_ERR_OK);
     if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
-  end else AddMessage('The size of the array is not suitable for CAN-message.', ML_ERROR);
+  end else AddMessage('The length of the buffer is not suitable for CAN-message.', ML_ERROR);
 end;
 
-function TPCanLight.RecvPacket(var a: array of char; const tend: cardinal): boolean;
+function TPCanLight.RecvBuf(var buf: PChar; const len: longword): integer;
 var lw_ret: longword;
 begin
-  result := false;
-  if length(a) >= sizeof(t_rbuf) then begin
+  result := 0;
+  if len = sizeof(TPCANMsg) then begin
     lw_ret := CanRead(t_rbuf);
-    Move(t_rbuf, a, sizeof(t_rbuf));
-    result := (lw_ret = CAN_ERR_OK);
-    if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
-  end else AddMessage('The size of the array is not suitable for CAN-message.', ML_ERROR);
+    Move(t_rbuf, buf, len);
+    result := len;
+    if (lw_ret <> CAN_ERR_OK) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
+  end else AddMessage('The length of the buffer is not suitable for CAN-message.', ML_ERROR);
 end;
 
 function TPCanLight.SendStr(const str: string): boolean;
@@ -1121,7 +1109,7 @@ function TPCanLight.RecvStr(var str: string; const bwait: boolean): integer;
 var lw_ret: longword;
 begin
   result := 0;
-  if bwait then WaitForReading(GetTickCount() + i_timeout);
+  if bwait then WaitForReading(GetTickCount() + c_timeout);
   lw_ret := CanRead(t_rbuf);
   if (lw_ret = CAN_ERR_OK) then begin
     BuildRecvMsg(str);
@@ -1157,7 +1145,7 @@ begin
 end;
 
 procedure TPCanReadThread.Execute;
-var
+{var
     hWaitEvent: THandle;
     Res: longword;
 begin   
@@ -1175,17 +1163,17 @@ begin
             Synchronize(ReadCanMessage);
     end;
     MessageBox(0, 'Read-Thread will exist.','Bye!',MB_ICONWARNING);
-    CloseHandle(hWaitEvent);    
+    CloseHandle(hWaitEvent);
     t_pcan.CanSetRcvEvent(0);
-end;
-{begin
+end;}
+begin
   if (t_pcan.RecvEvent <> 0) then begin
     while Not Terminated do begin
       if (WaitForSingleObject(t_pcan.RecvEvent, 50) = WAIT_OBJECT_0) then
         Synchronize(ReadCanMessage);
     end;
   end;
-end;}
+end;
 
 constructor TPCanReadThread.Create(pcan: TPCanLight);
 begin

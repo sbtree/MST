@@ -40,15 +40,23 @@
     <DelphiCompile Include="CommTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Externals\USBIO\usbio.pas" />
+    <DCCReference Include="..\Externals\USBIO\usbiobuf.pas" />
+    <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
+    <DCCReference Include="..\Externals\USBIO\usbiopipe.pas" />
+    <DCCReference Include="..\Externals\USBIO\Usbio_i.pas" />
+    <DCCReference Include="..\Externals\USBIO\usbio_i_delphi.pas" />
+    <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
+    <DCCReference Include="CAN.pas" />
     <DCCReference Include="ConnBase.pas" />
     <DCCReference Include="FormCommTester.pas">
       <Form>frmCommTester</Form>
     </DCCReference>
-    <DCCReference Include="PCAN.pas" />
     <DCCReference Include="RS232.pas" />
+    <DCCReference Include="USB.pas" />
     <None Include="ModelSupport_CommTester\CAN\default.txvpck" />
     <None Include="ModelSupport_CommTester\CommTester\default.txvpck" />
     <None Include="ModelSupport_CommTester\ConnBase\default.txaPackage" />
@@ -58,8 +66,18 @@
     <None Include="ModelSupport_CommTester\DataBuffer\default.txvpck" />
     <None Include="ModelSupport_CommTester\default.txaPackage" />
     <None Include="ModelSupport_CommTester\default.txvpck" />
+    <None Include="ModelSupport_CommTester\FormCommTester\default.txvpck" />
     <None Include="ModelSupport_CommTester\ProtocolBase\default.txaPackage" />
     <None Include="ModelSupport_CommTester\ProtocolBase\default.txvpck" />
     <None Include="ModelSupport_CommTester\RS232\default.txvpck" />
+    <None Include="ModelSupport_CommTester\TextMessage\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\UsbIoBuf\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USBIOCOMLib_TLB\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\UsbIoPipe\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USBIO\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USBIO_I\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\usbio_i_delphi\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USBSPEC\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\Usb\default.txaPackage" />
   </ItemGroup>
 </Project>

@@ -27,6 +27,8 @@ type
     b_tstamp:     boolean; //indicats, whether the time stamp should be prepended, default true
   protected
     procedure SetMessages(const msgs: TStrings);
+    function GetLines(): integer;
+    function GetLineText(idx: integer): string;
     function FormatMsg(const text: string; const sender: string; const level: EMessageLevel; var msg: string): boolean;
   public
     constructor Create();
@@ -35,6 +37,8 @@ type
     property  Messages: TStrings read t_msgextern write SetMessages;
     property  MessageThreshold: EMessageLevel read e_threshold write e_threshold;
     property  TimeStamp: boolean read b_tstamp write b_tstamp;
+    property  CountLines: integer read GetLines;
+    property  LineText[idx: integer]: string read GetLineText;
 
     procedure AddMessage(const text: string; const sender: string = ''; const level: EMessageLevel = ML_INFO);
     procedure UpdateMessage(const text: string; const sender: string = ''; const level: EMessageLevel = ML_INFO);
@@ -107,6 +111,17 @@ procedure TTextMessenger.SetMessages(const msgs: TStrings);
 begin
   if assigned(msgs) then t_msgextern := msgs
   else t_msgextern := t_msgintern;
+end;
+
+function TTextMessenger.GetLines(): integer;
+begin
+  result := t_msgintern.Count;
+end;
+
+function TTextMessenger.GetLineText(idx: integer): string;
+begin
+  result := '';
+  if ((idx >= 0) and (idx < t_msgintern.Count)) then result := t_msgintern[idx];
 end;
 
 function TTextMessenger.FormatMsg(const text: string; const sender: string; const level: EMessageLevel; var msg: string): boolean;

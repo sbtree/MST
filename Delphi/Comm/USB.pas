@@ -1,17 +1,17 @@
-unit UsbConnect;
+unit USB;
 
 interface
-uses USBIOCOMLib_TLB, Classes, SysUtils, StrUtils, Windows, Forms, ActiveX, USBSPEC;
+uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX;
 
 type
-  TUsbConnect=class(TComponent)
+  TMtxUsb=class(TComponent)
   protected
     t_usbio: TUSBIOInterface3;
     i_status: integer;
   protected
     procedure  CopyByteData (const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
   public
-    constructor Create(owner: TComponent);
+    constructor Create(owner: TComponent); override;
     destructor Destroy; override;
     function Init: boolean;
 
@@ -21,20 +21,12 @@ type
   end;
 
 implementation
+uses GenUtils;
 const
   C_USB_GUID_ARS2000_STR : string = '{6CC88F5A-EA80-4707-845B-D3CF7BDBCA6C}';
   C_USB_GUID_ARS2000_REC : TGUID = (D1:$6CC88F5A; D2:$EA80; D3:$4707; D4:($84, $5B, $D3, $CF, $7B, $DB, $CA, $6C));
 
-procedure Delay (Delaytime : Dword);	// Delaytime in Millisekunden
-var
-  ticks : DWord;
-begin
-  ticks := GetTickCount() + DelayTime;
-  repeat Application.ProcessMessages;
-  until (GetTickCount() >= Ticks);
-end;
-
-procedure TUsbConnect.copyByteData ( const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
+procedure TMtxUsb.copyByteData ( const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
 var
   li_inx_dest : longint;
   li_inx_src  : longint;
@@ -51,7 +43,7 @@ begin
   end;
 end;
 
-constructor TUsbConnect.Create(owner: TComponent);
+constructor TMtxUsb.Create(owner: TComponent);
 begin
 	inherited Create(owner);
   t_usbio := TUSBIOInterface3.Create(self);
@@ -61,7 +53,7 @@ begin
   i_status := integer(USBIO_ERR_SUCCESS);
 end;
 
-destructor TUsbConnect.Destroy;
+destructor TMtxUsb.Destroy;
 begin
   t_usbio.OnWriteStatusAvailable := Nil;
   t_usbio.OnWriteComplete := Nil;
@@ -70,7 +62,7 @@ begin
 	inherited Destroy;
 end;
 
-function TUsbConnect.Init: boolean;
+function TMtxUsb.Init: boolean;
 var
   i_count, i_vstatus, i_size: integer;
   dev_descr     : USB_DEVICE_DESCRIPTOR;
@@ -116,7 +108,7 @@ begin
       else
       begin
         t_usbio.CyclePort(i_status);
-        Delay(500);
+        TGenUtils.Delay(500);
         i_count := 0;
       end;
     end;
@@ -137,15 +129,15 @@ begin
     result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = USBIO_ERR_DEVICE_ALREADY_OPENED));
 end;
 
-procedure TUsbConnect.ReadComplete(sender: TObject; var obj: OleVariant);
+procedure TMtxUsb.ReadComplete(sender: TObject; var obj: OleVariant);
 begin
 end;
 
-procedure TUsbConnect.WriteComplete(sender: TObject; var obj: OleVariant);
+procedure TMtxUsb.WriteComplete(sender: TObject; var obj: OleVariant);
 begin
 end;
 
-procedure TUsbConnect.WriteStatusAvailable(sender: TObject; var obj: OleVariant);
+procedure TMtxUsb.WriteStatusAvailable(sender: TObject; var obj: OleVariant);
 begin
 end;
 

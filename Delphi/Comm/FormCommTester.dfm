@@ -2,8 +2,8 @@ object frmCommTester: TfrmCommTester
   Left = 0
   Top = 0
   Caption = 'CommunicationTester'
-  ClientHeight = 298
-  ClientWidth = 460
+  ClientHeight = 299
+  ClientWidth = 466
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,11 +16,11 @@ object frmCommTester: TfrmCommTester
   PixelsPerInch = 96
   TextHeight = 13
   object lblCount: TLabel
-    Left = 0
-    Top = 277
-    Width = 117
+    Left = 4
+    Top = 273
+    Width = 114
     Height = 13
-    Caption = 'Sending: 0; Receiving: 0'
+    Caption = 'Messages: Tx(0); Rx(0)'
   end
   object btnRS232: TButton
     Left = 296
@@ -41,20 +41,17 @@ object frmCommTester: TfrmCommTester
     OnClick = btnCanClick
   end
   object memLog: TMemo
-    Left = 0
+    Left = 4
     Top = 8
     Width = 457
     Height = 254
     ScrollBars = ssBoth
     TabOrder = 2
   end
-  object btnCount: TButton
-    Left = 240
-    Top = 268
-    Width = 50
-    Height = 25
-    Caption = 'Count'
-    TabOrder = 3
-    OnClick = btnCountClick
+  object tmrUpdate: TTimer
+    Interval = 500
+    OnTimer = tmrUpdateTimer
+    Left = 256
+    Top = 272
   end
 end

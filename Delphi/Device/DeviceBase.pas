@@ -312,7 +312,7 @@ begin
       if not assigned(t_conns[i]) then begin
         case i of
           CT_RS232: begin
-            t_conns[i] := TConnRS232.Create(self);
+            t_conns[i] := TMtxRS232.Create(self);
             if (t_conns[i].Config(s_inivalue)) then begin
               inc(result);
               e_actconn := CT_RS232;

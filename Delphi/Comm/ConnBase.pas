@@ -57,9 +57,12 @@ type
     c_rinterval:cardinal;       //maximal interval by reading in milli seconds
     b_rinterval:boolean;        //to indicate if interval is allowed by reading
     t_messenger:TTextMessenger;
+    ch_nullshow:Char;    // indicate a char to show null, if it is received
+    i_cntnull : integer; // count of received nulls
+    b_break:    boolean; // indicate if it breaks by reading and writing
 
   protected
-    function  IsConnected(): boolean; virtual;
+    function  IsConnected(): boolean; virtual; abstract;
     function  GetTypeName(): string; virtual;
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
@@ -76,20 +79,22 @@ type
     property Timeout: cardinal read c_timeout write c_timeout;
     property ReadingInterval: cardinal read c_rinterval write c_rinterval;
     property ReadingIntervalEnabled: boolean read b_rinterval write b_rinterval;
+    property NullShowChar: Char read ch_nullshow write ch_nullshow;
+    property BreakReadWrite: boolean read b_break write b_break;
 
-    function Config(const sconf: string): boolean; overload; virtual; abstract;
+    function Config(const sconf: string): boolean; overload;
     function Config(const sconfs: TStrings): boolean; overload; virtual; abstract;
-    function Connect(): boolean; virtual;
-    function Disconnect: boolean; virtual;
-    function SendPacket(const a: array of char): boolean; virtual;
-    function RecvPacket(var a: array of char; const tend: cardinal): boolean; virtual;
+    function Connect(): boolean; virtual; abstract;
+    function Disconnect: boolean; virtual; abstract;
+    function SendBuf(const buf: PChar; const len: longword): boolean; virtual; abstract;
+    function RecvBuf(var buf: PChar; const len: longword): integer; virtual; abstract;
     function SendStr(const str: string): boolean; virtual;
-    function RecvStr(var str: string; const bwait: boolean = false): integer; virtual;
-    
+    function RecvStr(var str: string; const bwait: boolean = false): integer; virtual; abstract;
+    function WaitForReading(const tend: cardinal): boolean; virtual;  abstract;
+
     function RecvStrTimeout(var str: string; const tend: cardinal): integer; virtual;
     function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer; virtual;
     function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; virtual;
-    function WaitForReading(const tend: cardinal): boolean; virtual;
   end;
   PConnBase = ^TConnBase;
 
@@ -105,7 +110,8 @@ const
                     'PROFIL'
                     );
   CINT_TIMEOUT_DEFAULT = 1000;//default timeout in milliseconds
-  CINT_RECV_INTERVAL = 50;    //milliseconds 
+  CINT_INTERVAL_DEFAULT = 300;//default interval by reading in milliseconds
+  CINT_RECV_INTERVAL = 50;    //milliseconds
 
 implementation
 uses SysUtils, StrUtils, Windows, Registry;
@@ -123,12 +129,6 @@ end;
 class function TConnBase.GetConnectTypeName(const etype: EConnectType): string;
 begin
   result := CSTR_CONN_KEYS[etype];
-end;
-
-function TConnBase.IsConnected(): boolean;
-begin
-  result := false;
-  AddMessage('Virtual function ''IsConnected'' should be reimplemented.', ML_WARNING);
 end;
 
 function  TConnBase.GetTypeName(): string;
@@ -157,7 +157,10 @@ begin
   t_connobj := nil;
   e_state := CS_UNKNOWN;
   c_timeout := CINT_TIMEOUT_DEFAULT;
-  //todo:
+  c_rinterval := CINT_INTERVAL_DEFAULT;
+  b_rinterval := false;
+  b_break := false;
+  ch_nullshow := #13; //null is show as #13
 end;
 
 destructor TConnBase.Destroy;
@@ -166,40 +169,29 @@ begin
   inherited Destroy();
 end;
 
-function TConnBase.Connect(): boolean;
+// =============================================================================
+//    Description  : config device using a string, which is formatted as
+//                   'PropertyName1:value1|PropertyName2:value2' or
+//                   'PropertyName1=value1|PropertyName2=value2'
+//    Parameter    : sconf, a formatted string. As empty parameter is not acceptable
+//    Return       : true, if the sconf is valid and accepted by the connection
+//    First author : 2016-06-17 /bsu/
+//    History      :
+// =============================================================================
+function TConnBase.Config(const sconf: string): boolean;
+var t_confs: TStrings; s_conf: string;
 begin
   result := false;
-  AddMessage('Virtual function ''Connect'' should be reimplemented.', ML_WARNING);
-end;
-
-function TConnBase.Disconnect: boolean;
-begin
-  result := false;
-  AddMessage('Virtual function ''Disconnect'' should be reimplemented.', ML_WARNING);
-end;
-
-function TConnBase.SendPacket(const a: array of char): boolean;
-begin
-  result := false;
-  AddMessage('Virtual function ''SendPacket'' should be reimplemented.', ML_WARNING);
-end;
-
-function TConnBase.RecvPacket(var a: array of char; const tend: cardinal): boolean;
-begin
-  result := false;
-  AddMessage('Virtual function ''RecvPacket'' should be reimplemented.', ML_WARNING);
+  s_conf := ReplaceStr(sconf, ':', '=');
+  t_confs := TStringList.Create();
+  if (ExtractStrings(['|'], [' ', #9], PChar(s_conf), t_confs) > 0) then
+    result := Config(t_confs);
+  t_confs.Free();
 end;
 
 function TConnBase.SendStr(const str: string): boolean;
 begin
-  result := false;
-  AddMessage('Virtual function ''SendStr'' should be reimplemented.', ML_WARNING);
-end;
-
-function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
-begin
-  result := 0;
-  AddMessage('Virtual function ''RecvStr'' should be reimplemented.', ML_WARNING);
+  result := SendBuf(PChar(str), length(str));
 end;
 
 function TConnBase.RecvStrTimeout(var str: string; const tend: cardinal): integer;
@@ -240,12 +232,6 @@ begin
     if bcase then b_break := ContainsStr(str, exstr)
     else b_break := ContainsText(str, exstr);
   until (b_break or (tend <= GetTickCount()));
-end;
-
-function TConnBase.WaitForReading(const tend: cardinal): boolean;
-begin
-  result := false;
-  AddMessage('Virtual function ''WaitForReading'' should be reimplemented.', ML_WARNING);
 end;
 
 end.
