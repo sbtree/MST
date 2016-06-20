@@ -490,7 +490,7 @@ end;
 
 function TMtxRS232.RecvBuf(var buf: PChar; const len: longword): integer;
 begin
-  result := RecvChars(buf, len, false);
+  result := RecvChars(buf, len, GetTickCount() + c_timeout, false);
 end;
 
 function TMtxRS232.SendStr(const str: string): boolean;

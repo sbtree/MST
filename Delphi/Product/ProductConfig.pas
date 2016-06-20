@@ -64,6 +64,7 @@ type
     t_ids:      TStringList;        //to arrange in order with id_string
     t_curconf:  TPairStrings;       //to save a settings for the current selection
     s_filtervar:string;             //to save a variable name in the config to filter
+    s_filtertxt:string;             //to save current filter text
 
   protected
     function AddConfigItem(const confname: string; const vals: TStrings): boolean;
@@ -95,6 +96,7 @@ type
     property FullCurConfig: TPairStrings read GetFullCurConfig;
     property Count: integer read GetCount;
     property FilterVar: string read s_filtervar write s_filtervar;
+    property FilterText: string read s_filtertxt;
 
     function ReadFromFile(const cfgfile: string; const bforce: boolean = false; const bappend: boolean = false): boolean; virtual;
     function SaveToFile(const destfile: string; const cf: EConfigFormat = CF_INI): boolean;
@@ -645,6 +647,7 @@ begin
       if assigned(t_citem) then t_citem.Filter(s_filtervar, ftext);
     end;
   end;
+  s_filtertxt := ftext;
 end;
 
 procedure TProdConfigurator.CleanCurConfig();

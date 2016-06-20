@@ -41,7 +41,7 @@ type
     { Private-Deklarationen }
     t_confreader: TProdConfigurator;
     procedure UpdateConfig();
-    procedure UpdateFilter();
+    procedure UpdateFilter(const bforce: boolean = false);
   public
     { Public-Deklarationen }
   end;
@@ -79,7 +79,7 @@ procedure TfrmProdTester.btnLoadClick(Sender: TObject);
 begin
   t_confreader.Clear();
   trvProduct.Items.Clear();
-  if t_confreader.ReadFromFile(txtConfigFile.Text) then UpdateFilter();
+  if t_confreader.ReadFromFile(txtConfigFile.Text) then  UpdateFilter(true);
 end;
 
 procedure TfrmProdTester.btnOpenIniClick(Sender: TObject);
@@ -158,13 +158,15 @@ begin
   t_confreader.UpdateListView(lsvConfig, chkShowAll.Checked, chkSorted.Checked);
 end;
 
-procedure TfrmProdTester.UpdateFilter();
+procedure TfrmProdTester.UpdateFilter(const bforce: boolean);
 var s_ftext: string;
 begin
   if chkFilter.Checked then s_ftext := trim(txtFilter.Text)
   else s_ftext := '';
-  t_confreader.Filter(s_ftext);
-  t_confreader.UpdateTreeView(trvProduct);
+  if ((not SameText(s_ftext, t_confreader.FilterText)) or bforce) then begin
+    t_confreader.Filter(s_ftext);
+    t_confreader.UpdateTreeView(trvProduct);
+  end;
 end;
 
 end.

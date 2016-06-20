@@ -904,7 +904,7 @@ begin
     end else if (result = CAN_ERR_OK) then begin
       Inc(lw_recvcnt);
       AddMessage('Received: ' + BuildMessage(MsgBuff));
-    end else AddMessage('Error: ' + BuildMessage(MsgBuff));
+    end else if (result <> CAN_ERR_QRCVEMPTY) then AddMessage('Error: ' + BuildMessage(MsgBuff));
   //end;
 end;
 
@@ -918,7 +918,7 @@ begin
     end else if (result = CAN_ERR_OK) then begin
       Inc(lw_recvcnt);
       AddMessage('Received: ' + BuildMessage(MsgBuff));
-    end else AddMessage('Error: ' + BuildMessage(MsgBuff));
+    end else if (result <> CAN_ERR_QRCVEMPTY) then AddMessage('Error: ' + BuildMessage(MsgBuff));
   //end;
 end;
 
@@ -1138,10 +1138,13 @@ begin
 end;
 
 procedure TPCanReadThread.ReadCanMessage();
-var t_canmsg: TPCANMsg; t_msgtime: TPCANTimestamp;
+var t_canmsg: TPCANMsg; t_msgtime: TPCANTimestamp; lw_ret: longword;
 begin
-  if assigned(t_pcan) then
-    t_pcan.CanReadEx(t_canmsg, t_msgtime);
+  if assigned(t_pcan) then begin
+    lw_ret := CAN_ERR_QXMTFULL;
+    while ((lw_ret AND CAN_ERR_QRCVEMPTY) <> CAN_ERR_QRCVEMPTY) do
+      lw_ret := t_pcan.CanReadEx(t_canmsg, t_msgtime);
+  end;
 end;
 
 procedure TPCanReadThread.Execute;
