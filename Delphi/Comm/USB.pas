@@ -23,10 +23,10 @@ type
 implementation
 uses GenUtils;
 const
-  C_USB_GUID_ARS2000_STR : string = '{6CC88F5A-EA80-4707-845B-D3CF7BDBCA6C}';
-  C_USB_GUID_ARS2000_REC : TGUID = (D1:$6CC88F5A; D2:$EA80; D3:$4707; D4:($84, $5B, $D3, $CF, $7B, $DB, $CA, $6C));
+  CSTR_MTXUSB_ARS2000_GUID : string = '{6CC88F5A-EA80-4707-845B-D3CF7BDBCA6C}';
+  CREC_MTXUSB_ARS2000_GUID : TGUID = (D1:$6CC88F5A; D2:$EA80; D3:$4707; D4:($84, $5B, $D3, $CF, $7B, $DB, $CA, $6C));
 
-procedure TMtxUsb.copyByteData ( const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
+procedure TMtxUsb.CopyByteData ( const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
 var
   li_inx_dest : longint;
   li_inx_src  : longint;
@@ -72,7 +72,7 @@ var
   str_dev, str_serial: string;
 begin
   repeat
-    t_usbio.EnumerateDevices(C_USB_GUID_ARS2000_STR,i_count);
+    t_usbio.EnumerateDevices(CSTR_MTXUSB_ARS2000_GUID,i_count);
     if (i_count>=1) then
     begin
       t_usbio.OpenDevice(0, i_status);

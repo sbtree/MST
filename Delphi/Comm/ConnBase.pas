@@ -62,8 +62,8 @@ type
     b_break:    boolean; // indicate if it breaks by reading and writing
 
   protected
-    function  IsConnected(): boolean; virtual; abstract;
-    function  GetTypeName(): string; virtual;
+    function IsConnected(): boolean; virtual; abstract;
+    function GetTypeName(): string; virtual;
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
 
