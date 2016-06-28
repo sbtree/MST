@@ -23,7 +23,7 @@ object frmCommTester: TfrmCommTester
     Caption = 'Messages: Tx(0); Rx(0)'
   end
   object btnRS232: TButton
-    Left = 296
+    Left = 232
     Top = 268
     Width = 75
     Height = 25
@@ -32,7 +32,7 @@ object frmCommTester: TfrmCommTester
     OnClick = btnRS232Click
   end
   object btnCan: TButton
-    Left = 382
+    Left = 313
     Top = 268
     Width = 75
     Height = 25
@@ -48,10 +48,19 @@ object frmCommTester: TfrmCommTester
     ScrollBars = ssBoth
     TabOrder = 2
   end
+  object btnUSB: TButton
+    Left = 394
+    Top = 268
+    Width = 75
+    Height = 25
+    Caption = 'USB'
+    TabOrder = 3
+    OnClick = btnUSBClick
+  end
   object tmrUpdate: TTimer
     Interval = 500
     OnTimer = tmrUpdateTimer
-    Left = 256
-    Top = 272
+    Left = 16
+    Top = 24
   end
 end

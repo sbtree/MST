@@ -72,12 +72,19 @@
     <None Include="ModelSupport_CommTester\RS232\default.txvpck" />
     <None Include="ModelSupport_CommTester\TextMessage\default.txaPackage" />
     <None Include="ModelSupport_CommTester\UsbIoBuf\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\UsbIoBuf\default.txvpck" />
     <None Include="ModelSupport_CommTester\USBIOCOMLib_TLB\default.txaPackage" />
     <None Include="ModelSupport_CommTester\UsbIoPipe\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\UsbIoPipe\default.txvpck" />
     <None Include="ModelSupport_CommTester\USBIO\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USBIO\default.txvpck" />
     <None Include="ModelSupport_CommTester\USBIO_I\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USBIO_I\default.txvpck" />
     <None Include="ModelSupport_CommTester\usbio_i_delphi\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\usbio_i_delphi\default.txvpck" />
     <None Include="ModelSupport_CommTester\USBSPEC\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USBSPEC\default.txvpck" />
     <None Include="ModelSupport_CommTester\Usb\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USB\default.txvpck" />
   </ItemGroup>
 </Project>

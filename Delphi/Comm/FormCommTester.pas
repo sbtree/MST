@@ -13,11 +13,13 @@ type
     memLog: TMemo;
     lblCount: TLabel;
     tmrUpdate: TTimer;
+    btnUSB: TButton;
     procedure btnRS232Click(Sender: TObject);
     procedure btnCanClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrUpdateTimer(Sender: TObject);
+    procedure btnUSBClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_conn: TConnBase;
@@ -35,7 +37,7 @@ var
 implementation
 
 {$R *.dfm}
-uses RS232;
+uses RS232, USB;
 
 procedure TfrmCommTester.btnCanClick(Sender: TObject);
 var s_conf, s_send{, s_recv}: string;
@@ -82,6 +84,14 @@ begin
   end else ShowMessage('RS232 is NOT connected' + ' [' + s_conf + ']');
 
   //FreeAndNil(t_conn);
+end;
+
+procedure TfrmCommTester.btnUSBClick(Sender: TObject);
+var t_usb: TMtxUSB;
+begin
+  t_usb := TMtxUSB.Create(self);
+
+
 end;
 
 procedure TfrmCommTester.FormCreate(Sender: TObject);
