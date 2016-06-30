@@ -90,8 +90,7 @@ procedure TfrmCommTester.btnUSBClick(Sender: TObject);
 var t_usb: TMtxUSB;
 begin
   t_usb := TMtxUSB.Create(self);
-
-
+  t_usb.Connect();
 end;
 
 procedure TfrmCommTester.FormCreate(Sender: TObject);
