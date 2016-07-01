@@ -90,7 +90,9 @@ procedure TfrmCommTester.btnUSBClick(Sender: TObject);
 var t_usb: TMtxUSB;
 begin
   t_usb := TMtxUSB.Create(self);
-  t_usb.Connect();
+  t_usb.Timeout := 30000;
+  if t_usb.Connect() then begin
+  end;
 end;
 
 procedure TfrmCommTester.FormCreate(Sender: TObject);

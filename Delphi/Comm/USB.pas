@@ -32,6 +32,9 @@ type
     i_prodsn:   integer;
     i_curdev:   integer; //index of the found device
     r_devconf:  RMtxUsbDeviceConfig;
+    ba_rbuf:    array[0..127] of byte; //buffer for data received from device
+    ba_wbuf:    array[0..127] of byte; //buffer for data sent to device
+    b_rflag, b_wflag: boolean; //indicate ReadComplete and WriteComplete
   protected
     function IsConnected(): boolean; override;
     function FindDevice( const sn: integer; const pid: word; const vid: word): boolean; overload;
@@ -135,20 +138,20 @@ begin
         if (i_status = USBIO_ERR_SUCCESS) then begin
           CopyByteData(pa_descr1, 0, i_size, PByteArray(@r_devconf.DeviceDescriptor));
           if ((r_devconf.DeviceDescriptor.idVendor = vid) and (r_devconf.DeviceDescriptor.idProduct = pid)) then begin
+            i_size := SizeOf(USB_STRING_DESCRIPTOR);
+            FillChar(r_strdesc.bString, SizeOf(r_strdesc.bString), $00);
+            pa_descr2 := SafeArrayCreateVector ( VT_UI1, 0, i_size );
+            t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iSerialNumber, 0, i_status);
+            if (i_status = USBIO_ERR_SUCCESS) then begin
+              CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
+              r_devconf.SerialNumber := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
+            end;
             if (sn = -1) then result := true
-            else begin
-              i_size := SizeOf(USB_STRING_DESCRIPTOR);
-              FillChar(r_strdesc.bString, Length(r_strdesc.bString), $00);
-              pa_descr2 := SafeArrayCreateVector ( VT_UI1, 0, i_size );
-              t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iSerialNumber, 0, i_status);
-              if (i_status = USBIO_ERR_SUCCESS) then begin
-                CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
-                r_devconf.SerialNumber := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
-                if TryStrToInt(r_devconf.SerialNumber, i_psnr) then  result := (i_psnr = sn);
-              end;
+            else if TryStrToInt(r_devconf.SerialNumber, i_psnr) then  result := (i_psnr = sn);
 
+            if result then begin
               i_size := SizeOf(USB_STRING_DESCRIPTOR);
-              FillChar(r_strdesc.bString, Length(r_strdesc.bString), $00);
+              FillChar(r_strdesc.bString, SizeOf(r_strdesc.bString), $00);
               t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iManufacturer, 0, i_status);
               if (i_status = USBIO_ERR_SUCCESS) then begin
                 CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
@@ -156,14 +159,14 @@ begin
               end;
 
               i_size := SizeOf(USB_STRING_DESCRIPTOR);
-              FillChar(r_strdesc.bString, Length(r_strdesc.bString), $00);
+              FillChar(r_strdesc.bString, SizeOf(r_strdesc.bString), $00);
               t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iProduct, 0, i_status);
               if (i_status = USBIO_ERR_SUCCESS) then begin
                 CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
                 r_devconf.ProductType := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
               end;
-              SafeArrayDestroy(pa_descr2);
             end;
+            SafeArrayDestroy(pa_descr2);
           end;
         end;
         SafeArrayDestroy(pa_descr1);
@@ -182,14 +185,16 @@ function TMtxUsb.GetDeviceConfig(): boolean;
 var i_size: integer; pa_descr1, pa_descr2: PSafeArray ;
     r_conf:  USB_CONFIGURATION_DESCRIPTOR; r_strdesc: USB_STRING_DESCRIPTOR;
 begin
-  result := (r_devconf.DeviceDescriptor.bNumConfigurations > 0);
+  result := (r_devconf.DeviceDescriptor.bNumConfigurations = 1); //Metronix USB-Device has only one configuration
   if result then begin
+    //get configuration descriptor firstly
     i_size := SizeOf(USB_CONFIGURATION_DESCRIPTOR);
     pa_descr1 := SafeArrayCreateVector(VT_UI1, 0, i_size);
     t_usbio.GetConfigurationDescriptor(pa_descr1, i_size, 0, i_status);
     result := (i_status = USBIO_ERR_SUCCESS);
     if result then begin
       CopyByteData(pa_descr1, 0, i_size, PByteArray(@r_conf));
+      //get total data of the configuration, incl. Interface descriptor und endpoints
       i_size := r_conf.wTotalLength;
       pa_descr2 := SafeArrayCreateVector(VT_UI1, 0, i_size);
       t_usbio.GetConfigurationDescriptor(pa_descr2, i_size, 0, i_status);
@@ -199,7 +204,7 @@ begin
 
       if result then begin
         i_size := SizeOf(USB_STRING_DESCRIPTOR);
-        FillChar(r_strdesc.bString, Length(r_strdesc.bString), $00);
+        FillChar(r_strdesc.bString, SizeOf(r_strdesc.bString), $00);
         pa_descr2 := SafeArrayCreateVector(VT_UI1, 0, i_size);
         t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.MtxUsbConfigDesc.ConfigDescriptor.iConfiguration, 0, i_status);
         if (i_status = USBIO_ERR_SUCCESS) then begin
@@ -216,17 +221,7 @@ function TMtxUsb.Init: boolean;
 var i_size: integer;
 begin
   result := FindDevice();
-  //1. open device
-  if result then begin
-    t_usbepin.OpenDevice(i_curdev, i_status);
-    result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_DEVICE_ALREADY_OPENED)));
-  end;
-  if result then begin
-    t_usbepout.OpenDevice(i_curdev, i_status);
-    result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_DEVICE_ALREADY_OPENED)));
-  end;
-
-  //2. add interface
+  //1.add interface
   if result then begin
     if (r_devconf.MtxUsbConfigDesc.EndpointIn.wMaxPacketSize > r_devconf.MtxUsbConfigDesc.EndpointOut.wMaxPacketSize) then
       i_size := r_devconf.MtxUsbConfigDesc.EndpointIn.wMaxPacketSize
@@ -238,48 +233,39 @@ begin
     result := (i_status = USBIO_ERR_SUCCESS);
   end;
 
-  //3. set configuration
+  //2. set configuration
   if result then begin
     t_usbio.SetConfiguration(0, i_status);
-    result := (i_status = USBIO_ERR_SUCCESS);
+    result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_ALREADY_CONFIGURED)));
   end;
 
-  //4. bind endpoint for reading from usb-device
+  //3. open and bind endpoint for reading from usb-device
+  if result then begin
+    t_usbepin.OpenDevice(i_curdev, i_status);
+    result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_DEVICE_ALREADY_OPENED)));
+  end;
   if result then begin
     t_usbepin.Bind(r_devconf.MtxUsbConfigDesc.EndpointIn.bEndpointAddress, i_status);
-    result := (i_status = USBIO_ERR_SUCCESS);
-  end;
-  if result then begin
-    t_usbepin.StartReading(C_USB_RX_BUFFER_SIZE, C_USB_CNT_RX_BUFFERS, C_USB_MAX_RX_ERRORS, i_status);
-    result := (i_status = USBIO_ERR_SUCCESS);
+    result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_ALREADY_BOUND)));
   end;
 
-  //5. bind endpoint for writing to usb-device
+  //4. open and bind endpoint for writing to usb-device
   if result then begin
-    t_usbepin.Bind(r_devconf.MtxUsbConfigDesc.EndpointOut.bEndpointAddress, i_status);
-    result := (i_status = USBIO_ERR_SUCCESS);
+    t_usbepout.OpenDevice(i_curdev, i_status);
+    result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_DEVICE_ALREADY_OPENED)));
   end;
   if result then begin
-    t_usbepin.StartWriting( C_USB_TX_BUFFER_SIZE, C_USB_CNT_TX_BUFFERS, C_USB_MAX_TX_ERRORS, 0, i_status);
-    result := (i_status = USBIO_ERR_SUCCESS);
+    t_usbepout.Bind(r_devconf.MtxUsbConfigDesc.EndpointOut.bEndpointAddress, i_status);
+    result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_ALREADY_BOUND)));
   end;
-
-  if result then begin
-    t_usbepin.ResetPipe(i_status);
-    t_usbepout.ResetPipe(i_status);
-  end;
-
 end;
 
 function TMtxUsb.Uninit(): boolean;
 begin
-  t_usbepout.StopWriting();
-  t_usbepin.StopReading();
-  t_usbepout.Unbind(i_status);
-  t_usbepin.Unbind(i_status);
   t_usbepout.CloseDevice();
   t_usbepin.CloseDevice();
   t_usbio.UnconfigureDevice(i_status);
+  t_usbio.DeleteInterfaces();
   t_usbio.CloseDevice();
   InitDevConfig();
   result := true;
@@ -305,20 +291,29 @@ end;
 procedure TMtxUsb.OnReadComplete(sender: TObject; var obj: OleVariant);
 var pa_recv: PSafeArray; i_size: integer;
 begin
-  // Puffer (SafeArray, Datentyp UINT8) für das Aulesen der Empfangsdaten erzeugen
+  i_size := SizeOf(ba_rbuf);
   pa_recv := SafeArrayCreateVector ( VT_UI1, 0, C_USB_RX_BUFFER_SIZE );
-  // Empfangsdaten einlesen
   t_usbepin.ReadData(pa_recv, i_size, i_status);
-  if (i_status <> USBIO_ERR_SUCCESS) then t_usbepin.ResetPipe(i_status);
+  if (i_status = USBIO_ERR_SUCCESS) then begin
+    FillChar(ba_rbuf, i_size, $00);
+    CopyByteData(pa_recv, 0, i_size, PByteArray(@ba_rbuf));
+    b_rflag := true;
+  end else t_usbepin.ResetPipe(i_status);
   SafeArrayDestroy (pa_recv);
 end;
 
 procedure TMtxUsb.OnWriteComplete(sender: TObject; var obj: OleVariant);
 begin
+  b_wflag := true;
 end;
 
 procedure TMtxUsb.OnWriteStatusAvailable(sender: TObject; var obj: OleVariant);
+var pa_send: PSafeArray; i_size: integer;
 begin
+  for i_size := 0 to SizeOf(ba_wbuf) - 1 do if (ba_wbuf[i_size] = 0) then break; //find the last byte which is not equal zero
+  pa_send := SafeArrayCreateVector ( VT_UI1, 0, i_size );
+  //todo:
+  t_usbepout.WriteData(pa_send, 0, i_status);
 end;
 
 procedure TMtxUsb.OnAddDevice(Sender: TObject; var Obj: OleVariant);
@@ -329,7 +324,8 @@ end;
 procedure TMtxUsb.OnRemoveDevice(Sender: TObject; var Obj: OleVariant);
 begin
   if (i_curdev >= 0) then
-    if (not FindDevice()) then Disconnect();
+    if (not FindDevice()) then
+      Disconnect();
 end;
 
 constructor TMtxUsb.Create(owner: TComponent);
@@ -350,13 +346,21 @@ begin
   t_usbepout := TUSBIOInterface3.Create(self);
   t_usbepout.OnWriteComplete := OnWriteComplete;
   InitDevConfig();
+  //connect all intances to COM server (USBIO-Driver) and
+  t_usbio.Connect();
+  t_usbepin.Connect();
+  t_usbepout.Connect();
 end;
 
 destructor TMtxUsb.Destroy;
 begin
-  t_usbio.OnWriteStatusAvailable := Nil;
-  t_usbio.OnWriteComplete := Nil;
-  t_usbio.OnReadComplete := Nil;
+  t_usbepout.Disconnect();
+  t_usbepin.Disconnect();
+  t_usbio.Disconnect();
+  t_usbepout.OnWriteStatusAvailable := Nil;
+  t_usbepout.OnWriteComplete := Nil;
+  t_usbepin.OnReadComplete := Nil;
+  t_usbio.DisablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
   FreeAndNil(t_usbio);
   t_connobj := nil;
 	inherited Destroy;
@@ -378,11 +382,31 @@ end;
 function TMtxUsb.Connect(): boolean;
 begin
   result := Init();
-  if result then e_state := CS_CONNECTED;
+  if result then begin
+    if result then begin
+      t_usbepin.StartReading(C_USB_RX_BUFFER_SIZE, C_USB_CNT_RX_BUFFERS, C_USB_MAX_RX_ERRORS, i_status);
+      result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
+    end;
+    if result then begin
+      t_usbepout.StartWriting( C_USB_TX_BUFFER_SIZE, C_USB_CNT_TX_BUFFERS, C_USB_MAX_TX_ERRORS, 0, i_status);
+      result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
+    end;
+
+    if result then begin
+      t_usbepin.ResetPipe(i_status);
+      t_usbepout.ResetPipe(i_status);
+      e_state := CS_CONNECTED;
+      b_rflag := false; b_wflag := false;
+      FillChar(ba_rbuf, SizeOf(ba_rbuf), $00);
+      FillChar(ba_wbuf, SizeOf(ba_wbuf), $00);
+    end;
+  end;
 end;
 
 function TMtxUsb.Disconnect: boolean;
 begin
+  t_usbepout.StopWriting();
+  t_usbepin.StopReading();
   result := Uninit();
   if (e_state = CS_CONNECTED) then  e_state := CS_CONFIGURED;
 end;
