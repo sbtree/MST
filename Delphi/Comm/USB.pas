@@ -37,9 +37,9 @@ type
     b_rflag, b_wflag: boolean; //indicate ReadComplete and WriteComplete
   protected
     function IsConnected(): boolean; override;
-    function FindDevice( const sn: integer; const pid: word; const vid: word): boolean; overload;
+    function FindDevice(const sn: integer; const pid: word; const vid: word; const tend: cardinal): boolean; overload;
     function GetDeviceConfig(): boolean;
-    function Init(): boolean;
+    function Init(const psn: integer = -1): boolean;
     function Uninit(): boolean;
     procedure CopyByteData (const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
     procedure InitDevConfig();
@@ -55,11 +55,12 @@ type
 
     property VendorID: word read w_vid write w_vid;
     property ProductID: word read w_pid write w_pid;
-    property ProductSN: integer read i_prodsn write i_prodsn;
+    property ProductSN: integer read i_prodsn;
 
-    function FindDevice(): boolean; overload;
+    function FindDevice(const sn: integer = -1; const tout: integer = -1): boolean; overload;
     function Config(const sconfs: TStrings): boolean; override;
     function Connect(): boolean; override;
+    function ConnectTo(const psnr: integer): boolean;
     function Disconnect: boolean; override;
     function SendBuf(const buf: PChar; const len: longword): boolean; override;
     function RecvBuf(var buf: PChar; const len: longword): integer; override;
@@ -121,12 +122,11 @@ begin
   end;
 end;
 
-function TMtxUsb.FindDevice( const sn: integer; const pid, vid: word): boolean;
+function TMtxUsb.FindDevice( const sn: integer; const pid, vid: word; const tend: cardinal): boolean;
 var i, i_count, i_size, i_psnr: integer;
-    c_tend: cardinal; pa_descr1, pa_descr2: PSafeArray; r_strdesc: USB_STRING_DESCRIPTOR;
+    pa_descr1, pa_descr2: PSafeArray; r_strdesc: USB_STRING_DESCRIPTOR;
 begin
-  result := false; i_curdev := -1;
-  c_tend := GetTickCount() + c_timeout;
+  result := false; i_curdev := -1; i_prodsn := -1;
   repeat
     t_usbio.EnumerateDevices(CSTR_MTXUSB_ARS2000_GUID,i_count);
     for i := 0 to i_count - 1 do begin
@@ -146,8 +146,8 @@ begin
               CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
               r_devconf.SerialNumber := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
             end;
-            if (sn = -1) then result := true
-            else if TryStrToInt(r_devconf.SerialNumber, i_psnr) then  result := (i_psnr = sn);
+            if TryStrToInt(r_devconf.SerialNumber, i_psnr) then i_prodsn := i_psnr;
+            result := ((i_prodsn = sn) or (sn = -1));
 
             if result then begin
               i_size := SizeOf(USB_STRING_DESCRIPTOR);
@@ -178,7 +178,7 @@ begin
       end else t_usbio.CloseDevice();
     end;
     Application.ProcessMessages();
-  until ((GetTickCount() >= c_tend) or b_break or result);
+  until ((GetTickCount() >= tend) or b_break or result);
 end;
 
 function TMtxUsb.GetDeviceConfig(): boolean;
@@ -217,10 +217,10 @@ begin
   end;
 end;
 
-function TMtxUsb.Init: boolean;
+function TMtxUsb.Init(const psn: integer): boolean;
 var i_size: integer;
 begin
-  result := FindDevice();
+  result := FindDevice(psn);
   //1.add interface
   if result then begin
     if (r_devconf.MtxUsbConfigDesc.EndpointIn.wMaxPacketSize > r_devconf.MtxUsbConfigDesc.EndpointOut.wMaxPacketSize) then
@@ -324,8 +324,7 @@ end;
 procedure TMtxUsb.OnRemoveDevice(Sender: TObject; var Obj: OleVariant);
 begin
   if (i_curdev >= 0) then
-    if (not FindDevice()) then
-      Disconnect();
+    if (not FindDevice(i_prodsn, 2000)) then Disconnect();      
 end;
 
 constructor TMtxUsb.Create(owner: TComponent);
@@ -366,9 +365,13 @@ begin
 	inherited Destroy;
 end;
 
-function TMtxUsb.FindDevice(): boolean;
+function TMtxUsb.FindDevice(const sn: integer; const tout: integer): boolean;
+var c_tend: cardinal;
 begin
-  result := FindDevice(i_prodsn, w_pid, w_vid);
+  if (tout < 0) then c_tend := GetTickCount() + c_timeout
+  else c_tend := GetTickCount() + cardinal(tout);
+  
+  result := FindDevice(sn, w_pid, w_vid, c_tend);
 end;
 
 function TMtxUsb.Config(const sconfs: TStrings): boolean;
@@ -381,7 +384,12 @@ end;
 
 function TMtxUsb.Connect(): boolean;
 begin
-  result := Init();
+  result := ConnectTo(-1);
+end;
+
+function TMtxUsb.ConnectTo(const psnr: integer): boolean;
+begin
+  result := Init(psnr);
   if result then begin
     if result then begin
       t_usbepin.StartReading(C_USB_RX_BUFFER_SIZE, C_USB_CNT_RX_BUFFERS, C_USB_MAX_RX_ERRORS, i_status);
