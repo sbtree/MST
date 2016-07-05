@@ -14,12 +14,17 @@ type
     lblCount: TLabel;
     tmrUpdate: TTimer;
     btnUSB: TButton;
+    txtSending: TEdit;
+    btnSend: TButton;
+    btnRecv: TButton;
     procedure btnRS232Click(Sender: TObject);
     procedure btnCanClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure tmrUpdateTimer(Sender: TObject);
     procedure btnUSBClick(Sender: TObject);
+    procedure btnSendClick(Sender: TObject);
+    procedure btnRecvClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_conn: TConnBase;
@@ -62,6 +67,12 @@ begin
   //FreeAndNil(t_conn);
 end;
 
+procedure TfrmCommTester.btnRecvClick(Sender: TObject);
+var s_recv: string;
+begin
+  t_conn.RecvStr(s_recv, true);
+end;
+
 procedure TfrmCommTester.btnRS232Click(Sender: TObject);
 var s_conf: string; s_send, s_recv: string;
 begin
@@ -86,13 +97,19 @@ begin
   //FreeAndNil(t_conn);
 end;
 
+procedure TfrmCommTester.btnSendClick(Sender: TObject);
+begin
+  t_conn.SendStr(trim(txtSending.Text));
+end;
+
 procedure TfrmCommTester.btnUSBClick(Sender: TObject);
 var t_usb: TMtxUSB;
 begin
   t_usb := TMtxUSB.Create(self);
-  t_usb.Timeout := 30000;
-  if t_usb.Connect() then begin
-  end;
+  //t_usb.Timeout := 30000;
+  t_usb.Connect();
+  t_conn := t_usb;
+  t_conn.Messenger := t_messenger;
 end;
 
 procedure TfrmCommTester.FormCreate(Sender: TObject);

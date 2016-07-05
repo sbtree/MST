@@ -1,7 +1,7 @@
 unit USB;
 
 interface
-uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX, ConnBase;
+uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX, ConnBase, SyncObjs;
 
 type
   RMtxUsbConfigDesc = packed record
@@ -24,8 +24,8 @@ type
   TMtxUsb=class(TConnBase)
   protected
     t_usbio:    TUSBIOInterface3;  //intance for general setting of usb
-    t_usbepin:  TUSBIOInterface3;  //endpoint for reading from usb-device
-    t_usbepout: TUSBIOInterface3;  //endpoint for writing to usb-device
+    t_usbrx:    TUSBIOInterface3;  //endpoint for reading from usb-device
+    t_usbtx:    TUSBIOInterface3;  //endpoint for writing to usb-device
     i_status:   integer;
     w_vid:      word;
     w_pid:      word;
@@ -33,14 +33,18 @@ type
     i_curdev:   integer; //index of the found device
     r_devconf:  RMtxUsbDeviceConfig;
     ba_rbuf:    array[0..127] of byte; //buffer for data received from device
-    ba_wbuf:    array[0..127] of byte; //buffer for data sent to device
-    b_rflag, b_wflag: boolean; //indicate ReadComplete and WriteComplete
+    //ba_wbuf:    array[0..127] of byte; //buffer for data sent to device
+    i_rlen:     integer;  //actual length of the received data
+    t_rxwait:   TEvent;   //wait event for reading
+    t_txwait:   TEvent;   //wait event for writing complete
   protected
     function IsConnected(): boolean; override;
     function FindDevice(const sn: integer; const pid: word; const vid: word; const tend: cardinal): boolean; overload;
     function GetDeviceConfig(): boolean;
     function Init(const psn: integer = -1): boolean;
     function Uninit(): boolean;
+    function RecvData(): boolean;
+    function WaitForTxComlete(const tend: cardinal): boolean;
     procedure CopyByteData (const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
     procedure InitDevConfig();
 
@@ -241,35 +245,57 @@ begin
 
   //3. open and bind endpoint for reading from usb-device
   if result then begin
-    t_usbepin.OpenDevice(i_curdev, i_status);
+    t_usbrx.OpenDevice(i_curdev, i_status);
     result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_DEVICE_ALREADY_OPENED)));
   end;
   if result then begin
-    t_usbepin.Bind(r_devconf.MtxUsbConfigDesc.EndpointIn.bEndpointAddress, i_status);
+    t_usbrx.Bind(r_devconf.MtxUsbConfigDesc.EndpointIn.bEndpointAddress, i_status);
     result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_ALREADY_BOUND)));
   end;
 
   //4. open and bind endpoint for writing to usb-device
   if result then begin
-    t_usbepout.OpenDevice(i_curdev, i_status);
+    t_usbtx.OpenDevice(i_curdev, i_status);
     result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_DEVICE_ALREADY_OPENED)));
   end;
   if result then begin
-    t_usbepout.Bind(r_devconf.MtxUsbConfigDesc.EndpointOut.bEndpointAddress, i_status);
+    t_usbtx.Bind(r_devconf.MtxUsbConfigDesc.EndpointOut.bEndpointAddress, i_status);
     result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_ALREADY_BOUND)));
   end;
 end;
 
 function TMtxUsb.Uninit(): boolean;
 begin
-  t_usbepout.CloseDevice();
-  t_usbepin.CloseDevice();
+  t_usbtx.CloseDevice();
+  t_usbrx.CloseDevice();
   t_usbio.UnconfigureDevice(i_status);
   t_usbio.DeleteInterfaces();
   t_usbio.CloseDevice();
   InitDevConfig();
   result := true;
   e_state := CS_CONFIGURED;
+end;
+
+function TMtxUsb.RecvData(): boolean;
+var pa_recv: PSafeArray; i_size: integer;
+begin
+  result := false; i_size := SizeOf(ba_rbuf);
+  pa_recv := SafeArrayCreateVector ( VT_UI1, 0, C_USB_RX_BUFFER_SIZE );
+  t_usbrx.ReadData(pa_recv, i_size, i_status);
+  if (i_status = USBIO_ERR_SUCCESS) then begin
+    FillChar(ba_rbuf, i_size, $00);
+    i_rlen := i_size;
+    CopyByteData(pa_recv, 0, i_size, PByteArray(@ba_rbuf));
+  end else t_usbrx.ResetPipe(i_status);
+  SafeArrayDestroy (pa_recv);
+end;
+
+function TMtxUsb.WaitForTxComlete(const tend: cardinal): boolean;
+begin
+  repeat
+    Application.ProcessMessages();
+    result := (t_txwait.WaitFor(0) = wrSignaled);
+  until (result or (GetTickCount() >= tend));
 end;
 
 function TMtxUsb.IsConnected(): boolean;
@@ -289,31 +315,19 @@ begin
 end;
 
 procedure TMtxUsb.OnReadComplete(sender: TObject; var obj: OleVariant);
-var pa_recv: PSafeArray; i_size: integer;
 begin
-  i_size := SizeOf(ba_rbuf);
-  pa_recv := SafeArrayCreateVector ( VT_UI1, 0, C_USB_RX_BUFFER_SIZE );
-  t_usbepin.ReadData(pa_recv, i_size, i_status);
-  if (i_status = USBIO_ERR_SUCCESS) then begin
-    FillChar(ba_rbuf, i_size, $00);
-    CopyByteData(pa_recv, 0, i_size, PByteArray(@ba_rbuf));
-    b_rflag := true;
-  end else t_usbepin.ResetPipe(i_status);
-  SafeArrayDestroy (pa_recv);
+  t_rxwait.SetEvent();
+  RecvData();
 end;
 
 procedure TMtxUsb.OnWriteComplete(sender: TObject; var obj: OleVariant);
 begin
-  b_wflag := true;
+  //t_txwait.SetEvent();
 end;
 
 procedure TMtxUsb.OnWriteStatusAvailable(sender: TObject; var obj: OleVariant);
-var pa_send: PSafeArray; i_size: integer;
 begin
-  for i_size := 0 to SizeOf(ba_wbuf) - 1 do if (ba_wbuf[i_size] = 0) then break; //find the last byte which is not equal zero
-  pa_send := SafeArrayCreateVector ( VT_UI1, 0, i_size );
-  //todo:
-  t_usbepout.WriteData(pa_send, 0, i_status);
+  t_txwait.SetEvent();
 end;
 
 procedure TMtxUsb.OnAddDevice(Sender: TObject; var Obj: OleVariant);
@@ -332,46 +346,51 @@ begin
 	inherited Create(owner);
   e_type := CT_USB;
   e_state := CS_UNKNOWN;
-  w_vid := $1B97;
-  w_pid := $2;
+  w_vid := $1B97;  //default vendor id of usb device
+  w_pid := $2;     //default product id of usb device
   i_prodsn := -1;
   t_usbio := TUSBIOInterface3.Create(self);
   t_connobj := t_usbio;
   t_usbio.OnPnPAddNotification := OnAddDevice;
   t_usbio.OnPnPRemoveNotification := OnRemoveDevice;
   t_usbio.EnablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
-  t_usbepin := TUSBIOInterface3.Create(self);
-  t_usbepin.OnReadComplete := OnReadComplete;
-  t_usbepout := TUSBIOInterface3.Create(self);
-  t_usbepout.OnWriteComplete := OnWriteComplete;
+  t_usbrx := TUSBIOInterface3.Create(self);
+  t_usbrx.OnReadComplete := OnReadComplete;
+  t_usbtx := TUSBIOInterface3.Create(self);
+  t_usbtx.OnWriteComplete := OnWriteComplete;
+  t_usbtx.OnWriteStatusAvailable := OnWriteStatusAvailable;
   InitDevConfig();
-  //connect all intances to COM server (USBIO-Driver) and
+  //connect all intances to COM server (USBIO-Driver)
   t_usbio.Connect();
-  t_usbepin.Connect();
-  t_usbepout.Connect();
+  t_usbrx.Connect();
+  t_usbtx.Connect();
+  t_rxwait := TEvent.Create(nil, false, false, 'TMtxUsb.Rx');
+  t_txwait := TEvent.Create(nil, false, false, 'TMtxUsb.Tx');
 end;
 
 destructor TMtxUsb.Destroy;
 begin
-  t_usbepout.Disconnect();
-  t_usbepin.Disconnect();
+  t_usbtx.Disconnect();
+  t_usbrx.Disconnect();
   t_usbio.Disconnect();
-  t_usbepout.OnWriteStatusAvailable := Nil;
-  t_usbepout.OnWriteComplete := Nil;
-  t_usbepin.OnReadComplete := Nil;
+  t_usbtx.OnWriteStatusAvailable := Nil;
+  t_usbtx.OnWriteComplete := Nil;
+  t_usbrx.OnReadComplete := Nil;
   t_usbio.DisablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
   FreeAndNil(t_usbio);
   t_connobj := nil;
+  FreeAndNil(t_rxwait);
+  FreeAndNil(t_txwait);
 	inherited Destroy;
 end;
 
 function TMtxUsb.FindDevice(const sn: integer; const tout: integer): boolean;
-var c_tend: cardinal;
+var c_time: cardinal;
 begin
-  if (tout < 0) then c_tend := GetTickCount() + c_timeout
-  else c_tend := GetTickCount() + cardinal(tout);
-  
-  result := FindDevice(sn, w_pid, w_vid, c_tend);
+  if (tout < 0) then c_time := GetTickCount() + c_timeout
+  else c_time := GetTickCount() + cardinal(tout);
+
+  result := FindDevice(sn, w_pid, w_vid, c_time);
 end;
 
 function TMtxUsb.Config(const sconfs: TStrings): boolean;
@@ -389,33 +408,33 @@ end;
 
 function TMtxUsb.ConnectTo(const psnr: integer): boolean;
 begin
+  Disconnect();
   result := Init(psnr);
   if result then begin
+    t_usbrx.StartReading(C_USB_RX_BUFFER_SIZE, C_USB_CNT_RX_BUFFERS, C_USB_MAX_RX_ERRORS, i_status);
+    result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
     if result then begin
-      t_usbepin.StartReading(C_USB_RX_BUFFER_SIZE, C_USB_CNT_RX_BUFFERS, C_USB_MAX_RX_ERRORS, i_status);
-      result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
-    end;
-    if result then begin
-      t_usbepout.StartWriting( C_USB_TX_BUFFER_SIZE, C_USB_CNT_TX_BUFFERS, C_USB_MAX_TX_ERRORS, 0, i_status);
-      result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
+      t_usbrx.ResetPipe(i_status);
+      FillChar(ba_rbuf, SizeOf(ba_rbuf), $00);
     end;
 
     if result then begin
-      t_usbepin.ResetPipe(i_status);
-      t_usbepout.ResetPipe(i_status);
-      e_state := CS_CONNECTED;
-      b_rflag := false; b_wflag := false;
-      FillChar(ba_rbuf, SizeOf(ba_rbuf), $00);
-      FillChar(ba_wbuf, SizeOf(ba_wbuf), $00);
+      t_usbtx.StartWriting( C_USB_TX_BUFFER_SIZE, C_USB_CNT_TX_BUFFERS, C_USB_MAX_TX_ERRORS, 1, i_status);
+      result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
+      if result then t_usbtx.ResetPipe(i_status);
     end;
   end;
+  if result then e_state := CS_CONNECTED
+  else Disconnect();
 end;
 
 function TMtxUsb.Disconnect: boolean;
 begin
-  t_usbepout.StopWriting();
-  t_usbepin.StopReading();
+  t_usbtx.StopWriting();
+  t_usbrx.StopReading();
   result := Uninit();
+  t_rxwait.ResetEvent();
+  t_txwait.ResetEvent();
   if (e_state = CS_CONNECTED) then  e_state := CS_CONFIGURED;
 end;
 
@@ -431,22 +450,60 @@ begin
   //todo:
 end;
 
-function TMtxUsb.SendStr(const str: string): boolean; 
+function TMtxUsb.SendStr(const str: string): boolean;
+var pa_send: PSafeArray; i, i_size: integer; c_time: cardinal;
 begin
   result := false;
-  //todo:
+  if Connected then begin
+    i_size := Length(str) + 1;
+    if (i_size > 0) then begin
+      c_time := GetTickCount() + c_timeout;
+      pa_send := SafeArrayCreateVector ( VT_UI1, 0, i_size );
+      for i := 0 to i_size - 1 do SafeArrayPutElement(pa_send, i, str[i]);
+      t_usbtx.WriteData(pa_send, 0, i_status);
+      result := (i_status = USBIO_ERR_SUCCESS);
+      SafeArrayDestroy(pa_send);
+      if result then result := WaitForTxComlete(c_time);
+      if result then Addmessage(format('Successed to send: %s', [str]))
+      else Addmessage(format('Failed to send: %s', [str]));
+    end else Addmessage('The given string is empty and nothing is sent.');
+  end else Addmessage('No connection and nothing is sent.');
 end;
 
-function TMtxUsb.RecvStr(var str: string; const bwait: boolean = false): integer; 
+function TMtxUsb.RecvStr(var str: string; const bwait: boolean = false): integer;
+var i: integer;
 begin
-  result := 0;
-  //todo:
+  result := 0; str := '';
+  if Connected then begin
+    if bwait then WaitForReading(GetTickCount + c_timeout)
+    else begin
+      Application.ProcessMessages();
+      t_rxwait.WaitFor(0);
+    end;
+    //if RecvData() then begin
+      for i := 0 to i_rlen - 1 do if (ba_rbuf[i] > 0) then str := str + Char(ba_rbuf[i]);
+      result := i_rlen;
+      for i := 0 to sizeof(ba_rbuf) - 1 do ba_rbuf[i] := 0;
+      i_rlen := 0;
+    //end;
+
+    if (result > 0) then Addmessage(format('Received: %s', [str]))
+    else Addmessage('Nothing is received.');
+  end else Addmessage('No connection and nothing is received.');;
 end;
 
 function TMtxUsb.RecvStrTimeout(var str: string; const tend: cardinal): integer;
+var i: integer;
 begin
-  result := 0;
-  //todo:
+  result := 0; str := '';
+  if Connected then begin
+    if (WaitForReading(tend)) then begin
+      for i := 0 to i_rlen - 1 do if (ba_rbuf[i] > 0) then str := str + Char(ba_rbuf[i]);
+      result := i_rlen;
+    end;
+    for i := 0 to sizeof(ba_rbuf) - 1 do ba_rbuf[i] := 0;
+    i_rlen := 0;
+  end;
 end;
 
 function TMtxUsb.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
@@ -461,10 +518,12 @@ begin
   //todo:
 end;
 
-function TMtxUsb.WaitForReading(const tend: cardinal): boolean; 
+function TMtxUsb.WaitForReading(const tend: cardinal): boolean;
 begin
-  result := false;
-  //todo:
+  repeat
+    Application.ProcessMessages();
+    result := (t_rxwait.WaitFor(0) = wrSignaled);
+  until (result or (GetTickCount() >= tend));
 end;
 
 end.
