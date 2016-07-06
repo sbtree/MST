@@ -41,6 +41,8 @@
     <DelphiCompile Include="BootTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\RS232.pas" />
     <DCCReference Include="..\Externals\Serial3.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="..\General\NewProgressbar.pas" />

@@ -6,7 +6,9 @@ uses
   Serial3 in '..\Externals\Serial3.pas',
   MtxDownloader in 'MtxDownloader.pas',
   GenUtils in '..\General\GenUtils.pas',
-  NewProgressbar in '..\General\NewProgressbar.pas';
+  NewProgressbar in '..\General\NewProgressbar.pas',
+  ConnBase in '..\Comm\ConnBase.pas',
+  RS232 in '..\Comm\RS232.pas';
 
 {$R *.res}
 

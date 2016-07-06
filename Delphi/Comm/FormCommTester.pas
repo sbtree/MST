@@ -99,17 +99,17 @@ end;
 
 procedure TfrmCommTester.btnSendClick(Sender: TObject);
 begin
-  t_conn.SendStr(trim(txtSending.Text));
+  t_conn.SendStr(trim(txtSending.Text + Char(#13)));
 end;
 
 procedure TfrmCommTester.btnUSBClick(Sender: TObject);
 var t_usb: TMtxUSB;
 begin
   t_usb := TMtxUSB.Create(self);
-  //t_usb.Timeout := 30000;
-  t_usb.Connect();
   t_conn := t_usb;
   t_conn.Messenger := t_messenger;
+  t_usb.Config('VID:$1B97|PID:$2|SN:1234');
+  t_usb.Connect();
 end;
 
 procedure TfrmCommTester.FormCreate(Sender: TObject);

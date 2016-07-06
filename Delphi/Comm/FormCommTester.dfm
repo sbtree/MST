@@ -3,7 +3,7 @@ object frmCommTester: TfrmCommTester
   Top = 0
   Caption = 'CommunicationTester'
   ClientHeight = 329
-  ClientWidth = 466
+  ClientWidth = 510
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,14 +16,14 @@ object frmCommTester: TfrmCommTester
   PixelsPerInch = 96
   TextHeight = 13
   object lblCount: TLabel
-    Left = 20
-    Top = 271
+    Left = 4
+    Top = 268
     Width = 114
     Height = 13
     Caption = 'Messages: Tx(0); Rx(0)'
   end
   object btnRS232: TButton
-    Left = 224
+    Left = 4
     Top = 296
     Width = 75
     Height = 25
@@ -32,7 +32,7 @@ object frmCommTester: TfrmCommTester
     OnClick = btnRS232Click
   end
   object btnCan: TButton
-    Left = 305
+    Left = 85
     Top = 296
     Width = 75
     Height = 25
@@ -43,13 +43,13 @@ object frmCommTester: TfrmCommTester
   object memLog: TMemo
     Left = 4
     Top = 8
-    Width = 457
+    Width = 501
     Height = 254
     ScrollBars = ssBoth
     TabOrder = 2
   end
   object btnUSB: TButton
-    Left = 386
+    Left = 166
     Top = 296
     Width = 75
     Height = 25
@@ -58,16 +58,16 @@ object frmCommTester: TfrmCommTester
     OnClick = btnUSBClick
   end
   object txtSending: TEdit
-    Left = 152
-    Top = 268
-    Width = 147
+    Left = 349
+    Top = 269
+    Width = 156
     Height = 21
     TabOrder = 4
     Text = 'OR:1:0008'
   end
   object btnSend: TButton
-    Left = 305
-    Top = 268
+    Left = 349
+    Top = 296
     Width = 75
     Height = 25
     Caption = '&Send'
@@ -75,8 +75,8 @@ object frmCommTester: TfrmCommTester
     OnClick = btnSendClick
   end
   object btnRecv: TButton
-    Left = 386
-    Top = 268
+    Left = 430
+    Top = 296
     Width = 75
     Height = 25
     Caption = '&Receive'
