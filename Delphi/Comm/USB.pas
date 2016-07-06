@@ -6,7 +6,7 @@ uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX, Co
 type
   EMtxUsbProperty = ( MUP_VID,
                       MUP_PID,
-                      MUP_SN
+                      MUP_PSN
                     );
 
   RMtxUsbConfigDesc = packed record
@@ -38,7 +38,7 @@ type
     i_curdev:   integer;          //index of the found device
     r_devconf:  RMtxUsbDeviceConfig;    //record of usb device configuration
     ba_rbuf:    array[0..1023] of byte; //buffer for data received from device
-    i_rlen:     integer;  //actual length of the received data
+    w_rlen:     word;     //actual length of the received data
     t_rxwait:   TEvent;   //wait event for reading
     t_txwait:   TEvent;   //wait event for writing complete
   protected
@@ -56,7 +56,7 @@ type
     function SetDevicePid(const sval: string): boolean;
     function SetProductSN(const sval: string): boolean;
     procedure CopyByteData (const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
-    procedure InitDevConfig();
+    procedure ClearDeviceInfo();
     procedure ClearBuffer();
 
     procedure OnReadComplete(sender: TObject; var obj: OleVariant);
@@ -121,7 +121,7 @@ const
   CSTR_MTXUSB_PROPERTIES: array[EMtxUsbProperty] of string = (
                           'VID',
                           'PID',
-                          'SN'
+                          'PSN'
                           );
 
 procedure TMtxUsb.CopyByteData ( const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
@@ -239,8 +239,8 @@ end;
 
 function TMtxUsb.GetProductSN(): integer;
 begin
-  if (i_actsn <> -1) then result := i_actsn
-  else result := i_prodsn;
+  if (i_actsn = -1) then result := i_prodsn
+  else result := i_actsn;
 end;
 
 function TMtxUsb.Init(const psn: integer): boolean;
@@ -285,14 +285,11 @@ begin
 
   //5. start reading and writing worker-thread
   if result then begin
+    FillChar(ba_rbuf, SizeOf(ba_rbuf), $00);
     t_usbrx.StartReading(C_USB_RX_BUFFER_SIZE, C_USB_CNT_RX_BUFFERS, C_USB_MAX_RX_ERRORS, i_status);
     result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
     if result then begin
       t_usbrx.ResetPipe(i_status);
-      FillChar(ba_rbuf, SizeOf(ba_rbuf), $00);
-    end;
-
-    if result then begin
       t_usbtx.StartWriting( C_USB_TX_BUFFER_SIZE, C_USB_CNT_TX_BUFFERS, C_USB_MAX_TX_ERRORS, 0, i_status);
       result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
       if result then t_usbtx.ResetPipe(i_status);
@@ -319,9 +316,9 @@ begin
   //1. remove interface
   t_usbio.DeleteInterfaces();
 
-  //0. close EP0 and reset device info
+  //0. close EP0 and clear device info
   t_usbio.CloseDevice();
-  InitDevConfig();
+  ClearDeviceInfo();
   result := true;
 
   //set state to 'configured'
@@ -338,7 +335,7 @@ begin
     t_usbrx.ReadData(pa_recv, i_size, i_status);
     if (i_status = USBIO_ERR_SUCCESS) then begin
       FillChar(ba_rbuf, i_size, $00);
-      i_rlen := i_size;
+      w_rlen := i_size;
       CopyByteData(pa_recv, 0, i_size, PByteArray(@ba_rbuf));
     end else if (i_status <> integer(USBIO_ERR_NO_DATA)) then begin
       t_usbrx.ResetPipe(i_status);
@@ -372,7 +369,7 @@ begin
   case eprop of
     MUP_VID: result := SetDeviceVid(sval);
     MUP_PID: result := SetDevicePid(sval);
-    MUP_SN: result := SetProductSN(sval);
+    MUP_PSN: result := SetProductSN(sval);
   end;
 end;
 
@@ -411,7 +408,7 @@ begin
   result := (e_state = CS_CONNECTED);
 end;
 
-procedure TMtxUsb.InitDevConfig();
+procedure TMtxUsb.ClearDeviceInfo();
 begin
   i_curdev := -1;
   FillChar(r_devconf.MtxUsbConfigDesc, SizeOf(RMtxUsbConfigDesc), $00);
@@ -425,8 +422,8 @@ end;
 procedure TMtxUsb.ClearBuffer();
 var i: integer;
 begin
-  for i := 0 to i_rlen - 1 do ba_rbuf[i] := 0;
-  i_rlen := 0;
+  for i := 0 to w_rlen - 1 do ba_rbuf[i] := 0;
+  w_rlen := 0;
 end;
 
 procedure TMtxUsb.OnReadComplete(sender: TObject; var obj: OleVariant);
@@ -447,13 +444,13 @@ end;
 
 procedure TMtxUsb.OnAddDevice(Sender: TObject; var Obj: OleVariant);
 begin
-  if (i_curdev < 0) then Connect();
+  if (not Connected) then Connect();
 end;
 
 procedure TMtxUsb.OnRemoveDevice(Sender: TObject; var Obj: OleVariant);
 begin
-  if (i_curdev >= 0) then
-    if (not FindDevice(ProductSN, 2000)) then Disconnect();
+  if (Connected) then
+    if (not FindDevice(ProductSN, 0)) then Disconnect();
 end;
 
 constructor TMtxUsb.Create(owner: TComponent);
@@ -464,7 +461,7 @@ begin
   w_vid := $1B97;  //default vendor id of usb device
   w_pid := $2;     //default product id of usb device
   i_prodsn := -1;  //default serial number of usb device, which means the first device with the given vid and pid
-  i_actsn := -1;
+  i_actsn := -1;   //initialize acture serial number with -1, which means that no serial number is not yet found.
   //create and set instances of usbiointerface for EP0, pipe in and out
   t_usbio := TUSBIOInterface3.Create(self);
   t_connobj := t_usbio;
@@ -476,8 +473,8 @@ begin
   t_usbtx := TUSBIOInterface3.Create(self);
   t_usbtx.OnWriteComplete := OnWriteComplete;
   t_usbtx.OnWriteStatusAvailable := OnWriteStatusAvailable;
-  //initialize device info
-  InitDevConfig();
+  //clear device info
+  ClearDeviceInfo();
   //connect all intances to COM server (USBIO-Driver)
   t_usbio.Connect();
   t_usbrx.Connect();
@@ -488,6 +485,7 @@ end;
 
 destructor TMtxUsb.Destroy;
 begin
+  if Connected then Disconnect();
   t_usbtx.Disconnect();
   t_usbrx.Disconnect();
   t_usbio.Disconnect();
@@ -577,8 +575,13 @@ end;
 function TMtxUsb.RecvBuf(var buf: PChar; const len: longword): integer;
 begin
   result := 0;
-  //todo:
-  Addmessage('This method ''RecvBuf'' is not yet implemented.', ML_WARNING);
+  if Connected then begin
+    if WaitForReading(GetTickCount + c_timeout) then begin
+      if len < w_rlen then result := len
+      else result := w_rlen;
+      Move(ba_rbuf, buf, result);
+    end;
+  end else Addmessage('No connection and nothing is received.');
 end;
 
 function TMtxUsb.SendStr(const str: string): boolean;
@@ -599,7 +602,6 @@ begin
       until (result or (GetTickCount() >= c_time));
       if result then result := WaitForWriting(c_time);
       SafeArrayDestroy(pa_send);
-
       if result then Addmessage(format('Successed to send: %s', [str]))
       else Addmessage(format('Failed to send: %s', [str]));
     end else Addmessage('The given string is empty and nothing is sent.');
@@ -617,11 +619,10 @@ begin
       b_recv := (t_rxwait.WaitFor(0) = wrSignaled);
     end;
     if b_recv then begin
-      for i := 0 to i_rlen - 1 do if (ba_rbuf[i] > 0) then str := str + Char(ba_rbuf[i]);
-      result := i_rlen;
+      for i := 0 to w_rlen - 1 do if (ba_rbuf[i] > 0) then str := str + Char(ba_rbuf[i]);
+      result := w_rlen;
       ClearBuffer();
     end;
-
     if (result > 0) then Addmessage(format('Received: %s', [str]))
     else Addmessage('Nothing is received.');
   end else Addmessage('No connection and nothing is received.');;
@@ -633,8 +634,8 @@ begin
   result := 0; str := '';
   if Connected then begin
     if (WaitForReading(tend)) then begin
-      for i := 0 to i_rlen - 1 do if (ba_rbuf[i] > 0) then str := str + Char(ba_rbuf[i]);
-      result := i_rlen;
+      for i := 0 to w_rlen - 1 do if (ba_rbuf[i] > 0) then str := str + Char(ba_rbuf[i]);
+      result := w_rlen;
     end;
     ClearBuffer();
   end;

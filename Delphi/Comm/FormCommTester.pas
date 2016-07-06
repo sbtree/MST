@@ -108,7 +108,7 @@ begin
   t_usb := TMtxUSB.Create(self);
   t_conn := t_usb;
   t_conn.Messenger := t_messenger;
-  t_usb.Config('VID:$1B97|PID:$2|SN:1234');
+  t_usb.Config('VID:$1B97|PID:$2|PSN:1234');
   t_usb.Connect();
 end;
 
