@@ -27,50 +27,45 @@ type
                     CS_CONNECTED  //connection is connected and in use
                    );
 
-  {ICommWithString = interface
+  IConnInterf = interface
+    function Config(const sconf: string): boolean; overload;
+    function Config(const sconfs: TStrings): boolean; overload;
+    function Connect(): boolean;
+    function Disconnect: boolean;
+    function SendBuf(const buf: PChar; const len: longword): boolean;
+    function RecvBuf(var buf: PChar; const len: longword): integer;
     function SendStr(const str: string): boolean;
-    function RecvStr(var str: string; const bwait: boolean = false): integer;
-    function RecvStrTimeout(var str: string; const tend: cardinal): integer;
-    function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
-    function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
-    function WaitForReading(const tend: cardinal): boolean;
+    function RecvStr(var str: string; const bwait: boolean): integer;
   end;
 
-  ICommWithBytes = interface
-    function SendBytes(const a: array of byte): boolean;
-    function RecvBytes(var a: array of byte; const bwait: boolean = false): boolean;
-    function RecvStrTimeout(var str: array of byte; const tend: cardinal): integer;
-    function RecvStrInterval(var str: array of byte; const tend: cardinal; const interv: cardinal): integer;
-    function RecvStrExpected(var str: array of byte; const exstr: array of byte; tend: cardinal; const bcase: boolean = false): integer;
-    function WaitForReading(const tend: cardinal): boolean;
-  end; }
-
-  TConnBase = class(TComponent)
+  TConnBase = class(TComponent, IConnInterf)
   class function GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
   class function GetConnectTypeName(const etype: EConnectType): string;
-
   protected
     e_type:     EConnectType;
-    t_connobj:  TObject;
+    t_connobj:  TObject;        //actural intance for communication
     e_state:    EConnectState;  //connection state
-    c_timeout : cardinal;       //timeout in milli seconds
+    c_timeout:  cardinal;       //timeout in milli seconds
     c_rinterval:cardinal;       //maximal interval by reading in milli seconds
     b_rinterval:boolean;        //to indicate if interval is allowed by reading
-    t_messenger:TTextMessenger;
-    ch_nullshow:Char;    // indicate a char to show null, if it is received
-    i_cntnull : integer; // count of received nulls
-    b_break:    boolean; // indicate if it breaks by reading and writing
-
+    t_messenger:TTextMessenger; //for transfering messages
+    ch_nullshow:Char;    //indicate a char to show null, if it is received
+    i_cntnull:  integer; //count of received nulls
+    b_break:    boolean; //indicate if it breaks in timeout by waiting, reading and writing
   protected
-    function IsConnected(): boolean; virtual; abstract;
+    function IsConnected(): boolean; virtual;
     function GetTypeName(): string; virtual;
+    function WaitForReading(const tend: cardinal): boolean; virtual; abstract;
+    function WaitForConnecting(const tend: cardinal): boolean; virtual; abstract;
+    function WaitForWriting(const tend: cardinal): boolean; virtual; abstract;
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
-
   public
+    //constructor and destructor
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
+    //base properties
     property Connected: boolean read IsConnected;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
     property ConnectType: EConnectType read e_type;
@@ -79,10 +74,11 @@ type
     property Timeout: cardinal read c_timeout write c_timeout;
     property ReadingInterval: cardinal read c_rinterval write c_rinterval;
     property ReadingIntervalEnabled: boolean read b_rinterval write b_rinterval;
-    property NullShowChar: Char read ch_nullshow write ch_nullshow;
+    property ShowNullChar: Char read ch_nullshow write ch_nullshow;
     property BreakReadWrite: boolean read b_break write b_break;
 
-    function Config(const sconf: string): boolean; overload;
+    //implementation of ICommInterf
+    function Config(const sconf: string): boolean; overload; virtual;
     function Config(const sconfs: TStrings): boolean; overload; virtual; abstract;
     function Connect(): boolean; virtual; abstract;
     function Disconnect: boolean; virtual; abstract;
@@ -90,8 +86,8 @@ type
     function RecvBuf(var buf: PChar; const len: longword): integer; virtual; abstract;
     function SendStr(const str: string): boolean; virtual;
     function RecvStr(var str: string; const bwait: boolean = false): integer; virtual; abstract;
-    function WaitForReading(const tend: cardinal): boolean; virtual;  abstract;
 
+    //additionnal functions
     function RecvStrTimeout(var str: string; const tend: cardinal): integer; virtual;
     function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer; virtual;
     function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; virtual;
@@ -129,6 +125,11 @@ end;
 class function TConnBase.GetConnectTypeName(const etype: EConnectType): string;
 begin
   result := CSTR_CONN_KEYS[etype];
+end;
+
+function TConnBase.IsConnected(): boolean;
+begin
+  result := (e_state = CS_CONNECTED);
 end;
 
 function  TConnBase.GetTypeName(): string;

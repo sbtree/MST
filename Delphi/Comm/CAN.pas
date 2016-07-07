@@ -315,11 +315,11 @@ type
                   );
   TPCanReadThread = class;
   TPCanLight = class(TConnBase)
-  class function FindHardware(const shwt: string; var ehwt: EPCanHardwareType): boolean; virtual;
+  class function FindHardwareType(const shwt: string; var ehwt: EPCanHardwareType): boolean; virtual;
   protected
-    e_hwt:    EPCanHardwareType;
-    e_baud:   EPCanBaudrate;
-    e_canver: EPCanVersion;
+    e_hwt:    EPCanHardwareType;  //indicate hardware type of the can adapter, see EPCanHardwareType
+    e_baud:   EPCanBaudrate;      //indicate baudrate of can bus, see EPCanBaudrate
+    e_canver: EPCanVersion;       //indicate version of can bus, see EPCanVersion
     h_dll:    THandle;
     h_rcveve: THandle;
     s_dllfile:string;
@@ -328,13 +328,11 @@ type
     t_wbuf:   TPCANMsg;
     lw_sendcnt, lw_recvcnt: longword;
     b_connected: boolean;
-
     lw_devnr:   longword;
     e_subtype:  EPCanNPnPType;
     lw_ioport:  longword;
     w_irq:      word;
     t_thread:  TPCanReadThread;
-
     a_pcanfnt: array[EPCanFunction] of Pointer;
   protected
     function IsConnected(): boolean; override;
@@ -347,6 +345,9 @@ type
     function BuildRecvMsg(var msg: string): boolean; virtual;
     function IsValidFunction(const canfnt: EPCanFunction; var errnr: longword): boolean;
     function SetNPnP(etype: EPCanNPnPType; ioport: longword; irq: word): boolean;
+    function WaitForReading(const tend: cardinal): boolean; override;
+    function WaitForWriting(const tend: cardinal): boolean; override;
+    function WaitForConnecting(const tend: cardinal): boolean; override;
 
     function SetProperty(const eprop: EPCanProperty; const sval: string): boolean;
     function SetHardwareType(const hwt: string): boolean;
@@ -377,6 +378,7 @@ type
     constructor Create(owner: TComponent); override;
     destructor Destroy(); override;
 
+    //properties of pcan light
     property HardwareType: EPCanHardwareType read e_hwt write e_hwt;
     property HardwareTypeText: string read GetHardwareTypeText;
     property DllFile: string read s_dllfile;
@@ -400,10 +402,10 @@ type
     function RecvBuf(var buf: PChar; const len: longword): integer; override;
     function SendStr(const str: string): boolean; override;
     function RecvStr(var str: string; const bwait: boolean = false): integer; override;
-    function WaitForReading(const tend: cardinal): boolean; override;
   end;
   PPCanLight = ^TPCanLight;
 
+  //a thread for receiving data from can-bus
   TPCanReadThread = class(TThread)
   protected
     t_pcan: TPCanLight;
@@ -607,7 +609,7 @@ type
   CAN_SETUSBDEVICENR = function(DevNum: LongWord): longword; stdcall;
   CAN_GETUSBDEVICENR = function(var DevNum: LongWord): longword; stdcall;
 
-class function TPCanLight.FindHardware(const shwt: string; var ehwt: EPCanHardwareType): boolean;
+class function TPCanLight.FindHardwareType(const shwt: string; var ehwt: EPCanHardwareType): boolean;
 var i_idx: integer;
 begin
   result := false;
@@ -674,7 +676,7 @@ end;
 function TPCanLight.LoadDefaultDll(const shwt: string): boolean;
 var e_htype: EPCanHardwareType;
 begin
-  result := FindHardware(shwt, e_htype);
+  result := FindHardwareType(shwt, e_htype);
   if result then result := LoadDefaultDll(e_htype);
 end;
 
@@ -793,6 +795,81 @@ begin
   result := true;
 end;
 
+function TPCanLight.WaitForReading(const tend: cardinal): boolean;
+var c_tcur, c_count: cardinal; s_lastmsg: string;
+begin
+  c_tcur := GetTickCount(); c_count := c_tcur;
+  s_lastmsg := 'Waiting for reading: %ds';
+  AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+  b_wait := true;
+  while (b_wait and (c_tcur <= tend)) do begin
+    Application.ProcessMessages();
+    if (h_rcveve <> 0) then b_wait := not (WaitForSingleObject(h_rcveve, 0) = WAIT_OBJECT_0)
+    else b_wait := false;
+    c_tcur := GetTickCount();
+    if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
+      UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+      c_count := c_tcur;
+    end;
+  end;
+  result := (not b_wait);
+end;
+
+function TPCanLight.WaitForWriting(const tend: cardinal): boolean;
+begin
+  //todo:
+  result := true;
+end;
+
+function TPCanLight.WaitForConnecting(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait: boolean; lw_ret: longword;
+begin
+  result := Connected;
+  c_tcur := GetTickCount(); c_count := c_tcur;
+  b_wait := ((not Connected) and (c_tcur <= tend));
+  if b_wait then begin
+    s_lastmsg := 'Waiting for connecting: %ds';
+    AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    repeat
+      Application.ProcessMessages();
+      c_tcur := GetTickCount();
+      if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
+        UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        c_count := c_tcur;
+      end;
+      if (e_hwt in [PCH_ISA1CH, PCH_ISA2CH, PCH_DNP, PCH_DNG]) then
+        lw_ret := CanInitNPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver), Ord(e_subtype), lw_ioport, w_irq)
+      else
+        lw_ret := CanInitPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver));
+      result := (lw_ret = CAN_ERR_OK);
+      b_wait := ((not result) and (c_tcur <= tend));
+    until (not b_wait);
+  end;
+
+  //create event and worker-thread for reading data
+  if result then begin
+    CanGetUsbDeviceNr(lw_devnr);
+    if (h_rcveve = 0) then begin
+      h_rcveve:= CreateEvent(nil,false,false,nil);
+      result := (h_rcveve <> 0);
+      if result then begin
+        lw_ret:= CanSetRcvEvent(h_rcveve);
+        result := (lw_ret = CAN_ERR_OK);
+        if result then begin
+          b_connected := true;
+          AddMessage(format('Succeed to connect to can adapter with number (=%x).', [lw_devnr]), ML_INFO);
+        end else begin
+          CanSetRcvEvent(0);
+          CloseHandle(h_rcveve);
+          h_rcveve := 0;
+          AddMessage('Failed to set event for reading data.', ML_ERROR);
+        end;
+      end else AddMessage('Failed to create event for reading data.', ML_ERROR);
+    end;
+    if not assigned(t_thread) then t_thread := TPCanReadThread.Create(self);
+  end;
+end;
+
 function TPCanLight.SetProperty(const eprop: EPCanProperty; const sval: string): boolean;
 begin
   result := false;
@@ -810,7 +887,7 @@ end;
 function TPCanLight.SetHardwareType(const hwt: string): boolean;
 var e_htype: EPCanHardwareType;
 begin
-  result := TPCanLight.FindHardware(hwt, e_htype);
+  result := TPCanLight.FindHardwareType(hwt, e_htype);
   if result then e_hwt := e_htype;
 end;
 
@@ -1027,28 +1104,11 @@ begin
 end;
 
 function TPCanLight.Connect(): boolean;
-var lw_ret: longword;
 begin
-  if (e_hwt in [PCH_ISA1CH, PCH_ISA2CH, PCH_DNP, PCH_DNG]) then
-    lw_ret := CanInitNPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver), Ord(e_subtype), lw_ioport, w_irq)
-  else
-    lw_ret := CanInitPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver));
-  result := (lw_ret = CAN_ERR_OK);
-  b_connected := result;
-  if result then begin
-    CanGetUsbDeviceNr(lw_devnr);
-    if (h_rcveve = 0) then begin
-      h_rcveve:= CreateEvent(nil,false,false,nil);
-      lw_ret:= CanSetRcvEvent(h_rcveve);
-      if not ((lw_ret = CAN_ERR_OK) and (h_rcveve <> 0)) then begin
-        CanSetRcvEvent(0);
-        CloseHandle(h_rcveve);
-        h_rcveve := 0;
-        AddMessage('Failed to set event for receiving data', ML_ERROR);
-      end;
-    end;
-    if not assigned(t_thread) then t_thread := TPCanReadThread.Create(self);
-  end;
+  result := false;
+  if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then
+    result := WaitForConnecting(GetTickCount() + c_timeout)
+  else AddMessage(format('The current state (=%d) is not suitable to connect.', [Ord(e_state)]), ML_WARNING);
 end;
 
 function TPCanLight.Disconnect: boolean;
@@ -1062,11 +1122,11 @@ begin
     t_thread.Terminate;
     t_thread.WaitFor();
     FreeAndNil(t_thread);
-    if (h_rcveve <> 0) then begin
-        CloseHandle(h_rcveve);
-        CanSetRcvEvent(0);
-        h_rcveve := 0;
-    end;
+  end;
+  if (h_rcveve <> 0) then begin
+      CloseHandle(h_rcveve);
+      CanSetRcvEvent(0);
+      h_rcveve := 0;
   end;
 end;
 
@@ -1117,26 +1177,6 @@ begin
   end else AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
 end;
 
-function TPCanLight.WaitForReading(const tend: cardinal): boolean;
-var c_tcur, c_count: cardinal; s_lastmsg: string;
-begin
-  c_tcur := GetTickCount(); c_count := c_tcur;
-  s_lastmsg := 'Waiting for reading: %ds';
-  AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
-  b_wait := true;
-  while (b_wait and (c_tcur <= tend)) do begin
-    Application.ProcessMessages();
-    if (h_rcveve <> 0) then b_wait := not (WaitForSingleObject(h_rcveve, 50) = WAIT_OBJECT_0)
-    else b_wait := false;
-    c_tcur := GetTickCount();
-    if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-      UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
-      c_count := c_tcur;
-    end;
-  end;
-  result := (not b_wait);
-end;
-
 procedure TPCanReadThread.ReadCanMessage();
 var t_canmsg: TPCANMsg; t_msgtime: TPCANTimestamp; lw_ret: longword;
 begin
@@ -1148,31 +1188,11 @@ begin
 end;
 
 procedure TPCanReadThread.Execute;
-{var
-    hWaitEvent: THandle;
-    Res: longword;
-begin   
-    hWaitEvent:= CreateEvent(nil,false,false,nil);
-    Res:= t_pcan.CanSetRcvEvent(hWaitEvent);
-    if Not((Res = CAN_ERR_OK) AND (hWaitEvent <> 0)) then
-    begin
-        MessageBox(0, 'Create CANRead-Thread failed','Error!',MB_ICONERROR);
-        exit;
-    end;
-    
-    while Not Terminated do
-    begin
-        if WaitForSingleObject(hWaitEvent, 50) = WAIT_OBJECT_0 then
-            Synchronize(ReadCanMessage);
-    end;
-    MessageBox(0, 'Read-Thread will exist.','Bye!',MB_ICONWARNING);
-    CloseHandle(hWaitEvent);
-    t_pcan.CanSetRcvEvent(0);
-end;}
 begin
-  if (t_pcan.RecvEvent <> 0) then begin
-    while Not Terminated do begin
-      if (WaitForSingleObject(t_pcan.RecvEvent, 50) = WAIT_OBJECT_0) then
+  while Not Terminated do begin
+    if (t_pcan.RecvEvent <> 0) then begin
+      Application.ProcessMessages();
+      if (WaitForSingleObject(t_pcan.RecvEvent, 0) = WAIT_OBJECT_0) then
         Synchronize(ReadCanMessage);
     end;
   end;
@@ -1180,13 +1200,13 @@ end;
 
 constructor TPCanReadThread.Create(pcan: TPCanLight);
 begin
-    t_pcan := pcan;
-    inherited Create(False);
+  t_pcan := pcan;
+  inherited Create(False);
 end;
 
 destructor TPCanReadThread.Destroy();
 begin
-    if Not Terminated then Terminate();
+  if Not Terminated then Terminate();
 end;
 
 end.

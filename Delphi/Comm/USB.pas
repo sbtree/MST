@@ -42,19 +42,20 @@ type
     t_rxwait:   TEvent;   //wait event for reading
     t_txwait:   TEvent;   //wait event for writing complete
   protected
-    function IsConnected(): boolean; override;
     function DetectDevice(const sn: integer; const pid: word; const vid: word): boolean;
     function GetDeviceConfig(): boolean;
     function GetProductSN(): integer;
     function Init(const psn: integer): boolean;
     function Uninit(): boolean;
     function RecvData(): boolean;
-    function WaitForWriting(const tend: cardinal): boolean;
-    function WaitForConnecting(const tend: cardinal): boolean;
+    function WaitForReading(const tend: cardinal): boolean; override;
+    function WaitForWriting(const tend: cardinal): boolean; override;
+    function WaitForConnecting(const tend: cardinal): boolean; override;
     function SetProperty(const eprop: EMtxUsbProperty; const sval: string): boolean;
     function SetDeviceVid(const sval: string): boolean;
     function SetDevicePid(const sval: string): boolean;
     function SetProductSN(const sval: string): boolean;
+    function ConnectTo(const psn: integer): boolean;
     procedure CopyByteData (const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
     procedure ClearDeviceInfo();
     procedure ClearBuffer();
@@ -72,10 +73,9 @@ type
     property ProductID: word read w_pid write w_pid;
     property ProductSN: integer read GetProductSN write i_prodsn;
 
-    function FindDevice(const sn: integer = -1; const tout: integer = -1): boolean;
+    function FindDevice(const psn: integer = -1; const tout: integer = -1): boolean;
     function Config(const sconfs: TStrings): boolean; override;
     function Connect(): boolean; override;
-    function ConnectTo(const psnr: integer): boolean;
     function Disconnect: boolean; override;
     function SendBuf(const buf: PChar; const len: longword): boolean; override;
     function RecvBuf(var buf: PChar; const len: longword): integer; override;
@@ -85,7 +85,6 @@ type
     function RecvStrTimeout(var str: string; const tend: cardinal): integer; override;
     function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = CINT_RECV_INTERVAL): integer; override;
     function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; override;
-    function WaitForReading(const tend: cardinal): boolean; override;
   end;
 
 implementation
@@ -345,6 +344,18 @@ begin
   SafeArrayDestroy (pa_recv);
 end;
 
+function TMtxUsb.WaitForReading(const tend: cardinal): boolean;
+begin
+  result := false;
+  if (not Connected) then WaitForConnecting(tend);
+  if Connected then begin
+    repeat
+      Application.ProcessMessages();
+      result := (t_rxwait.WaitFor(0) = wrSignaled);
+    until (result or (GetTickCount() >= tend));
+  end;
+end;
+
 function TMtxUsb.WaitForWriting(const tend: cardinal): boolean;
 begin
   repeat
@@ -403,9 +414,16 @@ begin
   end;
 end;
 
-function TMtxUsb.IsConnected(): boolean;
+function TMtxUsb.ConnectTo(const psn: integer): boolean;
 begin
-  result := (e_state = CS_CONNECTED);
+  result := false;
+  if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then begin
+    if Connected then Disconnect();
+    result := Init(psn);
+    if (not result) then Uninit();
+  end;
+  if result then AddMessage(format('Succeed to connect to the device with sn=%d', [ProductSN]))
+  else AddMessage(format('Failed to connect to the device with sn=%d', [psn]), ML_ERROR);
 end;
 
 procedure TMtxUsb.ClearDeviceInfo();
@@ -500,14 +518,14 @@ begin
 	inherited Destroy;
 end;
 
-function TMtxUsb.FindDevice(const sn: integer; const tout: integer): boolean;
+function TMtxUsb.FindDevice(const psn: integer; const tout: integer): boolean;
 var c_time: cardinal;
 begin
   if (tout < 0) then c_time := GetTickCount() + c_timeout
   else c_time := GetTickCount() + cardinal(tout);
 
   repeat
-    result := DetectDevice(sn, w_pid, w_vid);
+    result := DetectDevice(psn, w_pid, w_vid);
     Application.ProcessMessages();
   until (result or (GetTickCount() >= c_time));
 end;
@@ -523,24 +541,12 @@ begin
       if not result then break;
     end;
     if result then e_state := CS_CONFIGURED;
-  end;
+  end else AddMessage(format('The current state is not suitable to config (state=%d).', [Ord(e_state)]), ML_ERROR);
 end;
 
 function TMtxUsb.Connect(): boolean;
 begin
   result := ConnectTo(i_prodsn);
-end;
-
-function TMtxUsb.ConnectTo(const psnr: integer): boolean;
-begin
-  result := false;
-  if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then begin
-    if Connected then Disconnect();
-    result := Init(psnr);
-    if (not result) then Uninit();
-  end;
-  if result then AddMessage(format('Successed to connect to the device with sn=%d', [ProductSN]))
-  else AddMessage(format('Failed to connect to the device with sn=%d', [psnr]), ML_ERROR);
 end;
 
 function TMtxUsb.Disconnect: boolean;
@@ -602,7 +608,7 @@ begin
       until (result or (GetTickCount() >= c_time));
       if result then result := WaitForWriting(c_time);
       SafeArrayDestroy(pa_send);
-      if result then Addmessage(format('Successed to send: %s', [str]))
+      if result then Addmessage(format('Succeed to send: %s', [str]))
       else Addmessage(format('Failed to send: %s', [str]));
     end else Addmessage('The given string is empty and nothing is sent.');
   end else Addmessage('No connection and nothing is sent.');
@@ -619,7 +625,10 @@ begin
       b_recv := (t_rxwait.WaitFor(0) = wrSignaled);
     end;
     if b_recv then begin
-      for i := 0 to w_rlen - 1 do if (ba_rbuf[i] > 0) then str := str + Char(ba_rbuf[i]);
+      for i := 0 to w_rlen - 1 do begin
+        if (ba_rbuf[i] = 0) then str := str + ch_nullshow
+        else str := str + Char(ba_rbuf[i]);
+      end;
       result := w_rlen;
       ClearBuffer();
     end;
@@ -653,18 +662,6 @@ begin
   result := 0;
   //todo:
   Addmessage('This method ''RecvStrInterval'' is not yet implemented.', ML_WARNING);
-end;
-
-function TMtxUsb.WaitForReading(const tend: cardinal): boolean;
-begin
-  result := false;
-  if (not Connected) then WaitForConnecting(tend);
-  if Connected then begin
-    repeat
-      Application.ProcessMessages();
-      result := (t_rxwait.WaitFor(0) = wrSignaled);
-    until (result or (GetTickCount() >= tend));
-  end;
 end;
 
 end.

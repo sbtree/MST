@@ -16,6 +16,12 @@ type
 
   TMtxRS232 = class(TConnBase)
   class function EnumSerialPort(var sports: TStringList): integer;
+  class function SetPortByStr(pser: PSerial; const sval: string): boolean;
+  class function SetBaudrateByStr(pser: PSerial; const sval: string): boolean;
+  class function SetParityByStr(pser: PSerial; const sval: string): boolean;
+  class function SetDataBitsByStr(pser: PSerial; const sval: string): boolean;
+  class function SetStopBitsByStr(pser: PSerial; const sval: string): boolean;
+  class function SetFlowControlByStr(pser: PSerial; const sval: string): boolean;
   protected
     t_ser :     TSerial;
   protected
@@ -25,7 +31,16 @@ type
     function SendChars(const buf: PChar; const len: integer; const tend: cardinal): boolean; overload;
     function RecvChars(var buf: string; const tend: cardinal; const binterval: boolean = false): integer; overload;
     function SendChars(const buf: string; const tend: cardinal): boolean; overload;
-
+    function WaitForReading(const tend: cardinal): boolean; override;
+    function WaitForWriting(const tend: cardinal): boolean; override;
+    function WaitForConnecting(const tend: cardinal): boolean; override;
+    function SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
+    function SetPort(const sval: string): boolean;
+    function SetBaudrate(const sval: string): boolean;
+    function SetParity(const sval: string): boolean;
+    function SetDatabits(const sval: string): boolean;
+    function SetStopbits(const sval: string): boolean;
+    function SetFlowControl(const sval: string): boolean;
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
@@ -41,20 +56,14 @@ type
     function RecvStrTimeout(var str: string; const tend: cardinal): integer; override;
     function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = CINT_RECV_INTERVAL): integer; override;
     function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; override;
-    function WaitForReading(const tend: cardinal): boolean; override;
   end;
   PConnRS232 = ^TMtxRS232;
 
 implementation
 uses SysUtils, StrUtils, Windows, GenUtils, Registry, Forms, TextMessage;
 
-type
-  SetSerialProperty = function(pser: PSerial; const sval: string): boolean;
-
 const CSTR_RS232_PROPERTIES: array[ESerialProperty] of string =
                   ('PORT', 'BAUDRATE', 'PARITY', 'DATABITS', 'STOPBITS', 'FLOWCONTROL');
-
-var PSerialPropertyCalls: array [ESerialProperty] of SetSerialProperty;
 
 // =============================================================================
 // Class        : TConnRS232
@@ -103,7 +112,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function SetPort(pser: PSerial; const sval: string): boolean;
+class function TMtxRS232.SetPortByStr(pser: PSerial; const sval: string): boolean;
 var t_ports: TStringList; s_in,s_portname: string; i_port: integer;
 begin
   result := false;
@@ -131,7 +140,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function SetBaudrate(pser: PSerial; const sval: string): boolean;
+class function TMtxRS232.SetBaudrateByStr(pser: PSerial; const sval: string): boolean;
 const  CSTR_BAUD_VALUES: array[Low(aBaudrates)..High(aBaudrates)] of string = (
                           '110','300','600','1200','2400','4800','9600','14400',
                           '19200','38400','56000','57600','115200','128000','256000');
@@ -158,7 +167,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function SetParity(pser: PSerial; const sval: string): boolean;
+class function TMtxRS232.SetParityByStr(pser: PSerial; const sval: string): boolean;
 const
   CSTR_PA_VALUES: array[eParity] of string = ('NONE', 'ODD', 'EVEN', 'MARK', 'SPACE');
 var i_idx: integer; s_in: string;
@@ -184,7 +193,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function SetDataBits(pser: PSerial; const sval: string): boolean;
+class function TMtxRS232.SetDataBitsByStr(pser: PSerial; const sval: string): boolean;
 const
   CSTR_DB_VALUES: array[eDataBits] of string = ('7', '8');
 var i_idx: integer; s_in: string;
@@ -210,7 +219,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function SetStopBits(pser: PSerial; const sval: string): boolean;
+class function TMtxRS232.SetStopBitsByStr(pser: PSerial; const sval: string): boolean;
 const
   CSTR_SB_VALUES: array[eStopBits] of string = ('1', '2');
 var i_idx: integer; s_in: string;
@@ -237,7 +246,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function SetFlowControl(pser: PSerial; const sval: string): boolean;
+class function TMtxRS232.SetFlowControlByStr(pser: PSerial; const sval: string): boolean;
 const
   CSTR_FC_VALUES: array[eFlowControl] of string = ('NONE', 'RTS_CTS', 'DTR_DSR', 'XON_XOF');
 var i_idx: integer; s_in: string;
@@ -354,6 +363,116 @@ begin
   result := (t_ser.TxWaiting <= 0);
 end;
 
+function TMtxRS232.WaitForReading(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait: boolean;
+begin
+  c_tcur := GetTickCount(); c_count := c_tcur;
+  b_wait := ((t_ser.RxWaiting <= 0) and (c_tcur <= tend));
+  if b_wait then begin
+    s_lastmsg := 'Waiting for reading: %ds';
+    AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    while (b_wait) do begin
+      Application.ProcessMessages();
+      c_tcur := GetTickCount();
+      if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
+        UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        c_count := c_tcur;
+      end;
+      b_wait := ((t_ser.RxWaiting <= 0) and (c_tcur <= tend));
+    end;
+  end;
+  result := (t_ser.RxWaiting > 0);
+end;
+
+function TMtxRS232.WaitForWriting(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait: boolean;
+begin
+  c_tcur := GetTickCount(); c_count := c_tcur;
+  b_wait := ((t_ser.TxWaiting > 0) and (c_tcur <= tend));
+  if b_wait then begin
+    s_lastmsg := 'Waiting for reading: %ds';
+    AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    while (b_wait) do begin
+      Application.ProcessMessages();
+      c_tcur := GetTickCount();
+      if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
+        UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        c_count := c_tcur;
+      end;
+      b_wait := ((t_ser.TxWaiting > 0) and (c_tcur <= tend));
+    end;
+  end;
+  result := (t_ser.RxWaiting > 0);
+end;
+
+function TMtxRS232.WaitForConnecting(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait: boolean;
+begin
+  c_tcur := GetTickCount(); c_count := c_tcur;
+  b_wait := ((not t_ser.Active) and (c_tcur <= tend));
+  if b_wait then begin
+    s_lastmsg := 'Waiting for connecting: %ds';
+    AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    while (b_wait) do begin
+      Application.ProcessMessages();
+      c_tcur := GetTickCount();
+      if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
+        UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        c_count := c_tcur;
+      end;
+      b_wait := ((not t_ser.Active) and (c_tcur <= tend));
+    end;
+  end;
+  result := t_ser.Active;
+end;
+
+function TMtxRS232.SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
+begin
+  result := false;
+  case eprop of
+    SP_PORT: result := SetPort(sval);
+    SP_BAUDRATE: result := SetBaudrate(sval);
+    SP_PARITY: result := SetParity(sval);
+    SP_DATABITS: result := SetDatabits(sval);
+    SP_STOPBITS: result := SetStopbits(sval);
+    SP_FLOWCONTROL: result := SetFlowControl(sval);
+  end;
+end;
+
+function TMtxRS232.SetPort(const sval: string): boolean;
+begin
+  result := TMtxRS232.SetPortByStr(@t_ser, sval);
+end;
+
+function TMtxRS232.SetBaudrate(const sval: string): boolean;
+begin
+  result := TMtxRS232.SetBaudrateByStr(@t_ser, sval);
+end;
+
+function TMtxRS232.SetParity(const sval: string): boolean;
+begin
+  if (sval = '') then result := true
+  else result := TMtxRS232.SetParityByStr(@t_ser, sval);
+end;
+
+function TMtxRS232.SetDatabits(const sval: string): boolean;
+begin
+  if (sval = '') then result := true
+  else result := TMtxRS232.SetDataBitsByStr(@t_ser, sval);
+end;
+
+function TMtxRS232.SetStopbits(const sval: string): boolean;
+begin
+  if (sval = '') then result := true
+  else result := TMtxRS232.SetStopBitsByStr(@t_ser, sval);
+end;
+
+function TMtxRS232.SetFlowControl(const sval: string): boolean;
+begin
+  if (sval = '') then result := true
+  else result := TMtxRS232.SetFlowControlByStr(@t_ser, sval);
+end;
+
 // =============================================================================
 // Class        : TConnRS232
 // Function     : IsConnected
@@ -422,14 +541,13 @@ end;
 // History      :
 // =============================================================================
 function TMtxRS232.Config(const sconfs: TStrings): boolean;
-var i: ESerialProperty; s_conf: string; b_settings: array[ESerialProperty] of boolean;
+var i: ESerialProperty; s_conf: string;
 begin
   for i := LOW(ESerialProperty) to HIGH(ESerialProperty) do begin
-    b_settings[i] := false;
     s_conf := sconfs.Values[CSTR_RS232_PROPERTIES[i]];
-    b_settings[i] := (PSerialPropertyCalls[i](@t_ser, s_conf));
+    result := SetProperty(i, s_conf);
+    if not result then break;
   end;
-  result := (b_settings[SP_PORT] and b_settings[SP_BAUDRATE]); //
   if result then e_state := CS_CONFIGURED;
 end;
 
@@ -446,9 +564,16 @@ end;
 // =============================================================================
 function TMtxRS232.Connect(): boolean;
 begin
-  t_ser.Active := true;
-  result := t_ser.Active;
-  if result then e_state := CS_CONNECTED;
+  result := false;
+  if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then begin
+    t_ser.Active := true;
+    result := t_ser.Active;
+    if result then e_state := CS_CONNECTED;
+    if result then begin
+      e_state := CS_CONNECTED;
+      AddMessage(format('Succeed to connect to port (=%d) with baudrate (=%d).', [t_ser.Port, t_ser.Baudrate]));
+    end else AddMessage(format('Failed to connect to port (=%d)', [t_ser.Port]), ML_ERROR);
+  end else AddMessage(format('The current state (=%d) is not suitable to connect.', [Ord(e_state)]), ML_WARNING);
 end;
 
 // =============================================================================
@@ -464,9 +589,12 @@ end;
 // =============================================================================
 function TMtxRS232.Disconnect: boolean;
 begin
-  t_ser.Active := false;
-  result := (not t_ser.Active);
-  if result then e_state := CS_CONFIGURED;
+  result := false;
+  if Connected then begin
+    t_ser.Active := false;
+    result := (not t_ser.Active);
+    if result then e_state := CS_CONFIGURED;
+  end;
 end;
 
 function TMtxRS232.SendBuf(const buf: PChar; const len: longword): boolean;
@@ -545,31 +673,6 @@ begin
   until (b_timeout or b_found);
   result := length(str);
 end;
-
-function TMtxRS232.WaitForReading(const tend: cardinal): boolean;
-var s_lastmsg: string; c_tcur, c_count: cardinal;
-begin
-  c_tcur := GetTickCount(); c_count := c_tcur;
-  s_lastmsg := 'Waiting for reading: %ds';
-  AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
-  while ((t_ser.RxWaiting <= 0) and (c_tcur <= tend)) do begin
-    Application.ProcessMessages();
-    c_tcur := GetTickCount();
-    if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-      UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
-      c_count := c_tcur;
-    end;
-  end;
-  result := (t_ser.RxWaiting > 0);
-end;
-
-initialization
-  PSerialPropertyCalls[SP_PORT]       := SetPort;
-  PSerialPropertyCalls[SP_BAUDRATE]   := SetBaudrate;
-  PSerialPropertyCalls[SP_PARITY]     := SetParity;
-  PSerialPropertyCalls[SP_DATABITS]   := SetDataBits;
-  PSerialPropertyCalls[SP_STOPBITS]   := SetStopBits;
-  PSerialPropertyCalls[SP_FLOWCONTROL]:= SetFlowControl;
 
 end.
 

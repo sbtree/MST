@@ -52,18 +52,18 @@ begin
   t_conn := TPCanLight.Create(self);
   t_conn.Messenger := t_messenger;
   s_conf := 'HWT:USB1CH|PCANDLL:PCAN_USB.dll|baudrate:1M|CANVER:EXT';
-  if t_conn.Config(s_conf) then ShowMessage('PCAN is configured' + ' [' + s_conf + ']')
-  else ShowMessage('PCAN is NOT configured' + ' [' + s_conf + ']');
+  t_conn.Config(s_conf);
+  t_conn.Connect();
 
-  if t_conn.Connect then begin
+  //if t_conn.Connect then begin
     //t_canthread := TPCanReadThread.Create(TPCanLight(t_conn));
-    s_send := '60A:40800020';
-    t_conn.Timeout := 3000;
+    //s_send := '60A:40800020';
+    //t_conn.Timeout := 3000;
     {if t_conn.SendStr(s_send) then begin
       t_conn.RecvStr(s_recv);
-      ShowMessage('PCAN receives string:' + ' [' + s_recv + ']'); 
+      ShowMessage('PCAN receives string:' + ' [' + s_recv + ']');
     end;}
-  end else ShowMessage('PCAN is NOT connected' + ' [' + s_conf + ']');
+  //end else ShowMessage('PCAN is NOT connected' + ' [' + s_conf + ']');
   //FreeAndNil(t_conn);
 end;
 
@@ -80,20 +80,10 @@ begin
 
   t_conn := TMtxRS232.Create(self);
   t_conn.Messenger := t_messenger;
-  //t_rs232.Config('Port:1|baudrate:115200');
   s_conf := 'Port:5|baudrate:9600';
-  if t_conn.Config(s_conf) then ShowMessage('RS232 is configured' + ' [' + s_conf + ']')
-  else ShowMessage('RS232 is NOT configured' + ' [' + s_conf + ']');
+  t_conn.Config(s_conf);
 
-  if t_conn.Connect then begin
-    s_send := 'FORM:ELEM?' + Char(#13);
-    t_conn.Timeout := 3000;
-    if t_conn.SendStr(s_send) then begin
-      t_conn.RecvStr(s_recv);
-      ShowMessage('RS232 receives string:' + ' [' + s_recv + ']');
-    end;
-  end else ShowMessage('RS232 is NOT connected' + ' [' + s_conf + ']');
-
+  t_conn.Connect();
   //FreeAndNil(t_conn);
 end;
 
@@ -103,13 +93,13 @@ begin
 end;
 
 procedure TfrmCommTester.btnUSBClick(Sender: TObject);
-var t_usb: TMtxUSB;
 begin
-  t_usb := TMtxUSB.Create(self);
-  t_conn := t_usb;
+  if assigned(t_conn) then FreeAndNil(t_conn);
+
+  t_conn := TMtxUSB.Create(self);
   t_conn.Messenger := t_messenger;
-  t_usb.Config('VID:$1B97|PID:$2|PSN:1234');
-  t_usb.Connect();
+  t_conn.Config('VID:$1B97|PID:$2|PSN:1234');
+  t_conn.Connect();
 end;
 
 procedure TfrmCommTester.FormCreate(Sender: TObject);
