@@ -1161,6 +1161,10 @@ begin
   if result then begin
     lw_ret := CanWrite(t_wbuf);
     result := (lw_ret = CAN_ERR_OK);
+    if result then begin
+      lw_ret := CanStatus();
+      result := (lw_ret = CAN_ERR_OK);
+    end;
     if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
   end;
 end;
@@ -1182,8 +1186,10 @@ var t_canmsg: TPCANMsg; t_msgtime: TPCANTimestamp; lw_ret: longword;
 begin
   if assigned(t_pcan) then begin
     lw_ret := CAN_ERR_QXMTFULL;
-    while ((lw_ret AND CAN_ERR_QRCVEMPTY) <> CAN_ERR_QRCVEMPTY) do
+    while ((lw_ret AND CAN_ERR_QRCVEMPTY) <> CAN_ERR_QRCVEMPTY) do begin
+      Application.ProcessMessages();
       lw_ret := t_pcan.CanReadEx(t_canmsg, t_msgtime);
+    end;
   end;
 end;
 

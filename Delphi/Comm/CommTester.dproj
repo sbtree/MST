@@ -40,12 +40,7 @@
     <DelphiCompile Include="CommTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
-    <DCCReference Include="..\Externals\USBIO\usbio.pas" />
-    <DCCReference Include="..\Externals\USBIO\usbiobuf.pas" />
     <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
-    <DCCReference Include="..\Externals\USBIO\usbiopipe.pas" />
-    <DCCReference Include="..\Externals\USBIO\Usbio_i.pas" />
-    <DCCReference Include="..\Externals\USBIO\usbio_i_delphi.pas" />
     <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />

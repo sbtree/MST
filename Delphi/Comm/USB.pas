@@ -93,8 +93,8 @@ uses GenUtils, Forms, TextMessage;
 const
   CSTR_MTXUSB_ARS2000_GUID: string = '{6CC88F5A-EA80-4707-845B-D3CF7BDBCA6C}';
   CREC_MTXUSB_ARS2000_GUID: TGUID = (D1:$6CC88F5A; D2:$EA80; D3:$4707; D4:($84, $5B, $D3, $CF, $7B, $DB, $CA, $6C));
-  C_USB_RX_BUFFER_SIZE = 16384; // Größe des USB-Empfangspuffers
-  C_USB_TX_BUFFER_SIZE = 16384; // Größe des USB-Sendepuffers
+  C_USB_RX_BUFFER_SIZE = 1024; // Größe des USB-Empfangspuffers
+  C_USB_TX_BUFFER_SIZE = 1024; // Größe des USB-Sendepuffers
                                 // ACHTUNG: Der Puffer muss größer sein als die
                                 // im Servo hinterlegte Fifo-Größe, da das Gerät
                                 // an USB 1.1 und USB 2.0 angeschlossen werden kann.
@@ -111,12 +111,12 @@ const
                                 // auftreten dürfen. Wird diese Anzahl erreicht,
                                 // so wird der interne Worker-Thread angehalten.
                                 // (s. TUSBIOInterface3.StartWriting)
-  C_USB_CNT_TX_BUFFERS = 5;     // Anzahl Sendepuffer
+  C_USB_CNT_TX_BUFFERS = 16;     // Anzahl Sendepuffer
   C_USB_MAX_RX_ERRORS  = 5;     // Maximale Anzahl von Fehlern, die beim Datenempfang
                                // auftreten dürfen. Wird diese Anzahl erreicht,
                                // so wird der interne Worker-Thread angehalten.
                                // (s. TUSBIOInterface3.StartWriting)
-  C_USB_CNT_RX_BUFFERS = 5;    // Anzahl Empfangspuffer
+  C_USB_CNT_RX_BUFFERS = 16;    // Anzahl Empfangspuffer
   CSTR_MTXUSB_PROPERTIES: array[EMtxUsbProperty] of string = (
                           'VID',
                           'PID',
@@ -243,16 +243,13 @@ begin
 end;
 
 function TMtxUsb.Init(const psn: integer): boolean;
-var i_size: integer;
 begin
   result := FindDevice(psn);
   //1.add interface
   if result then begin
-    if (r_devconf.MtxUsbConfigDesc.EndpointIn.wMaxPacketSize > r_devconf.MtxUsbConfigDesc.EndpointOut.wMaxPacketSize) then i_size := r_devconf.MtxUsbConfigDesc.EndpointIn.wMaxPacketSize
-    else i_size := r_devconf.MtxUsbConfigDesc.EndpointOut.wMaxPacketSize;
     t_usbio.AddInterface(r_devconf.MtxUsbConfigDesc.InterfaceDescriptor.bInterfaceNumber,
                          r_devconf.MtxUsbConfigDesc.InterfaceDescriptor.bAlternateSetting,
-                         i_size, i_status);
+                         (C_USB_RX_BUFFER_SIZE * C_USB_CNT_RX_BUFFERS), i_status);
     result := (i_status = USBIO_ERR_SUCCESS);
   end;
 
