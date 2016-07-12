@@ -14,9 +14,10 @@ type
     lblCount: TLabel;
     tmrUpdate: TTimer;
     btnUSB: TButton;
-    txtSending: TEdit;
     btnSend: TButton;
     btnRecv: TButton;
+    cmbConf: TComboBox;
+    cmbSending: TComboBox;
     procedure btnRS232Click(Sender: TObject);
     procedure btnCanClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -45,26 +46,15 @@ implementation
 uses RS232, USB;
 
 procedure TfrmCommTester.btnCanClick(Sender: TObject);
-var s_conf, s_send{, s_recv}: string;
+var s_conf: string;
 begin
   if assigned(t_conn) then FreeAndNil(t_conn);
 
   t_conn := TPCanLight.Create(self);
   t_conn.Messenger := t_messenger;
-  s_conf := 'HWT:USB1CH|PCANDLL:PCAN_USB.dll|baudrate:1M|CANVER:EXT';
+  s_conf := trim(cmbConf.Text); //'HWT:USB1CH|PCANDLL:PCAN_USB.dll|baudrate:1M|CANVER:EXT';
   t_conn.Config(s_conf);
   t_conn.Connect();
-
-  //if t_conn.Connect then begin
-    //t_canthread := TPCanReadThread.Create(TPCanLight(t_conn));
-    //s_send := '60A:40800020';
-    //t_conn.Timeout := 3000;
-    {if t_conn.SendStr(s_send) then begin
-      t_conn.RecvStr(s_recv);
-      ShowMessage('PCAN receives string:' + ' [' + s_recv + ']');
-    end;}
-  //end else ShowMessage('PCAN is NOT connected' + ' [' + s_conf + ']');
-  //FreeAndNil(t_conn);
 end;
 
 procedure TfrmCommTester.btnRecvClick(Sender: TObject);
@@ -74,31 +64,33 @@ begin
 end;
 
 procedure TfrmCommTester.btnRS232Click(Sender: TObject);
-var s_conf: string; s_send, s_recv: string;
+var s_conf: string;
 begin
   if assigned(t_conn) then FreeAndNil(t_conn);
 
   t_conn := TMtxRS232.Create(self);
   t_conn.Messenger := t_messenger;
-  s_conf := 'Port:5|baudrate:9600';
+  s_conf := trim(cmbConf.Text); //'Port:8|baudrate:9600'; //'PARITY', 'DATABITS', 'STOPBITS', 'FLOWCONTROL'
   t_conn.Config(s_conf);
-
   t_conn.Connect();
-  //FreeAndNil(t_conn);
 end;
 
 procedure TfrmCommTester.btnSendClick(Sender: TObject);
 begin
-  t_conn.SendStr(trim(txtSending.Text + Char(#13)));
+  //format of CAN-Message: '60A:40800020';
+  //format of OROW: 'OR:0008'
+  t_conn.SendStr(trim(cmbSending.Text) + Char(#13));
 end;
 
 procedure TfrmCommTester.btnUSBClick(Sender: TObject);
+var s_conf: string;
 begin
   if assigned(t_conn) then FreeAndNil(t_conn);
 
   t_conn := TMtxUSB.Create(self);
   t_conn.Messenger := t_messenger;
-  t_conn.Config('VID:$1B97|PID:$2|PSN:1234');
+  s_conf := trim(cmbConf.Text); //'VID:$1B97|PID:$2|PSN:1234';
+  t_conn.Config(s_conf);
   t_conn.Connect();
 end;
 
@@ -122,7 +114,7 @@ var t_pcan: TPCanLight;
 begin
   t_pcan := TPCanLight(t_conn);
   if assigned(t_pcan) then begin
-    lblCount.Caption := format('Messages: Tx(%d); Rx(%d)', [t_pcan.CountSending, t_pcan.CountReceive]);
+    lblCount.Caption := format('Tx(%d); Rx(%d)', [t_pcan.CountSending, t_pcan.CountReceive]);
     //UpdateMemoText();
   end;
 end;

@@ -33,8 +33,8 @@ type
     i_status:   integer;
     w_vid:      word;             //vendor id of usb device
     w_pid:      word;             //product id of usb device
-    i_prodsn:   integer;          //serial number of usb device for setting to connect
-    i_actsn:    integer;          //serial number of usb device, which is actually connected
+    i_psn:      integer;          //serial number of usb device for setting to connect
+    i_actpsn:   integer;          //serial number of usb device, which is actually connected
     i_curdev:   integer;          //index of the found device
     r_devconf:  RMtxUsbDeviceConfig;    //record of usb device configuration
     ba_rbuf:    array[0..1023] of byte; //buffer for data received from device
@@ -48,14 +48,14 @@ type
     function Init(const psn: integer): boolean;
     function Uninit(): boolean;
     function RecvData(): boolean;
-    function WaitForReading(const tend: cardinal): boolean; override;
-    function WaitForWriting(const tend: cardinal): boolean; override;
-    function WaitForConnecting(const tend: cardinal): boolean; override;
     function SetProperty(const eprop: EMtxUsbProperty; const sval: string): boolean;
     function SetDeviceVid(const sval: string): boolean;
     function SetDevicePid(const sval: string): boolean;
     function SetProductSN(const sval: string): boolean;
     function ConnectTo(const psn: integer): boolean;
+    function IsReadable(): boolean; override;
+    function IsWriteComplete(): boolean; override;
+    procedure TryConnect(); override;
     procedure CopyByteData (const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
     procedure ClearDeviceInfo();
     procedure ClearBuffer();
@@ -71,7 +71,7 @@ type
 
     property VendorID: word read w_vid write w_vid;
     property ProductID: word read w_pid write w_pid;
-    property ProductSN: integer read GetProductSN write i_prodsn;
+    property ProductSN: integer read GetProductSN write i_psn;
 
     function FindDevice(const psn: integer = -1; const tout: integer = -1): boolean;
     function Config(const sconfs: TStrings): boolean; override;
@@ -165,10 +165,10 @@ begin
           if (i_status = USBIO_ERR_SUCCESS) then begin
             CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
             r_devconf.SerialNumber := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
-            if (not TryStrToInt(r_devconf.SerialNumber, i_actsn)) then i_actsn := -1;
+            if (not TryStrToInt(r_devconf.SerialNumber, i_actpsn)) then i_actpsn := -1;
           end;
           if (sn = -1) then result := true
-          else result := (i_actsn = sn);
+          else result := (i_actpsn = sn);
           //get information of manufacturer and product type
           if result then begin
             i_size := SizeOf(USB_STRING_DESCRIPTOR);
@@ -238,8 +238,8 @@ end;
 
 function TMtxUsb.GetProductSN(): integer;
 begin
-  if (i_actsn = -1) then result := i_prodsn
-  else result := i_actsn;
+  if (i_actpsn = -1) then result := i_psn
+  else result := i_actpsn;
 end;
 
 function TMtxUsb.Init(const psn: integer): boolean;
@@ -341,36 +341,6 @@ begin
   SafeArrayDestroy (pa_recv);
 end;
 
-function TMtxUsb.WaitForReading(const tend: cardinal): boolean;
-begin
-  result := false;
-  if (not Connected) then WaitForConnecting(tend);
-  if Connected then begin
-    repeat
-      Application.ProcessMessages();
-      result := (t_rxwait.WaitFor(0) = wrSignaled);
-    until (result or (GetTickCount() >= tend));
-  end;
-end;
-
-function TMtxUsb.WaitForWriting(const tend: cardinal): boolean;
-begin
-  repeat
-    Application.ProcessMessages();
-    result := (t_txwait.WaitFor(0) = wrSignaled);
-  until (result or (GetTickCount() >= tend));
-end;
-
-function TMtxUsb.WaitForConnecting(const tend: cardinal): boolean;
-var i_tout: integer;
-begin
-  i_tout := tend - GetTickCount();
-  if (i_tout < 0) then i_tout := 0;
-  
-  result := FindDevice(i_prodsn, i_tout);
-  if result then result := ConnectTo(i_prodsn);
-end;
-
 function TMtxUsb.SetProperty(const eprop: EMtxUsbProperty; const sval: string): boolean;
 begin
   result := false;
@@ -407,7 +377,7 @@ begin
   if (sval = '') then result := true
   else begin
     result := TryStrToInt(sval, i_val);
-    if result then i_prodsn := i_val;
+    if result then i_psn := i_val;
   end;
 end;
 
@@ -419,8 +389,31 @@ begin
     result := Init(psn);
     if (not result) then Uninit();
   end;
-  if result then AddMessage(format('Succeed to connect to the device with sn=%d', [ProductSN]))
-  else AddMessage(format('Failed to connect to the device with sn=%d', [psn]), ML_ERROR);
+  if result then begin
+    e_state := CS_CONNECTED;
+    AddMessage(format('Succeed to connect to the device with sn=%d', [ProductSN]));
+  end else
+    AddMessage(format('Failed to connect to the device with sn=%d', [psn]), ML_ERROR);
+end;
+
+function TMtxUsb.IsReadable(): boolean;
+begin
+  Application.ProcessMessages();
+  result := (t_rxwait.WaitFor(0) = wrSignaled);
+end;
+
+function TMtxUsb.IsWriteComplete(): boolean;
+begin
+  Application.ProcessMessages();
+  result := (t_txwait.WaitFor(0) = wrSignaled);
+end;
+
+procedure TMtxUsb.TryConnect();
+var b_ok: boolean;
+begin
+  Application.ProcessMessages();
+  b_ok := DetectDevice(i_psn, w_pid, w_vid);
+  if b_ok then ConnectTo(i_psn);
 end;
 
 procedure TMtxUsb.ClearDeviceInfo();
@@ -475,8 +468,8 @@ begin
   e_state := CS_UNKNOWN;
   w_vid := $1B97;  //default vendor id of usb device
   w_pid := $2;     //default product id of usb device
-  i_prodsn := -1;  //default serial number of usb device, which means the first device with the given vid and pid
-  i_actsn := -1;   //initialize acture serial number with -1, which means that no serial number is not yet found.
+  i_psn := -1;  //default serial number of usb device, which means the first device with the given vid and pid
+  i_actpsn := -1;   //initialize acture serial number with -1, which means that no serial number is not yet found.
   //create and set instances of usbiointerface for EP0, pipe in and out
   t_usbio := TUSBIOInterface3.Create(self);
   t_connobj := t_usbio;
@@ -522,8 +515,8 @@ begin
   else c_time := GetTickCount() + cardinal(tout);
 
   repeat
-    result := DetectDevice(psn, w_pid, w_vid);
     Application.ProcessMessages();
+    result := DetectDevice(psn, w_pid, w_vid);
   until (result or (GetTickCount() >= c_time));
 end;
 
@@ -543,7 +536,7 @@ end;
 
 function TMtxUsb.Connect(): boolean;
 begin
-  result := ConnectTo(i_prodsn);
+  result := ConnectTo(i_psn);
 end;
 
 function TMtxUsb.Disconnect: boolean;

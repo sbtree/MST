@@ -41,25 +41,29 @@ type
   TConnBase = class(TComponent, IConnInterf)
   class function GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
   class function GetConnectTypeName(const etype: EConnectType): string;
+  class function GetConnectState(const estate: EConnectState): string;
   protected
     e_type:     EConnectType;
     t_connobj:  TObject;        //actural intance for communication
     e_state:    EConnectState;  //connection state
     c_timeout:  cardinal;       //timeout in milli seconds
     c_rinterval:cardinal;       //maximal interval by reading in milli seconds
-    b_rinterval:boolean;        //to indicate if interval is allowed by reading
+    b_rinterval:boolean;        //indicates if interval is allowed by reading
     t_messenger:TTextMessenger; //for transfering messages
-    ch_nullshow:Char;    //indicate a char to show null, if it is received
-    i_cntnull:  integer; //count of received nulls
-    b_break:    boolean; //indicate if it breaks in timeout by waiting, reading and writing
+    ch_nullshow:Char;           //indicate a char to show null, if it is received
+    i_cntnull:  integer;        //count of received nulls
   protected
-    function IsConnected(): boolean; virtual;
     function GetTypeName(): string; virtual;
-    function WaitForReading(const tend: cardinal): boolean; virtual; abstract;
-    function WaitForConnecting(const tend: cardinal): boolean; virtual; abstract;
-    function WaitForWriting(const tend: cardinal): boolean; virtual; abstract;
-    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
-    procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    function GetStateStr(): string; virtual;
+    function WaitForReading(const tend: cardinal): boolean; virtual;
+    function WaitForWriting(const tend: cardinal): boolean; virtual;
+    function WaitForConnecting(const tend: cardinal): boolean; virtual;
+    function IsConnected(): boolean; virtual;
+    function IsReadable(): boolean; virtual; abstract;
+    function IsWriteComplete(): boolean; virtual; abstract;
+    procedure TryConnect(); virtual; abstract;
+    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO); virtual;
+    procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO); virtual;
   public
     //constructor and destructor
     constructor Create(owner: TComponent); override;
@@ -75,12 +79,11 @@ type
     property ReadingInterval: cardinal read c_rinterval write c_rinterval;
     property ReadingIntervalEnabled: boolean read b_rinterval write b_rinterval;
     property ShowNullChar: Char read ch_nullshow write ch_nullshow;
-    property BreakReadWrite: boolean read b_break write b_break;
 
     //implementation of ICommInterf
     function Config(const sconf: string): boolean; overload; virtual;
     function Config(const sconfs: TStrings): boolean; overload; virtual; abstract;
-    function Connect(): boolean; virtual; abstract;
+    function Connect(): boolean; virtual;
     function Disconnect: boolean; virtual; abstract;
     function SendBuf(const buf: PChar; const len: longword): boolean; virtual; abstract;
     function RecvBuf(var buf: PChar; const len: longword): integer; virtual; abstract;
@@ -105,12 +108,17 @@ const
                     'CAN',
                     'PROFIL'
                     );
+  CSTR_CONN_STATES: array[EConnectState] of string = (
+                    'unknown',
+                    'configured',
+                    'connected'
+                    );
   CINT_TIMEOUT_DEFAULT = 1000;//default timeout in milliseconds
   CINT_INTERVAL_DEFAULT = 300;//default interval by reading in milliseconds
   CINT_RECV_INTERVAL = 50;    //milliseconds
 
 implementation
-uses SysUtils, StrUtils, Windows, Registry;
+uses Forms, SysUtils, StrUtils, Windows, Registry;
 
 class function TConnBase.GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
 var i_idx: integer;
@@ -127,14 +135,92 @@ begin
   result := CSTR_CONN_KEYS[etype];
 end;
 
-function TConnBase.IsConnected(): boolean;
+class function TConnBase.GetConnectState(const estate: EConnectState): string;
 begin
-  result := (e_state = CS_CONNECTED);
+  result := CSTR_CONN_STATES[estate];
 end;
 
 function  TConnBase.GetTypeName(): string;
 begin
   result := TConnBase.GetConnectTypeName(e_type);
+end;
+
+function TConnBase.GetStateStr(): string;
+begin
+  result := TConnBase.GetConnectState(e_state);
+end;
+
+function TConnBase.WaitForReading(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_read: boolean;
+begin
+  c_tcur := GetTickCount(); c_count := c_tcur;
+  b_read := IsReadable(); //save its return value in a local variable, because it can be other value for next calling
+  b_wait := ((not b_read) and (c_tcur <= tend));
+  if b_wait then begin
+    s_lastmsg := 'Waiting for reading: %ds';
+    AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    repeat
+      Application.ProcessMessages();
+      c_tcur := GetTickCount();
+      if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
+        UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        c_count := c_tcur;
+      end;
+      b_read := IsReadable();
+      b_wait := ((not b_read) and (c_tcur <= tend));
+    until (not b_wait);
+  end;
+  result := b_read;
+end;
+
+function TConnBase.WaitForWriting(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_write: boolean;
+begin
+  c_tcur := GetTickCount(); c_count := c_tcur;
+  b_write := IsWriteComplete(); //save its return value in a local variable, because it can be other value for next calling
+  b_wait := ((not b_write) and (c_tcur <= tend));
+  if b_wait then begin
+    s_lastmsg := 'Waiting for completing write: %ds';
+    AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    repeat
+      Application.ProcessMessages();
+      c_tcur := GetTickCount();
+      if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
+        UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        c_count := c_tcur;
+      end;
+      b_write := IsWriteComplete();
+      b_wait := ((not b_write) and (c_tcur <= tend));
+    until (not b_wait);
+  end;
+  result := b_write;
+end;
+
+function TConnBase.WaitForConnecting(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait: boolean;
+begin
+  c_tcur := GetTickCount(); c_count := c_tcur;
+  b_wait := ((not IsConnected()) and (c_tcur <= tend));
+  if b_wait then begin
+    s_lastmsg := 'Waiting for connecting: %ds';
+    AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    repeat
+      Application.ProcessMessages();
+      TryConnect();
+      c_tcur := GetTickCount();
+      if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
+        UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        c_count := c_tcur;
+      end;
+      b_wait := ((not IsConnected()) and (c_tcur <= tend));
+    until (not b_wait);
+  end;
+  result := IsConnected();
+end;
+
+function TConnBase.IsConnected(): boolean;
+begin
+  result := (e_state = CS_CONNECTED);
 end;
 
 procedure TConnBase.AddMessage(const text: string; const level: EMessageLevel);
@@ -160,7 +246,6 @@ begin
   c_timeout := CINT_TIMEOUT_DEFAULT;
   c_rinterval := CINT_INTERVAL_DEFAULT;
   b_rinterval := false;
-  b_break := false;
   ch_nullshow := #13; //null is show as #13
 end;
 
@@ -188,6 +273,28 @@ begin
   if (ExtractStrings(['|'], [' ', #9], PChar(s_conf), t_confs) > 0) then
     result := Config(t_confs);
   t_confs.Free();
+end;
+
+// =============================================================================
+// Description  : make connection over calling TryConnect()
+// Parameter    : --
+// Return       : true, if t_ser is activated
+//                false, otherwise
+// Exceptions   : --
+// First author : 2016-07-12 /bsu/
+// History      :
+// =============================================================================
+function TConnBase.Connect(): boolean;
+begin
+  result := false;
+  if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then begin
+    TryConnect();
+    result := WaitForConnecting(GetTickCount() + c_timeout);
+    if result then begin
+      e_state := CS_CONNECTED;
+      AddMessage(format('Successful to make a connection(%s).', [GetTypeName()]));
+    end else AddMessage(format('Successful to make a connection(%s)', [GetTypeName()]), ML_ERROR);
+  end else AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
 end;
 
 function TConnBase.SendStr(const str: string): boolean;

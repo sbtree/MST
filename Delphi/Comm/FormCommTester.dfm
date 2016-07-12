@@ -16,18 +16,18 @@ object frmCommTester: TfrmCommTester
   PixelsPerInch = 96
   TextHeight = 13
   object lblCount: TLabel
-    Left = 4
-    Top = 268
-    Width = 114
+    Left = 247
+    Top = 303
+    Width = 74
     Height = 13
-    Caption = 'Messages: Tx(0); Rx(0)'
+    Caption = 'Tx(0); Rx(0)'
   end
   object btnRS232: TButton
     Left = 4
     Top = 296
     Width = 75
     Height = 25
-    Caption = 'Test &RS232'
+    Caption = '&RS232'
     TabOrder = 0
     OnClick = btnRS232Click
   end
@@ -36,7 +36,7 @@ object frmCommTester: TfrmCommTester
     Top = 296
     Width = 75
     Height = 25
-    Caption = 'Test &CAN'
+    Caption = '&CAN'
     TabOrder = 1
     OnClick = btnCanClick
   end
@@ -57,21 +57,13 @@ object frmCommTester: TfrmCommTester
     TabOrder = 3
     OnClick = btnUSBClick
   end
-  object txtSending: TEdit
-    Left = 349
-    Top = 269
-    Width = 156
-    Height = 21
-    TabOrder = 4
-    Text = 'OR:1:0008'
-  end
   object btnSend: TButton
     Left = 349
     Top = 296
     Width = 75
     Height = 25
     Caption = '&Send'
-    TabOrder = 5
+    TabOrder = 4
     OnClick = btnSendClick
   end
   object btnRecv: TButton
@@ -80,8 +72,39 @@ object frmCommTester: TfrmCommTester
     Width = 75
     Height = 25
     Caption = '&Receive'
-    TabOrder = 6
+    TabOrder = 5
     OnClick = btnRecvClick
+  end
+  object cmbConf: TComboBox
+    Left = 4
+    Top = 269
+    Width = 317
+    Height = 21
+    ItemHeight = 13
+    ItemIndex = 0
+    TabOrder = 6
+    Text = 
+      'Port:8|Baudrate:9600|PARITY:None|DATABITS:8|STOPBITS:1|FLOWCONTR' +
+      'OL:NONE'
+    Items.Strings = (
+      
+        'Port:8|Baudrate:9600|PARITY:None|DATABITS:8|STOPBITS:1|FLOWCONTR' +
+        'OL:NONE'
+      'HWT:USB1CH|PCANDLL:PCAN_USB.dll|baudrate:1M|CANVER:STD'
+      'VID:$1B97|PID:$2|PSN:1234')
+  end
+  object cmbSending: TComboBox
+    Left = 349
+    Top = 269
+    Width = 156
+    Height = 21
+    ItemHeight = 13
+    ItemIndex = 0
+    TabOrder = 7
+    Text = 'OR:1:0008'
+    Items.Strings = (
+      'OR:1:0008'
+      '60A:40800020')
   end
   object tmrUpdate: TTimer
     Interval = 500
