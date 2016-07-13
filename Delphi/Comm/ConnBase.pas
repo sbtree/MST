@@ -36,8 +36,8 @@ type
     function Connect(): boolean;
     function Disconnect: boolean;
     function SendBuf(const buf: PChar; const len: longword): boolean;
-    function RecvBuf(var buf: PChar; const len: longword): integer;
     function SendStr(const str: string): boolean;
+    function RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer;
     function RecvStr(var str: string; const bwait: boolean): integer;
   end;
 
@@ -60,13 +60,17 @@ type
   protected
     function GetTypeName(): string; virtual;
     function GetStateStr(): string; virtual;
+    function BufferToStr(): string; virtual;
     function WaitForReading(const tend: cardinal): boolean; virtual;
     function WaitForWriting(const tend: cardinal): boolean; virtual;
     function WaitForConnecting(const tend: cardinal): boolean; virtual;
     function IsConnected(): boolean; virtual;
-    function IsReadable(): boolean; virtual; abstract;
+    function IsReadComplete(): boolean; virtual; abstract;
     function IsWriteComplete(): boolean; virtual; abstract;
+    function SendData(const buf: PChar; len: word): boolean; virtual; abstract;
+    function RecvData(): boolean; virtual; abstract;
     procedure TryConnect(); virtual; abstract;
+    procedure ClearBuffer(); virtual;
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO); virtual;
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO); virtual;
   public
@@ -90,10 +94,10 @@ type
     function Config(const sconfs: TStrings): boolean; overload; virtual; abstract;
     function Connect(): boolean; virtual;
     function Disconnect: boolean; virtual; abstract;
-    function SendBuf(const buf: PChar; const len: longword): boolean; virtual; abstract;
-    function RecvBuf(var buf: PChar; const len: longword): integer; virtual; abstract;
+    function SendBuf(const buf: PChar; const len: longword): boolean; virtual;
     function SendStr(const str: string): boolean; virtual;
-    function RecvStr(var str: string; const bwait: boolean = false): integer; virtual; abstract;
+    function RecvBuf(var buf: PChar; const len: longword; const bwait: boolean = true): integer; virtual;
+    function RecvStr(var str: string; const bwait: boolean = true): integer; virtual;
 
     //additionnal functions
     function RecvStrTimeout(var str: string; const tend: cardinal): integer; virtual;
@@ -155,11 +159,25 @@ begin
   result := TConnBase.GetConnectState(e_state);
 end;
 
+function TConnBase.BufferToStr(): string;
+var i: integer;
+begin
+  result := ''; i_cntnull := 0;
+  if (w_rlen > 0) then begin
+    for i := 0 to w_rlen - 1 do
+      if (ba_rbuf[i] = Char(0)) then begin
+        inc(i_cntnull);
+        ba_rbuf[i] := ch_nullshow;
+      end;
+    result := PChar(@ba_rbuf);
+  end;
+end;
+
 function TConnBase.WaitForReading(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_read: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
-  b_read := IsReadable(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
+  b_read := IsReadComplete(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
   b_wait := ((not b_read) and (c_tcur <= tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for reading: %ds';
@@ -171,7 +189,7 @@ begin
         UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
         c_count := c_tcur;
       end;
-      b_read := IsReadable();
+      b_read := IsReadComplete();
       b_wait := ((not b_read) and (c_tcur <= tend));
     until (not b_wait);
   end;
@@ -226,6 +244,12 @@ end;
 function TConnBase.IsConnected(): boolean;
 begin
   result := (e_state = CS_CONNECTED);
+end;
+
+procedure TConnBase.ClearBuffer();
+begin
+  ZeroMemory(@ba_rbuf, w_rlen);
+  w_rlen := 0;
 end;
 
 procedure TConnBase.AddMessage(const text: string; const level: EMessageLevel);
@@ -300,8 +324,22 @@ begin
     if result then begin
       e_state := CS_CONNECTED;
       AddMessage(format('Successful to make a connection(%s).', [GetTypeName()]));
-    end else AddMessage(format('Successful to make a connection(%s)', [GetTypeName()]), ML_ERROR);
+    end else AddMessage(format('Failed to make a connection(%s)', [GetTypeName()]), ML_ERROR);
   end else AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
+end;
+
+function TConnBase.SendBuf(const buf: PChar; const len: longword): boolean;
+var c_tend: cardinal;
+begin
+  result := false;
+  if Connected then begin
+    c_tend := GetTickCount() + c_timeout;
+    result := SendData(buf, len);
+    if result then result := WaitForWriting(c_tend);
+    if result then AddMessage(format('Successful to send data (%d bytes): %s', [len, buf]))
+    else AddMessage(format('Failed to send data (%d bytes): %s', [len, buf]), ML_ERROR)
+  end else
+    AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR)
 end;
 
 function TConnBase.SendStr(const str: string): boolean;
@@ -309,16 +347,54 @@ begin
   result := SendBuf(PChar(str), length(str));
 end;
 
+function TConnBase.RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer;
+var c_tend: cardinal; i_len: integer;
+begin
+  result := 0;
+  if Connected then begin
+    c_tend := GetTickCount() + c_timeout;
+    if bwait then WaitForReading(c_tend);
+    if RecvData() then begin
+      if (w_rlen > len) then i_len := len
+      else i_len := w_rlen;
+      Move(ba_rbuf, buf, i_len);
+      result := w_rlen;
+    end;
+    if (result > 0) then AddMessage(format('Successful to receieve data (%d bytes): %s', [result, buf]))
+    else AddMessage('Nothing is receieved.', ML_WARNING);
+  end else
+    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR)
+end;
+
+function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
+var c_tend: cardinal;
+begin
+  result := 0;
+  if Connected then begin
+    c_tend := GetTickCount() + c_timeout;
+    if bwait then WaitForReading(c_tend);
+    if RecvData() then begin
+      str := BufferToStr();
+      result := length(str);
+    end;
+    if (result > 0) then AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+    else AddMessage('Nothing is receieved.', ML_WARNING);
+  end else
+    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR)
+end;
+
 function TConnBase.RecvStrTimeout(var str: string; const tend: cardinal): integer;
 var s_recv: string;
 begin
-  result := 0; str := '';
+  str := '';
   repeat
-    s_recv := '';
-    result := result + RecvStr(s_recv);
-    str := str + s_recv;
+    if RecvData() then begin
+      s_recv := BufferToStr();
+      str := str + s_recv;
+    end;
     Application.ProcessMessages();
   until (GetTickCount() >= tend);
+  result := length(str);
 end;
 
 function TConnBase.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
@@ -326,13 +402,14 @@ var i_time: cardinal; s_recv: string; b_break: boolean;
 begin
   result := 0; str := '';
   repeat
-    s_recv := '';
-    result := result + RecvStr(s_recv);
-    str := str + s_recv;
+    if RecvData() then begin
+      s_recv := BufferToStr();
+      str := str + s_recv;
+    end;
     i_time := GetTickCount() + interv;
     if (i_time > tend) then i_time := tend;
     Application.ProcessMessages();
-    b_break := WaitForReading(i_time);
+    b_break := (not WaitForReading(i_time));
   until (b_break or (GetTickCount() >= tend));
 end;
 
@@ -341,9 +418,10 @@ var b_break: boolean; s_recv: string;
 begin
   result := 0; str := '';
   repeat
-    s_recv := '';
-    result := result + RecvStr(s_recv);
-    str := str + s_recv;
+    if RecvData() then begin
+      s_recv := BufferToStr();
+      str := str + s_recv;
+    end;
     if bcase then b_break := ContainsStr(str, exstr)
     else b_break := ContainsText(str, exstr);
   until (b_break or (GetTickCount() >= tend));

@@ -70,6 +70,7 @@ begin
 
   t_conn := TMtxRS232.Create(self);
   t_conn.Messenger := t_messenger;
+  //t_conn.Timeout := 10000;
   s_conf := trim(cmbConf.Text); //'Port:8|baudrate:9600'; //'PARITY', 'DATABITS', 'STOPBITS', 'FLOWCONTROL'
   t_conn.Config(s_conf);
   t_conn.Connect();

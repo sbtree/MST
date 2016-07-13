@@ -23,6 +23,7 @@ type
     LEN: Byte;                  // Data Length Code of the Msg (0..8)
     DATA: array[0..7] of Byte;  // Data 0 .. 7
   end;
+  PPCANMsg = ^TPCANMsg;
 
   // Timestamp of a receive/transmit event
   // Total microseconds = micros + 1000 * millis + $FFFFFFFF * 1000 * millis_overflow
@@ -32,6 +33,7 @@ type
     millis_overflow: Word;      // Roll-arounds of millis
     micros: Word;               // Microseconds: 0..999
   end;
+  PPCANTimestamp = ^TPCANTimestamp;
 
 ///////////////////////////////////////////////////////////////////////////////
 //  CAN_Init()
@@ -323,7 +325,7 @@ type
     h_dll:    THandle;
     h_rcveve: THandle;
     s_dllfile:string;
-    t_rbuf:   TPCANMsg;
+    p_rbuf:   PPCANMsg;
     t_wbuf:   TPCANMsg;
     lw_sendcnt, lw_recvcnt: longword;
     lw_devnr:   longword;
@@ -348,8 +350,11 @@ type
     function SetCanVersion(const sver: string): boolean;
     function GetHardwareTypeText(): string;
     function GetBaudrateText(): string;
-    function IsReadable(): boolean; override;
+    function BufferToStr(): string; override;
+    function IsReadComplete(): boolean; override;
     function IsWriteComplete(): boolean; override;
+    function SendData(const buf: PChar; len: word): boolean; override;
+    function RecvData(): boolean; override;
     procedure TryConnect(); override;
     procedure SetMsgVersion(ecanver: EPCanVersion);
     procedure SetDeviceNr(devnr: longword);
@@ -390,14 +395,14 @@ type
     property CountReceive: cardinal read lw_recvcnt;
 
     function SetDllFile(const sdll: string): boolean;
-    function BuildMessage(const canmsg: TPCANMsg): string;
+    function BuildMessage(const canmsg: PPCANMsg): string;
     function Config(const sconfs: TStrings): boolean; overload; override;
-    function Connect(): boolean; override;
+//    function Connect(): boolean; override;
     function Disconnect: boolean; override;
-    function SendBuf(const buf: PChar; const len: longword): boolean; override;
-    function RecvBuf(var buf: PChar; const len: longword): integer; override;
-    function SendStr(const str: string): boolean; override;
-    function RecvStr(var str: string; const bwait: boolean = false): integer; override;
+//    function SendBuf(const buf: PChar; const len: longword): boolean; override;
+//    function SendStr(const str: string): boolean; override;
+//    function RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer; override;
+//    function RecvStr(var str: string; const bwait: boolean): integer; override;
   end;
   PPCanLight = ^TPCanLight;
 
@@ -746,7 +751,7 @@ end;
 
 function TPCanLight.BuildRecvMsg(var msg: string): boolean;
 begin
-  msg := BuildMessage(t_rbuf);
+  msg := BuildMessage(p_rbuf);
   result := true;
 end;
 
@@ -839,7 +844,13 @@ begin
   result := CSTR_PCAN_BAUDRATES[e_baud];
 end;
 
-function TPCanLight.IsReadable(): boolean;
+function TPCanLight.BufferToStr(): string;
+begin
+  result := '';
+  if (w_rlen = sizeof(TPCANMsg)) then result := BuildMessage(p_rbuf);
+end;
+
+function TPCanLight.IsReadComplete(): boolean;
 begin
   if (h_rcveve = 0) then result := false
   else result := (WaitForSingleObject(h_rcveve, 0) = WAIT_OBJECT_0);
@@ -848,6 +859,23 @@ end;
 function TPCanLight.IsWriteComplete(): boolean;
 begin
   result := (CanStatus() = CAN_ERR_OK);
+end;
+
+function TPCanLight.SendData(const buf: PChar; len: word): boolean;
+var lw_ret: longword;
+begin
+  Move(buf, t_wbuf, sizeof(t_wbuf));
+  lw_ret := CanWrite(t_wbuf);
+  result := (lw_ret = CAN_ERR_OK);
+end;
+
+function TPCanLight.RecvData(): boolean;
+var lw_ret: longword;
+begin
+  lw_ret := CanRead(p_rbuf^);
+  result := (lw_ret = CAN_ERR_OK);
+  if result then w_rlen := sizeof(TPCANMsg)
+  else ClearBuffer();
 end;
 
 procedure TPCanLight.TryConnect();
@@ -867,19 +895,16 @@ begin
       if b_ok then begin
         lw_ret:= CanSetRcvEvent(h_rcveve);
         b_ok := (lw_ret = CAN_ERR_OK);
-        if b_ok then begin
-          e_state := CS_CONNECTED;
-          AddMessage(format('Succeed to connect to can adapter with number (=%x).', [lw_devnr]), ML_INFO);
-        end else begin
+        if b_ok then e_state := CS_CONNECTED
+        else begin
           CanSetRcvEvent(0);
           CloseHandle(h_rcveve);
           h_rcveve := 0;
-          AddMessage('Failed to set event for reading data.', ML_ERROR);
         end;
-      end else AddMessage('Failed to create event for reading data.', ML_ERROR);
+      end;
     end;
     if not assigned(t_thread) then t_thread := TPCanReadThread.Create(self);
-  end else AddMessage('Failed to initialize the connection.', ML_ERROR);;
+  end;
 end;
 
 procedure TPCanLight.SetMsgVersion(ecanver: EPCanVersion);
@@ -923,9 +948,9 @@ begin
   //if IsValidFunction(PCF_WRITE, result) then begin
     result := CAN_WRITE(a_pcanfnt[PCF_WRITE])(MsgBuff);
     if (result = CAN_ERR_OK) then begin
-      AddMessage('Sent: ' + BuildMessage(MsgBuff));
+      AddMessage('Sent: ' + BuildMessage(@MsgBuff));
       Inc(lw_recvcnt);
-    end else AddMessage('Error: ' + BuildMessage(MsgBuff));
+    end else AddMessage('Error: ' + BuildMessage(@MsgBuff));
   //end;
 end;
 
@@ -936,11 +961,11 @@ begin
     result := CAN_READ(a_pcanfnt[PCF_READ])(MsgBuff);
     if (result = CAN_ERR_BUSOFF) then begin // initilize the controller again if it has this error
       Connect();
-      AddMessage('Reconnected by error: ' + BuildMessage(MsgBuff));
+      AddMessage('Reconnected by error: ' + BuildMessage(@MsgBuff));
     end else if (result = CAN_ERR_OK) then begin
       Inc(lw_recvcnt);
-      AddMessage('Received: ' + BuildMessage(MsgBuff));
-    end else if (result <> CAN_ERR_QRCVEMPTY) then AddMessage('Error: ' + BuildMessage(MsgBuff));
+      AddMessage('Received: ' + BuildMessage(@MsgBuff));
+    end else if (result <> CAN_ERR_QRCVEMPTY) then AddMessage('Error: ' + BuildMessage(@MsgBuff));
   //end;
 end;
 
@@ -950,11 +975,11 @@ begin
     result := CAN_READEX(a_pcanfnt[PCF_READEX])(MsgBuff, RcvTime);
     if (result = CAN_ERR_BUSOFF) then begin // initilize the controller again if it has this error
       self.Connect();
-      AddMessage('Reconnected by error: ' + BuildMessage(MsgBuff));
+      AddMessage('Reconnected by error: ' + BuildMessage(@MsgBuff));
     end else if (result = CAN_ERR_OK) then begin
       Inc(lw_recvcnt);
-      AddMessage('Received: ' + BuildMessage(MsgBuff));
-    end else if (result <> CAN_ERR_QRCVEMPTY) then AddMessage('Error: ' + BuildMessage(MsgBuff));
+      AddMessage('Received: ' + BuildMessage(@MsgBuff));
+    end else if (result <> CAN_ERR_QRCVEMPTY) then AddMessage('Error: ' + BuildMessage(@MsgBuff));
   //end;
 end;
 
@@ -1027,6 +1052,7 @@ begin
   lw_recvcnt := 0;
   for i := Low(EPCanFunction) to High(EPCanFunction) do a_pcanfnt[i] := nil;
   SetNPnP(HW_ISA, 0, 0);
+  p_rbuf := @ba_rbuf;
 end;
 
 destructor TPCanLight.Destroy();
@@ -1040,13 +1066,13 @@ begin
   result := LoadDll(sdll);
 end;
 
-function TPCanLight.BuildMessage(const canmsg: TPCANMsg): string;
+function TPCanLight.BuildMessage(const canmsg: PPCANMsg): string;
 var i: integer; s_data: string;
 begin
   s_data := '';
-  for i := 0 to canmsg.LEN - 1 do s_data := s_data + format('%.2x', [canmsg.DATA[i]]);
-  if (canmsg.MSGTYPE = MSGTYPE_EXTENDED) then result := format('%.8x:%s', [canmsg.ID, s_data])
-  else result := format('%.3x:%s', [canmsg.ID, s_data]);
+  for i := 0 to canmsg^.LEN - 1 do s_data := s_data + format('%.2x', [canmsg^.DATA[i]]);
+  if (canmsg^.MSGTYPE = MSGTYPE_EXTENDED) then result := format('%.8x:%s', [canmsg^.ID, s_data])
+  else result := format('%.3x:%s', [canmsg^.ID, s_data]);
 end;
 
 function TPCanLight.Config(const sconfs: TStrings): boolean;
@@ -1059,17 +1085,18 @@ begin
       result := SetProperty(i, s_conf);
       if not result then break;
     end;
-    if result then e_state := CS_CONFIGURED;
+    if result then e_state := CS_CONFIGURED
+    else AddMessage(format('Failed to configurate the configuration (%s).', [GetTypeName()]), ML_ERROR);
   end else AddMessage(format('The current state (%s) is not suitable for configuration.', [GetStateStr()]), ML_WARNING);
 end;
 
-function TPCanLight.Connect(): boolean;
+{function TPCanLight.Connect(): boolean;
 begin
   result := false;
   if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then
     result := WaitForConnecting(GetTickCount() + c_timeout)
   else AddMessage(format('The current state (%s) is not suitable to connect.', [GetStateStr()]), ML_WARNING);
-end;
+end; }
 
 function TPCanLight.Disconnect: boolean;
 var lw_ret: longword;
@@ -1090,7 +1117,7 @@ begin
   if (e_state = CS_CONNECTED) then e_state := CS_CONFIGURED;
 end;
 
-function TPCanLight.SendBuf(const buf: PChar; const len: longword): boolean;
+{function TPCanLight.SendBuf(const buf: PChar; const len: longword): boolean;
 var lw_ret: longword;
 begin
   result := false;
@@ -1100,20 +1127,6 @@ begin
     result := (lw_ret = CAN_ERR_OK);
     if result then result := WaitForWriting(GetTickCount() + c_timeout);
     if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
-  end else AddMessage('The length of the buffer is not suitable for CAN-message.', ML_ERROR);
-end;
-
-function TPCanLight.RecvBuf(var buf: PChar; const len: longword): integer;
-var lw_ret: longword;
-begin
-  result := 0;
-  if len = sizeof(TPCANMsg) then begin
-    if (WaitForReading(GetTickCount() + c_timeout)) then begin
-      lw_ret := CanRead(t_rbuf);
-      Move(t_rbuf, buf, len);
-      result := len;
-      if (lw_ret <> CAN_ERR_OK) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
-    end;
   end else AddMessage('The length of the buffer is not suitable for CAN-message.', ML_ERROR);
 end;
 
@@ -1127,6 +1140,20 @@ begin
     if result then result := WaitForWriting(GetTickCount() + c_timeout);
     if (not result) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
   end;
+end;
+
+function TPCanLight.RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer;
+var lw_ret: longword;
+begin
+  result := 0;
+  if len = sizeof(TPCANMsg) then begin
+    if (WaitForReading(GetTickCount() + c_timeout)) then begin
+      lw_ret := CanRead(t_rbuf);
+      Move(t_rbuf, buf, len);
+      result := len;
+      if (lw_ret <> CAN_ERR_OK) then AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
+    end;
+  end else AddMessage('The length of the buffer is not suitable for CAN-message.', ML_ERROR);
 end;
 
 function TPCanLight.RecvStr(var str: string; const bwait: boolean): integer;
@@ -1145,7 +1172,7 @@ begin
       else AddMessage(GetErrorMsg(lw_ret), ML_ERROR);
     end;
   end;
-end;
+end;}
 
 procedure TPCanReadThread.ReadCanMessage();
 var t_canmsg: TPCANMsg; t_msgtime: TPCANTimestamp; lw_ret: longword;
