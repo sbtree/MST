@@ -11,6 +11,9 @@ unit ConnBase;
 
 interface
 uses Classes, TextMessage, IniFiles, Serial3;
+const
+  C_BUFFER_SIZE_DEFAULT = 1024;
+
 type
   EConnectType = (CT_UNKNOWN, //unknown connection
                   CT_RS232,   //rs232
@@ -52,6 +55,8 @@ type
     t_messenger:TTextMessenger; //for transfering messages
     ch_nullshow:Char;           //indicate a char to show null, if it is received
     i_cntnull:  integer;        //count of received nulls
+    ba_rbuf:    array[0..C_BUFFER_SIZE_DEFAULT-1] of Char; //buffer for data received from device
+    w_rlen:     word;     //actual length of the received data
   protected
     function GetTypeName(): string; virtual;
     function GetStateStr(): string; virtual;
@@ -76,8 +81,8 @@ type
     property ConnectTypeName: string read GetTypeName;
     property ConnectState: EConnectState read e_state;
     property Timeout: cardinal read c_timeout write c_timeout;
-    property ReadingInterval: cardinal read c_rinterval write c_rinterval;
-    property ReadingIntervalEnabled: boolean read b_rinterval write b_rinterval;
+    property RxInterval: cardinal read c_rinterval write c_rinterval;
+    property RxIntervalEnabled: boolean read b_rinterval write b_rinterval;
     property ShowNullChar: Char read ch_nullshow write ch_nullshow;
 
     //implementation of ICommInterf
@@ -154,7 +159,7 @@ function TConnBase.WaitForReading(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_read: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
-  b_read := IsReadable(); //save its return value in a local variable, because it can be other value for next calling
+  b_read := IsReadable(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
   b_wait := ((not b_read) and (c_tcur <= tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for reading: %ds';
@@ -177,7 +182,7 @@ function TConnBase.WaitForWriting(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_write: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
-  b_write := IsWriteComplete(); //save its return value in a local variable, because it can be other value for next calling
+  b_write := IsWriteComplete(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
   b_wait := ((not b_write) and (c_tcur <= tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for completing write: %ds';
@@ -247,6 +252,8 @@ begin
   c_rinterval := CINT_INTERVAL_DEFAULT;
   b_rinterval := false;
   ch_nullshow := #13; //null is show as #13
+  //SetLength(ba_rbuf, C_BUFFER_SIZE_DEFAULT);
+  w_rlen := 0;
 end;
 
 destructor TConnBase.Destroy;
@@ -308,11 +315,10 @@ begin
   result := 0; str := '';
   repeat
     s_recv := '';
-    if WaitForReading(tend) then begin
-      result := result + RecvStr(s_recv);
-      str := str + s_recv;
-    end;
-  until (tend <= GetTickCount());
+    result := result + RecvStr(s_recv);
+    str := str + s_recv;
+    Application.ProcessMessages();
+  until (GetTickCount() >= tend);
 end;
 
 function TConnBase.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
@@ -325,8 +331,9 @@ begin
     str := str + s_recv;
     i_time := GetTickCount() + interv;
     if (i_time > tend) then i_time := tend;
+    Application.ProcessMessages();
     b_break := WaitForReading(i_time);
-  until (b_break or (tend <= GetTickCount()));
+  until (b_break or (GetTickCount() >= tend));
 end;
 
 function TConnBase.RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean): integer;
@@ -339,7 +346,7 @@ begin
     str := str + s_recv;
     if bcase then b_break := ContainsStr(str, exstr)
     else b_break := ContainsText(str, exstr);
-  until (b_break or (tend <= GetTickCount()));
+  until (b_break or (GetTickCount() >= tend));
 end;
 
 end.

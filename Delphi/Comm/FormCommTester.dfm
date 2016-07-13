@@ -18,7 +18,7 @@ object frmCommTester: TfrmCommTester
   object lblCount: TLabel
     Left = 247
     Top = 303
-    Width = 74
+    Width = 60
     Height = 13
     Caption = 'Tx(0); Rx(0)'
   end

@@ -2,7 +2,9 @@ unit USB;
 
 interface
 uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX, ConnBase, SyncObjs;
-
+const
+  C_USB_BUFFER_SIZE = 1024;
+  
 type
   EMtxUsbProperty = ( MUP_VID,
                       MUP_PID,
@@ -37,8 +39,6 @@ type
     i_actpsn:   integer;          //serial number of usb device, which is actually connected
     i_curdev:   integer;          //index of the found device
     r_devconf:  RMtxUsbDeviceConfig;    //record of usb device configuration
-    ba_rbuf:    array[0..1023] of byte; //buffer for data received from device
-    w_rlen:     word;     //actual length of the received data
     t_rxwait:   TEvent;   //wait event for reading
     t_txwait:   TEvent;   //wait event for writing complete
   protected
@@ -81,10 +81,6 @@ type
     function RecvBuf(var buf: PChar; const len: longword): integer; override;
     function SendStr(const str: string): boolean; override;
     function RecvStr(var str: string; const bwait: boolean = false): integer; override;
-
-    function RecvStrTimeout(var str: string; const tend: cardinal): integer; override;
-    function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = CINT_RECV_INTERVAL): integer; override;
-    function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; override;
   end;
 
 implementation
@@ -93,8 +89,8 @@ uses GenUtils, Forms, TextMessage;
 const
   CSTR_MTXUSB_ARS2000_GUID: string = '{6CC88F5A-EA80-4707-845B-D3CF7BDBCA6C}';
   CREC_MTXUSB_ARS2000_GUID: TGUID = (D1:$6CC88F5A; D2:$EA80; D3:$4707; D4:($84, $5B, $D3, $CF, $7B, $DB, $CA, $6C));
-  C_USB_RX_BUFFER_SIZE = 1024; // Größe des USB-Empfangspuffers
-  C_USB_TX_BUFFER_SIZE = 1024; // Größe des USB-Sendepuffers
+  C_USB_RX_BUFFER_SIZE = C_USB_BUFFER_SIZE; // Größe des USB-Empfangspuffers
+  C_USB_TX_BUFFER_SIZE = C_USB_BUFFER_SIZE; // Größe des USB-Sendepuffers
                                 // ACHTUNG: Der Puffer muss größer sein als die
                                 // im Servo hinterlegte Fifo-Größe, da das Gerät
                                 // an USB 1.1 und USB 2.0 angeschlossen werden kann.
@@ -159,7 +155,7 @@ begin
         if ((r_devconf.DeviceDescriptor.idVendor = vid) and (r_devconf.DeviceDescriptor.idProduct = pid)) then begin
           //get serial number
           i_size := SizeOf(USB_STRING_DESCRIPTOR);
-          FillChar(r_strdesc.bString, SizeOf(r_strdesc.bString), $00);
+          ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
           pa_descr2 := SafeArrayCreateVector ( VT_UI1, 0, i_size );
           t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iSerialNumber, 0, i_status);
           if (i_status = USBIO_ERR_SUCCESS) then begin
@@ -172,7 +168,7 @@ begin
           //get information of manufacturer and product type
           if result then begin
             i_size := SizeOf(USB_STRING_DESCRIPTOR);
-            FillChar(r_strdesc.bString, SizeOf(r_strdesc.bString), $00);
+            ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
             t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iManufacturer, 0, i_status);
             if (i_status = USBIO_ERR_SUCCESS) then begin
               CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
@@ -180,7 +176,7 @@ begin
             end;
 
             i_size := SizeOf(USB_STRING_DESCRIPTOR);
-            FillChar(r_strdesc.bString, SizeOf(r_strdesc.bString), $00);
+            ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
             t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iProduct, 0, i_status);
             if (i_status = USBIO_ERR_SUCCESS) then begin
               CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
@@ -223,7 +219,7 @@ begin
 
       if result then begin
         i_size := SizeOf(USB_STRING_DESCRIPTOR);
-        FillChar(r_strdesc.bString, SizeOf(r_strdesc.bString), $00);
+        ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
         pa_descr2 := SafeArrayCreateVector(VT_UI1, 0, i_size);
         t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.MtxUsbConfigDesc.ConfigDescriptor.iConfiguration, 0, i_status);
         if (i_status = USBIO_ERR_SUCCESS) then begin
@@ -281,7 +277,7 @@ begin
 
   //5. start reading and writing worker-thread
   if result then begin
-    FillChar(ba_rbuf, SizeOf(ba_rbuf), $00);
+    ZeroMemory(@ba_rbuf, length(ba_rbuf));
     t_usbrx.StartReading(C_USB_RX_BUFFER_SIZE, C_USB_CNT_RX_BUFFERS, C_USB_MAX_RX_ERRORS, i_status);
     result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
     if result then begin
@@ -324,13 +320,13 @@ end;
 function TMtxUsb.RecvData(): boolean;
 var pa_recv: PSafeArray; i_size: integer;
 begin
-  result := false; i_size := SizeOf(ba_rbuf);
+  result := false; i_size := length(ba_rbuf);
+  ClearBuffer();
   pa_recv := SafeArrayCreateVector ( VT_UI1, 0, C_USB_RX_BUFFER_SIZE );
   i_status := USBIO_ERR_SUCCESS;
   repeat
     t_usbrx.ReadData(pa_recv, i_size, i_status);
     if (i_status = USBIO_ERR_SUCCESS) then begin
-      FillChar(ba_rbuf, i_size, $00);
       w_rlen := i_size;
       CopyByteData(pa_recv, 0, i_size, PByteArray(@ba_rbuf));
     end else if (i_status <> integer(USBIO_ERR_NO_DATA)) then begin
@@ -419,8 +415,8 @@ end;
 procedure TMtxUsb.ClearDeviceInfo();
 begin
   i_curdev := -1;
-  FillChar(r_devconf.MtxUsbConfigDesc, SizeOf(RMtxUsbConfigDesc), $00);
-  FillChar(r_devconf.DeviceDescriptor, SizeOf(USB_DEVICE_DESCRIPTOR), $00);
+  ZeroMemory(@r_devconf.MtxUsbConfigDesc, SizeOf(RMtxUsbConfigDesc));
+  ZeroMemory(@r_devconf.DeviceDescriptor, SizeOf(USB_DEVICE_DESCRIPTOR));
   r_devconf.Manufacturer := '';
   r_devconf.ProductType := '';
   r_devconf.SerialNumber := '';
@@ -428,9 +424,8 @@ begin
 end;
 
 procedure TMtxUsb.ClearBuffer();
-var i: integer;
 begin
-  for i := 0 to w_rlen - 1 do ba_rbuf[i] := 0;
+  ZeroMemory(@ba_rbuf, w_rlen);
   w_rlen := 0;
 end;
 
@@ -616,42 +611,14 @@ begin
     end;
     if b_recv then begin
       for i := 0 to w_rlen - 1 do begin
-        if (ba_rbuf[i] = 0) then str := str + ch_nullshow
+        if (ba_rbuf[i] = Char(0)) then str := str + ch_nullshow
         else str := str + Char(ba_rbuf[i]);
       end;
       result := w_rlen;
-      ClearBuffer();
     end;
     if (result > 0) then Addmessage(format('Received: %s', [str]))
     else Addmessage('Nothing is received.');
   end else Addmessage('No connection and nothing is received.');;
-end;
-
-function TMtxUsb.RecvStrTimeout(var str: string; const tend: cardinal): integer;
-var i: integer;
-begin
-  result := 0; str := '';
-  if Connected then begin
-    if (WaitForReading(tend)) then begin
-      for i := 0 to w_rlen - 1 do if (ba_rbuf[i] > 0) then str := str + Char(ba_rbuf[i]);
-      result := w_rlen;
-    end;
-    ClearBuffer();
-  end;
-end;
-
-function TMtxUsb.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
-begin
-  result := 0;
-  //todo:
-  Addmessage('This method ''RecvStrInterval'' is not yet implemented.', ML_WARNING);
-end;
-
-function TMtxUsb.RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean): integer;
-begin
-  result := 0;
-  //todo:
-  Addmessage('This method ''RecvStrInterval'' is not yet implemented.', ML_WARNING);
 end;
 
 end.

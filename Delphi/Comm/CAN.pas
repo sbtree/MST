@@ -1087,6 +1087,7 @@ begin
       CanSetRcvEvent(0);
       h_rcveve := 0;
   end;
+  if (e_state = CS_CONNECTED) then e_state := CS_CONFIGURED;
 end;
 
 function TPCanLight.SendBuf(const buf: PChar; const len: longword): boolean;
