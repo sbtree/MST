@@ -1,7 +1,7 @@
 unit USB;
 
 interface
-uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX, ConnBase, SyncObjs;
+uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX, ConnBase;
 const
   C_USB_BUFFER_SIZE = 1024;
   
@@ -39,8 +39,6 @@ type
     i_actpsn:   integer;          //serial number of usb device, which is actually connected
     i_curdev:   integer;          //index of the found device
     r_devconf:  RMtxUsbDeviceConfig;    //record of usb device configuration
-    t_rxwait:   TEvent;   //wait event for reading
-    t_txwait:   TEvent;   //wait event for writing complete
   protected
     function DetectDevice(const sn: integer; const pid: word; const vid: word): boolean;
     function GetDeviceConfig(): boolean;
@@ -57,7 +55,7 @@ type
     function SendData(const buf: PChar; len: word): boolean; override;
     function RecvData(): boolean; override;
     procedure TryConnect(); override;
-    procedure CopyByteData (const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
+    procedure SafeArrayToArray(const psarr: PSafeArray; const parr: PByteArray; const size: Integer);
     procedure ClearDeviceInfo();
 
     procedure OnReadComplete(sender: TObject; var obj: OleVariant);
@@ -77,13 +75,10 @@ type
     function Config(const sconfs: TStrings): boolean; override;
     function Connect(): boolean; override;
     function Disconnect: boolean; override;
-//    function SendStr(const str: string): boolean; override;
-    function RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer; override;
-    function RecvStr(var str: string; const bwait: boolean): integer; override;
   end;
 
 implementation
-uses GenUtils, Forms, TextMessage;
+uses GenUtils, Forms, TextMessage, SyncObjs;
 
 const
   CSTR_MTXUSB_ARS2000_GUID: string = '{6CC88F5A-EA80-4707-845B-D3CF7BDBCA6C}';
@@ -118,20 +113,19 @@ const
                           'PSN'
                           );
 
-procedure TMtxUsb.CopyByteData ( const psarr : PSafeArray; li_offset, li_size : longint; const pbarr : PByteArray );
-var
-  li_inx_dest : longint;
-  li_inx_src  : longint;
-  byte_tmp    : byte;
+
+procedure TMtxUsb.SafeArrayToArray(const psarr: PSafeArray; const parr: PByteArray; const size: Integer);
+var i, i_idx, i_ubound, i_lbound: integer; byte_val: byte;
 begin
-  li_inx_src  := li_offset;
-  li_inx_dest := 0;
-  while ( li_inx_src < (li_offset+li_size) ) do
-  begin
-    SafeArrayGetElement ( psarr, li_inx_src, byte_tmp );
-    pbarr^[li_inx_dest] := byte_tmp;
-    inc ( li_inx_src  );
-    inc ( li_inx_dest );
+  if ((SafeArrayGetUBound(psarr, 1, i_ubound) = S_OK) and (SafeArrayGetLBound(psarr, 1, i_lbound) = S_OK)) then begin
+    i_idx := 0;
+    if (i_ubound >= size) then i_ubound := size;
+    for i := i_lbound to i_ubound do begin
+      if (SafeArrayGetElement(psarr, i, byte_val) = S_OK) then begin
+        parr^[i_idx] := byte_val;
+        inc(i_idx);
+      end;
+    end;
   end;
 end;
 
@@ -139,7 +133,8 @@ function TMtxUsb.DetectDevice( const sn: integer; const pid, vid: word): boolean
 var i, i_count, i_size: integer;
     pa_descr1, pa_descr2: PSafeArray; r_strdesc: USB_STRING_DESCRIPTOR;
 begin
-  result := false; i_curdev := -1;
+  result := false;
+  ClearDeviceInfo();
   t_usbio.EnumerateDevices(CSTR_MTXUSB_ARS2000_GUID,i_count);
   for i := 0 to i_count - 1 do begin
     t_usbio.OpenDevice(i, i_status);
@@ -149,7 +144,7 @@ begin
       pa_descr1 := SafeArrayCreateVector ( VT_UI1, 0, i_size );
       t_usbio.GetDeviceDescriptor(pa_descr1, i_size, i_status);
       if (i_status = USBIO_ERR_SUCCESS) then begin
-        CopyByteData(pa_descr1, 0, i_size, PByteArray(@r_devconf.DeviceDescriptor));
+        SafeArrayToArray(pa_descr1, PByteArray(@r_devconf.DeviceDescriptor), i_size);
         //find out the device with expected vid and pid
         if ((r_devconf.DeviceDescriptor.idVendor = vid) and (r_devconf.DeviceDescriptor.idProduct = pid)) then begin
           //get serial number
@@ -158,7 +153,7 @@ begin
           pa_descr2 := SafeArrayCreateVector ( VT_UI1, 0, i_size );
           t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iSerialNumber, 0, i_status);
           if (i_status = USBIO_ERR_SUCCESS) then begin
-            CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
+            SafeArrayToArray(pa_descr2, PByteArray(@r_strdesc), i_size);
             r_devconf.SerialNumber := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
             if (not TryStrToInt(r_devconf.SerialNumber, i_actpsn)) then i_actpsn := -1;
           end;
@@ -170,7 +165,7 @@ begin
             ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
             t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iManufacturer, 0, i_status);
             if (i_status = USBIO_ERR_SUCCESS) then begin
-              CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
+              SafeArrayToArray(pa_descr2, PByteArray(@r_strdesc), i_size);
               r_devconf.Manufacturer := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
             end;
 
@@ -178,7 +173,7 @@ begin
             ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
             t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iProduct, 0, i_status);
             if (i_status = USBIO_ERR_SUCCESS) then begin
-              CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
+              SafeArrayToArray(pa_descr2, PByteArray(@r_strdesc), i_size);
               r_devconf.ProductType := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
             end;
           end;
@@ -207,13 +202,13 @@ begin
     t_usbio.GetConfigurationDescriptor(pa_descr1, i_size, 0, i_status);
     result := (i_status = USBIO_ERR_SUCCESS);
     if result then begin
-      CopyByteData(pa_descr1, 0, i_size, PByteArray(@r_conf));
+      SafeArrayToArray(pa_descr1, PByteArray(@r_conf), i_size);
       //get total data of the configuration, incl. Interface descriptor und endpoints
       i_size := r_conf.wTotalLength;
       pa_descr2 := SafeArrayCreateVector(VT_UI1, 0, i_size);
       t_usbio.GetConfigurationDescriptor(pa_descr2, i_size, 0, i_status);
       result := (i_status = USBIO_ERR_SUCCESS);
-      if result then  CopyByteData(pa_descr2, 0, i_size, PByteArray(@r_devconf.MtxUsbConfigDesc));
+      if result then  SafeArrayToArray(pa_descr2, PByteArray(@r_devconf.MtxUsbConfigDesc), i_size);
       SafeArrayDestroy(pa_descr2);
 
       if result then begin
@@ -222,7 +217,7 @@ begin
         pa_descr2 := SafeArrayCreateVector(VT_UI1, 0, i_size);
         t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.MtxUsbConfigDesc.ConfigDescriptor.iConfiguration, 0, i_status);
         if (i_status = USBIO_ERR_SUCCESS) then begin
-          CopyByteData (pa_descr2, 0, i_size, PByteArray(@r_strdesc));
+          SafeArrayToArray(pa_descr2, PByteArray(@r_strdesc), i_size);
           r_devconf.Configuration := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
         end;
       end;
@@ -313,7 +308,7 @@ begin
   result := true;
 
   //set state to 'configured'
-  if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then e_state := CS_CONFIGURED;
+  if (e_state <> CS_UNKNOWN) then e_state := CS_CONFIGURED;
 end;
 
 function TMtxUsb.SetProperty(const eprop: EMtxUsbProperty; const sval: string): boolean;
@@ -358,17 +353,12 @@ end;
 
 function TMtxUsb.ConnectTo(const psn: integer): boolean;
 begin
-  result := false;
-  if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then begin
-    if Connected then Disconnect();
-    result := Init(psn);
-    if (not result) then Uninit();
+  if ((psn <> -1) and (psn <> i_actpsn)) then begin
+    if IsConnected() then Disconnect();
+    i_psn := psn;
   end;
-  if result then begin
-    e_state := CS_CONNECTED;
-    AddMessage(format('Succeed to connect to the device with sn=%d', [ProductSN]));
-  end else
-    AddMessage(format('Failed to connect to the device with sn=%d', [psn]), ML_ERROR);
+  if (not IsConnected()) then TryConnect();
+  result := IsConnected();
 end;
 
 function TMtxUsb.IsReadComplete(): boolean;
@@ -387,6 +377,7 @@ function TMtxUsb.SendData(const buf: PChar; len: word): boolean;
 var pa_send: PSafeArray; i: integer;
 begin
   result := false;
+  ClearBuffer();
   if (len > 0) then begin
     pa_send := SafeArrayCreateVector ( VT_UI1, 0, len );
     for i := 0 to len - 1 do SafeArrayPutElement(pa_send, i, buf[i]);
@@ -401,29 +392,28 @@ end;
 function TMtxUsb.RecvData(): boolean;
 var pa_recv: PSafeArray; i_size: integer;
 begin
-  result := false; i_size := length(ba_rbuf);
-  ClearBuffer();
+  i_size := length(ba_rbuf);
   pa_recv := SafeArrayCreateVector ( VT_UI1, 0, C_USB_RX_BUFFER_SIZE );
   i_status := USBIO_ERR_SUCCESS;
-  repeat
+  repeat  
     t_usbrx.ReadData(pa_recv, i_size, i_status);
     if (i_status = USBIO_ERR_SUCCESS) then begin
-      w_rlen := i_size;
-      CopyByteData(pa_recv, 0, i_size, PByteArray(@ba_rbuf));
+      SafeArrayToArray(pa_recv, PByteArray(@(ba_rbuf[w_rlen])), i_size);
+      w_rlen := w_rlen + i_size;
     end else if (i_status <> integer(USBIO_ERR_NO_DATA)) then begin
       t_usbrx.ResetPipe(i_status);
       break;
     end;
   until (i_status = integer(USBIO_ERR_NO_DATA));
   SafeArrayDestroy (pa_recv);
+  //It is possible to receive no data, if this function is already automatically caleld because of event ReadComplete
+  result := (w_rlen > 0); 
 end;
 
 procedure TMtxUsb.TryConnect();
-var b_ok: boolean;
 begin
-  Application.ProcessMessages();
-  b_ok := DetectDevice(i_psn, w_pid, w_vid);
-  if b_ok then ConnectTo(i_psn);
+  if (not Init(i_psn)) then
+    Uninit();
 end;
 
 procedure TMtxUsb.ClearDeviceInfo();
@@ -440,6 +430,7 @@ end;
 procedure TMtxUsb.OnReadComplete(sender: TObject; var obj: OleVariant);
 begin
   t_rxwait.SetEvent();
+  ClearBuffer();
   RecvData();
 end;
 
@@ -490,8 +481,6 @@ begin
   t_usbio.Connect();
   t_usbrx.Connect();
   t_usbtx.Connect();
-  t_rxwait := TEvent.Create(nil, false, false, 'TMtxUsb.Rx');
-  t_txwait := TEvent.Create(nil, false, false, 'TMtxUsb.Tx');
 end;
 
 destructor TMtxUsb.Destroy;
@@ -506,8 +495,6 @@ begin
   t_usbio.DisablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
   FreeAndNil(t_usbio);
   t_connobj := nil;
-  FreeAndNil(t_rxwait);
-  FreeAndNil(t_txwait);
 	inherited Destroy;
 end;
 
@@ -540,7 +527,15 @@ end;
 
 function TMtxUsb.Connect(): boolean;
 begin
-  result := ConnectTo(i_psn);
+  result := false;
+  if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then begin
+    ConnectTo(i_psn);
+    result := WaitForConnecting(GetTickCount() + c_timeout);
+    if result then begin
+      e_state := CS_CONNECTED;
+      AddMessage(format('Successful to make a connection(%s) to device(sn=%d).', [GetTypeName(), ProductSN]));
+    end else AddMessage(format('Failed to make a connection(%s) to device(sn=%d)', [GetTypeName(), ProductSN]), ML_ERROR);
+  end else AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
 end;
 
 function TMtxUsb.Disconnect: boolean;
@@ -549,64 +544,6 @@ begin
   t_rxwait.ResetEvent();
   t_txwait.ResetEvent();
   AddMessage('The device is disconnected.');
-end;
-
-{function TMtxUsb.SendStr(const str: string): boolean;
-var pa_send: PSafeArray; i, i_size: integer; c_time: cardinal;
-begin
-  result := false;
-  if Connected then begin
-    i_size := Length(str);
-    if (i_size > 0) then begin
-      c_time := GetTickCount() + c_timeout;
-      pa_send := SafeArrayCreateVector ( VT_UI1, 0, i_size );
-      for i := 0 to i_size - 1 do SafeArrayPutElement(pa_send, i, str[i+1]);
-      repeat
-        t_usbtx.WriteData(pa_send, 0, i_status);
-        result := (i_status = USBIO_ERR_SUCCESS);
-        if (not result) then
-          t_usbtx.ResetPipe(i_status);
-      until (result or (GetTickCount() >= c_time));
-      if result then result := WaitForWriting(c_time);
-      SafeArrayDestroy(pa_send);
-      if result then Addmessage(format('Succeed to send: %s', [str]))
-      else Addmessage(format('Failed to send: %s', [str]));
-    end else Addmessage('The given string is empty and nothing is sent.');
-  end else Addmessage('No connection and nothing is sent.');
-end; }
-
-function TMtxUsb.RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer;
-begin
-  result := 0;
-  if Connected then begin
-    if WaitForReading(GetTickCount + c_timeout) then begin
-      if len < w_rlen then result := len
-      else result := w_rlen;
-      Move(ba_rbuf, buf, result);
-    end;
-  end else Addmessage('No connection and nothing is received.');
-end;
-
-function TMtxUsb.RecvStr(var str: string; const bwait: boolean): integer;
-var i: integer; b_recv: boolean;
-begin
-  result := 0; str := '';
-  if Connected then begin
-    if bwait then b_recv := WaitForReading(GetTickCount + c_timeout)
-    else begin
-      Application.ProcessMessages();
-      b_recv := (t_rxwait.WaitFor(0) = wrSignaled);
-    end;
-    if b_recv then begin
-      for i := 0 to w_rlen - 1 do begin
-        if (ba_rbuf[i] = Char(0)) then str := str + ch_nullshow
-        else str := str + Char(ba_rbuf[i]);
-      end;
-      result := w_rlen;
-    end;
-    if (result > 0) then Addmessage(format('Received: %s', [str]))
-    else Addmessage('Nothing is received.');
-  end else Addmessage('No connection and nothing is received.');;
 end;
 
 end.

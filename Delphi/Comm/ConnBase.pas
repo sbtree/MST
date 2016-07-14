@@ -10,7 +10,7 @@
 unit ConnBase;
 
 interface
-uses Classes, TextMessage, IniFiles, Serial3;
+uses Classes, TextMessage, IniFiles, Serial3, SyncObjs;
 const
   C_BUFFER_SIZE_DEFAULT = 1024;
 
@@ -57,6 +57,8 @@ type
     i_cntnull:  integer;        //count of received nulls
     ba_rbuf:    array[0..C_BUFFER_SIZE_DEFAULT-1] of Char; //buffer for data received from device
     w_rlen:     word;     //actual length of the received data
+    t_rxwait:   TEvent;   //wait event for reading
+    t_txwait:   TEvent;   //wait event for writing complete
   protected
     function GetTypeName(): string; virtual;
     function GetStateStr(): string; virtual;
@@ -103,6 +105,12 @@ type
     function RecvStrTimeout(var str: string; const tend: cardinal): integer; virtual;
     function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer; virtual;
     function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; virtual;
+
+    //sync methods
+    procedure SetEventRx();
+    procedure ResetEventRx();
+    procedure SetEventTx();
+    procedure ResetEventTx();
   end;
   PConnBase = ^TConnBase;
 
@@ -278,11 +286,14 @@ begin
   ch_nullshow := #13; //null is show as #13
   //SetLength(ba_rbuf, C_BUFFER_SIZE_DEFAULT);
   w_rlen := 0;
+  t_rxwait := TEvent.Create(nil, false, false, 'TMtxConn.Rx');
+  t_txwait := TEvent.Create(nil, false, false, 'TMtxConn.Tx');
 end;
 
 destructor TConnBase.Destroy;
 begin
-  //todo:
+  FreeAndNil(t_rxwait);
+  FreeAndNil(t_txwait);
   inherited Destroy();
 end;
 
@@ -359,6 +370,7 @@ begin
       else i_len := w_rlen;
       Move(ba_rbuf, buf, i_len);
       result := w_rlen;
+      ClearBuffer();
     end;
     if (result > 0) then AddMessage(format('Successful to receieve data (%d bytes): %s', [result, buf]))
     else AddMessage('Nothing is receieved.', ML_WARNING);
@@ -376,6 +388,7 @@ begin
     if RecvData() then begin
       str := BufferToStr();
       result := length(str);
+      ClearBuffer();
     end;
     if (result > 0) then AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
     else AddMessage('Nothing is receieved.', ML_WARNING);
@@ -425,6 +438,26 @@ begin
     if bcase then b_break := ContainsStr(str, exstr)
     else b_break := ContainsText(str, exstr);
   until (b_break or (GetTickCount() >= tend));
+end;
+
+procedure TConnBase.SetEventRx();
+begin
+  t_rxwait.SetEvent();
+end;
+
+procedure TConnBase.ResetEventRx();
+begin
+  t_rxwait.ResetEvent();
+end;
+
+procedure TConnBase.SetEventTx();
+begin
+  t_txwait.SetEvent();
+end;
+
+procedure TConnBase.ResetEventTx();
+begin
+  t_txwait.ResetEvent();
 end;
 
 end.

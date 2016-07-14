@@ -49,10 +49,6 @@ type
 
     function Config(const sconfs: TStrings): boolean; override;
     function Disconnect: boolean; override;
-//    function SendBuf(const buf: PChar; const len: longword): boolean; override;
-//    function SendStr(const str: string): boolean; override;
-//    function RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer; override;
-//    function RecvStr(var str: string; const bwait: boolean): integer; override;
   end;
   PConnRS232 = ^TMtxRS232;
 
@@ -257,45 +253,6 @@ begin
   end;
 end;
 
-{function TMtxRS232.RecvChars(var buf: PChar; const len: integer; const tend: cardinal; const binterval: boolean = false): integer;
-var c_tend: cardinal; b_recv: boolean; i_len: integer;
-begin
-  result := 0; i_cntnull := 0;
-  repeat
-    b_recv := RecvData();
-    if b_recv then begin
-      if (w_rlen > len) then i_len := len
-      else i_len := w_rlen;
-      Move(ba_rbuf, buf[result], i_len);
-      result := result + w_rlen;
-    end else if binterval then begin
-      c_tend := GetTickCount() + c_rinterval;
-      if (c_tend > tend) then c_tend := tend;
-      b_recv := (not WaitForReading(c_tend));
-    end else b_recv := false;
-    Application.ProcessMessages();
-    b_recv := (b_recv and (GetTickCount() < tend) and (result < len));
-  until (not b_recv);
-end;
-
-function  TMtxRS232.RecvChars(var buf: string; const tend: cardinal; const binterval: boolean): integer;
-var c_tend: cardinal; b_recv: boolean;
-begin
-  buf := '';
-  repeat
-    b_recv := RecvData();
-    if b_recv then buf := buf + BufferToStr()
-    else if binterval then begin
-      c_tend := GetTickCount() + c_rinterval;
-      if (c_tend > tend) then c_tend := tend;
-      b_recv := (not WaitForReading(c_tend));
-    end else b_recv := false;
-    Application.ProcessMessages();
-    b_recv := (b_recv and (GetTickCount() < tend));
-  until (not b_recv);
-  result := length(buf);
-end; }
-
 function TMtxRS232.SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
 begin
   result := false;
@@ -497,43 +454,6 @@ begin
     if result then e_state := CS_CONFIGURED;
   end;
 end;
-
-{function TMtxRS232.SendBuf(const buf: PChar; const len: longword): boolean;
-var c_tend: cardinal;
-begin
-  c_tend := GetTickCount() + c_timeout;
-  SendChars(buf, len, c_tend);
-  result := WaitForWriting(c_tend);
-  if result then AddMessage(format('Succeeded to send data (%d bytes)', [len]))
-  else AddMessage(format('Failed to send data (%d bytes)', [len]), ML_ERROR)
-end;
-
-function TMtxRS232.SendStr(const str: string): boolean;
-var c_tend: cardinal;
-begin
-  c_tend := GetTickCount() + c_timeout;
-  SendChars(str, c_tend);
-  result := WaitForWriting(c_tend);
-  if result then AddMessage(format('Succeeded to send: %s', [str]))
-  else AddMessage(format('Failed to send: %s', [str]), ML_ERROR)
-end; 
-
-function TMtxRS232.RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer;
-begin
-  result := RecvChars(buf, len, GetTickCount() + c_timeout, false);
-  if (result > 0) then AddMessage(format('Succeeded to receieve data (%d bytes)', [result]))
-  else AddMessage(format('Failed to receieve data (%d byte)', [result]), ML_WARNING)
-end;
-
-function TMtxRS232.RecvStr(var str: string; const bwait: boolean): integer;
-begin
-  str := '';
-  if bwait then WaitForReading(GetTickCount() + c_timeout);
-  if RecvData() then str := BufferToStr();
-  result := length(str);
-  if (result > 0) then AddMessage(format('Received: %s', [str]))
-  else AddMessage('Nothing is received.', ML_WARNING);
-end; }
 
 end.
 
