@@ -27,8 +27,6 @@ type
   protected
     t_ser :     TSerial;
   protected
-//    function RecvChars(var buf: PChar; const len: integer; const tend: cardinal; const binterval: boolean = false): integer; overload;
-//    function RecvChars(var buf: string; const tend: cardinal; const binterval: boolean = false): integer; overload;
     function SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
     function SetPort(const sval: string): boolean;
     function SetBaudrate(const sval: string): boolean;
@@ -331,6 +329,7 @@ begin
   ClearBuffer(); //clear reading buffer of the serial interface
   for i := 0 to len - 1 do t_ser.WriteChar(buf[i]);
   result := (len > 0);
+  //if result then t_txwait.SetEvent();
 end;
 
 function TMtxRS232.RecvData(): boolean;
@@ -348,6 +347,7 @@ begin
     Application.ProcessMessages();
   end;
   result := (w_rlen > 0);
+  //if result then t_rxwait.SetEvent();
 end;
 
 procedure TMtxRS232.TryConnect();

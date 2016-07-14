@@ -13,7 +13,11 @@ uses
   RS232 in '..\Comm\RS232.pas',
   PowerSupply in 'PowerSupply.pas',
   Thermometer in 'Thermometer.pas',
-  DeviceConfig in 'DeviceConfig.pas';
+  DeviceConfig in 'DeviceConfig.pas',
+  CAN in '..\Comm\CAN.pas',
+  USB in '..\Comm\USB.pas',
+  USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
+  Usbspec in '..\Externals\USBIO\Usbspec.pas';
 
 {$R *.res}
 

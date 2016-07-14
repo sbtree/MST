@@ -63,8 +63,8 @@ type
     s_devname: string;      //name of the device
     b_comhex : boolean;     //convert string, in which the hexadicimal data are presented, into hexadicimal value, if it is true
 
-    t_conns: array[EConnectionType] of TConnBase; //array of all possible connections
-    e_actconn: EConnectionType; //type of currently active connection
+    t_conns: array[EConnectType] of TConnBase; //array of all possible connections
+    e_actconn: EConnectType; //type of currently active connection
     t_prot: TProtBase;      //protocol of communication
 
     //t_rbuf, t_wbuf: TCharBuffer; //buffer for receiving and sending data
@@ -96,7 +96,7 @@ type
     function TryToReady(): boolean; virtual;
     function Connect(): Boolean; virtual;
     function Disconnect: boolean; virtual;
-    function ActiveConn(const ct: EConnectionType): boolean; virtual;
+    function ActiveConn(const ct: EConnectType): boolean; virtual;
     function Reset(): boolean; virtual;
     function SendStr(const sData: string; const bAns: boolean = true): boolean; virtual;
     function RecvStr(var sdata: string): Integer; virtual;
@@ -303,10 +303,10 @@ end;
 // History      :
 // =============================================================================
 function TDeviceBase.ConfigConnections(const ini: TMemIniFile; const secname: string): integer;
-var i: EConnectionType; s_inivalue: string;
+var i: EConnectType; s_inivalue: string;
 begin
   result := 0;
-  for i := LOW(EConnectionType) to HIGH(EConnectionType) do begin
+  for i := LOW(EConnectType) to HIGH(EConnectType) do begin
     if ini.ValueExists(secname, CSTR_CONN_KEYS[i]) then begin
       s_inivalue := trim(ini.ReadString(secname, CSTR_CONN_KEYS[CT_RS232], ''));
       if not assigned(t_conns[i]) then begin
@@ -380,10 +380,10 @@ end;
 // History      :
 // =============================================================================
 function TDeviceBase.Disconnect(): boolean;
-var i: EConnectionType;
+var i: EConnectType;
 begin
   result := true;
-  for i := LOW(EConnectionType) to HIGH(EConnectionType) do begin
+  for i := LOW(EConnectType) to HIGH(EConnectType) do begin
     if assigned(t_conns[i]) then result := (result and t_conns[i].Disconnect)
   end;
   if result then e_state := DS_CONFIGURED;
@@ -400,7 +400,7 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.ActiveConn(const ct: EConnectionType): boolean;
+function TDeviceBase.ActiveConn(const ct: EConnectType): boolean;
 begin
   result := false;
   if assigned(t_conns[ct])  then begin
@@ -448,20 +448,11 @@ end;
 // History      :
 // =============================================================================
 function TDeviceBase.SendStr(const sData: string; const bAns: boolean): boolean;
-var i_len: integer;
 begin
   result := false;
   if TryToReady() then begin
-    //clear read-buffer of t_ser
-    t_conns[e_actconn].RecvData(t_rbuf, C_TIMEOUT_ONCE);
-    //t_rbuf.Clear;
-
     //send string and wait til write-buffer is completely sent
-    //i_len := t_wbuf.WriteStr(sData);
-    i_len := length(sData);
-    StrCopy(PChar(@t_wbuf), PChar(@sData));
-    result := t_conns[e_actconn].SendData(t_wbuf, i_len, c_timeout);
-
+    result := t_conns[e_actconn].SendStr(sData);
     if result then begin
       if bAns then e_state := DS_BUSY
       else e_state := DS_COMMOK;
@@ -484,11 +475,7 @@ var b_ok: boolean;
 begin
   result := 0;
   if (e_state in C_DEV_INSTATES[DE_RECV]) then begin
-    //t_rbuf.Clear;
-    ZeroMemory(@t_rbuf, length(t_rbuf));
-    result := t_conns[e_actconn].RecvData(t_rbuf, c_timeout);
-    //sdata := t_rbuf.ReadStr(false);
-    sdata := Copy(t_rbuf, Low(t_rbuf), result);
+    result := t_conns[e_actconn].RecvStr(sdata);
     b_ok := CheckAnswer(sdata);
     if b_ok then e_state := DS_COMMOK
     else e_state := DS_COMMERR;

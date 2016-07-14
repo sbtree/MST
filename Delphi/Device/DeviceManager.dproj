@@ -43,9 +43,13 @@
     <DelphiCompile Include="DeviceManager.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Comm\CAN.pas" />
     <DCCReference Include="..\Comm\ConnBase.pas" />
     <DCCReference Include="..\Comm\ProtocolBase.pas" />
     <DCCReference Include="..\Comm\RS232.pas" />
+    <DCCReference Include="..\Comm\USB.pas" />
+    <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
+    <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="DeviceBase.pas" />

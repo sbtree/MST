@@ -325,8 +325,6 @@ type
     h_dll:    THandle;
     h_rcveve: THandle;
     s_dllfile:string;
-    p_rbuf:   PPCANMsg;
-    t_wbuf:   TPCANMsg;
     lw_sendcnt, lw_recvcnt: longword;
     lw_devnr:   longword;
     e_subtype:  EPCanNPnPType;
@@ -741,6 +739,8 @@ begin
       if result then begin
         canmsg.ID := i_nodenr;
         canmsg.LEN := byte(i_len);
+        if (i_nodenr > CAN_MAX_STANDARD_ID) then canmsg.MSGTYPE := MSGTYPE_EXTENDED
+        else canmsg.MSGTYPE := MSGTYPE_STANDARD;
       end;
     end;
   end;
@@ -902,7 +902,7 @@ begin
     p_pcanmsg := PPCANMsg(buf);
     lw_ret := CanWrite(p_pcanmsg^);
     result := (lw_ret = CAN_ERR_OK);
-  end;
+  end else AddMessage(format('Found invalid PCAN-message by sending data (% bytes).', [len]), ML_ERROR);
 end;
 
 function TPCanLight.RecvData(): boolean;
@@ -953,8 +953,6 @@ end;
 procedure TPCanLight.SetMsgVersion(ecanver: EPCanVersion);
 begin
   e_canver := ecanver;
-  if (e_canver = PCV_STD) then t_wbuf.MSGTYPE := MSGTYPE_STANDARD
-  else t_wbuf.MSGTYPE := MSGTYPE_EXTENDED;
 end;
 
 procedure TPCanLight.SetDeviceNr(devnr: longword);
@@ -1084,12 +1082,10 @@ begin
   h_dll := 0;
   s_dllfile := '';
   e_canver := PCV_STD;
-  t_wbuf.MSGTYPE := MSGTYPE_STANDARD;
   lw_sendcnt := 0;
   lw_recvcnt := 0;
   for i := Low(EPCanFunction) to High(EPCanFunction) do a_pcanfnt[i] := nil;
   SetNPnP(HW_ISA, 0, 0);
-  p_rbuf := @ba_rbuf;
 end;
 
 destructor TPCanLight.Destroy();
@@ -1143,31 +1139,27 @@ begin
   result := false;
   if IsConnected() then begin
     c_tend := GetTickCount() + c_timeout;
-    result := IsPCanMsg(buf, len);
-    if result then begin
-      result := SendData(buf, sizeof(t_wbuf));
-      if result then result := WaitForWriting(c_tend);
-      p_pcanmsg := PPCANMsg(buf);
-      PCanMsgToStr(p_pcanmsg^, s_msg);
-      if result then AddMessage(format('Successful to send data (%d bytes): %s ', [len, s_msg]))
-      else AddMessage(format('Failed to send data (%d bytes): %s', [len, s_msg]), ML_ERROR);
-    end else
-      AddMessage(format('Failed to build PCAN-message by sending string: %s', [s_msg]), ML_ERROR);
+    result := SendData(buf, len);
+    if result then result := WaitForWriting(c_tend);
+    p_pcanmsg := PPCANMsg(buf);
+    PCanMsgToStr(p_pcanmsg^, s_msg);
+    if result then AddMessage(format('Successful to send data (%d bytes): %s ', [len, s_msg]))
+    else AddMessage(format('Failed to send data (%d bytes): %s', [len, s_msg]), ML_ERROR);
   end else
     AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 function TPCanLight.SendStr(const str: string): boolean;
-var c_tend: cardinal;
+var c_tend: cardinal; t_pcanmsg: TPCANMsg;
 begin
   result := false;
   if IsConnected() then begin
     c_tend := GetTickCount() + c_timeout;
-    result := StrToPCanMsg(str, t_wbuf);
+    result := StrToPCanMsg(str, t_pcanmsg);
     if result then begin
-      result := (CanWrite(t_wbuf) = CAN_ERR_OK);
+      result := (CanWrite(t_pcanmsg) = CAN_ERR_OK);
       if result then result := WaitForWriting(c_tend);
-      if result then AddMessage(format('Successful to send string: %s (internal: %d bytes)', [str, sizeof(t_wbuf)]))
+      if result then AddMessage(format('Successful to send string: %s (internal: %d bytes)', [str, sizeof(t_pcanmsg)]))
       else AddMessage(format('Failed to send string: %s', [str]), ML_ERROR)
     end else
       AddMessage(format('Failed to build PCAN-message by sending string: %s', [str]), ML_ERROR);

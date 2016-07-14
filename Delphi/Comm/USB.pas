@@ -234,7 +234,7 @@ end;
 
 function TMtxUsb.Init(const psn: integer): boolean;
 begin
-  result := FindDevice(psn);
+  result := FindDevice(psn, 0);
   //1.add interface
   if result then begin
     t_usbio.AddInterface(r_devconf.MtxUsbConfigDesc.InterfaceDescriptor.bInterfaceNumber,
@@ -541,8 +541,6 @@ end;
 function TMtxUsb.Disconnect: boolean;
 begin
   result := Uninit();
-  t_rxwait.ResetEvent();
-  t_txwait.ResetEvent();
   AddMessage('The device is disconnected.');
 end;
 

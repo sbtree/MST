@@ -182,68 +182,68 @@ begin
 end;
 
 function TConnBase.WaitForReading(const tend: cardinal): boolean;
-var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_read: boolean;
+var s_lastmsg: string; c_tcur, c_tstart, c_count: cardinal; b_wait, b_read: boolean;
 begin
-  c_tcur := GetTickCount(); c_count := c_tcur;
+  c_tstart := GetTickCount(); c_tcur := c_tstart; c_count := c_tstart;
   b_read := IsReadComplete(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
-  b_wait := ((not b_read) and (c_tcur <= tend));
+  b_wait := ((not b_read) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for reading: %ds';
-    AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
         c_count := c_tcur;
       end;
       b_read := IsReadComplete();
-      b_wait := ((not b_read) and (c_tcur <= tend));
+      b_wait := ((not b_read) and (c_tcur < tend));
     until (not b_wait);
   end;
   result := b_read;
 end;
 
 function TConnBase.WaitForWriting(const tend: cardinal): boolean;
-var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_write: boolean;
+var s_lastmsg: string; c_tcur, c_tstart, c_count: cardinal; b_wait, b_write: boolean;
 begin
-  c_tcur := GetTickCount(); c_count := c_tcur;
+  c_tstart := GetTickCount(); c_tcur := c_tstart; c_count := c_tstart;
   b_write := IsWriteComplete(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
-  b_wait := ((not b_write) and (c_tcur <= tend));
+  b_wait := ((not b_write) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for completing write: %ds';
-    AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
         c_count := c_tcur;
       end;
       b_write := IsWriteComplete();
-      b_wait := ((not b_write) and (c_tcur <= tend));
+      b_wait := ((not b_write) and (c_tcur < tend));
     until (not b_wait);
   end;
   result := b_write;
 end;
 
 function TConnBase.WaitForConnecting(const tend: cardinal): boolean;
-var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait: boolean;
+var s_lastmsg: string; c_tcur, c_tstart, c_count: cardinal; b_wait: boolean;
 begin
-  c_tcur := GetTickCount(); c_count := c_tcur;
-  b_wait := ((not IsConnected()) and (c_tcur <= tend));
+  c_tstart := GetTickCount(); c_tcur := c_tstart; c_count := c_tstart;
+  b_wait := ((not IsConnected()) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for connecting: %ds';
-    AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
     repeat
       Application.ProcessMessages();
       TryConnect();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
         c_count := c_tcur;
       end;
-      b_wait := ((not IsConnected()) and (c_tcur <= tend));
+      b_wait := ((not IsConnected()) and (c_tcur < tend));
     until (not b_wait);
   end;
   result := IsConnected();
@@ -284,7 +284,6 @@ begin
   c_rinterval := CINT_INTERVAL_DEFAULT;
   b_rinterval := false;
   ch_nullshow := #13; //null is show as #13
-  //SetLength(ba_rbuf, C_BUFFER_SIZE_DEFAULT);
   w_rlen := 0;
   t_rxwait := TEvent.Create(nil, false, false, 'TMtxConn.Rx');
   t_txwait := TEvent.Create(nil, false, false, 'TMtxConn.Tx');

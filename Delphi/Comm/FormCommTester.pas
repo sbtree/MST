@@ -52,6 +52,7 @@ begin
 
   t_conn := TPCanLight.Create(self);
   t_conn.Messenger := t_messenger;
+  t_conn.Timeout := 10000;
   s_conf := trim(cmbConf.Text); //'HWT:USB1CH|PCANDLL:PCAN_USB.dll|baudrate:1M|CANVER:EXT';
   t_conn.Config(s_conf);
   t_conn.Connect();
@@ -70,7 +71,7 @@ begin
 
   t_conn := TMtxRS232.Create(self);
   t_conn.Messenger := t_messenger;
-  //t_conn.Timeout := 10000;
+  t_conn.Timeout := 10000;
   s_conf := trim(cmbConf.Text); //'Port:8|baudrate:9600'; //'PARITY', 'DATABITS', 'STOPBITS', 'FLOWCONTROL'
   t_conn.Config(s_conf);
   t_conn.Connect();
@@ -90,6 +91,7 @@ begin
 
   t_conn := TMtxUSB.Create(self);
   t_conn.Messenger := t_messenger;
+  t_conn.Timeout := 10000;
   s_conf := trim(cmbConf.Text); //'VID:$1B97|PID:$2|PSN:1234';
   t_conn.Config(s_conf);
   t_conn.Connect();

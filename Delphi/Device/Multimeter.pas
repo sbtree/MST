@@ -47,7 +47,7 @@ type
 
     function CloseRelays(const relays: string): boolean; virtual;
     function OpenRelays(const relays: string): boolean; virtual;
-    function QueryRelays(var relnrs: string): string; virtual;
+    function QueryRelays(var relnrs: string): boolean; virtual;
     function MeasureR(var val: real): boolean; virtual;
     function MeasureDCV(var val: real): boolean; virtual;
     function MeasureACV(var val: real): boolean; virtual;
