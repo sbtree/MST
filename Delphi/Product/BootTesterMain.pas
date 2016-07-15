@@ -198,7 +198,7 @@ begin
   t_cmds := TStringList.create;
   ExtractStrings([Char(13)], [' '], PChar(s_buffer), t_cmds);
   for i := 0 to t_cmds.Count - 1 do begin
-    if SameText(t_cmds[i], 'Wait') then Delay(1000)
+    if SameText(t_cmds[i], 'Wait') then TGenUtils.Delay(1000)
     else SendStr(t_cmds[i] + Char(13));
   end;
 
@@ -281,7 +281,7 @@ begin
       memRecv.Lines.Add(format('prog: %s %ds', [CSTR_POWER_ONOFF, Round((c_time - GetTickCount()) / 1000)]));
       repeat
         memRecv.Lines[memRecv.Lines.count - 1] := format('prog: %s %ds', [CSTR_POWER_ONOFF, Round((c_time - GetTickCount()) / 1000)]);
-        Delay(C_DELAY_MSEC);
+        TGenUtils.Delay(C_DELAY_MSEC);
         b_timeout := (GetTickCount() >= c_time);
       until (b_timeout or (t_ser.RxWaiting > 0));
     end else begin
@@ -314,12 +314,12 @@ begin
   if t_ser.Active then begin
     i_baud := t_ser.Baudrate;
     t_ser.Baudrate := CINT_B115200;
-    //Delay(C_DELAY_MSEC);
+    //TGenUtils.Delay(C_DELAY_MSEC);
     SendStr(CSTR_TEST_CMD + Char(13));
     c_endtime := GetTickCount() + 1000;
     result := RecvStrInterval(msg, c_endtime, 100);
     t_ser.Baudrate := i_baud;
-    //Delay(C_DELAY_MSEC);
+    //TGenUtils.Delay(C_DELAY_MSEC);
   end;
 end;
 
@@ -374,7 +374,7 @@ begin
         s_temp := UpperCase(s_recv);
         if (Pos(CSTR_WAITING, s_temp) > 0) then begin
           SendStr(CSTR_SERVICE + Char(13));
-          Delay(C_DELAY_MSEC); //wait till the service mode is reached
+          TGenUtils.Delay(C_DELAY_MSEC); //wait till the service mode is reached
           t_exstrs.Clear; t_exstrs.Add(CSTR_SERVICE);
           i_trials := 0;
           repeat
@@ -388,7 +388,7 @@ begin
                   t_ser.Baudrate := CINT_B115200;
                 end;
               end;
-            end else Delay(C_DELAY_MSEC);
+            end else TGenUtils.Delay(C_DELAY_MSEC);
             Inc(i_trials);
           until (result or (i_trials > 5));
           e_dlprotocol := DP_METRONIX1;
@@ -414,13 +414,13 @@ begin
       BS_MTLBL_ONLY:begin
         t_ser.Baudrate := CINT_B115200;
         t_ser.FlowMode := fcXON_XOF;
-        //Delay(C_DELAY_MSEC);
+        //TGenUtils.Delay(C_DELAY_MSEC);
         result := t_ser.Active;
       end;
       BS_MTLBL_UPD, BS_MTLBL_APP: begin
         t_ser.Baudrate := CINT_B115200;
         t_ser.FlowMode := fcXON_XOF;
-        //Delay(C_DELAY_MSEC);
+        //TGenUtils.Delay(C_DELAY_MSEC);
         c_endtime := GetTickCount() + C_REBOOT_TIME;
         if SwitchOn('', c_endtime) then begin
           t_exstrs.Clear; t_exstrs.Add(CSTR_MOTOROLA);
@@ -445,7 +445,7 @@ begin
             if (t_ser.ReadString(s_recv) > 0) then begin
               self.memRecv.Lines.Add('prog:<' + s_recv);
               t_ser.Baudrate := CINT_B115200;
-              //Delay(C_DELAY_MSEC);
+              //TGenUtils.Delay(C_DELAY_MSEC);
             end;
           end;
         end;
@@ -456,7 +456,7 @@ begin
         if SwitchOn('', c_endtime) then begin
           if (RecvStrExpected(t_exstrs, c_endtime) >= 0) then begin
             SendStr(CSTR_SERVICE + Char(13));
-            Delay(C_DELAY_MSEC); //wait till the service mode is reached
+            TGenUtils.Delay(C_DELAY_MSEC); //wait till the service mode is reached
             t_exstrs.Clear; t_exstrs.Add(CSTR_SERVICE);
             i_trials := 0;
             repeat
@@ -468,10 +468,10 @@ begin
                   if (t_ser.ReadString(s_recv) > 0) then begin
                     self.memRecv.Lines.Add('prog:<' + s_recv);
                     t_ser.Baudrate := CINT_B115200;
-                    //Delay(C_DELAY_MSEC);
+                    //TGenUtils.Delay(C_DELAY_MSEC);
                   end;
                 end;
-              end else Delay(C_DELAY_MSEC);
+              end else TGenUtils.Delay(C_DELAY_MSEC);
               Inc(i_trials);
             until (result or (i_trials > 5));
           end;
@@ -507,7 +507,7 @@ begin
               s_temp := UpperCase(s_recv);
               if (Pos(CSTR_WAITING, s_temp) > 0) then begin
                 SendStr(CSTR_SERVICE + Char(13));
-                Delay(C_DELAY_MSEC); //wait till the service mode is reached
+                TGenUtils.Delay(C_DELAY_MSEC); //wait till the service mode is reached
                 t_exstrs.Clear; t_exstrs.Add(CSTR_SERVICE);
                 i_trials := 0;
                 repeat
@@ -519,10 +519,10 @@ begin
                       if (t_ser.ReadString(s_recv) > 0) then begin
                         self.memRecv.Lines.Add('prog:<' + s_recv);
                         t_ser.Baudrate := CINT_B115200;
-                        //Delay(C_DELAY_MSEC);
+                        //TGenUtils.Delay(C_DELAY_MSEC);
                       end;
                     end;
-                  end else Delay(C_DELAY_MSEC);
+                  end else TGenUtils.Delay(C_DELAY_MSEC);
                   Inc(i_trials);
                 until (result or (i_trials > 5));
                 e_dlprotocol := DP_METRONIX1;
@@ -547,12 +547,12 @@ begin
   if t_ser.Active then begin
     cTimeout := GetTickCount() + msecs;
     sIn := UpperCase(str);
-    while ((t_ser.RxWaiting <= 0) and (GetTickCount() < cTimeout)) do Delay(C_DELAY_MSEC);
+    while ((t_ser.RxWaiting <= 0) and (GetTickCount() < cTimeout)) do TGenUtils.Delay(C_DELAY_MSEC);
     repeat
       ch := chr(0);
       if (t_ser.ReadChar(ch) = 1) then if (not (ch = char(0))) then sRecv := sRecv + ch;
       sTemp := UpperCase(sRecv);
-      if (t_ser.RxWaiting <= 0) then Delay(C_DELAY_MSEC);
+      if (t_ser.RxWaiting <= 0) then TGenUtils.Delay(C_DELAY_MSEC);
     until ((Pos(sIn, sTemp) > 0) or (GetTickCount() >= cTimeout));
   end;
 
@@ -601,7 +601,7 @@ begin
     while (not b_app) do
     begin
       s_tmp := '';
-      SendStr(s_send); Delay(100);
+      SendStr(s_send); TGenUtils.Delay(100);
       if (RecvStr(s_tmp) > 0) then s_recv := s_recv + trim(s_tmp);
       b_app := (EndsText('application', s_recv) or (GetTickCount() >= c_time));
     end;
@@ -736,7 +736,7 @@ begin
   c_start := GetTickCount();
   timeout := c_start + c_timeout;
   t_ser.WriteString(str);
-  while ((t_ser.TxWaiting > 0) and (GetTickCount() < timeout)) do Delay(C_DELAY_MSEC);
+  while ((t_ser.TxWaiting > 0) and (GetTickCount() < timeout)) do TGenUtils.Delay(C_DELAY_MSEC);
   result := (t_ser.TxWaiting <= 0);
   {result := t_comport.WriteStr(str);}
   c_end := GetTickCount();

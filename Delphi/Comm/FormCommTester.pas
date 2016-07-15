@@ -61,7 +61,8 @@ end;
 procedure TfrmCommTester.btnRecvClick(Sender: TObject);
 var s_recv: string;
 begin
-  t_conn.RecvStr(s_recv, true);
+  t_conn.RecvStr(s_recv);
+  //t_conn.RecvStrTimeout(s_recv, 10000);
 end;
 
 procedure TfrmCommTester.btnRS232Click(Sender: TObject);
@@ -80,7 +81,7 @@ end;
 procedure TfrmCommTester.btnSendClick(Sender: TObject);
 begin
   //format of CAN-Message: '60A:40800020';
-  //format of OROW: 'OR:0008'
+  //format of OROW: 'OR:0008' or 'OR:1:0008'
   t_conn.SendStr(trim(cmbSending.Text) + Char(#13));
 end;
 

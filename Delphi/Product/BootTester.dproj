@@ -46,6 +46,7 @@
     <DCCReference Include="..\Externals\Serial3.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="..\General\NewProgressbar.pas" />
+    <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="BootTesterMain.pas">
       <Form>FrmBootTester</Form>
     </DCCReference>

@@ -337,6 +337,7 @@ type
     function LoadDefaultDll(const hwt: EPCanHardwareType): boolean; overload;
     function LoadDefaultDll(const shwt: string): boolean; overload;
     function UnloadDll(): boolean; virtual;
+    function CanInit(): boolean; virtual;
     function GetErrorMsg(const errnr: longword): string; virtual;
     function StrToPCanMsg(const msg: string; var canmsg: TPCANMsg): boolean; virtual;
     function PCanMsgToStr(const canmsg: TPCANMsg; var msg: string): boolean; virtual;
@@ -686,6 +687,14 @@ begin
   result := true;
 end;
 
+function TPCanLight.CanInit(): boolean;
+begin
+  if (e_hwt in [PCH_ISA1CH, PCH_ISA2CH, PCH_DNP, PCH_DNG]) then
+    result := (CanInitNPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver), Ord(e_subtype), lw_ioport, w_irq) = CAN_ERR_OK)
+  else
+    result := (CanInitPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver)) = CAN_ERR_OK);
+end;
+
 function TPCanLight.GetErrorMsg(const errnr: longword): string;
 begin
   case errnr of
@@ -924,26 +933,20 @@ end;
 procedure TPCanLight.TryConnect();
 var b_ok: boolean; lw_ret: longword;
 begin
-  if (e_hwt in [PCH_ISA1CH, PCH_ISA2CH, PCH_DNP, PCH_DNG]) then
-    b_ok := (CanInitNPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver), Ord(e_subtype), lw_ioport, w_irq) = CAN_ERR_OK)
-  else
-    b_ok := (CanInitPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver)) = CAN_ERR_OK);
-
+  b_ok := CanInit();
   //create event and worker-thread for reading data
   if b_ok then begin
     CanGetUsbDeviceNr(lw_devnr);
-    if (h_rcveve = 0) then begin
-      h_rcveve:= CreateEvent(nil,false,false,nil);
-      b_ok := (h_rcveve <> 0);
-      if b_ok then begin
-        lw_ret:= CanSetRcvEvent(h_rcveve);
-        b_ok := (lw_ret = CAN_ERR_OK);
-        if b_ok then e_state := CS_CONNECTED
-        else begin
-          CanSetRcvEvent(0);
-          CloseHandle(h_rcveve);
-          h_rcveve := 0;
-        end;
+    if (h_rcveve = 0) then h_rcveve:= CreateEvent(nil,false,false,nil);
+    b_ok := (h_rcveve <> 0);
+    if b_ok then begin
+      lw_ret:= CanSetRcvEvent(h_rcveve);
+      b_ok := (lw_ret = CAN_ERR_OK);
+      if b_ok then e_state := CS_CONNECTED
+      else begin
+        CanSetRcvEvent(0);
+        CloseHandle(h_rcveve);
+        h_rcveve := 0;
       end;
     end;
     if not assigned(t_thread) then t_thread := TPCanReadThread.Create(self);
@@ -998,8 +1001,11 @@ function TPCanLight.CanRead(var MsgBuff: TPCANMsg): longword;
 begin
   result := CAN_READ(a_pcanfnt[PCF_READ])(MsgBuff);
   if ((result <> CAN_ERR_QRCVEMPTY) and (result <> CAN_ERR_OK)) then AddMessage('Error by reading: ' + BuildMessage(@MsgBuff));
-  if (result = CAN_ERR_BUSOFF) then begin // initilize the controller again if it has this error
-    if Connect() then AddMessage('Reconnected by error: ' + BuildMessage(@MsgBuff));
+  if ((result AND (CAN_ERR_QRCVEMPTY or CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) then begin // initilize the controller again if it has this error
+    result := CanClose();
+    TryConnect();
+    if IsConnected() then AddMessage('Successful to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
+    else AddMessage('Failed to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
   end else if (result = CAN_ERR_OK) then begin
     Inc(lw_recvcnt);
     //AddMessage('Successful to receive message: ' +  BuildMessage(@MsgBuff));

@@ -6,6 +6,7 @@ const
   C_RS232_BUFFER_SIZE = C_BUFFER_SIZE_DEFAULT;
 
 type
+  //enumeration of properties for serial port
   ESerialProperty = (
                     SP_PORT,
                     SP_BAUDRATE,
@@ -16,6 +17,7 @@ type
                     );
   PSerial = ^TSerial;
 
+  //sub class of TConnBase for communication over serial port
   TMtxRS232 = class(TConnBase)
   class function EnumSerialPort(var sports: TStringList): integer;
   class function SetPortByStr(pser: PSerial; const sval: string): boolean;

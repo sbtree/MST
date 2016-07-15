@@ -8,7 +8,8 @@ uses
   GenUtils in '..\General\GenUtils.pas',
   NewProgressbar in '..\General\NewProgressbar.pas',
   ConnBase in '..\Comm\ConnBase.pas',
-  RS232 in '..\Comm\RS232.pas';
+  RS232 in '..\Comm\RS232.pas',
+  TextMessage in '..\General\TextMessage.pas';
 
 {$R *.res}
 

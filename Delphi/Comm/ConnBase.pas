@@ -15,6 +15,7 @@ const
   C_BUFFER_SIZE_DEFAULT = 1024;
 
 type
+  //enumeration for all connection type
   EConnectType = (CT_UNKNOWN, //unknown connection
                   CT_RS232,   //rs232
                   CT_USB,     //usb
@@ -24,12 +25,13 @@ type
                   CT_CAN,     //can-bus
                   CT_PROFIL   //profil-bus
                   );
-
+  //enumeration of connection states
   EConnectState = ( CS_UNKNOWN,   //unknown state
                     CS_CONFIGURED,//connection is configurated
                     CS_CONNECTED  //connection is connected and in use
                    );
 
+  //definition of a interface for communication
   IConnInterf = interface
     function Config(const sconf: string): boolean; overload;
     function Config(const sconfs: TStrings): boolean; overload;
@@ -41,6 +43,7 @@ type
     function RecvStr(var str: string; const bwait: boolean): integer;
   end;
 
+  //base class of connection
   TConnBase = class(TComponent, IConnInterf)
   class function GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
   class function GetConnectTypeName(const etype: EConnectType): string;
@@ -50,8 +53,6 @@ type
     t_connobj:  TObject;        //actural intance for communication
     e_state:    EConnectState;  //connection state
     c_timeout:  cardinal;       //timeout in milli seconds
-    c_rinterval:cardinal;       //maximal interval by reading in milli seconds
-    b_rinterval:boolean;        //indicates if interval is allowed by reading
     t_messenger:TTextMessenger; //for transfering messages
     ch_nullshow:Char;           //indicate a char to show null, if it is received
     i_cntnull:  integer;        //count of received nulls
@@ -87,8 +88,6 @@ type
     property ConnectTypeName: string read GetTypeName;
     property ConnectState: EConnectState read e_state;
     property Timeout: cardinal read c_timeout write c_timeout;
-    property RxInterval: cardinal read c_rinterval write c_rinterval;
-    property RxIntervalEnabled: boolean read b_rinterval write b_rinterval;
     property ShowNullChar: Char read ch_nullshow write ch_nullshow;
 
     //implementation of ICommInterf
@@ -102,9 +101,9 @@ type
     function RecvStr(var str: string; const bwait: boolean = true): integer; virtual;
 
     //additionnal functions
-    function RecvStrTimeout(var str: string; const tend: cardinal): integer; virtual;
-    function RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer; virtual;
-    function RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer; virtual;
+    function RecvStrTimeout(var str: string; const timeout: cardinal): integer; virtual;
+    function RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal = 3000): integer; virtual;
+    function RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean = false): integer; virtual;
 
     //sync methods
     procedure SetEventRx();
@@ -115,6 +114,7 @@ type
   PConnBase = ^TConnBase;
 
 const
+  //define names of connection types
   CSTR_CONN_KEYS : array[EConnectType] of string = (
                     'UNKNOWN',
                     'RS232',
@@ -125,6 +125,7 @@ const
                     'CAN',
                     'PROFIL'
                     );
+  //define connection state
   CSTR_CONN_STATES: array[EConnectState] of string = (
                     'unknown',
                     'configured',
@@ -137,6 +138,17 @@ const
 implementation
 uses Forms, SysUtils, StrUtils, Windows, Registry;
 
+// =============================================================================
+// Description  : a class function to get connection type using its name
+// Parameter    : conkey, string to represent the name of a connection type
+//                val, enum for output, see definition of EConnectType
+// Return       : true, if the given conkey is found in the definiation of
+//                connection type and the type value will be save in the
+//                parameter val. Otherwise false. 
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 class function TConnBase.GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
 var i_idx: integer;
 begin
@@ -147,26 +159,68 @@ begin
   end else result := false;
 end;
 
+// =============================================================================
+// Description  : a class function to get the name of a connection type
+// Parameter    : etype, enum, see definition of EConnectType
+// Return       : string, name of connection type
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 class function TConnBase.GetConnectTypeName(const etype: EConnectType): string;
 begin
   result := CSTR_CONN_KEYS[etype];
 end;
 
+// =============================================================================
+// Description  : a class function to get string which represents the current
+//                state of the connection
+// Parameter    : estate, enum, see definition of EConnectState
+// Return       : string of current state
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 class function TConnBase.GetConnectState(const estate: EConnectState): string;
 begin
   result := CSTR_CONN_STATES[estate];
 end;
 
+// =============================================================================
+// Description  : get name of the connection type of the object
+// Parameter    : --
+// Return       : string of current state
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function  TConnBase.GetTypeName(): string;
 begin
   result := TConnBase.GetConnectTypeName(e_type);
 end;
 
+// =============================================================================
+// Description  : get string which represents the current state
+// Parameter    : --
+// Return       : string of current state
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function TConnBase.GetStateStr(): string;
 begin
   result := TConnBase.GetConnectState(e_state);
 end;
 
+// =============================================================================
+// Description  : build current data in the buffer into a string
+//                Note: The property ShowNullChar is applied for null
+// Parameter    : --
+// Return       : string, the built string
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function TConnBase.BufferToStr(): string;
 var i: integer;
 begin
@@ -181,6 +235,15 @@ begin
   end;
 end;
 
+// =============================================================================
+// Description  : wait until the first data arrives.
+// Parameter    : tend, end time (current time + timeout)
+// Return       : true, if the data arrives
+//                false, otherwise
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function TConnBase.WaitForReading(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_tstart, c_count: cardinal; b_wait, b_read: boolean;
 begin
@@ -204,6 +267,15 @@ begin
   result := b_read;
 end;
 
+// =============================================================================
+// Description  : wait until the sending data is acturally sent.
+// Parameter    : tend, end time (current time + timeout)
+// Return       : true, if the data is sent
+//                false, otherwise
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function TConnBase.WaitForWriting(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_tstart, c_count: cardinal; b_wait, b_write: boolean;
 begin
@@ -227,6 +299,16 @@ begin
   result := b_write;
 end;
 
+// =============================================================================
+// Description  : try to connect more times till timeout or the connection is 
+//                established if it is not connected
+// Parameter    : tend, end time (current time + timeout)
+// Return       : true, if it is connected
+//                false, otherwise
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function TConnBase.WaitForConnecting(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_tstart, c_count: cardinal; b_wait: boolean;
 begin
@@ -249,17 +331,41 @@ begin
   result := IsConnected();
 end;
 
+// =============================================================================
+// Description  : query whether the object is connected
+// Parameter    : --
+// Return       : true, if it is connected
+//                false, otherwise
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function TConnBase.IsConnected(): boolean;
 begin
   result := (e_state = CS_CONNECTED);
 end;
 
+// =============================================================================
+// Description  : clear the buffer
+// Parameter    : --
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 procedure TConnBase.ClearBuffer();
 begin
   ZeroMemory(@ba_rbuf, w_rlen);
   w_rlen := 0;
 end;
 
+// =============================================================================
+// Description  : append a new message in t_messenger
+// Parameter    : text, text of the message to update
+//                level, message level, see the definition of EMessageLevel
+// Exceptions   : --
+// First author : 2016-06-15 /bsu/
+// History      :
+// =============================================================================
 procedure TConnBase.AddMessage(const text: string; const level: EMessageLevel);
 begin
   if assigned(t_messenger) then begin
@@ -267,6 +373,14 @@ begin
   end;
 end;
 
+// =============================================================================
+// Description  : update the text of last message, which is appended through
+//                function AddMessage
+// Parameter    : text, text of the message to update
+// Exceptions   : --
+// First author : 2016-06-15 /bsu/
+// History      :
+// =============================================================================
 procedure TConnBase.UpdateMessage(const text: string; const level: EMessageLevel);
 begin
   if assigned(t_messenger) then begin
@@ -274,6 +388,13 @@ begin
   end;
 end;
 
+// =============================================================================
+// Description  : constuctor
+// Parameter    : --
+// Exceptions   : --
+// First author : 2016-06-15 /bsu/
+// History      :
+// =============================================================================
 constructor TConnBase.Create(owner: TComponent);
 begin
   inherited Create(owner);
@@ -281,14 +402,19 @@ begin
   t_connobj := nil;
   e_state := CS_UNKNOWN;
   c_timeout := CINT_TIMEOUT_DEFAULT;
-  c_rinterval := CINT_INTERVAL_DEFAULT;
-  b_rinterval := false;
   ch_nullshow := #13; //null is show as #13
   w_rlen := 0;
   t_rxwait := TEvent.Create(nil, false, false, 'TMtxConn.Rx');
   t_txwait := TEvent.Create(nil, false, false, 'TMtxConn.Tx');
 end;
 
+// =============================================================================
+// Description  : destuctor
+// Parameter    : --
+// Exceptions   : --
+// First author : 2016-06-15 /bsu/
+// History      :
+// =============================================================================
 destructor TConnBase.Destroy;
 begin
   FreeAndNil(t_rxwait);
@@ -317,9 +443,12 @@ begin
 end;
 
 // =============================================================================
-// Description  : make connection over calling TryConnect()
+// Description  : establisch connection 
+//                Note: This function will try to establish the connections 
+//                more times till timeout if the connection is not establisched
+//                by the first one time
 // Parameter    : --
-// Return       : true, if t_ser is activated
+// Return       : true, if the connection is established
 //                false, otherwise
 // Exceptions   : --
 // First author : 2016-07-12 /bsu/
@@ -334,10 +463,22 @@ begin
     if result then begin
       e_state := CS_CONNECTED;
       AddMessage(format('Successful to make a connection(%s).', [GetTypeName()]));
-    end else AddMessage(format('Failed to make a connection(%s)', [GetTypeName()]), ML_ERROR);
-  end else AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
+    end else
+      AddMessage(format('Failed to make a connection(%s)', [GetTypeName()]), ML_ERROR);
+  end else
+    AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
 end;
 
+// =============================================================================
+// Description  : send data in an array of char
+// Parameter    : buf, pointer of the array to send
+//                len, length of the array
+// Return       : true, if the string is sent successfully
+//                false, otherwise
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function TConnBase.SendBuf(const buf: PChar; const len: longword): boolean;
 var c_tend: cardinal;
 begin
@@ -346,17 +487,39 @@ begin
     c_tend := GetTickCount() + c_timeout;
     result := SendData(buf, len);
     if result then result := WaitForWriting(c_tend);
-    if result then AddMessage(format('Successful to send data (%d bytes): %s', [len, buf]))
-    else AddMessage(format('Failed to send data (%d bytes): %s', [len, buf]), ML_ERROR)
+    if result then
+      AddMessage(format('Successful to send data (%d bytes): %s', [len, buf]))
+    else
+      AddMessage(format('Failed to send data (%d bytes): %s', [len, buf]), ML_ERROR)
   end else
-    AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR)
+    AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
+// =============================================================================
+// Description  : send a string
+// Parameter    : str, the string to send
+// Return       : true, if the string is sent successfully
+//                false, otherwise
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function TConnBase.SendStr(const str: string): boolean;
 begin
   result := SendBuf(PChar(str), length(str));
 end;
 
+// =============================================================================
+// Description  : receive data and save it in an array of char
+// Parameter    : buf, an array variable for output
+//                len, length of the array
+//                bwait, indicates whether it should wait if no data is not available recently
+//                Note: The property Timeout will be used if bwait is equal true.
+// Return       : integer, the length of the received data in byte
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function TConnBase.RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer;
 var c_tend: cardinal; i_len: integer;
 begin
@@ -371,89 +534,196 @@ begin
       result := w_rlen;
       ClearBuffer();
     end;
-    if (result > 0) then AddMessage(format('Successful to receieve data (%d bytes): %s', [result, buf]))
-    else AddMessage('Nothing is receieved.', ML_WARNING);
+    if (result > 0) then
+      AddMessage(format('Successful to receieve data (%d bytes): %s', [result, buf]))
+    else
+      AddMessage('Nothing is receieved.', ML_WARNING);
   end else
-    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR)
+    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
+// =============================================================================
+// Description  : receive a string
+// Parameter    : str, output string which is received
+//                bwait, indicates whether it should wait if no data is not available recently
+//                Note: The property Timeout will be used if bwait is equal true.
+// Return       : integer, the length of the received string
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
 var c_tend: cardinal;
 begin
   result := 0;
+  c_tend := GetTickCount() + c_timeout;
   if Connected then begin
-    c_tend := GetTickCount() + c_timeout;
-    if bwait then WaitForReading(c_tend);
+    if bwait then  WaitForReading(c_tend);
     if RecvData() then begin
       str := BufferToStr();
       result := length(str);
       ClearBuffer();
     end;
-    if (result > 0) then AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
-    else AddMessage('Nothing is receieved.', ML_WARNING);
+    if (result > 0) then
+      AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+    else
+      AddMessage('Nothing is receieved.', ML_WARNING);
   end else
-    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR)
+    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
-function TConnBase.RecvStrTimeout(var str: string; const tend: cardinal): integer;
-var s_recv: string;
-begin
-  str := '';
-  repeat
-    if RecvData() then begin
-      s_recv := BufferToStr();
-      str := str + s_recv;
-    end;
-    Application.ProcessMessages();
-  until (GetTickCount() >= tend);
-  result := length(str);
-end;
-
-function TConnBase.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
-var i_time: cardinal; s_recv: string; b_break: boolean;
+// =============================================================================
+// Description  : force to receive string until the time is over
+// Parameter    : str, output string which is received
+//                timeout, in millisecond
+// Return       : integer, the length of the received string
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
+function TConnBase.RecvStrTimeout(var str: string; const timeout: cardinal): integer;
+var s_recv: string; tend: cardinal;
 begin
   result := 0; str := '';
-  repeat
-    if RecvData() then begin
-      s_recv := BufferToStr();
-      str := str + s_recv;
-    end;
-    i_time := GetTickCount() + interv;
-    if (i_time > tend) then i_time := tend;
-    Application.ProcessMessages();
-    b_break := (not WaitForReading(i_time));
-  until (b_break or (GetTickCount() >= tend));
+  tend := GetTickCount() + timeout;
+  if Connected then begin
+    repeat
+      if RecvData() then begin
+        s_recv := BufferToStr();
+        str := str + s_recv;
+        ClearBuffer();
+      end;
+      Application.ProcessMessages();
+    until (GetTickCount() >= tend);
+    result := length(str);
+    if (result > 0) then
+      AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+    else
+      AddMessage('Nothing is receieved.', ML_WARNING);
+  end else
+    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
-function TConnBase.RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean): integer;
-var b_break: boolean; s_recv: string;
+// =============================================================================
+// Description  : force to receive string until the time is over or the interval is over
+//                An interval is allowed between the data blocks if they arrive in more times
+// Parameter    : str, output string which is received
+//                timeout, time in millisecond
+//                interv, an interval in millisecond
+// Return       : integer, the length of the received string
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
+function TConnBase.RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal): integer;
+var i_time: cardinal; s_recv: string; b_break: boolean; tend: cardinal;
 begin
   result := 0; str := '';
-  repeat
-    if RecvData() then begin
-      s_recv := BufferToStr();
-      str := str + s_recv;
-    end;
-    if bcase then b_break := ContainsStr(str, exstr)
-    else b_break := ContainsText(str, exstr);
-  until (b_break or (GetTickCount() >= tend));
+  tend := GetTickCount() + timeout;
+  if Connected then begin
+    repeat
+      if RecvData() then begin
+        s_recv := BufferToStr();
+        str := str + s_recv;
+        ClearBuffer();
+      end;
+      i_time := GetTickCount() + interv;
+      if (i_time > tend) then i_time := tend;
+      Application.ProcessMessages();
+      b_break := (not WaitForReading(i_time));
+    until (b_break or (GetTickCount() >= tend));
+    result := length(str);
+    if (result > 0) then
+      AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+    else
+      AddMessage('Nothing is receieved.', ML_WARNING);
+  end else
+    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
+// =============================================================================
+// Description  : force to receive string until the time is over or the expected string arrives
+// Parameter    : str, output string which is received
+//                exstr, expected string
+//                timeout, in millisecond
+//                bcase, indicates if case sensitivity should be considered
+// Return       : integer, the length of the received string
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
+function TConnBase.RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean): integer;
+var b_break: boolean; s_recv: string; tend: cardinal;
+begin
+  result := 0; str := '';
+  tend := GetTickCount() + timeout;
+  if Connected then begin
+    repeat
+      if RecvData() then begin
+        s_recv := BufferToStr();
+        str := str + s_recv;
+        ClearBuffer();
+      end;
+      if bcase then b_break := ContainsStr(str, exstr)
+      else b_break := ContainsText(str, exstr);
+      Application.ProcessMessages();
+    until (b_break or (GetTickCount() >= tend));
+    result := length(str);
+    if (result > 0) then
+      AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+    else
+      AddMessage('Nothing is receieved.', ML_WARNING);
+  end else
+    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
+end;
+
+// =============================================================================
+// Description  : signal the read event
+// Parameter    : --
+// Return       : --
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 procedure TConnBase.SetEventRx();
 begin
   t_rxwait.SetEvent();
 end;
 
+// =============================================================================
+// Description  : unsignal the event of read complete
+// Parameter    : --
+// Return       : --
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 procedure TConnBase.ResetEventRx();
 begin
   t_rxwait.ResetEvent();
 end;
 
+// =============================================================================
+// Description  : signal the event of write complete
+// Parameter    : --
+// Return       : --
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 procedure TConnBase.SetEventTx();
 begin
   t_txwait.SetEvent();
 end;
 
+// =============================================================================
+// Description  : unsignal the event of write complete
+// Parameter    : --
+// Return       : --
+// Exceptions   : --
+// First author : 2016-07-15 /bsu/
+// History      :
+// =============================================================================
 procedure TConnBase.ResetEventTx();
 begin
   t_txwait.ResetEvent();

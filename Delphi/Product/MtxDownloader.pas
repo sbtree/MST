@@ -20,18 +20,23 @@ type
                 DP_METRONIX2 //download protocol of metronix boot loader, z.B. ARS2000
                 );
 
+  IDownloaderInterf = Interface
+    function EnterService(const cmd: string): boolean;
+    function LoadSourceFile(const sfile: string): boolean;
+    function DoDownload(): boolean;
+  End;
+
   TDownloader = class
   protected
-    e_dlprotocol: EDownloadProtocol; //to save protocol
-    s_blmessage, s_fwmessage: string; //to save switch-on message of boot loader and firmware
-    s_lastmsg: string; //to save information in the last action
-    s_lastfile: string; //to save file path (an s-record file), which is given in function Download last time;
-    t_srecords: TStringList; //to save s-records, which is loaded last time;
-    i_curline: integer; //to save the current index of t_srecords which is downloaded, internal variable
-    t_progress: TControl; //TProgressBar; //to illustrate the progress of the download
-    t_messager: TStrings; //to output messages
-    b_dlcancel: boolean;  //to cancel downloading manually
-    r_baudfactor: single;  //factor of baudrate, useful if the oscilator frequence of the target device and its boot loader don't match
+    e_dlprotocol: EDownloadProtocol;//to save protocol
+    s_lastmsg:    string;           //to save information in the last action
+    s_lastfile:   string;           //to save file path (an s-record file), which is given in function Download last time;
+    t_srecords:   TStringList;      //to save s-records, which is loaded last time;
+    i_curline:    integer;          //to save the current index of t_srecords which is downloaded, internal variable
+    t_progress:   TControl;         //TProgressBar; //to illustrate the progress of the download
+    t_messager:   TStrings;         //to output messages
+    b_dlcancel:   boolean;          //to cancel downloading manually
+    r_baudfactor: single;           //factor of baudrate, useful if the oscilator frequence of the target device and its boot loader don't match
   protected
     procedure UpdateStartMessage(); virtual; abstract;
     function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
@@ -54,6 +59,8 @@ type
   TComDownloader = class(TDownloader)
   protected
     t_ser: TSerial;
+    s_blmessage: string; //save switch-on message of boot loader
+    s_fwmessage: string; //save switch-on message of firmware
   protected
     procedure SwitchBaudrate(const ibaud: integer; const efc: eFlowControl = fcNone);
     function  SendStr(const str: string; const bprint: boolean = true): boolean;
@@ -72,8 +79,10 @@ type
     function  EnterService(const cmd: string): boolean; override;
     function  StartDownload(): boolean; virtual;
   public
+    constructor Create();
+
     property ComObj: TSerial read t_ser write t_ser;
-  public
+
     function TestApp(): boolean; override;
     function GetBootState(const cmd: string): EBootState; override;
     function Download(const cmd, fname: string): boolean; override;
@@ -146,8 +155,6 @@ constructor TDownloader.Create;
 begin
 	inherited Create;
   e_dlprotocol := DP_UNDEFINED;
-  s_blmessage := '';
-  s_fwmessage := '';
   s_lastmsg := '';
   s_lastfile := '';
   t_srecords := TStringList.Create();
@@ -182,7 +189,7 @@ begin
   RecvStr(s_recv, false); //clear reading buffer of the serial interface
   c_time := GetTickCount() + C_ANSWER_WAIT;
   t_ser.WriteString(str);
-  while ((t_ser.TxWaiting > 0) and (GetTickCount() < c_time)) do Delay(C_DELAY_ONCE);
+  while ((t_ser.TxWaiting > 0) and (GetTickCount() < c_time)) do TGenUtils.Delay(C_DELAY_ONCE);
   result := (t_ser.TxWaiting <= 0);
   if assigned(t_messager) then t_messager.Add(format('[%s]:>%s', [DateTimeToStr(Now()), str]));
 end;
@@ -275,7 +282,7 @@ var i: integer;
 begin
   for i := 0 to t_srecords.Count - 1 do begin
     t_ser.WriteString(t_srecords[i] + CCHR_RETURN);
-    while t_ser.TxWaiting > 0 do Delay(C_DELAY_ONCE);
+    while t_ser.TxWaiting > 0 do TGenUtils.Delay(C_DELAY_ONCE);
     Application.ProcessMessages();
     UpdateProgressBar(i + 1);
     if b_dlcancel then break;
@@ -353,7 +360,7 @@ begin
   
   RecvStrInterval(s_temp, c_time, C_RECV_INTERVAL);
   s_blmessage := s_blmessage + s_temp;
-  if (not IsValidAscii(s_blmessage)) then begin
+  if (not TGenUtils.IsAsciiValid(s_blmessage)) then begin
     s_blmessage := '';
     TryBootMessageMTL(s_blmessage);
   end else begin
@@ -431,7 +438,7 @@ begin
               if WaitForReading(GetTickCount() + C_ANSWER_WAIT) then begin
                 if (RecvStr(s_temp, false) > 0) then SwitchBaudrate(CINT_B115200);
               end;
-            end else Delay(C_DELAY_ONCE);
+            end else TGenUtils.Delay(C_DELAY_ONCE);
             Inc(i_trials);
           until (result or (i_trials > CINT_TRIALS_MAX));
         end;
@@ -441,7 +448,7 @@ begin
       end else if ContainsText(s_recv, CSTR_UNKNOWNCMD) then begin
         if assigned(t_messager) then t_messager.Add(format('[%s]: ''%s'' is not supported.', [DateTimeToStr(Now()), cmd]));
         break;
-      end else if (not IsValidAscii(s_recv)) then begin //messy code, assume that the Motorola S-Record Loader exists on the device
+      end else if (not TGenUtils.IsAsciiValid(s_recv)) then begin //messy code, assume that the Motorola S-Record Loader exists on the device
         if (length(s_recv) = 1) then begin //start char of ARS iS Variant 
           s_recv := '';
           continue;
@@ -480,6 +487,13 @@ begin
     else
       t_messager.Add(format('[%s]: download is finished with %d/%d lines', [DateTimeToStr(Now()), i_curline, t_srecords.Count]));
   end;
+end;
+
+constructor TComDownloader.Create();
+begin
+  inherited Create();
+  s_blmessage := '';
+  s_fwmessage := '';
 end;
 
 function TComDownloader.TestApp(): boolean;
