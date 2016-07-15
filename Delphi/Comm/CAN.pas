@@ -337,7 +337,6 @@ type
     function LoadDefaultDll(const hwt: EPCanHardwareType): boolean; overload;
     function LoadDefaultDll(const shwt: string): boolean; overload;
     function UnloadDll(): boolean; virtual;
-    function CanInit(): boolean; virtual;
     function GetErrorMsg(const errnr: longword): string; virtual;
     function StrToPCanMsg(const msg: string; var canmsg: TPCANMsg): boolean; virtual;
     function PCanMsgToStr(const canmsg: TPCANMsg; var msg: string): boolean; virtual;
@@ -360,6 +359,7 @@ type
     procedure SetMsgVersion(ecanver: EPCanVersion);
     procedure SetDeviceNr(devnr: longword);
 
+    function CanInit(): boolean; virtual;
     function CanInitPnP(wBR: Word; CANMsgType: Integer): longword; virtual;
     function CanInitNPnP(wBR: Word; CANMsgType: Integer; CANHwType: Integer; IO_Port: LongWord; Interupt: Word): longword; virtual;
     function CanClose(): longword; virtual;
@@ -687,14 +687,6 @@ begin
   result := true;
 end;
 
-function TPCanLight.CanInit(): boolean;
-begin
-  if (e_hwt in [PCH_ISA1CH, PCH_ISA2CH, PCH_DNP, PCH_DNG]) then
-    result := (CanInitNPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver), Ord(e_subtype), lw_ioport, w_irq) = CAN_ERR_OK)
-  else
-    result := (CanInitPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver)) = CAN_ERR_OK);
-end;
-
 function TPCanLight.GetErrorMsg(const errnr: longword): string;
 begin
   case errnr of
@@ -961,6 +953,14 @@ end;
 procedure TPCanLight.SetDeviceNr(devnr: longword);
 begin
   CanSetUsbDeviceNr(devnr);
+end;
+
+function TPCanLight.CanInit(): boolean;
+begin
+  if (e_hwt in [PCH_ISA1CH, PCH_ISA2CH, PCH_DNP, PCH_DNG]) then
+    result := (CanInitNPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver), Ord(e_subtype), lw_ioport, w_irq) = CAN_ERR_OK)
+  else
+    result := (CanInitPnP(CINT_PCAN_BAUDRATES[e_baud], Ord(e_canver)) = CAN_ERR_OK);
 end;
 
 function TPCanLight.CanInitPnP(wBR: Word; CANMsgType: Integer): longword;
