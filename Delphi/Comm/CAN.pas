@@ -1000,27 +1000,28 @@ end;
 function TPCanLight.CanRead(var MsgBuff: TPCANMsg): longword;
 begin
   result := CAN_READ(a_pcanfnt[PCF_READ])(MsgBuff);
-  if ((result <> CAN_ERR_QRCVEMPTY) and (result <> CAN_ERR_OK)) then AddMessage('Error by reading: ' + BuildMessage(@MsgBuff));
-  if ((result AND (CAN_ERR_QRCVEMPTY or CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) then begin // initilize the controller again if it has this error
-    result := CanClose();
-    TryConnect();
-    if IsConnected() then AddMessage('Successful to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
-    else AddMessage('Failed to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
-  end else if (result = CAN_ERR_OK) then begin
-    Inc(lw_recvcnt);
-    //AddMessage('Successful to receive message: ' +  BuildMessage(@MsgBuff));
+  if (result = CAN_ERR_OK) then Inc(lw_recvcnt)
+  else begin
+    if ((result AND (CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) then begin
+      result := CanClose();
+      TryConnect();
+      if IsConnected() then AddMessage('Successful to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
+      else AddMessage('Failed to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
+    end;
   end;
 end;
 
 function TPCanLight.CanReadEx(var MsgBuff: TPCANMsg; var RcvTime: TPCANTimestamp): longword;
 begin
   result := CAN_READEX(a_pcanfnt[PCF_READEX])(MsgBuff, RcvTime);
-  if ((result <> CAN_ERR_QRCVEMPTY) and (result <> CAN_ERR_OK)) then AddMessage('Error by reading: ' + BuildMessage(@MsgBuff));
-  if (result = CAN_ERR_BUSOFF) then begin // initilize the controller again if it has this error
-    if Connect() then AddMessage('Reconnected by error: ' + BuildMessage(@MsgBuff));
-  end else if (result = CAN_ERR_OK) then begin
-    Inc(lw_recvcnt);
-    //AddMessage('Successful to receive message: ' +  BuildMessage(@MsgBuff));
+  if (result = CAN_ERR_OK) then Inc(lw_recvcnt)
+  else begin
+    if ((result AND (CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) then begin
+      result := CanClose();
+      TryConnect();
+      if IsConnected() then AddMessage('Successful to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
+      else AddMessage('Failed to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
+    end;
   end;
 end;
 
@@ -1165,7 +1166,7 @@ begin
     if result then begin
       result := (CanWrite(t_pcanmsg) = CAN_ERR_OK);
       if result then result := WaitForWriting(c_tend);
-      if result then AddMessage(format('Successful to send string: %s (internal: %d bytes)', [str, sizeof(t_pcanmsg)]))
+      if result then AddMessage(format('Successful to send string: %s (data length: %d bytes)', [str, t_pcanmsg.LEN]))
       else AddMessage(format('Failed to send string: %s', [str]), ML_ERROR)
     end else
       AddMessage(format('Failed to build PCAN-message by sending string: %s', [str]), ML_ERROR);

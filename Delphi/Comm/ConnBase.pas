@@ -555,7 +555,7 @@ end;
 function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
 var c_tend: cardinal;
 begin
-  result := 0;
+  result := 0; str := '';
   c_tend := GetTickCount() + c_timeout;
   if Connected then begin
     if bwait then  WaitForReading(c_tend);
