@@ -3,7 +3,7 @@ object frmCommTester: TfrmCommTester
   Top = 0
   Caption = 'CommunicationTester'
   ClientHeight = 329
-  ClientWidth = 510
+  ClientWidth = 590
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -43,7 +43,7 @@ object frmCommTester: TfrmCommTester
   object memLog: TMemo
     Left = 4
     Top = 8
-    Width = 501
+    Width = 580
     Height = 254
     ScrollBars = ssBoth
     TabOrder = 2
@@ -58,7 +58,7 @@ object frmCommTester: TfrmCommTester
     OnClick = btnUSBClick
   end
   object btnSend: TButton
-    Left = 349
+    Left = 428
     Top = 296
     Width = 75
     Height = 25
@@ -67,7 +67,7 @@ object frmCommTester: TfrmCommTester
     OnClick = btnSendClick
   end
   object btnRecv: TButton
-    Left = 430
+    Left = 509
     Top = 296
     Width = 75
     Height = 25
@@ -94,9 +94,9 @@ object frmCommTester: TfrmCommTester
       'VID:$1B97|PID:$2|PSN:1234')
   end
   object cmbSending: TComboBox
-    Left = 349
+    Left = 368
     Top = 269
-    Width = 156
+    Width = 121
     Height = 21
     ItemHeight = 13
     ItemIndex = 0
@@ -105,6 +105,24 @@ object frmCommTester: TfrmCommTester
     Items.Strings = (
       'OR:1:0008'
       '60A:40800020')
+  end
+  object chkCr: TCheckBox
+    Left = 495
+    Top = 271
+    Width = 42
+    Height = 17
+    Caption = '+CR'
+    Checked = True
+    State = cbChecked
+    TabOrder = 8
+  end
+  object chkLF: TCheckBox
+    Left = 546
+    Top = 271
+    Width = 38
+    Height = 17
+    Caption = '+LF'
+    TabOrder = 9
   end
   object tmrUpdate: TTimer
     Interval = 500

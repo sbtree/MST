@@ -18,6 +18,8 @@ type
     btnRecv: TButton;
     cmbConf: TComboBox;
     cmbSending: TComboBox;
+    chkCr: TCheckBox;
+    chkLF: TCheckBox;
     procedure btnRS232Click(Sender: TObject);
     procedure btnCanClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -79,10 +81,15 @@ begin
 end;
 
 procedure TfrmCommTester.btnSendClick(Sender: TObject);
+var s_sending: string;
 begin
   //format of CAN-Message: '60A:40800020';
   //format of OROW: 'OR:0008' or 'OR:1:0008'
-  t_conn.SendStr(trim(cmbSending.Text) + Char(#13));
+  s_sending := trim(cmbSending.Text);
+  if chkCR.Checked then s_sending := s_sending + Char(#13);
+  if chkLF.Checked then s_sending := s_sending + Char(#10);
+
+  t_conn.SendStr(s_sending);
 end;
 
 procedure TfrmCommTester.btnUSBClick(Sender: TObject);
