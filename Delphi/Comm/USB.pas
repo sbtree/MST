@@ -1,4 +1,5 @@
 unit USB;
+//Warning: this file is not be klu yet
 
 interface
 uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX, ConnBase;
@@ -6,9 +7,9 @@ const
   C_USB_BUFFER_SIZE = 1024;
   
 type
-  EMtxUsbProperty = ( MUP_VID,
-                      MUP_PID,
-                      MUP_PSN
+  EMtxUsbProperty = ( MUP_VID, //id of vendor
+                      MUP_PID, //product id
+                      MUP_PSN  //serial number of the device
                     );
 
   RMtxUsbConfigDesc = packed record
@@ -78,7 +79,7 @@ type
   end;
 
 implementation
-uses GenUtils, Forms, TextMessage, SyncObjs;
+uses Forms, TextMessage, SyncObjs;
 
 const
   CSTR_MTXUSB_ARS2000_GUID: string = '{6CC88F5A-EA80-4707-845B-D3CF7BDBCA6C}';
@@ -101,11 +102,11 @@ const
                                 // auftreten dürfen. Wird diese Anzahl erreicht,
                                 // so wird der interne Worker-Thread angehalten.
                                 // (s. TUSBIOInterface3.StartWriting)
-  C_USB_CNT_TX_BUFFERS = 16;     // Anzahl Sendepuffer
+  C_USB_CNT_TX_BUFFERS = 16;    // Anzahl Sendepuffer
   C_USB_MAX_RX_ERRORS  = 5;     // Maximale Anzahl von Fehlern, die beim Datenempfang
-                               // auftreten dürfen. Wird diese Anzahl erreicht,
-                               // so wird der interne Worker-Thread angehalten.
-                               // (s. TUSBIOInterface3.StartWriting)
+                                // auftreten dürfen. Wird diese Anzahl erreicht,
+                                // so wird der interne Worker-Thread angehalten.
+                                // (s. TUSBIOInterface3.StartWriting)
   C_USB_CNT_RX_BUFFERS = 16;    // Anzahl Empfangspuffer
   CSTR_MTXUSB_PROPERTIES: array[EMtxUsbProperty] of string = (
                           'VID',
