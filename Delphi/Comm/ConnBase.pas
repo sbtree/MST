@@ -49,8 +49,8 @@ type
   class function GetConnectTypeName(const etype: EConnectType): string;
   class function GetConnectState(const estate: EConnectState): string;
   protected
-    e_type:     EConnectType;
-    t_connobj:  TObject;        //actural intance for communication
+    e_type:     EConnectType;   //connection type
+    t_connobj:  TObject;        //actural instance for communication, e.g. TSerial
     e_state:    EConnectState;  //connection state
     c_timeout:  cardinal;       //timeout in milli seconds
     t_messenger:TTextMessenger; //for transfering messages
@@ -256,7 +256,7 @@ begin
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
-      if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
+      if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing in gui
         UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
         c_count := c_tcur;
       end;
