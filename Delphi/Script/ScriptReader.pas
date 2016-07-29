@@ -488,7 +488,7 @@ begin
           if (trim(s_curtoken) = '') then begin
             s_curtext := s_curtext + curch;
             PushState(PS_STEP);
-            b_allowvar := false;
+            //b_allowvar := false;
           end else begin
             result := false;
             AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);

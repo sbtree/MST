@@ -186,7 +186,7 @@ begin
   end;
   t_downloader.BaudrateFactor := r_factor;
   s_file := trim(txtFile.Text);
-  b_ok := t_downloader.Download(trim(txtBootCmd.Text), s_file);
+  t_downloader.Download(trim(txtBootCmd.Text), s_file);
 end;
 
 procedure TFrmBootTester.Transmit();

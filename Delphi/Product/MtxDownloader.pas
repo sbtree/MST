@@ -14,10 +14,19 @@ type
                 BS_XBL_UPD      //one Boot Loader (of s-record loader and metronix boot loader) is just updated through BL-Updater
                 );
   EDownloadProtocol = (
-                DP_UNDEFINED,//undefined download protocol 
-                DP_MOTOROLA, //download protocol of Motorola S-Record loader
-                DP_METRONIX1,//download protocol of metronix boot loader, z.B. DIS2
-                DP_METRONIX2 //download protocol of metronix boot loader, z.B. ARS2000
+                DP_UNDEFINED, //undefined download protocol
+                DP_MOTOROLA,  //download protocol of Motorola S-Record loader
+                DP_METRONIX1, //download protocol of metronix boot loader, z.B. DIS2
+                DP_METRONIX2  //download protocol of metronix boot loader, z.B. ARS2000
+                );
+
+  EDownloadChannel = (
+                DC_RS232,    //download directly over rs232 connection
+                DC_USB,      //download directly over usb connection
+                DC_CAN,      //download directly over can-bus connection
+                DC_FOJ,      //flash over jtag, a software tool (adapter: parallel port -> jtag)
+                DC_FDT,      //flash development toolkit, a software tool of Renesas for flashing (rs232 in boot mode)
+                DC_FCW       //Freescale CodeWarrior flash, a software tool for flashing (adapter: usb->jtag)
                 );
 
   IDownloaderInterf = Interface

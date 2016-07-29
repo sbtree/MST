@@ -13,7 +13,12 @@ uses
   FuncMxp in 'FuncMxp.pas',
   FuncTmm in 'FuncTmm.pas',
   FuncSys in 'FuncSys.pas',
-  FuncAux in 'FuncAux.pas';
+  FuncAux in 'FuncAux.pas',
+  FlashUpdater in 'FlashUpdater.pas',
+  RS232 in '..\Comm\RS232.pas',
+  USB in '..\Comm\USB.pas',
+  CAN in '..\Comm\CAN.pas',
+  ConnBase in '..\Comm\ConnBase.pas';
 
 {$R *.res}
 

@@ -10,7 +10,16 @@ unit FuncMxp;
 
 interface
 uses Classes, FuncBase, TextMessage;
-
+//1. Download
+//   CheckVersion, DoDownload, BL, FW
+//2. Query, e.g. OR:0123
+//   SpeedQuery, CurrentQuery, VoltageQuery
+//3. SendOnly
+//4. RecvOnly
+//5. EEPROM function, write service data
+//6. Read error buffer
+//7. Reset and wait
+//8. Paratemeter
 implementation
 
 initialization

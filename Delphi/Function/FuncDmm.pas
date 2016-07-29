@@ -10,7 +10,7 @@ unit FuncDmm;
 
 interface
 uses Classes, FuncBase, TextMessage;
-
+//1. Measure
 implementation
 
 initialization

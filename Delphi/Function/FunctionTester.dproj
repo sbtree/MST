@@ -42,8 +42,13 @@
     <DelphiCompile Include="FunctionTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Comm\CAN.pas" />
+    <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\RS232.pas" />
+    <DCCReference Include="..\Comm\USB.pas" />
     <DCCReference Include="..\General\GenType.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
+    <DCCReference Include="FlashUpdater.pas" />
     <DCCReference Include="FormFunctionTester.pas">
       <Form>FormFTMain</Form>
     </DCCReference>

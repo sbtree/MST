@@ -53,7 +53,7 @@ type
   PConnRS232 = ^TMtxRS232;
 
 implementation
-uses SysUtils, StrUtils, Windows, GenUtils, Registry, Forms, TextMessage;
+uses SysUtils, StrUtils, Windows, Registry, Forms, TextMessage;
 
 const CSTR_RS232_PROPERTIES: array[ESerialProperty] of string =
                   ('PORT', 'BAUDRATE', 'PARITY', 'DATABITS', 'STOPBITS', 'FLOWCONTROL');

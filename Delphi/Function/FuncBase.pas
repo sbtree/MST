@@ -47,8 +47,6 @@ type
   end;
   TFunctionClass = class of TFunctionBase;
 
-  
-
 implementation
 uses SysUtils;
 
