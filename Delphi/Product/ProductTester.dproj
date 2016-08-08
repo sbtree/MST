@@ -44,7 +44,7 @@
     </DelphiCompile>
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
-    <DCCReference Include="..\General\PairStrings.pas" />
+    <DCCReference Include="..\General\StringPairs.pas" />
     <DCCReference Include="FormProdTester.pas">
       <Form>frmProdTester</Form>
     </DCCReference>

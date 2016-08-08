@@ -1,18 +1,23 @@
 unit LoopControl;
 
 interface
+uses Contnrs;
 
 type
   TLoopEntry = class
 
+  public
+    constructor Create();
+    destructor Destroy(); override;
+
   end;
 
-  TLoopStack = class
+  TLoopEntryStack = class(TObjectStack)
 
   end;
 
 const
-  CSTR_LOOP_START:  string = 'LoopStart';
+  CSTR_LOOP_BEGIN:  string = 'LoopBegin';
   CSTR_LOOP_END:    string = 'LoopEnd';
   
 implementation

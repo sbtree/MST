@@ -78,7 +78,7 @@ begin
       t_func.ExecutionMode := e_exemode;
       result := t_func.LoadParameter(par);
       if (result) then begin
-        result := t_func.Execute();
+        result := t_func.DoTask();
         s_result := t_func.ResultString;
       end else AddMessage('The called function "' + func + '" is not executed because of an error in its parameter.', ML_ERROR);
       FreeAndNil(t_func);

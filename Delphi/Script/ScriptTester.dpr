@@ -10,7 +10,7 @@ uses
   ScriptReader in 'ScriptReader.pas',
   StepDescriptor in '..\CoreData\StepDescriptor.pas',
   StepChecker in 'StepChecker.pas',
-  PairStrings in '..\General\PairStrings.pas';
+  StringPairs in '..\General\StringPairs.pas';
 
 {$R *.res}
 

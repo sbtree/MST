@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage, PairStrings;
+  Dialogs, StdCtrls, ScriptReader, StepDescriptor, TextMessage, StringPairs;
 
 type
   TfrmScriptTester = class(TForm)
@@ -56,7 +56,7 @@ type
     t_tstep:    TTestStep;
     t_messenger:TTextMessenger;
     t_container:TStepContainer;
-    t_vars:     TPairStrings;
+    t_vars:     TStringPairs;
   public
     { Public-Deklarationen }
   end;
@@ -213,7 +213,7 @@ begin
   t_sreader := TScriptReader.Create();
   t_messenger := TTextMessenger.Create();
   t_container := TStepContainer.Create();
-  t_vars := TPairStrings.Create();
+  t_vars := TStringPairs.Create();
   t_messenger.Messages := memInfo.Lines;
   t_sreader.Messenger := t_messenger;
   t_sreader.StepContainer := t_container;

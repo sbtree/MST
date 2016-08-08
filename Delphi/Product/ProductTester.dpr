@@ -6,7 +6,7 @@ uses
   DataBuffer in '..\General\DataBuffer.pas',
   GenUtils in '..\General\GenUtils.pas',
   ProductConfig in 'ProductConfig.pas',
-  PairStrings in '..\General\PairStrings.pas';
+  StringPairs in '..\General\StringPairs.pas';
 
 {$R *.res}
 

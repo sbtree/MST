@@ -421,7 +421,7 @@ begin
 end;
 
 procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
-var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TPairStrings;
+var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TStringPairs;
     sNames, sValues, tComPorts: TStrings; v: variant; iInt64: int64; r: double;
 begin
   QExp_TestCase();
@@ -432,7 +432,7 @@ begin
   ShowMessage(format('iInt64 = %f',[r]));
   sNames := TStringList.Create();
   sValues := TStringList.Create();
-  tPairs := TPairStrings.Create();
+  tPairs := TStringPairs.Create();
   tComPorts := TStringList.Create();
 
   sNames.Add('Test1=text1=1');

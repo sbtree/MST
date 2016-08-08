@@ -78,7 +78,7 @@ unit ScriptReader;
 
 interface
 uses  Classes, Contnrs, StepDescriptor, StepChecker, TextMessage,
-      TypInfo, PairStrings;
+      TypInfo, StringPairs;
 
 type
   EParseState = (
@@ -126,7 +126,7 @@ type
     e_lastfield:EStepField;   //to save the index of last field, which is found in reading the script
 
     t_tsteps:   TStringList;  //list of test steps without any useless char
-    t_variables:TPairStrings;      //to save variables, name=value pair
+    t_variables:TStringPairs;      //to save variables, name=value pair
     t_container:TStepContainer;     //a container to save steps
     a_fieldvals:FieldStringArray;   //an array to save field values of current test step
     s_curkey:   string;       //to save current key word, e.g. field name, variable name
@@ -145,7 +145,7 @@ type
     function  ReadChar(const curch, nextch: char): boolean;
 
   public
-    property VarContainer: TPairStrings read t_variables write t_variables;
+    property VarContainer: TStringPairs read t_variables write t_variables;
     property StepContainer: TStepContainer read t_container write t_container;
     property FieldNameChecker: TFieldNameChecker read t_fnchecker;
     property FieldValueChecker: TFieldValueChecker read t_fvchecker;

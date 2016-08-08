@@ -12,6 +12,13 @@ interface
 uses Classes, FuncBase, TextMessage;
 
 type
+  TMtxLoop = class
+  protected
+    c_timeout: cardinal;
+  public
+    
+  end;
+
   LoopBegin = class(TFunctionBase)
 
   end;
@@ -20,15 +27,17 @@ type
 
   end;
 
-  IfTrueJump = class(TFunctionBase)
+  JumpIfTrue = class(TFunctionBase)
 
   end;
 
-  IfFalseJump = class(TFunctionBase)
+  JumpIfFalse = class(TFunctionBase)
 
   end;
 
 implementation
+uses Contnrs;
+var t_loopstack: TObjectStack;
 
 initialization
   //Classes.RegisterClass(YourSubclass);

@@ -43,7 +43,7 @@ type
 
     function LoadParameter(const par: string): boolean; virtual;
     function LoadParameters(const pars: TStrings): boolean; virtual;
-    function Execute(): boolean; virtual;
+    function DoTask(): boolean; virtual;
   end;
   TFunctionClass = class of TFunctionBase;
 
@@ -90,7 +90,7 @@ begin
   result := true;
 end;
 
-function TFunctionBase.Execute(): boolean;
+function TFunctionBase.DoTask(): boolean;
 begin
   //AddMessage('"Execute" is not specified and its basic function is called.');
   b_aborted := false;

@@ -1,11 +1,11 @@
-unit PairStrings;
+unit StringPairs;
 
 interface
 uses Classes;
 
 Type
 
-  TPairStrings = class
+  TStringPairs = class
   protected
     t_namevals: TStrings;
   protected
@@ -40,13 +40,13 @@ Type
 implementation
 uses SysUtils, StrUtils;
 
-function TPairStrings.GetCount(): integer;
+function TStringPairs.GetCount(): integer;
 begin
   result := t_namevals.Count;
 end;
 
 //if sname is given in format name[n], it will be renamed in format name_n
-function TPairStrings.Rename(const sname: string): string;
+function TStringPairs.Rename(const sname: string): string;
 var i_pos: integer;
 begin
   result := trim(sname);
@@ -58,14 +58,14 @@ begin
   end;
 end;
 
-function TPairStrings.GetPairName(idx: integer): string;
+function TStringPairs.GetPairName(idx: integer): string;
 begin
   result := '';
   if ((idx >= 0) and (idx < t_namevals.Count)) then result := t_namevals.Names[idx];
 end;
 
 
-function TPairStrings.CleanValue(const val: string): string;
+function TStringPairs.CleanValue(const val: string): string;
 var t_strs: TStrings; i: integer;
 begin
   //clean combined value, which is composed of more through strings and separated through '|'
@@ -80,24 +80,24 @@ begin
   end else result := trim(val); //clean single value
 end;
 
-constructor TPairStrings.Create();
+constructor TStringPairs.Create();
 begin
   t_namevals := TStringList.Create();
 end;
 
-destructor TPairStrings.Destroy();
+destructor TStringPairs.Destroy();
 begin
   t_namevals.Free();
 end;
 
-function TPairStrings.FindPair(const sname: string): boolean;
+function TStringPairs.FindPair(const sname: string): boolean;
 var s_name: string;
 begin
   s_name := Rename(sname);
   result := (t_namevals.IndexOfName(s_name) >= 0);
 end;
 
-function TPairStrings.AddPair(const sname, sval: string; bcover: boolean): boolean;
+function TStringPairs.AddPair(const sname, sval: string; bcover: boolean): boolean;
 var s_name: string;
 begin
   s_name := Rename(sname);
@@ -105,7 +105,7 @@ begin
   else result := false;
 end;
 
-function  TPairStrings.AddPair(const nameval: string; bcover: boolean): boolean;
+function  TStringPairs.AddPair(const nameval: string; bcover: boolean): boolean;
 var s_pair, s_name, s_value: string; i_pos: integer;
 begin
   s_pair := trim(nameval);
@@ -118,7 +118,7 @@ begin
   result := AddPair(s_name, s_value, bcover);
 end;
 
-function TPairStrings.AddPairs(const names, vals: TStrings; bcover: boolean): integer;
+function TStringPairs.AddPairs(const names, vals: TStrings; bcover: boolean): integer;
 var i: integer;
 begin
   result := 0;
@@ -129,7 +129,7 @@ begin
   end;
 end;
 
-function  TPairStrings.AddPairs(const namevals: TStrings; bcover: boolean): integer;
+function  TStringPairs.AddPairs(const namevals: TStrings; bcover: boolean): integer;
 var i: integer;
 begin
   result := 0;
@@ -138,7 +138,7 @@ begin
   end;
 end;
 
-function  TPairStrings.GetPairValue(const sname: string; var sval: string): boolean;
+function  TStringPairs.GetPairValue(const sname: string; var sval: string): boolean;
 var i_index: integer; s_name: string;
 begin
   result := false;
@@ -149,14 +149,14 @@ begin
   end;
 end;
 
-function  TPairStrings.GetPairValue(const idx: integer; var sval: string): boolean;
+function  TStringPairs.GetPairValue(const idx: integer; var sval: string): boolean;
 begin
   sval := '';
   result := ((idx >= 0) and (idx < t_namevals.Count));
   if result then sval := t_namevals.ValueFromIndex[idx];
 end;
 
-function  TPairStrings.SetPairValue(const sname, sval: string): boolean;
+function  TStringPairs.SetPairValue(const sname, sval: string): boolean;
 var i_index: integer; s_pair, s_name, s_value: string;
 begin
   result := false;
@@ -173,7 +173,7 @@ begin
   end;
 end;
 
-function  TPairStrings.GetPairNames(var names: TStrings): integer;
+function  TStringPairs.GetPairNames(var names: TStrings): integer;
 var i: integer;
 begin
   names.Clear();
@@ -181,7 +181,7 @@ begin
   result := names.Count;
 end;
 
-function  TPairStrings.GetPairValues(var values: TStrings): integer;
+function  TStringPairs.GetPairValues(var values: TStrings): integer;
 var i: integer;
 begin
   values.Clear();
@@ -189,19 +189,19 @@ begin
   result := values.Count;
 end;
 
-procedure TPairStrings.RemovePair(const idx: integer);
+procedure TStringPairs.RemovePair(const idx: integer);
 begin
   if ((idx >= 0) and (idx < t_namevals.Count)) then t_namevals.Delete(idx);
 end;
 
-procedure TPairStrings.RemovePair(const sname: string);
+procedure TStringPairs.RemovePair(const sname: string);
 var i_index: integer;
 begin
   i_index := t_namevals.IndexOfName(sname);
   RemovePair(i_index);
 end;
 
-procedure TPairStrings.Clear();
+procedure TStringPairs.Clear();
 begin
   t_namevals.Clear();
 end;

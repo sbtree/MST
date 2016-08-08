@@ -21,7 +21,7 @@ type
     procedure OutputInfo(outputs: TStrings; S: string);
   public
     function LoadParameter(const par: string): boolean; override;
-    function Execute(): boolean; override;
+    function DoTask(): boolean; override;
   end;
 
 implementation
@@ -110,7 +110,7 @@ begin
   result := FileExists(par);
 end;
 
-function ExecConsoleCmd.Execute(): boolean;
+function ExecConsoleCmd.DoTask(): boolean;
 begin
   result := true;
   CaptureStdOut();

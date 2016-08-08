@@ -1,24 +1,24 @@
 unit PseudoActor;
 
 interface
-uses Classes, PairStrings;
+uses Classes, StringPairs;
 type
   TPseudoActor=class
   protected
-    t_staticpairs: TPairStrings;
+    t_staticpairs: TStringPairs;
   protected
 
   public
     constructor Create();
     destructor Destroy(); override;
 
-    function UpdateStaticPseudos(const vars: TPairStrings): integer;
+    function UpdateStaticPseudos(const vars: TStringPairs): integer;
     function ReplacePseudos(const instr: string; var outstr: string): integer;
   end;
 
 const
-  CCHR_SPECIAL_PSEUDOS : array[0..8] of string = (
-                //Pseudo-String without beginning char '@'
+  CCHR_PREFIX_PSEUDOS : array[0..8] of string = (
+                //Pseudo-String with ending '_nnnn', here nnnn is a number
                 'BOOTLOADER_', //file of boot loader, e.g.: BOOTLOADER_0001
                 'BL_UPDATER_', //file of bool loader updater, e.g.: BL_UPDATER_0001
                 'FIRMWARE_',   //file of firmware, e.g.: FIRMWARW_0001
@@ -30,8 +30,8 @@ const
                 'SonderRel_'
                 );
 
-  CCHR_STATIC_PSEUDOS : array[0..60] of string = (
-                //Pseudo-Strings with beginning char '@'
+  CCHR_AT_PSEUDOS : array[0..60] of string = (
+                //Pseudo-Strings with prefix char '@'
                 //Pseudo-strings in array, which are not changed after selection of a product variant any more
                 'TxVer',
                 'BLVersion',
@@ -120,7 +120,7 @@ begin
   inherited Destroy();
 end;
 
-function TPseudoActor.UpdateStaticPseudos(const vars: TPairStrings): integer;
+function TPseudoActor.UpdateStaticPseudos(const vars: TStringPairs): integer;
 begin
   result := 0;
 end;

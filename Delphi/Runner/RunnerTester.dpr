@@ -11,7 +11,7 @@ uses
   ScriptReader in '..\Script\ScriptReader.pas',
   StepChecker in '..\Script\StepChecker.pas',
   StepDescriptor in '..\CoreData\StepDescriptor.pas',
-  PairStrings in '..\General\PairStrings.pas',
+  StringPairs in '..\General\StringPairs.pas',
   TestDebugger in 'TestDebugger.pas',
   PseudoActor in 'PseudoActor.pas',
   LoopControl in 'LoopControl.pas';

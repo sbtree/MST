@@ -8,7 +8,7 @@ type
     t_expr: TQExprParser;
   public
     function LoadParameter(const par: string): boolean; override;
-    function Execute(): boolean; override;
+    function DoTask(): boolean; override;
   end;
 
   EvalExprStr = class(TEvalExprBase)
@@ -28,7 +28,7 @@ type
   IntToHexStr = class(TFunctionBase)
   public
     function LoadParameter(const par: string): boolean; override;
-    function Execute(): boolean; override;
+    function DoTask(): boolean; override;
   end;
 var
   g_exprparser: TQExprParser;
@@ -51,7 +51,7 @@ begin
   end;
 end;
 
-function TEvalExprBase.Execute(): boolean;
+function TEvalExprBase.DoTask(): boolean;
 begin
   //todo:
   //1. call g_exprparser.calc in block of try ... except ...
@@ -73,7 +73,7 @@ begin
   //todo:
   result := true;
 end;
-function IntToHexStr.Execute(): boolean;
+function IntToHexStr.DoTask(): boolean;
 begin
   //todo:
   result := true;
