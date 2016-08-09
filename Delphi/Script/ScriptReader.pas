@@ -684,7 +684,7 @@ end;
 //    History      :
 // =============================================================================
 procedure TScriptReader.Clear();
-var i, i_vars, i_steps, i_cases: integer; b_info: boolean;
+var i_vars, i_steps, i_cases: integer; b_info: boolean;
 begin
   i_vars := 0; i_steps := 0; i_cases := 0;
   b_info := (t_tsteps.Count > 0);

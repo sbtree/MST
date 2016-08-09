@@ -27,7 +27,7 @@ var
 
 implementation
 {$R *.dfm}
-uses PairStrings, Math, StrUtils;
+uses StringPairs, Math, StrUtils;
 
 
 procedure TestCase_CNExp;

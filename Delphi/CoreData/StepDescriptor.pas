@@ -227,11 +227,11 @@ type
   //e.g. a test case, which have the same main number in field Nr (xxx of xxx.yyy)
   TTestCase = class(TStepGroup)
   protected
-    i_indexfrom:  integer; //index of the first step of this group in the container
-    i_indexto:    integer; //index of the last step of this group in the container
-    i_casenr:    integer; //number of the group, e.g. test case number
+    i_casenr:     integer; //number of the group, e.g. test case number
     s_title:      string;  //title of this group
   protected
+    function GetIndexFrom(): integer;
+    function GetIndexTo(): integer;
     procedure SetIndexFrom(const idx: integer);
     procedure SetIndexTo(const idx: integer);
 
@@ -239,8 +239,8 @@ type
     constructor Create(const container: TStepContainer);
     destructor Destroy(); override;
 
-    property IndexFrom: integer read i_indexfrom write SetIndexFrom;
-    property IndexTo: integer read i_indexto write SetIndexTo;
+    property IndexFrom: integer read GetIndexFrom write SetIndexFrom;
+    property IndexTo: integer read GetIndexTo write SetIndexTo;
     property CaseNr: integer read i_casenr write i_casenr;
     property CaseTitle: string read s_title write s_title;
   end;
@@ -248,9 +248,9 @@ type
   //a class representing a test sequence, which is composed of test groups in the container
   TTestSequence = class(TStepGroup)
   protected
-    a_cases:    array of integer; //to save indexes of test cases, which are contained in t_container
-    i_curcaseidx: integer; //to indicate current element in a_cases;
-    t_casenrs:  TStrings; //to save numbers of test cases in this test sequence
+    a_cases:      array of integer; //to save indexes of test cases, which are contained in t_container
+    i_curcaseidx: integer;          //to indicate current element in a_cases;
+    t_casenrs:    TStrings;         //to save numbers of test cases in this test sequence
 
   protected
     function  GetCases(): integer;
@@ -648,6 +648,7 @@ begin
   t_stepnrs := TStringList.Create();
   t_cases := TObjectList.Create();
   t_casenrs := TStringList.Create();
+  t_casenrs.Delimiter := Char(';');
   t_sequence := TTestSequence.Create(self);
 end;
 
@@ -876,42 +877,55 @@ begin
   end;
 end;
 
+function TTestCase.GetIndexFrom(): integer;
+begin
+  if (Length(a_steps) > 0) then result := a_steps[0]
+  else result := -1;
+end;
+
+function TTestCase.GetIndexTo(): integer;
+var i_len: integer;
+begin
+  i_len := Length(a_steps);
+  if (i_len > 0) then result := a_steps[i_len - 1]
+  else result := -1;
+end;
+
 procedure TTestCase.SetIndexFrom(const idx: integer);
 var t_step: TTestStep;
 begin
-  Clear();
-  i_indexfrom := idx;
-  SetLength(a_steps, 1);
-  a_steps[0] := i_indexfrom;
   if assigned(t_container) then begin
-    t_step := t_container.StepByIndex(i_indexfrom);
-    if assigned(t_step) then t_stepnrs.Add(t_step.GetFieldValue(SF_NR));
+    t_step := t_container.StepByIndex(idx);
+    if assigned(t_step) then begin
+      Clear();
+      SetLength(a_steps, 1);
+      a_steps[0] := idx;
+      t_stepnrs.Add(t_step.GetFieldValue(SF_NR));
+    end;
   end;
 end;
 
 procedure TTestCase.SetIndexTo(const idx: integer);
-var i, i_cntnew, i_cntold: integer; t_step: TTestStep;
+var i, i_idxlast, i_cntnew, i_cntold: integer; t_step: TTestStep;
 begin
-  i_indexto := idx; i_cntold := length(a_steps);
-  if ((i_indexfrom >= 0) and (i_indexto  >= i_indexfrom)) then i_cntnew := i_indexto - i_indexfrom + 1
-  else i_cntnew := 0;
-  SetLength(a_steps, i_cntnew);
-  if ((i_cntnew >= i_cntold) and assigned(t_container)) then begin
-    for i := i_cntold - 1 to i_cntnew - 1 do begin
-      a_steps[i] := i_indexfrom + i;
-      t_step := t_container.StepByIndex(a_steps[i]);
-      if assigned(t_step) then t_stepnrs.Add(t_step.GetFieldValue(SF_NR));
+  i_cntold := Length(a_steps); i_idxlast := GetIndexTo();
+  if ((idx <> i_idxlast) and (i_idxlast >= 0) )then begin
+    i_cntnew := i_cntold + (idx - i_idxlast);
+    if ((i_cntnew > 0) and assigned(t_container)) then begin
+      SetLength(a_steps, i_cntnew);
+      for i := i_cntold to i_cntnew - 1 do begin
+        Inc(i_idxlast);
+        a_steps[i] := i_idxlast;
+        t_step := t_container.StepByIndex(a_steps[i]);
+        if assigned(t_step) then t_stepnrs.Add(t_step.GetFieldValue(SF_NR));
+      end;
     end;
-  end else begin
-    while (t_stepnrs.Count > i_cntnew) do t_stepnrs.Delete(t_stepnrs.Count - 1);
   end;
 end;
 
 constructor TTestCase.Create(const container: TStepContainer);
 begin
   inherited Create(container);
-  i_indexfrom := -1;
-  i_indexto := -1;
   i_casenr := -1;
   s_title := '';
 end;
@@ -957,6 +971,7 @@ begin
   inherited Create(container);
   i_curcaseidx := -1;
   t_casenrs := TStringList.Create();
+  t_casenrs.Delimiter := Char(';');
 end;
 
 destructor TTestSequence.Destroy();

@@ -14,7 +14,7 @@ type
   EvaluateStr = class(TFunctionBase)
   public
     function LoadParameter(const par: string): boolean; override;
-    function Execute(): boolean; override;
+    function DoTask(): boolean; override;
   end;
 
 implementation
@@ -26,7 +26,7 @@ begin
   result := true;
 end;
 
-function EvaluateStr.Execute(): boolean;
+function EvaluateStr.DoTask(): boolean;
 begin
   AddMessage(format('todo->"Execute" must be reimplemented in class "%s".', [self.ClassName]), ML_WARNING);
   result := true;
