@@ -22,6 +22,13 @@ type
     btnExpand: TButton;
     btnClean: TButton;
     btnCleanAll: TButton;
+    btnSave: TButton;
+    txtCurConfig: TEdit;
+    txtRefConfig: TEdit;
+    btnMoveText: TButton;
+    btnUpdate: TButton;
+    btnMove: TButton;
+    btnNew: TButton;
     procedure btnOpenIniClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -37,6 +44,11 @@ type
     procedure btnExpandClick(Sender: TObject);
     procedure btnCleanClick(Sender: TObject);
     procedure btnCleanAllClick(Sender: TObject);
+    procedure btnSaveClick(Sender: TObject);
+    procedure btnMoveTextClick(Sender: TObject);
+    procedure btnUpdateClick(Sender: TObject);
+    procedure btnMoveClick(Sender: TObject);
+    procedure btnNewClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_confreader: TProdConfigurator;
@@ -51,7 +63,7 @@ var
 
 implementation
 {$R *.dfm}
-uses PairStrings;
+uses StringPairs;
 
 procedure TfrmProdTester.btnCleanAllClick(Sender: TObject);
 begin
@@ -96,6 +108,34 @@ begin
   t_dialog.Free; // Free up the dialog
 end;
 
+procedure TfrmProdTester.btnSaveClick(Sender: TObject);
+begin
+  t_confreader.SaveToFile();
+end;
+
+procedure TfrmProdTester.btnUpdateClick(Sender: TObject);
+begin
+  t_confreader.UpdateConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
+  UpdateConfig();
+end;
+
+procedure TfrmProdTester.btnMoveClick(Sender: TObject);
+begin
+  t_confreader.MoveConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
+  t_confreader.UpdateTreeView(trvProduct);;
+end;
+
+procedure TfrmProdTester.btnMoveTextClick(Sender: TObject);
+begin
+  txtRefConfig.Text := txtCurConfig.Text;
+end;
+
+procedure TfrmProdTester.btnNewClick(Sender: TObject);
+begin
+  t_confreader.CreateConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
+  t_confreader.UpdateTreeView(trvProduct);;
+end;
+
 procedure TfrmProdTester.chkFilterClick(Sender: TObject);
 begin
   txtFilter.Enabled := chkFilter.Checked;
@@ -121,7 +161,7 @@ procedure TfrmProdTester.cmbFilterNameChange(Sender: TObject);
 var s_filtervar: string;
 begin
   s_filtervar := trim(cmbFilterName.Text);
-  if (s_filtervar <> '') then t_confreader.FilterVar := s_filtervar;
+  if (s_filtervar <> '') then t_confreader.FilterVarName := s_filtervar;
 end;
 
 procedure TfrmProdTester.FormCreate(Sender: TObject);
@@ -150,11 +190,12 @@ begin
 end;
 
 procedure TfrmProdTester.UpdateConfig();
-var s_select: string;
+var s_confname: string;
 begin
-  if assigned(trvProduct.Selected) then s_select := trvProduct.Selected.Text
-  else s_select := '';
-  t_confreader.Select(s_select);
+  if assigned(trvProduct.Selected) then s_confname := trvProduct.Selected.Text
+  else s_confname := '';
+  txtCurConfig.Text := s_confname;
+  t_confreader.Select(s_confname);
   t_confreader.UpdateListView(lsvConfig, chkShowAll.Checked, chkSorted.Checked);
 end;
 

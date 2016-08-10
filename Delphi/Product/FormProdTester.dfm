@@ -2,7 +2,7 @@ object frmProdTester: TfrmProdTester
   Left = 0
   Top = 0
   Caption = 'ProductTester'
-  ClientHeight = 510
+  ClientHeight = 543
   ClientWidth = 858
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -19,7 +19,7 @@ object frmProdTester: TfrmProdTester
     Left = 8
     Top = 8
     Width = 413
-    Height = 417
+    Height = 457
     HideSelection = False
     Indent = 19
     ReadOnly = True
@@ -29,15 +29,15 @@ object frmProdTester: TfrmProdTester
   end
   object txtConfigFile: TEdit
     Left = 8
-    Top = 436
-    Width = 317
+    Top = 481
+    Width = 287
     Height = 21
     TabOrder = 1
     Text = 'ARS21xx.INI'
   end
   object btnOpenIni: TButton
-    Left = 331
-    Top = 436
+    Left = 301
+    Top = 481
     Width = 24
     Height = 21
     Caption = '...'
@@ -45,26 +45,26 @@ object frmProdTester: TfrmProdTester
     OnClick = btnOpenIniClick
   end
   object btnLoad: TButton
-    Left = 366
-    Top = 436
-    Width = 55
+    Left = 331
+    Top = 481
+    Width = 40
     Height = 21
     Caption = '&Load'
     TabOrder = 3
     OnClick = btnLoadClick
   end
   object chkShowAll: TCheckBox
-    Left = 744
-    Top = 475
-    Width = 105
+    Left = 770
+    Top = 483
+    Width = 79
     Height = 17
-    Caption = 'Show Full Settings'
+    Caption = 'Full Settings'
     TabOrder = 4
     OnClick = chkShowAllClick
   end
   object chkFilter: TCheckBox
     Left = 72
-    Top = 475
+    Top = 514
     Width = 45
     Height = 17
     Caption = 'Filter:'
@@ -73,7 +73,7 @@ object frmProdTester: TfrmProdTester
   end
   object txtFilter: TEdit
     Left = 127
-    Top = 473
+    Top = 512
     Width = 198
     Height = 21
     Enabled = False
@@ -85,7 +85,7 @@ object frmProdTester: TfrmProdTester
     Left = 440
     Top = 8
     Width = 410
-    Height = 449
+    Height = 457
     Columns = <
       item
         Caption = 'Name'
@@ -101,9 +101,9 @@ object frmProdTester: TfrmProdTester
     ViewStyle = vsReport
   end
   object chkSorted: TCheckBox
-    Left = 681
-    Top = 475
-    Width = 57
+    Left = 712
+    Top = 483
+    Width = 52
     Height = 17
     Caption = 'Sorted'
     TabOrder = 8
@@ -111,7 +111,7 @@ object frmProdTester: TfrmProdTester
   end
   object cmbFilterName: TComboBox
     Left = 331
-    Top = 473
+    Top = 512
     Width = 90
     Height = 21
     Enabled = False
@@ -132,7 +132,7 @@ object frmProdTester: TfrmProdTester
   end
   object btnCollapse: TButton
     Left = 8
-    Top = 474
+    Top = 513
     Width = 20
     Height = 20
     Caption = '+'
@@ -141,7 +141,7 @@ object frmProdTester: TfrmProdTester
   end
   object btnExpand: TButton
     Left = 34
-    Top = 474
+    Top = 513
     Width = 20
     Height = 20
     Caption = '-'
@@ -150,20 +150,79 @@ object frmProdTester: TfrmProdTester
   end
   object btnClean: TButton
     Left = 440
-    Top = 471
-    Width = 57
-    Height = 25
+    Top = 481
+    Width = 41
+    Height = 21
     Caption = 'Clean'
     TabOrder = 12
     OnClick = btnCleanClick
   end
   object btnCleanAll: TButton
-    Left = 503
-    Top = 471
-    Width = 66
-    Height = 25
+    Left = 487
+    Top = 481
+    Width = 58
+    Height = 21
     Caption = 'Clean All'
     TabOrder = 13
     OnClick = btnCleanAllClick
+  end
+  object btnSave: TButton
+    Left = 381
+    Top = 481
+    Width = 40
+    Height = 21
+    Caption = '&Save'
+    TabOrder = 14
+    OnClick = btnSaveClick
+  end
+  object txtCurConfig: TEdit
+    Left = 440
+    Top = 512
+    Width = 129
+    Height = 21
+    TabOrder = 15
+  end
+  object txtRefConfig: TEdit
+    Left = 592
+    Top = 512
+    Width = 129
+    Height = 21
+    TabOrder = 16
+  end
+  object btnMoveText: TButton
+    Left = 571
+    Top = 512
+    Width = 20
+    Height = 21
+    Caption = '->'
+    TabOrder = 17
+    OnClick = btnMoveTextClick
+  end
+  object btnUpdate: TButton
+    Left = 770
+    Top = 512
+    Width = 40
+    Height = 21
+    Caption = '&Update'
+    TabOrder = 18
+    OnClick = btnUpdateClick
+  end
+  object btnMove: TButton
+    Left = 816
+    Top = 512
+    Width = 34
+    Height = 21
+    Caption = '&Move'
+    TabOrder = 19
+    OnClick = btnMoveClick
+  end
+  object btnNew: TButton
+    Left = 730
+    Top = 512
+    Width = 34
+    Height = 21
+    Caption = '&New'
+    TabOrder = 20
+    OnClick = btnNewClick
   end
 end
