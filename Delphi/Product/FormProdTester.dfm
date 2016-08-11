@@ -2,7 +2,7 @@ object frmProdTester: TfrmProdTester
   Left = 0
   Top = 0
   Caption = 'ProductTester'
-  ClientHeight = 543
+  ClientHeight = 574
   ClientWidth = 858
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -99,6 +99,7 @@ object frmProdTester: TfrmProdTester
     RowSelect = True
     TabOrder = 7
     ViewStyle = vsReport
+    OnSelectItem = lsvConfigSelectItem
   end
   object chkSorted: TCheckBox
     Left = 712
@@ -176,22 +177,22 @@ object frmProdTester: TfrmProdTester
     OnClick = btnSaveClick
   end
   object txtCurConfig: TEdit
-    Left = 440
-    Top = 512
-    Width = 129
+    Left = 8
+    Top = 545
+    Width = 89
     Height = 21
     TabOrder = 15
   end
   object txtRefConfig: TEdit
-    Left = 592
-    Top = 512
-    Width = 129
+    Left = 117
+    Top = 545
+    Width = 100
     Height = 21
     TabOrder = 16
   end
   object btnMoveText: TButton
-    Left = 571
-    Top = 512
+    Left = 97
+    Top = 545
     Width = 20
     Height = 21
     Caption = '->'
@@ -199,30 +200,64 @@ object frmProdTester: TfrmProdTester
     OnClick = btnMoveTextClick
   end
   object btnUpdate: TButton
-    Left = 770
-    Top = 512
-    Width = 40
+    Left = 321
+    Top = 545
+    Width = 44
     Height = 21
     Caption = '&Update'
     TabOrder = 18
     OnClick = btnUpdateClick
   end
   object btnMove: TButton
-    Left = 816
-    Top = 512
-    Width = 34
+    Left = 371
+    Top = 545
+    Width = 50
     Height = 21
-    Caption = '&Move'
+    Caption = '&Move To'
     TabOrder = 19
     OnClick = btnMoveClick
   end
   object btnNew: TButton
-    Left = 730
-    Top = 512
-    Width = 34
+    Left = 223
+    Top = 545
+    Width = 39
     Height = 21
     Caption = '&New'
     TabOrder = 20
     OnClick = btnNewClick
+  end
+  object btnRemove: TButton
+    Left = 268
+    Top = 545
+    Width = 47
+    Height = 21
+    Caption = '&Remove'
+    TabOrder = 21
+    OnClick = btnRemoveClick
+  end
+  object txtVarNames: TEdit
+    Left = 440
+    Top = 512
+    Width = 384
+    Height = 21
+    TabOrder = 22
+  end
+  object btnPromote: TButton
+    Left = 800
+    Top = 545
+    Width = 50
+    Height = 21
+    Caption = '&Promote'
+    TabOrder = 23
+    OnClick = btnPromoteClick
+  end
+  object btnClearVarNames: TButton
+    Left = 830
+    Top = 513
+    Width = 20
+    Height = 20
+    Caption = 'R'
+    TabOrder = 24
+    OnClick = btnClearVarNamesClick
   end
 end

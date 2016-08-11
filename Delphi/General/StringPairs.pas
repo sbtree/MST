@@ -32,6 +32,8 @@ Type
     function  SetPairValue(const sname, sval: string): boolean;
     function  GetPairNames(var names: TStrings): integer;
     function  GetPairValues(var values: TStrings): integer;
+    function  HasSameValues(const ref: TStringPairs; const varnames: TStrings): boolean;
+    function  CopyValuesFrom(const source: TStringPairs; const varnames: TStrings): integer;
     procedure RemovePair(const idx: integer); overload;
     procedure RemovePair(const sname: string); overload;
     procedure Clear();
@@ -187,6 +189,18 @@ begin
   values.Clear();
   for i := 0 to t_namevals.Count - 1 do values.Append(t_namevals.ValueFromIndex[i]);
   result := values.Count;
+end;
+
+function  TStringPairs.HasSameValues(const ref: TStringPairs; const varnames: TStrings): boolean;
+begin
+  result := false;
+  //todo: compair values
+end;
+
+function  TStringPairs.CopyValuesFrom(const source: TStringPairs; const varnames: TStrings): integer;
+begin
+  result := 0;
+  //todo: copy values
 end;
 
 procedure TStringPairs.RemovePair(const idx: integer);

@@ -29,6 +29,10 @@ type
     btnUpdate: TButton;
     btnMove: TButton;
     btnNew: TButton;
+    btnRemove: TButton;
+    txtVarNames: TEdit;
+    btnPromote: TButton;
+    btnClearVarNames: TButton;
     procedure btnOpenIniClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -49,6 +53,11 @@ type
     procedure btnUpdateClick(Sender: TObject);
     procedure btnMoveClick(Sender: TObject);
     procedure btnNewClick(Sender: TObject);
+    procedure btnRemoveClick(Sender: TObject);
+    procedure lsvConfigSelectItem(Sender: TObject; Item: TListItem;
+      Selected: Boolean);
+    procedure btnClearVarNamesClick(Sender: TObject);
+    procedure btnPromoteClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_confreader: TProdConfigurator;
@@ -63,7 +72,7 @@ var
 
 implementation
 {$R *.dfm}
-uses StringPairs;
+uses StringPairs, StrUtils;
 
 procedure TfrmProdTester.btnCleanAllClick(Sender: TObject);
 begin
@@ -75,6 +84,11 @@ procedure TfrmProdTester.btnCleanClick(Sender: TObject);
 begin
   t_confreader.CleanCurConfig();
   UpdateConfig();
+end;
+
+procedure TfrmProdTester.btnClearVarNamesClick(Sender: TObject);
+begin
+  txtVarNames.Text := '';
 end;
 
 procedure TfrmProdTester.btnCollapseClick(Sender: TObject);
@@ -106,6 +120,22 @@ begin
   t_dialog.FilterIndex := 1; // Select text files as the starting filter type
   if t_dialog.Execute then txtConfigFile.Text:=t_dialog.FileName; // Display the open file dialog
   t_dialog.Free; // Free up the dialog
+end;
+
+procedure TfrmProdTester.btnPromoteClick(Sender: TObject);
+var t_varnames: TStrings;
+begin
+  t_varnames := TStringList.Create();
+  ExtractStrings([';'], [' '], PChar(trim(txtVarNames.Text)), t_varnames);
+  t_confreader.PromoteConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text), t_varnames);
+  t_confreader.UpdateTreeView(trvProduct);
+  t_varnames.Free();
+end;
+
+procedure TfrmProdTester.btnRemoveClick(Sender: TObject);
+begin
+  t_confreader.RemoveConfig(trim(txtCurConfig.Text));
+  t_confreader.UpdateTreeView(trvProduct);;
 end;
 
 procedure TfrmProdTester.btnSaveClick(Sender: TObject);
@@ -172,6 +202,16 @@ end;
 procedure TfrmProdTester.FormDestroy(Sender: TObject);
 begin
   t_confreader.Free();
+end;
+
+procedure TfrmProdTester.lsvConfigSelectItem(Sender: TObject; Item: TListItem;
+  Selected: Boolean);
+var s_varnames: string;
+begin
+  s_varnames := trim(txtVarNames.Text);
+  if (not ContainsText(s_varnames, Item.Caption)) then begin
+    txtVarNames.Text :=   s_varnames + Item.Caption + ';'
+  end;
 end;
 
 procedure TfrmProdTester.trvProductChange(Sender: TObject; Node: TTreeNode);
