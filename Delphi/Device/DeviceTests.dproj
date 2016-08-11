@@ -49,6 +49,7 @@
     <DCCReference Include="DeviceBase.pas" />
     <DCCReference Include="FlashRunner.pas" />
     <DCCReference Include="TestFlashRunner.pas" />
+    <None Include="ModelSupport_DeviceTests\default.txaPackage" />
     <None Include="ModelSupport_DeviceTests\default.txvpck" />
   </ItemGroup>
 </Project>

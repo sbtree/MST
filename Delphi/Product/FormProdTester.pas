@@ -33,6 +33,7 @@ type
     txtVarNames: TEdit;
     btnPromote: TButton;
     btnClearVarNames: TButton;
+    btnDefault: TButton;
     procedure btnOpenIniClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -58,6 +59,7 @@ type
       Selected: Boolean);
     procedure btnClearVarNamesClick(Sender: TObject);
     procedure btnPromoteClick(Sender: TObject);
+    procedure btnDefaultClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_confreader: TProdConfigurator;
@@ -94,6 +96,12 @@ end;
 procedure TfrmProdTester.btnCollapseClick(Sender: TObject);
 begin
   trvProduct.FullCollapse();
+end;
+
+procedure TfrmProdTester.btnDefaultClick(Sender: TObject);
+begin
+  t_confreader.UpdateDefault(trim(txtCurConfig.Text));
+  t_confreader.UpdateTreeView(trvProduct);
 end;
 
 procedure TfrmProdTester.btnExpandClick(Sender: TObject);

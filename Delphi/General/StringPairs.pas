@@ -192,15 +192,28 @@ begin
 end;
 
 function  TStringPairs.HasSameValues(const ref: TStringPairs; const varnames: TStrings): boolean;
+var i: integer; s_name, s_val, s_valref: string;
 begin
-  result := false;
-  //todo: compair values
+  result := true;
+  for i := 0 to varnames.Count - 1 do begin
+    s_name := varnames[i];
+    if GetPairValue(s_name, s_val) = ref.GetPairValue(s_name, s_valref) then result := SameText(s_val, s_valref)
+    else result := false;
+    if (not result) then break;
+  end;
 end;
 
 function  TStringPairs.CopyValuesFrom(const source: TStringPairs; const varnames: TStrings): integer;
+var i: integer; s_name, s_val: string;
 begin
   result := 0;
-  //todo: copy values
+  for i := 0 to varnames.Count - 1 do begin
+    s_name := varnames[i];
+    if source.GetPairValue(s_name, s_val) then begin
+      SetPairValue(s_name, s_val);
+      Inc(result);
+    end;
+  end;
 end;
 
 procedure TStringPairs.RemovePair(const idx: integer);

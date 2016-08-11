@@ -260,4 +260,13 @@ object frmProdTester: TfrmProdTester
     TabOrder = 24
     OnClick = btnClearVarNamesClick
   end
+  object btnDefault: TButton
+    Left = 440
+    Top = 545
+    Width = 50
+    Height = 21
+    Caption = '&Default'
+    TabOrder = 25
+    OnClick = btnDefaultClick
+  end
 end

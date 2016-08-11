@@ -111,6 +111,7 @@ type
     function UpdateConfig(const confname, srcname: string): boolean;
     function MoveConfig(const confname, destname: string): boolean;
     function RemoveConfig(const confname: string): boolean;
+    procedure UpdateDefault(const confref: string);
     procedure UpdateTreeView(var trv: TTreeView; const bclear: boolean = true);
     procedure UpdateListView(var lsv: TListView; const bfull: boolean = false; const bsorted: boolean = false; const bclear: boolean = true);
     procedure Select(const sname: string);
@@ -733,12 +734,17 @@ begin
         for i := t_parent.ChildCount - 1 downto 0 do begin
           t_child := t_parent.GetChild(i);
           if (assigned(t_child) and (t_conf <> t_child)) then begin
-            if t_child.ConfigVars.HasSameValues(t_spairs, varnames) then t_child.ResetParent(t_conf);
+            if t_child.ConfigVars.HasSameValues(t_spairs, varnames) then begin
+              t_child.ResetParent(t_conf);
+              t_child.CleanConfig();
+              Inc(result);
+            end;
           end;
         end;
         t_conf.ResetParent(t_parent);
         t_spairs.Free();
       end;
+      t_confref.CleanConfig();
     end;
   end;
 end;
@@ -790,6 +796,13 @@ begin
     FreeAndNil(t_conflist);
   end;
 end;
+
+//update default settings from the given config section
+procedure TProdConfigurator.UpdateDefault(const confref: string);
+begin
+  t_croot.UpdateConfigFrom(GetConfig(confref));
+end;
+
 
 procedure TProdConfigurator.Select(const sname: string);
 begin
