@@ -60,9 +60,11 @@ type
     procedure btnClearVarNamesClick(Sender: TObject);
     procedure btnPromoteClick(Sender: TObject);
     procedure btnDefaultClick(Sender: TObject);
+    procedure lsvConfigCustomDrawItem(Sender: TCustomListView; Item: TListItem;
+      State: TCustomDrawState; var DefaultDraw: Boolean);
   private
     { Private-Deklarationen }
-    t_confreader: TProdConfigurator;
+    t_pconfigurator: TProdConfigurator;
     procedure UpdateConfig();
     procedure UpdateFilter(const bforce: boolean = false);
   public
@@ -78,13 +80,13 @@ uses StringPairs, StrUtils;
 
 procedure TfrmProdTester.btnCleanAllClick(Sender: TObject);
 begin
-  t_confreader.CleanAllConfig();
+  t_pconfigurator.CleanAllConfig();
   UpdateConfig();
 end;
 
 procedure TfrmProdTester.btnCleanClick(Sender: TObject);
 begin
-  t_confreader.CleanCurConfig();
+  t_pconfigurator.CleanCurConfig();
   UpdateConfig();
 end;
 
@@ -100,8 +102,8 @@ end;
 
 procedure TfrmProdTester.btnDefaultClick(Sender: TObject);
 begin
-  t_confreader.UpdateDefault(trim(txtCurConfig.Text));
-  t_confreader.UpdateTreeView(trvProduct);
+  t_pconfigurator.UpdateDefault(trim(txtCurConfig.Text));
+  t_pconfigurator.UpdateTreeView(trvProduct);
 end;
 
 procedure TfrmProdTester.btnExpandClick(Sender: TObject);
@@ -111,9 +113,9 @@ end;
 
 procedure TfrmProdTester.btnLoadClick(Sender: TObject);
 begin
-  t_confreader.Clear();
+  t_pconfigurator.Clear();
   trvProduct.Items.Clear();
-  if t_confreader.ReadFromFile(txtConfigFile.Text) then  UpdateFilter(true);
+  if t_pconfigurator.ReadFromFile(txtConfigFile.Text) then  UpdateFilter(true);
 end;
 
 procedure TfrmProdTester.btnOpenIniClick(Sender: TObject);
@@ -135,43 +137,44 @@ var t_varnames: TStrings;
 begin
   t_varnames := TStringList.Create();
   ExtractStrings([';'], [' '], PChar(trim(txtVarNames.Text)), t_varnames);
-  t_confreader.PromoteConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text), t_varnames);
-  t_confreader.UpdateTreeView(trvProduct);
+  t_pconfigurator.PromoteConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text), t_varnames);
+  t_pconfigurator.UpdateTreeView(trvProduct);
   t_varnames.Free();
 end;
 
 procedure TfrmProdTester.btnRemoveClick(Sender: TObject);
 begin
-  t_confreader.RemoveConfig(trim(txtCurConfig.Text));
-  t_confreader.UpdateTreeView(trvProduct);;
+  t_pconfigurator.RemoveConfig(trim(txtCurConfig.Text));
+  t_pconfigurator.UpdateTreeView(trvProduct);;
 end;
 
 procedure TfrmProdTester.btnSaveClick(Sender: TObject);
 begin
-  t_confreader.SaveToFile();
+  t_pconfigurator.SaveToFile();
 end;
 
 procedure TfrmProdTester.btnUpdateClick(Sender: TObject);
 begin
-  t_confreader.UpdateConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
+  t_pconfigurator.UpdateConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
   UpdateConfig();
 end;
 
 procedure TfrmProdTester.btnMoveClick(Sender: TObject);
 begin
-  t_confreader.MoveConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
-  t_confreader.UpdateTreeView(trvProduct);;
+  t_pconfigurator.MoveConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
+  t_pconfigurator.UpdateTreeView(trvProduct);;
 end;
 
 procedure TfrmProdTester.btnMoveTextClick(Sender: TObject);
 begin
   txtRefConfig.Text := txtCurConfig.Text;
+  txtCurConfig.Text := '';
 end;
 
 procedure TfrmProdTester.btnNewClick(Sender: TObject);
 begin
-  t_confreader.CreateConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
-  t_confreader.UpdateTreeView(trvProduct);;
+  t_pconfigurator.CreateConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
+  t_pconfigurator.UpdateTreeView(trvProduct);;
 end;
 
 procedure TfrmProdTester.chkFilterClick(Sender: TObject);
@@ -199,17 +202,29 @@ procedure TfrmProdTester.cmbFilterNameChange(Sender: TObject);
 var s_filtervar: string;
 begin
   s_filtervar := trim(cmbFilterName.Text);
-  if (s_filtervar <> '') then t_confreader.FilterVarName := s_filtervar;
+  if (s_filtervar <> '') then t_pconfigurator.FilterVarName := s_filtervar;
 end;
 
 procedure TfrmProdTester.FormCreate(Sender: TObject);
 begin
-  t_confreader := TProdConfigurator.Create();
+  t_pconfigurator := TProdConfigurator.Create();
 end;
 
 procedure TfrmProdTester.FormDestroy(Sender: TObject);
 begin
-  t_confreader.Free();
+  t_pconfigurator.Free();
+end;
+
+procedure TfrmProdTester.lsvConfigCustomDrawItem(Sender: TCustomListView;
+  Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
+var t_varnames: TStrings; i_idx: integer;
+begin
+  t_varnames := TStringList.Create();
+  if (t_pconfigurator.CurConfig.ConfigVars.GetPairNames(t_varnames) > 0) then begin
+    if (t_varnames.IndexOf(Item.Caption) >= 0) then Sender.Canvas.Font.Color := clBlack
+    else Sender.Canvas.Font.Color := clDkGray;
+  end;
+  t_varnames.Free();
 end;
 
 procedure TfrmProdTester.lsvConfigSelectItem(Sender: TObject; Item: TListItem;
@@ -243,8 +258,8 @@ begin
   if assigned(trvProduct.Selected) then s_confname := trvProduct.Selected.Text
   else s_confname := '';
   txtCurConfig.Text := s_confname;
-  t_confreader.Select(s_confname);
-  t_confreader.UpdateListView(lsvConfig, chkShowAll.Checked, chkSorted.Checked);
+  t_pconfigurator.Select(s_confname);
+  t_pconfigurator.UpdateListView(lsvConfig, chkShowAll.Checked, chkSorted.Checked);
 end;
 
 procedure TfrmProdTester.UpdateFilter(const bforce: boolean);
@@ -252,9 +267,9 @@ var s_ftext: string;
 begin
   if chkFilter.Checked then s_ftext := trim(txtFilter.Text)
   else s_ftext := '';
-  if ((not SameText(s_ftext, t_confreader.FilterText)) or bforce) then begin
-    t_confreader.Filter(s_ftext);
-    t_confreader.UpdateTreeView(trvProduct);
+  if ((not SameText(s_ftext, t_pconfigurator.FilterText)) or bforce) then begin
+    t_pconfigurator.Filter(s_ftext);
+    t_pconfigurator.UpdateTreeView(trvProduct);
   end;
 end;
 

@@ -99,6 +99,7 @@ object frmProdTester: TfrmProdTester
     RowSelect = True
     TabOrder = 7
     ViewStyle = vsReport
+    OnCustomDrawItem = lsvConfigCustomDrawItem
     OnSelectItem = lsvConfigSelectItem
   end
   object chkSorted: TCheckBox

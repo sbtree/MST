@@ -18,7 +18,9 @@ uses
   RS232 in '..\Comm\RS232.pas',
   USB in '..\Comm\USB.pas',
   CAN in '..\Comm\CAN.pas',
-  ConnBase in '..\Comm\ConnBase.pas';
+  ConnBase in '..\Comm\ConnBase.pas',
+  USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
+  Usbspec in '..\Externals\USBIO\Usbspec.pas';
 
 {$R *.res}
 

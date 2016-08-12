@@ -1,7 +1,7 @@
 unit ProductConfig;
 
 interface
-uses Classes, IniFiles, StringPairs, GenUtils, ComCtrls;
+uses Classes, IniFiles, StringPairs, ComCtrls;
 type
   EConfigFormat = (
                 CF_UNKNOWN,
@@ -39,8 +39,8 @@ type
     property ChildCount: integer read GetChildren;
     property Children[idx: integer]: TConfigSection read GetChild;
 
-    function CreateChild(const sname: string): TConfigSection; overload;
-    function AddChild(citem: TConfigSection): TConfigSection; overload;
+    function CreateChild(const sname: string): TConfigSection;
+    function AddChild(citem: TConfigSection): boolean;
     function TakeChild(const sname: string): TConfigSection;
     function MoveChildTo(const sname: string; dest: TConfigSection): TConfigSection;
     function HasChildren(): boolean;
@@ -54,6 +54,7 @@ type
     procedure TakeToRemove(var conflist: TStrings);
     procedure Clear();
     procedure CleanConfig();
+    procedure CompleteOwnConfig();
     procedure ResetParent(parent: TConfigSection);
     procedure SetConfigVars(const vals: TStrings);
     procedure Filter(const varname, filtertext: string);
@@ -109,7 +110,7 @@ type
     function CreateConfig(const confname: string; const parent: string = ''): boolean;
     function PromoteConfig(const confname, confref: string; const varnames: TStrings): boolean;
     function UpdateConfig(const confname, srcname: string): boolean;
-    function MoveConfig(const confname, destname: string): boolean;
+    function MoveConfig(const confname, destname: string; const bfull: boolean = true): boolean;
     function RemoveConfig(const confname: string): boolean;
     procedure UpdateDefault(const confref: string);
     procedure UpdateTreeView(var trv: TTreeView; const bclear: boolean = true);
@@ -172,6 +173,7 @@ begin
   else result := nil;
 end;
 
+//write current config and its child into a string list with ini-format
 function TConfigSection.WriteToIni(var slines: TStrings): boolean;
 var i: integer; t_citem: TConfigSection;
 begin
@@ -196,6 +198,7 @@ begin
   //todo:
 end;
 
+//constructor of the class
 constructor TConfigSection.Create(const confname: string; const parent: TConfigSection);
 begin
   inherited Create();
@@ -208,6 +211,7 @@ begin
   b_visible := true;
 end;
 
+//destructor of the class
 destructor TConfigSection.Destroy();
 begin
   Clear();
@@ -216,6 +220,7 @@ begin
   inherited Destroy();
 end;
 
+//create a child with the given name if it does not exist in the child list
 function TConfigSection.CreateChild(const sname: string): TConfigSection;
 var i_idx: integer;
 begin
@@ -226,20 +231,19 @@ begin
   end;
 end;
 
-function TConfigSection.AddChild(citem: TConfigSection): TConfigSection;
+//add a config as a child of current config if it does not in current config
+function TConfigSection.AddChild(citem: TConfigSection): boolean;
 var i_idx: integer;
 begin
-  result := citem;
-  if t_children.Find(citem.ConfigName, i_idx) then begin
-    //todo: dupplicated???
-    result := TConfigSection(t_children.Objects[i_idx]);
-    citem.Free();
-  end else begin
+  if t_children.Find(citem.ConfigName, i_idx) then result := false
+  else begin
     t_children.AddObject(citem.ConfigName, citem);
     citem.Parent := self;
+    result := true;
   end;
 end;
 
+//take out a child from the child list by name
 function TConfigSection.TakeChild(const sname: string): TConfigSection;
 var i_idx: integer;
 begin
@@ -247,17 +251,20 @@ begin
   if assigned(result) then t_children.Delete(i_idx);
 end;
 
+//move a child to the destination
 function TConfigSection.MoveChildTo(const sname: string; dest: TConfigSection): TConfigSection;
 begin
   result := TakeChild(sname);
   if (assigned(result) and assigned(dest)) then dest.AddChild(result);
 end;
 
+//indicate if current config has children
 function TConfigSection.HasChildren(): boolean;
 begin
   result := (t_children.Count > 0);
 end;
 
+//get own settings (exclusive settings of its parent) and save them in conf
 function TConfigSection.GetOwnConfig(const secname: string; var conf: TStringPairs): boolean;
 var t_citem: TConfigSection;
 begin
@@ -269,6 +276,7 @@ begin
   end;
 end;
 
+//get full settings (inclusive settings of its parent) and save them in conf
 function TConfigSection.GetFullConfig(var conf: TStringPairs): boolean;
 begin
   result := true;
@@ -276,11 +284,13 @@ begin
   conf.AddPairs(t_config.Pairs, true);
 end;
 
+//get value of a variable name
 function TConfigSection.GetValue(const varname: string; var varval: string): boolean;
 begin
   result := ConfigVars.GetPairValue(varname, varval);
 end;
 
+//recursive function, get first value of a variable which is firstly found in its parent or grandparents
 function TConfigSection.GetValueFromParent(const varname: string; var varval: string): boolean;
 begin
   result := false;
@@ -290,6 +300,7 @@ begin
   end;
 end;
 
+//save config in a string list with given format
 function TConfigSection.SaveConfig(var slines: TStrings; const cf: EConfigFormat): boolean;
 begin
   result := false;
@@ -299,6 +310,7 @@ begin
   end;
 end;
 
+//update settings of current config from the given config
 function TConfigSection.UpdateConfigFrom(const conf: TConfigSection): boolean;
 var t_vars: TStringPairs;
 begin
@@ -315,6 +327,7 @@ begin
   end;
 end;
 
+//build a tree node with its children
 function TConfigSection.BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode): boolean;
 var i: integer; t_curnode: TTreeNode; t_citem: TConfigSection;
 begin
@@ -329,6 +342,7 @@ begin
   end;
 end;
 
+//indicate if the config is visible
 function TConfigSection.IsVisible(): boolean;
 var i: integer; t_citem: TConfigSection;
 begin
@@ -344,11 +358,13 @@ begin
   end;
 end;
 
+//get identifer of current config
 function TConfigSection.GetConfigId(): string;
 begin
   t_config.GetPairValue(CSTR_ID_STRING, result);
 end;
 
+//set identifer of current config
 procedure TConfigSection.SetConfigId(cid: string);
 begin
   t_config.SetPairValue(CSTR_ID_STRING, cid);
@@ -367,6 +383,7 @@ begin
   conflist.AddObject(s_confname, self);
 end;
 
+//clear setting of current config and its child
 procedure TConfigSection.Clear();
 var i: integer;
 begin
@@ -375,6 +392,7 @@ begin
   t_children.Clear();
 end;
 
+//remove items of own string pairs, which have same value as its parent
 procedure TConfigSection.CleanConfig();
 var i: integer; t_child: TConfigSection; s_myval, s_parentval: string;
 begin
@@ -393,6 +411,17 @@ begin
   end;
 end;
 
+//complete own string pairs with the string pairs of its parent, but not overwrite
+procedure TConfigSection.CompleteOwnConfig();
+var t_spairs: TStringPairs;
+begin
+  t_spairs := TStringPairs.Create();
+  if assigned(t_parent) then begin
+    if t_parent.GetFullConfig(t_spairs) then t_config.AddPairs(t_spairs.Pairs, false);
+  end;
+  t_spairs.Free();
+end;
+
 procedure TConfigSection.ResetParent(parent: TConfigSection);
 begin
   if ((t_parent <> parent) and assigned(parent)) then begin
@@ -400,12 +429,14 @@ begin
   end;
 end;
 
+//set settings with the given string list of name-value-pair 
 procedure TConfigSection.SetConfigVars(const vals: TStrings);
 begin
   Clear();
   t_config.AddPairs(vals, true);
 end;
 
+//filter configs which include filtertext in the setting with varname
 procedure TConfigSection.Filter(const varname, filtertext: string);
 var s_value: string; i: integer; t_citem: TConfigSection;
 begin
@@ -424,6 +455,7 @@ begin
   end;
 end;
 
+//cancel filtering
 procedure TConfigSection.Unfilter();
 var i: integer; t_citem: TConfigSection;
 begin
@@ -457,6 +489,7 @@ begin
   end else result := nil;
 end;
 
+//read configs from a ini-file. Only the sections, which have names started with CSTR_FAMILY, CSTR_VARIANT and CSTR_ARTICLE
 function TProdConfigurator.ReadFromIni(const sfile: string; const bcover: boolean): boolean;
 var t_inifile: TIniFile; t_secnames, t_secvals: TStrings; s_name: string; i: integer;
 begin
@@ -489,6 +522,7 @@ begin
   t_inifile.Free();
 end;
 
+//build tree structure from a file with ini-format
 function TProdConfigurator.BuildTreeFromIni(const ini: TIniFile): boolean;
 var i: integer; t_citem, t_parent: TConfigSection; t_secvals: TStrings; s_name, s_parent: string;
 begin
@@ -508,12 +542,13 @@ begin
   result := true;
 end;
 
+//write all configs into a string list with ini-format
 function TProdConfigurator.WriteToIni(var slines: TStrings; const bRoot: boolean): boolean;
 var i: integer;
 begin
   result := false;
   slines.Add(';======================================================================================');
-  slines.Add('; This file is created by MST automatically.');
+  slines.Add('; This file is created by Metronix program automatically.');
   slines.Add('; (c) Metronix 2016');
   slines.Add('; ' + DateTimeToStr(Now()));
   slines.Add(';======================================================================================');
@@ -529,18 +564,21 @@ begin
   end;
 end;
 
+//read configs from a xml-file
 function TProdConfigurator.ReadFromXML(const sfile: string; const bcover: boolean): boolean;
 begin
   result := false;
   //todo:
 end;
 
+//write configs into an xml-files
 function TProdConfigurator.WriteToXML(const sfile: string; const bRoot: boolean): boolean;
 begin
   result := false;
   //todo:
 end;
 
+//get reference of a config by name
 function TProdConfigurator.GetConfig(const name: string): TConfigSection;
 var i_idx: integer;
 begin
@@ -548,17 +586,20 @@ begin
   else result := nil;
 end;
 
+//get reference of a config by index
 function TProdConfigurator.GetConfig(const idx: integer): TConfigSection;
 begin
   if (idx >=0) and (idx < t_names.Count) then result := TConfigSection(t_names.Objects[idx])
   else result := nil;
 end;
 
+//get own settings of a config by name (exclusive the settings of its parent)
 function TProdConfigurator.GetOwnConfigVars(const name: string): TStringPairs;
 begin
   result := GetOwnConfigVars(GetConfig(name));
 end;
 
+//get own settings of a config by instance (exclusive the settings of its parent)
 function TProdConfigurator.GetOwnConfigVars(const citem: TConfigSection): TStringPairs;
 begin
   t_curconf.Clear();
@@ -566,11 +607,13 @@ begin
   result := t_curconf;
 end;
 
+//get full settings of a config by name(inclusive the settings of its parent)
 function TProdConfigurator.GetFullConfigVars(const name: string): TStringPairs;
 begin
   result := GetFullConfigVars(GetConfig(name));
 end;
 
+//get full settings of a config by instance (inclusive the settings of its parent)
 function TProdConfigurator.GetFullConfigVars(const citem: TConfigSection): TStringPairs;
 begin
   t_curconf.Clear();
@@ -578,16 +621,19 @@ begin
   result := t_curconf;
 end;
 
+//get own settings of current config (exclusive the settings of its parent)
 function TProdConfigurator.GetOwnCurConfigVars(): TStringPairs;
 begin
   result := GetOwnConfigVars(t_cursec);
 end;
 
+//get full settings of current config (inclusive the settings of its parent)
 function TProdConfigurator.GetFullCurConfigVars(): TStringPairs;
 begin
   result := GetFullConfigVars(t_cursec);
 end;
 
+//get count of the configs
 function TProdConfigurator.GetCount(): integer;
 begin
   result := t_names.Count;
@@ -617,6 +663,7 @@ begin
   t_curconf.Free();
 end;
 
+//read configs from a file
 function TProdConfigurator.ReadFromFile(const cfgfile: string; const bforce: boolean; const bappend: boolean): boolean;
 var e_cf: EConfigFormat; i_idx: integer; t_fdatetime: TDateTime; b_cover: boolean; s_filepath: string;
 begin
@@ -646,6 +693,7 @@ begin
   end;  
 end;
 
+//show and update all configs in a tree view
 procedure TProdConfigurator.UpdateTreeView(var trv: TTreeView; const bclear: boolean);
 begin
   trv.Enabled := false;
@@ -658,6 +706,7 @@ begin
   trv.Enabled := true;
 end;
 
+//show and update the settings of current config in a list view
 procedure TProdConfigurator.UpdateListView(var lsv: TListView; const bfull: boolean; const bsorted: boolean; const bclear: boolean);
 var t_litem: TListItem; t_varnames: TStrings; s_value: string; i: integer;
 begin
@@ -680,6 +729,7 @@ begin
   lsv.Enabled := true;
 end;
 
+//save all configs into a file
 function TProdConfigurator.SaveToFile(const destfile: string; const cf: EConfigFormat): boolean;
 var s_fname, s_ext: string; t_lines: TStrings;
 begin
@@ -703,6 +753,7 @@ begin
   end;
 end;
 
+//create a config as child of the given config
 function TProdConfigurator.CreateConfig(const confname: string; const parent: string): boolean;
 var t_parent, t_conf: TConfigSection;
 begin
@@ -717,6 +768,9 @@ begin
   end;
 end;
 
+//create a new config with given name as parent of the given config.
+//the given config and its siblings become children of this new config
+//if they has the same values of the given variable names
 function TProdConfigurator.PromoteConfig(const confname, confref: string; const varnames: TStrings): boolean;
 var t_conf, t_confref, t_parent, t_child: TConfigSection; i: integer; t_spairs: TStringPairs;
 begin
@@ -749,6 +803,7 @@ begin
   end;
 end;
 
+//the settings of the given config will be upgraded with those of the source config
 function TProdConfigurator.UpdateConfig(const confname, srcname: string): boolean;
 var t_src, t_dest: TConfigSection;
 begin
@@ -760,15 +815,21 @@ begin
   end;
 end;
 
-function TProdConfigurator.MoveConfig(const confname, destname: string): boolean;
+//change the parent of the given config to the destination.
+//The settings of the old parent will be brought with if bfull is true
+//the settings are cleaned with the new parent after the change
+function TProdConfigurator.MoveConfig(const confname, destname: string; const bfull: boolean ): boolean;
 var t_conf, t_confdest: TConfigSection;
 begin
   result := false;
   if (not SameText(confname, destname)) then begin
     t_conf := GetConfig(confname);
-    t_confdest := GetConfig(destname);
+    if bfull then t_conf.CompleteOwnConfig();
+    if destname = '' then t_confdest := t_croot
+    else t_confdest := GetConfig(destname);
     if (assigned(t_conf) and assigned(t_confdest)) then begin
       t_conf.ResetParent(t_confdest);
+      t_conf.CleanConfig();
       result := true;
     end;
   end;
@@ -803,12 +864,13 @@ begin
   t_croot.UpdateConfigFrom(GetConfig(confref));
 end;
 
-
+//set current config by name
 procedure TProdConfigurator.Select(const sname: string);
 begin
   t_cursec := GetConfig(sname);
 end;
 
+//filter configs with ftext.
 procedure TProdConfigurator.Filter(const ftext: string);
 var i: integer; t_citem: TConfigSection;
 begin
@@ -822,16 +884,19 @@ begin
   s_filtertxt := ftext;
 end;
 
+//clean the settings of current config
 procedure TProdConfigurator.CleanCurConfig();
 begin
   if assigned(t_cursec) then t_cursec.CleanConfig();
 end;
 
+//clean settings of all configs
 procedure TProdConfigurator.CleanAllConfig();
 begin
   t_croot.CleanConfig();
 end;
 
+//clear all information in the class
 procedure TProdConfigurator.Clear();
 begin
   t_croot.Clear();

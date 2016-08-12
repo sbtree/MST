@@ -103,7 +103,7 @@ begin
   //todo:
 end;
 
-function TFlashUpdaterRS232.UpdateFlash(): boolean; override;
+function TFlashUpdaterRS232.UpdateFlash(): boolean;
 begin
   result := false;
   //todo:
