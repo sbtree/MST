@@ -1,3 +1,11 @@
+// =============================================================================
+// Module name  : $RCSfile: StringPairs.pas,v $
+// description  : This unit implements a class, in which name-value pairs are managed.
+//                It is very useful for the configuration from ini-file
+// Compiler     : Delphi 2007
+// Author       : 2015-11-20 /bsu/
+// History      :
+//==============================================================================
 unit StringPairs;
 
 interface

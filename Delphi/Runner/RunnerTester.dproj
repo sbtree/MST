@@ -34,7 +34,7 @@
     </DelphiCompile>
     <DCCReference Include="..\CoreData\StepDescriptor.pas" />
     <DCCReference Include="..\Function\FuncBase.pas" />
-    <DCCReference Include="..\Function\FunctionCaller.pas" />
+    <DCCReference Include="..\Function\FuncCaller.pas" />
     <DCCReference Include="..\General\GenType.pas" />
     <DCCReference Include="..\General\StringPairs.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />

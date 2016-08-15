@@ -2,7 +2,7 @@
 // Module name  : $RCSfile: FuncDmm.pas,v $
 // description  : The classes of script functions which are relevant to some
 //                software tools (SWT), are implemented in this unit, e.g. to
-//                call some extern program, to execute batch file, and so an
+//                call some extern program, to execute, e.g. batch file, FDT etw.
 // Compiler     : Delphi 2007
 // Author       : 2015-12-18 /bsu/
 // History      :

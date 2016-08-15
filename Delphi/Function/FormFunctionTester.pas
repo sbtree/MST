@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, TextMessage, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, FunctionCaller, GenType;
+  Dialogs, StdCtrls, FuncCaller, GenType;
 
 type
   TFormFTMain = class(TForm)

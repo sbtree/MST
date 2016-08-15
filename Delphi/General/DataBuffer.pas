@@ -1,3 +1,12 @@
+//==============================================================================
+// Module name  : $RCSfile: DataBuffer.pas,v $
+// Description  : This unit defines a class of ring buffer and some of its subclasses
+// Copyright    : (c) Metronix 2014
+// Reversion    : $Revision 1.0$
+// Compiler     : Delphi 2007
+// Author       : 2014-07-14 /bsu/
+// History      :
+//==============================================================================
 unit DataBuffer;
 
 interface

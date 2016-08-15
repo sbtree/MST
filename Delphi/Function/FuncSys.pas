@@ -1,7 +1,8 @@
 // =============================================================================
 // Module name  : $RCSfile: FuncSys.pas,v $
 // description  : The classes of script functions which are relevant to the
-//                software system of this program (SYS), are implemented in this unit.
+//                system of this program (SYS), are implemented in this unit, e.g.
+//                Jump-Function, Loop-Controll etw.
 // Compiler     : Delphi 2007
 // Author       : 2015-12-18 /bsu/
 // History      :

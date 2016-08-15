@@ -3,7 +3,7 @@ program FunctionTester;
 uses
   Forms,
   FormFunctionTester in 'FormFunctionTester.pas' {FormFTMain},
-  FunctionCaller in 'FunctionCaller.pas',
+  FuncCaller in 'FuncCaller.pas',
   TextMessage in '..\General\TextMessage.pas',
   FuncBase in 'FuncBase.pas',
   GenType in '..\General\GenType.pas',

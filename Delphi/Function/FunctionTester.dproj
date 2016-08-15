@@ -56,12 +56,12 @@
     </DCCReference>
     <DCCReference Include="FuncAux.pas" />
     <DCCReference Include="FuncBase.pas" />
+    <DCCReference Include="FuncCaller.pas" />
     <DCCReference Include="FuncDmm.pas" />
     <DCCReference Include="FuncDso.pas" />
     <DCCReference Include="FuncMxp.pas" />
     <DCCReference Include="FuncSwt.pas" />
     <DCCReference Include="FuncSys.pas" />
-    <DCCReference Include="FunctionCaller.pas" />
     <DCCReference Include="FuncTmm.pas" />
     <None Include="ModelSupport_FunctionTester\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\default.txvpck" />

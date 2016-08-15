@@ -1,8 +1,11 @@
 //==============================================================================
-// A unit, in which some general functions will be implemented.
+// Module name  : $RCSfile: GenUtils.pas,v $
+// Description  : This unit defines global functions, which are not dependent on
+//                any other unit except standard unit of delphi.
 // Copyright    : (c) Metronix 2014
 // Reversion    : $Revision 1.0$
-// First author : /bsu/ 2014-07-14
+// Compiler     : Delphi 2007
+// Author       : 2014-07-14 /bsu/
 // History      :
 //==============================================================================
 unit GenUtils;

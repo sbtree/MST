@@ -140,6 +140,7 @@ type
 
   //a class composed of all test steps
   TStepContainer = class
+  class function CalcCaseNr(const stepnr: string; var casenr: integer): boolean;
   protected
     t_steps:      TObjectList;  //to save test steps, a list of TTestStep
     t_stepnrs:    TStrings;     //auxiliary variable, to save the step number matching index of t_steps;
@@ -154,7 +155,6 @@ type
 
   protected
     procedure UpdateCase(const stepnr, title: string);
-    function  CalcCaseNr(const stepnr: string; var casenr: integer): boolean;
     function  GetSteps(): integer;
     function  GetCases(): integer;
     function  GetPrevStep(): TTestStep;
@@ -221,6 +221,30 @@ type
 
     function  MoveStepIndex(const rela: integer): integer;
     procedure UpdateCurStepIndex();
+  end;
+
+  //a class, represents a loop in a test case, which starts with script function
+  //'LoopBegin' and ends with 'LoopEnd'
+  //warning: step loops may be nested, but they are only allowed  in one test case.
+  //         a loop is not allowed between two test cases, that means, the beginning
+  //         and its corresponding end muss exist in one case.
+  TStepLoop = class(TStepGroup)
+  protected
+    i_casenr:   integer; //indicates test case, in which the loop exists
+    b_closed:  boolean;  //indicates if the loop is closed
+  protected
+    function GetIndexBegin(): integer;
+    function GetIndexEnd(): integer;
+    procedure SetIndexBegin(const idx: integer);
+    procedure SetIndexEnd(const idx: integer);
+
+  public
+    constructor Create(const container: TStepContainer);
+    destructor Destroy(); override;
+
+    property StepIndexBegin: integer read GetIndexBegin write SetIndexBegin;
+    property StepIndexEnd: integer read GetIndexEnd write SetIndexEnd;
+    property LoopClosed : boolean read b_closed;
   end;
 
   //a class representing a set of test steps in the container (continue from an index to another),
@@ -506,6 +530,20 @@ begin
   end;
 end;
 
+class function TStepContainer.CalcCaseNr(const stepnr: string; var casenr: integer): boolean;
+var t_nrs: TStrings;
+begin
+  result := false;
+  if (trim(stepnr) <> '') then begin
+    t_nrs := TStringList.Create();
+    if (ExtractStrings(['.'], [' '], PChar(stepnr), t_nrs) > 0) then begin
+      result := TryStrToInt(t_nrs[0], casenr);
+      if result then casenr := abs(casenr);
+    end;
+    FreeAndNil(t_nrs);
+  end;
+end;
+
 procedure  TStepContainer.UpdateCase(const stepnr, title:string);
 var t_tcase: TTestCase; i_casenr, i_curstepidx: integer;
 begin
@@ -529,21 +567,6 @@ begin
     end;
   end;
 end;
-
-function  TStepContainer.CalcCaseNr(const stepnr: string; var casenr: integer): boolean;
-var t_nrs: TStrings;
-begin
-  result := false;
-  if (trim(stepnr) <> '') then begin
-    t_nrs := TStringList.Create();
-    if (ExtractStrings(['.'], [' '], PChar(stepnr), t_nrs) > 0) then begin
-      result := TryStrToInt(t_nrs[0], casenr);
-      if result then casenr := abs(casenr);
-    end;
-    FreeAndNil(t_nrs);
-  end;
-end;
-
 
 // =============================================================================
 //    Description  : analyze the given string casenrs and return back a list of
@@ -875,6 +898,71 @@ begin
       if i_index >= 0 then i_curstepidx := i_index;
     end;
   end;
+end;
+
+function TStepLoop.GetIndexBegin(): integer;
+begin
+  if (Length(a_steps) > 0) then result := a_steps[0]
+  else result := -1;
+end;
+
+function TStepLoop.GetIndexEnd(): integer;
+var i_len: integer;
+begin
+  i_len := Length(a_steps);
+  if ((i_len > 0) and b_closed) then result := a_steps[i_len - 1]
+  else result := -1;
+end;
+
+procedure TStepLoop.SetIndexBegin(const idx: integer);
+var t_step: TTestStep; s_stepnr: string;
+begin
+  if assigned(t_container) then begin
+    t_step := t_container.StepByIndex(idx);
+    if assigned(t_step) then begin
+      Clear();
+      s_stepnr := t_step.GetFieldValue(SF_NR);
+      SetLength(a_steps, 1);
+      a_steps[0] := idx;
+      t_stepnrs.Add(s_stepnr);
+      TStepContainer.CalcCaseNr(s_stepnr, i_casenr);
+    end;
+  end;
+end;
+
+procedure TStepLoop.SetIndexEnd(const idx: integer);
+var i, i_idxlast, i_cntnew, i_cntold, i_cnr: integer; t_step: TTestStep; s_stepnr: string;
+begin
+  i_cntold := Length(a_steps);
+  if (i_cntold > 0)then begin
+    i_idxlast := GetIndexBegin();
+    i_cntnew := i_cntold + (idx - i_idxlast);
+    t_step := t_container.StepByIndex(idx);
+    if ((i_cntnew > 1) and assigned(t_container) and assigned(t_step)) then begin
+      SetLength(a_steps, i_cntnew);
+      if TStepContainer.CalcCaseNr(t_step.GetFieldValue(SF_NR), i_cnr) then
+        b_closed := ((i_cnr = i_casenr) and (i_cnr >= 0));
+      for i := i_cntold to i_cntnew - 1 do begin
+        Inc(i_idxlast);
+        a_steps[i] := i_idxlast;
+        t_step := t_container.StepByIndex(a_steps[i]);
+        if assigned(t_step) then t_stepnrs.Add(t_step.GetFieldValue(SF_NR));
+      end;
+    end;
+  end;
+end;
+
+constructor TStepLoop.Create(const container: TStepContainer);
+begin
+  inherited Create(container);
+  i_casenr := -1;
+  b_closed := false;
+end;
+
+destructor TStepLoop.Destroy();
+begin
+  //todo:
+  inherited Destroy();
 end;
 
 function TTestCase.GetIndexFrom(): integer;

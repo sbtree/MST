@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, StdCtrls,
-  Dialogs, ScriptReader, TextMessage, StepDescriptor, PairStrings, TestRunner;
+  Dialogs, ScriptReader, TextMessage, StepDescriptor, StringPairs, TestRunner;
 
 type
   TForm2 = class(TForm)
@@ -61,7 +61,7 @@ type
     t_sreader:  TScriptReader;
     t_messenger:TTextMessenger;
     t_container:TStepContainer;
-    t_vars:     TPairStrings;
+    t_vars:     TStringPairs;
     t_runner:   TTestRunner;
   public
     { Public-Deklarationen }
@@ -125,7 +125,7 @@ end;
 
 procedure TForm2.btnRunSequenceClick(Sender: TObject);
 begin
-  t_runner.RunSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
+  if t_runner.SetSequence(trim(txtInclusive.Text), trim(txtExclusive.Text)) then t_runner.RunSequence();
 end;
 
 procedure TForm2.btnRunStepByNrClick(Sender: TObject);
@@ -165,7 +165,7 @@ end;
 
 procedure TForm2.btnRepeatSequenceClick(Sender: TObject);
 begin
-  t_runner.RepeatSequence();
+  t_runner.RunSequence();
 end;
 
 procedure TForm2.btnRepeatStepClick(Sender: TObject);
@@ -178,7 +178,7 @@ begin
   t_sreader := TScriptReader.Create();
   t_messenger := TTextMessenger.Create();
   t_container := TStepContainer.Create();
-  t_vars := TPairStrings.Create();
+  t_vars := TStringPairs.Create();
   t_messenger.Messages := memInfo.Lines;
   t_sreader.Messenger := t_messenger;
   t_sreader.StepContainer := t_container;

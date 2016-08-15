@@ -1,8 +1,21 @@
+// =============================================================================
+// Module name  : $RCSfile: FuncAux.pas,v $
+// description  : This unit implements subclasses of TFuncitonBase, which can be
+//                called as auxiliary functions in a script.
+//                Auxiliary Script Function
+// Compiler     : Delphi 2007
+// Author       : 2015-09-08 /bsu/
+// History      :
+//==============================================================================
 unit FuncAux;
 
 interface
 uses Classes, FuncBase, QExp;
 type
+  SubStr = class(TFunctionBase)
+  
+  end;
+
   TEvalExprBase = class(TFunctionBase)
   protected
     t_expr: TQExprParser;

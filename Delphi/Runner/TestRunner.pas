@@ -50,10 +50,10 @@ type
     function RunStep(const stepidx: integer): boolean; overload;
     function RunCase(const casenr: string): boolean; overload;
     function RunCase(const caseidx: integer): boolean; overload;
-    function RunSequence(const csincl, csexcl: string): boolean;
+    function RunSequence(): boolean;
+    function SetSequence(const csincl, csexcl: string): boolean;
     function RepeatStep(): boolean;
     function RepeatCase(): boolean;
-    function RepeatSequence(): boolean;
   end;
 
 implementation
@@ -237,12 +237,21 @@ begin
   end;
 end;
 
-function TTestRunner.RunSequence(const csincl, csexcl: string): boolean;
+function TTestRunner.RunSequence(): boolean;
+begin
+  result := false;
+  if assigned(t_container) then begin
+    if (t_container.TestSequence.CountCase > 0) then result := RunStepGroup(t_container.TestSequence)
+    else AddMessage('No test case is found in current test sequence.', ML_WARNING);
+  end;
+end;
+
+function TTestRunner.SetSequence(const csincl, csexcl: string): boolean;
 begin
   result := false;
   if assigned(t_container) then begin
     t_container.UpdateSequence(csincl, csexcl);
-    result := RunStepGroup(t_container.TestSequence);
+    result := (t_container.TestSequence.CountCase > 0);
   end;
 end;
 
@@ -257,12 +266,6 @@ function TTestRunner.RepeatCase(): boolean;
 begin
   result := false;
   if assigned(t_container) then result := RunStepGroup(t_container.CurrentCase);
-end;
-
-function TTestRunner.RepeatSequence(): boolean;
-begin
-  result := false;
-  if assigned(t_container) then result := RunStepGroup(t_container.TestSequence);
 end;
 
 end.

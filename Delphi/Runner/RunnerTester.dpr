@@ -6,7 +6,7 @@ uses
   TestRunner in 'TestRunner.pas',
   GenType in '..\General\GenType.pas',
   TextMessage in '..\General\TextMessage.pas',
-  FunctionCaller in '..\Function\FunctionCaller.pas',
+  FuncCaller in '..\Function\FuncCaller.pas',
   FuncBase in '..\Function\FuncBase.pas',
   ScriptReader in '..\Script\ScriptReader.pas',
   StepChecker in '..\Script\StepChecker.pas',

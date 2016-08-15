@@ -1,12 +1,12 @@
 // =============================================================================
-// Module name  : $RCSfile: FunctionBase.pas,v $
+// Module name  : $RCSfile: FuncBase.pas,v $
 // description  : This unit implements basis methodes and properties of a class
 //                for script function. A script function is a function, which is
 //                called in a script of a test sequence. It is defined as a class
 //                in the source code and it muss be a subclass of this base class.
 //                NOTE: all subclasses have to be registered into Delphi-classes
 //                system, so that they are automatically recognized by function
-//                caller (see unit FunctionCaller). Every script function will have
+//                caller (see unit FuncCaller). Every script function will have
 //                the same name as your subclass. 
 //                In order to register your subclass, Classes.RegisterClass(YourSubclass)
 //                has to be called in section initialization of its unit and
@@ -26,9 +26,9 @@ type
     t_messenger:TTextMessenger; //a pointer, which can be asssigned through property Messager
     e_exemode:  EExecMode;      //execution mode, which can be changed through property ExecutionMode
     b_aborted:  boolean;        //indicates if current execution should be aborted
-    //s_par:      string;         //saves parameter string of this function object
     t_pars:     TStrings;       //tos save parameters
     s_result:   string;         //a string to save result
+    ch_separator: char;         //separator of the parameters. The default value is a space
   protected
      procedure SetAborted(const aborted: boolean);
      procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
@@ -40,6 +40,7 @@ type
     property ExecutionMode: EExecMode read e_exemode write e_exemode;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
     property Aborted: boolean read b_aborted write SetAborted;
+    property ParamSeparator: Char read ch_separator write ch_separator;
 
     function LoadParameter(const par: string): boolean; virtual;
     function LoadParameters(const pars: TStrings): boolean; virtual;
@@ -56,6 +57,7 @@ begin
   e_exemode := EM_NORMAL;
   b_aborted := false;
   t_pars := TStringList.Create();
+  ch_separator := ' '; //default separator
 end;
 
 destructor TFunctionBase.Destroy;
@@ -76,18 +78,21 @@ end;
 
 function TFunctionBase.LoadParameter(const par: string): boolean;
 begin
-  //AddMessage('"LoadParameter" is not specified and its basic function is called.');
-  t_pars.Clear();
-  result := (ExtractStrings([' '], [' ', #9], PChar(par), t_pars) > 0);
+  ExtractStrings([ch_separator], [' ', #9], PChar(par), t_pars);
+  result := LoadParameters(t_pars);
 end;
 
 function TFunctionBase.LoadParameters(const pars: TStrings): boolean;
 var i: integer;
 begin
-  //AddMessage('"LoadParameter" is not specified and its basic function is called.');
-  t_pars.Clear();
-  for i := 0 to pars.Count - 1 do t_pars.Insert(i, pars.Strings[i]);
-  result := true;
+  result := false;
+  //todo: check if all parmeters are valid
+  //result := true; //set return value is true if no parameter is required
+  for i := 0 to pars.Count - 1 do begin
+    //todo: check if the parameter is valid
+    //result := valid(pars[i]);
+    if (not result) then break;
+  end;
 end;
 
 function TFunctionBase.DoTask(): boolean;
