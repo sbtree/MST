@@ -142,11 +142,9 @@ type
   TStepContainer = class
   class function CalcCaseNr(const stepnr: string; var casenr: integer): boolean;
   protected
-    t_steps:      TObjectList;  //to save test steps, a list of TTestStep
-    t_stepnrs:    TStrings;     //auxiliary variable, to save the step number matching index of t_steps;
+    t_steps:      TStrings;     //a list of test steps (step number and object pairs)
     i_curstep:    integer;      //index of step, to indicate current step, which is now selected, -1 means no selection
-    t_cases:      TObjectList;  //to save test cases, a list of TTestCase
-    t_casenrs:    TStrings;     //auxiliary variable, to save the number of test case for easily searching, mathching index of t_cases
+    t_cases:      TStrings;     //a list of test cases (case number and object pairs)
     i_lastcnr:    integer;      //to save last case number during reading test script
     t_sequence:   TTestSequence;//to save current test sequence, in which a case list and a step list are inclusive
 
@@ -155,6 +153,7 @@ type
 
   protected
     procedure UpdateCase(const stepnr, title: string);
+    procedure UpdateLoop(const stepnr, funcname: string);
     function  GetSteps(): integer;
     function  GetCases(): integer;
     function  GetPrevStep(): TTestStep;
@@ -182,6 +181,8 @@ type
     function  CaseByNr(const nr: integer): TTestCase; overload;
     function  IndexOfStep(const stepnr: string): integer;
     function  IndexOfCase(const casenr: string): integer;
+    function  StepNrOf(const idx: integer): string;
+    function  CaseNrOf(const idx: integer): string;
     function  CaseIndexSet(const casenrs: string): TIndexSet;
     
     procedure UpdateSequence(const incl: string; const excl: string = '');
@@ -193,18 +194,17 @@ type
   //a class representing a step group, which is composed of test steps in the container
   TStepGroup = class
   protected
-    a_steps:    array of integer; //to save indexes of test steps, which are contained in t_container for this group
-    i_curstepidx: integer;  //indicate current element of a_steps, in which the index of test step is saved
-    t_stepnrs:  TStrings; //to save numbers of test steps in this step group
-    t_container:TStepContainer;   //reference to step container
+    t_stepnrs:    TStrings;       //a list of test steps (step number and reference pairs)
+    i_curstepidx: integer;        //indicate current index of t_stepnrs
+    t_container:  TStepContainer; //reference to step container
 
   protected
     function  GetSteps(): integer;
-    function  FirstIndexOfStep(): integer;
-    function  PrevIndexOfStep(): integer;
-    function  CurIndexOfStep(): integer; virtual;
-    function  NextIndexOfStep(): integer;
-    function  LastIndexOfStep(): integer;
+    function  GetFirstTestStep(): TTestStep;
+    function  GetPrevTestStep(): TTestStep;
+    function  GetCurTestStep(): TTestStep; virtual;
+    function  GetNextTestStep(): TTestStep;
+    function  GetLastTestStep(): TTestStep;
     procedure Clear(); virtual;
 
   public
@@ -213,11 +213,11 @@ type
 
     property  Count: integer read GetSteps;
     property  StepNrList: TStrings read t_stepnrs;
-    property  FirstStepIndex: integer read FirstIndexOfStep;
-    property  PreviousStepIndex: integer read PrevIndexOfStep;
-    property  CurrentStepIndex: integer read CurIndexOfStep;
-    property  NextStepIndex: integer read NextIndexOfStep;
-    property  LastStepIndex: integer read LastIndexOfStep;
+    property  FirstTestStep: TTestStep read GetFirstTestStep;
+    property  PreviousTestStep: TTestStep read GetPrevTestStep;
+    property  CurrentTestStep: TTestStep read GetCurTestStep;
+    property  NextTestStep: TTestStep read GetNextTestStep;
+    property  LastTestStep: integer read GetLastTestStep;
 
     function  MoveStepIndex(const rela: integer): integer;
     procedure UpdateCurStepIndex();
@@ -233,17 +233,17 @@ type
     i_casenr:   integer; //indicates test case, in which the loop exists
     b_closed:  boolean;  //indicates if the loop is closed
   protected
-    function GetIndexBegin(): integer;
-    function GetIndexEnd(): integer;
-    procedure SetIndexBegin(const idx: integer);
-    procedure SetIndexEnd(const idx: integer);
+    function GetBeginStep(): TTestStep;
+    function GetEndStep(): TTestStep;
+    procedure SetBeginStep(const step: TTestStep);
+    procedure SetEndStep(const step: TTestStep);
 
   public
     constructor Create(const container: TStepContainer);
     destructor Destroy(); override;
 
-    property StepIndexBegin: integer read GetIndexBegin write SetIndexBegin;
-    property StepIndexEnd: integer read GetIndexEnd write SetIndexEnd;
+    property BeginStep: TTestStep read GetBeginStep write SetBeginStep;
+    property EndStep: TTestStep read GetEndStep write SetEndStep;
     property LoopClosed : boolean read b_closed;
   end;
 
@@ -278,9 +278,9 @@ type
 
   protected
     function  GetCases(): integer;
-    procedure UpdateCase(const caseidx: byte);
+    procedure UpdateCaseSteps(const caseidx: byte);
     procedure Clear(); override;
-    function  CurIndexOfStep(): integer; override;
+    function  CurTestStep(): integer; override;
     function  FirstIndexOfCase(): integer;
     function  PrevIndexOfCase(): integer;
     function  CurIndexOfCase(): integer;
@@ -551,21 +551,25 @@ begin
     i_curstepidx := t_steps.Count - 1;
     if (i_casenr = i_lastcnr) then begin //update indexto of last case if the case number is same as last one
       if (t_cases.Count > 0) then begin
-        t_tcase := TTestCase(t_cases.Last);
+        t_tcase := TTestCase(t_cases.Objects[t_cases.Count - 1]);
         if assigned(t_tcase) then t_tcase.IndexTo := i_curstepidx;
       end;
     end else begin  //create a new case if the case number differs from last one
       t_tcase := TTestCase.Create(self);
-      if (t_cases.Add(t_tcase) >= 0) then begin
+      if (t_cases.AddObject(IntToStr(i_casenr), t_tcase) >= 0) then begin
         t_tcase.CaseNr := i_casenr;
         t_tcase.CaseTitle := title;
         t_tcase.IndexFrom := i_curstepidx;
         t_tcase.IndexTo := i_curstepidx;
-        t_casenrs.Add(IntToStr(i_casenr));
       end else FreeAndNil(t_tcase);
       i_lastcnr := i_casenr;
     end;
   end;
+end;
+
+procedure TStepContainer.UpdateLoop(const stepnr, funcname: string);
+begin
+  //todo:
 end;
 
 // =============================================================================
@@ -588,8 +592,8 @@ var i, i_maxidx: integer; t_cstrs, t_cnrs: TStrings;
     i_cnr, i_cnr1, i_cnr2, i_idx: integer; s_cnr: string;
 begin
   result := [];
-  if ((t_casenrs.Count - 1) > CINT_CASES_MAX) then i_maxidx := CINT_CASES_MAX
-  else i_maxidx := t_casenrs.Count - 1;
+  if ((t_cases.Count - 1) > CINT_CASES_MAX) then i_maxidx := CINT_CASES_MAX
+  else i_maxidx := t_cases.Count - 1;
 
   if SameText(casenrs, 'all') then begin
     for i := 0 to i_maxidx do Include(result, i);
@@ -604,14 +608,14 @@ begin
             if (TryStrToInt(t_cnrs[0], i_cnr1) and TryStrToInt(t_cnrs[t_cnrs.Count-1], i_cnr2)) then begin
               for i_cnr := i_cnr1 to i_cnr2 do begin
                 s_cnr := IntToStr(i_cnr);
-                i_idx := t_casenrs.IndexOf(s_cnr);
+                i_idx := t_cases.IndexOf(s_cnr);
                 if ((i_idx >= 0) and (i_idx <= i_maxidx)) then Include(result, i_idx);
               end;
             end;
           end else begin
             if TryStrToInt(t_cstrs[i], i_cnr) then begin
               s_cnr := IntToStr(i_cnr);
-              i_idx := t_casenrs.IndexOf(s_cnr);
+              i_idx := t_cases.IndexOf(s_cnr);
               if ((i_idx >= 0) and (i_idx <= i_maxidx)) then Include(result, i_idx);
             end;
           end;
@@ -643,7 +647,7 @@ function  TStepContainer.GetCurStep(): TTestStep;
 begin
   result := Nil;
   if ((i_curstep < 0) or (i_curstep >= t_steps.Count)) then i_curstep := -1
-  else result := TTestStep(t_steps.Items[i_curstep])
+  else result := TTestStep(t_steps.Objects[i_curstep])
 end;
 
 function  TStepContainer.GetNextStep(): TTestStep;
@@ -667,11 +671,9 @@ constructor TStepContainer.Create();
 begin
   inherited Create();
   i_curstep := -1;
-  t_steps := TObjectList.Create();
-  t_stepnrs := TStringList.Create();
-  t_cases := TObjectList.Create();
-  t_casenrs := TStringList.Create();
-  t_casenrs.Delimiter := Char(';');
+  t_steps := TStringList.Create();
+  t_cases := TStringList.Create();
+  t_cases.Delimiter := Char(';');
   t_sequence := TTestSequence.Create(self);
 end;
 
@@ -679,9 +681,7 @@ destructor TStepContainer.Destroy();
 begin
   Clear();
   t_steps.Free();
-  t_stepnrs.Free();
   t_cases.Free();
-  t_casenrs.Free();
   t_sequence.Free();
   inherited Destroy();
 end;
@@ -691,14 +691,11 @@ var t_step: TTestStep;
 begin
   t_step := TTestStep.Create();
   t_step.InputFields(fields);
-  if (t_steps.Add(t_step) >= 0) then begin
-    result := true;
-    t_stepnrs.Add(fields[SF_NR]);  //save step number into the list for searching
+  result := (t_steps.AddObject(fields[SF_NR], t_step) >= 0);
+  if result then begin
     UpdateCase(fields[SF_NR], fields[SF_T]);
-  end else begin
-    result := false;
-    FreeAndNil(t_step);
-  end;
+    UpdateLoop(fields[SF_NR], fields[SF_FCT]);
+  end else  FreeAndNil(t_step);
 end;
 
 function  TStepContainer.StepByIndex(const idx: integer): TTestStep;
@@ -706,14 +703,14 @@ begin
   result := nil;
   if ((idx >= 0) and (idx < t_steps.Count)) then begin
     i_curstep := idx;
-    result := TTestStep(t_steps.Items[i_curstep]);
+    result := TTestStep(t_steps.Objects[i_curstep]);
   end;
 end;
 
 function  TStepContainer.StepByNr(const nr: string): TTestStep;
 var i_idx: integer;
 begin
-  i_idx := t_stepnrs.IndexOf(nr);
+  i_idx := t_steps.IndexOf(nr);
   result := StepByIndex(i_idx);
 end;
 
@@ -721,7 +718,7 @@ function  TStepContainer.CaseByIndex(const caseidx: integer): TTestCase;
 begin
   result := nil;
   if ((caseidx >= 0) and (caseidx < t_cases.Count)) then begin
-    result := TTestCase(t_cases.Items[caseidx]);
+    result := TTestCase(t_cases.Objects[caseidx]);
     if assigned(result) then StepByIndex(result.IndexFrom);
   end;
 end;
@@ -729,7 +726,7 @@ end;
 function  TStepContainer.CaseByNr(const casenr: string): TTestCase;
 var i_caseidx, i_casenr: integer;
 begin
-  if TryStrToInt(casenr, i_casenr) then  i_caseidx := t_casenrs.IndexOf(IntToStr(i_casenr))
+  if TryStrToInt(casenr, i_casenr) then  i_caseidx := t_cases.IndexOf(IntToStr(i_casenr))
   else i_caseidx := -1;
   result := CaseByIndex(i_caseidx);
 end;
@@ -743,13 +740,26 @@ end;
 
 function  TStepContainer.IndexOfStep(const stepnr: string): integer;
 begin
-  result := t_stepnrs.IndexOf(stepnr);
+  result := t_steps.IndexOf(stepnr);
 end;
 
 function  TStepContainer.IndexOfCase(const casenr: string): integer;
 begin
-  result := t_casenrs.IndexOf(casenr);
+  result := t_cases.IndexOf(casenr);
 end;
+
+function  TStepContainer.StepNrOf(const idx: integer): string;
+begin
+  if ((idx >= 0) and (idx < t_steps.Count)) then result := t_steps.Strings[idx]
+  else result := '';
+end;
+
+function  TStepContainer.CaseNrOf(const idx: integer): string;
+begin
+  if ((idx >= 0) and (idx < t_cases.Count)) then result := t_cases.Strings[idx]
+  else result := '';
+end;
+
 
 // =============================================================================
 //    Description  : analyze the given strings incl and excl and update t_sequence
@@ -777,13 +787,16 @@ begin
 end;
 
 procedure TStepContainer.Clear();
+var i: integer;
 begin
   i_curstep := -1;
   i_lastcnr := -1;
+  for i := 0 to t_steps.Count - 1 do
+    if assigned(t_steps.Objects[i]) then t_steps.Objects[i].Free();
   t_steps.Clear();
-  t_stepnrs.Clear();
+  for i := 0 to t_steps.Count - 1 do
+    if assigned(t_cases.Objects[i]) then t_cases.Objects[i].Free();
   t_cases.Clear();
-  t_casenrs.Clear();
   t_sequence.Clear();
   s_inclusive := '';
   s_exclusive := ''
@@ -802,7 +815,7 @@ var i: integer; s_line: string; j:EStepField; t_stepvals: TStringList; t_step: T
 begin
   t_stepvals := TStringList.Create();
   for i := 0 to t_steps.Count - 1 do begin
-    t_step := TTestStep(t_steps.Items[i]);
+    t_step := TTestStep(t_steps.Objects[i]);
     s_line := t_step.GetFieldValue(SF_NR);
     for j := SF_T to High(EStepField) do s_line := s_line + ';' + #9 + t_step.GetFieldValue(j);
     t_stepvals.Add(s_line);
@@ -819,51 +832,48 @@ begin
     for i := 0 to source.CountStep - 1 do begin
       t_step := TTestStep.Create();
       t_step.Assign(source.StepByIndex(i));
-      t_steps.Add(t_step);
-      t_stepnrs.Add(t_step.GetFieldValue(SF_NR));
+      t_steps.AddObject(t_step.GetFieldValue(SF_NR), t_step);
     end;
   end;
 end;
 
 function TStepGroup.GetSteps(): integer;
 begin
-  result := length(a_steps);
+  result := t_stepnrs.Count;
 end;
 
-function  TStepGroup.FirstIndexOfStep(): integer;
+function  TStepGroup.GetFirstTestStep(): TTestStep;
 begin
   i_curstepidx := 0;
-  result := CurIndexOfStep();
+  result := GetCurTestStep();
 end;
 
-function  TStepGroup.PrevIndexOfStep(): integer;
+function  TStepGroup.GetPrevTestStep(): TTestStep;
 begin
   dec(i_curstepidx);
-  result := CurIndexOfStep()
+  result := GetCurTestStep()
 end;
 
-function  TStepGroup.CurIndexOfStep(): integer;
+function  TStepGroup.GetCurTestStep(): TTestStep;
 begin
-  result := -1;
-  if ((i_curstepidx < 0) or (i_curstepidx >= length(a_steps))) then i_curstepidx := -1
-  else result := a_steps[i_curstepidx];
+  if ((i_curstepidx >= 0) and (i_curstepidx < t_stepnrs.Count)) then result := TTestStep(t_stepnrs.Objects(i_curstepidx))
+  else result := nil;
 end;
 
-function  TStepGroup.NextIndexOfStep(): integer;
+function  TStepGroup.GetNextTestStep(): TTestStep;
 begin
   inc(i_curstepidx);
-  result := CurIndexOfStep()
+  result := GetCurTestStep()
 end;
 
-function  TStepGroup.LastIndexOfStep(): integer;
+function  TStepGroup.GetLastTestStep(): TTestStep;
 begin
-  i_curstepidx := length(a_steps) - 1;
-  result := CurIndexOfStep();
+  i_curstepidx := t_stepnrs.Count - 1;
+  result := GetCurTestStep();
 end;
 
 procedure TStepGroup.Clear();
 begin
-  SetLength(a_steps, 0);
   t_stepnrs.Clear();
 end;
 
@@ -885,7 +895,8 @@ end;
 function  TStepGroup.MoveStepIndex(const rela: integer): integer;
 begin
   i_curstepidx := i_curstepidx + rela;
-  result := CurIndexOfStep();
+  if ((i_curstepidx < 0) or (i_curstepidx >= t_stepnrs.Count)) then i_curstepidx := -1;
+  result := i_curstepidx;
 end;
 
 procedure TStepGroup.UpdateCurStepIndex();
@@ -900,54 +911,44 @@ begin
   end;
 end;
 
-function TStepLoop.GetIndexBegin(): integer;
+function TStepLoop.GetBeginStep(): TTestStep;
 begin
-  if (Length(a_steps) > 0) then result := a_steps[0]
-  else result := -1;
+  if (t_stepnrs.Count > 0) then result := TTestStep(t_stepnrs.Objects[0])
+  else result := nil;
 end;
 
-function TStepLoop.GetIndexEnd(): integer;
+function TStepLoop.GetEndStep(): integer;
 var i_len: integer;
 begin
-  i_len := Length(a_steps);
-  if ((i_len > 0) and b_closed) then result := a_steps[i_len - 1]
-  else result := -1;
+  i_len := t_stepnrs.Count;
+  if ((i_len > 0) and b_closed) then result := TTestStep(t_stepnrs.Objects[i_len - 1])
+  else result := nil;
 end;
 
-procedure TStepLoop.SetIndexBegin(const idx: integer);
-var t_step: TTestStep; s_stepnr: string;
+procedure TStepLoop.SetBeginStep(const step: TTestStep);
+var s_stepnr: string;
 begin
-  if assigned(t_container) then begin
-    t_step := t_container.StepByIndex(idx);
-    if assigned(t_step) then begin
-      Clear();
-      s_stepnr := t_step.GetFieldValue(SF_NR);
-      SetLength(a_steps, 1);
-      a_steps[0] := idx;
-      t_stepnrs.Add(s_stepnr);
-      TStepContainer.CalcCaseNr(s_stepnr, i_casenr);
-    end;
+  if assigned(step) then begin
+    Clear();
+    s_stepnr := step.GetFieldValue(SF_NR);
+    t_stepnrs.AddObject(s_stepnr, step);
+    TStepContainer.CalcCaseNr(s_stepnr, i_casenr);
   end;
 end;
 
-procedure TStepLoop.SetIndexEnd(const idx: integer);
-var i, i_idxlast, i_cntnew, i_cntold, i_cnr: integer; t_step: TTestStep; s_stepnr: string;
+procedure TStepLoop.SetEndStep(const step: TTestStep);
+var i_cnr: integer; t_step: TTestStep;
 begin
-  i_cntold := Length(a_steps);
-  if (i_cntold > 0)then begin
-    i_idxlast := GetIndexBegin();
-    i_cntnew := i_cntold + (idx - i_idxlast);
-    t_step := t_container.StepByIndex(idx);
-    if ((i_cntnew > 1) and assigned(t_container) and assigned(t_step)) then begin
-      SetLength(a_steps, i_cntnew);
+  t_step := BeginStep;
+  if (assigned(t_step) and assigned(step) and assigned(t_container) and (t_step <> step)) then begin
+    t_step := t_container.StepByNr(t_step.GetFieldValue(SF_NR));
+    while assigned(t_step) and (t_step <> step) do begin
+      t_step := t_container.NextStep;
+      if assigned(t_step) then t_stepnrs.AddObject(t_step.GetFieldValue(SF_NR), t_step);
+    end;
+    if (t_step = step) then begin
       if TStepContainer.CalcCaseNr(t_step.GetFieldValue(SF_NR), i_cnr) then
         b_closed := ((i_cnr = i_casenr) and (i_cnr >= 0));
-      for i := i_cntold to i_cntnew - 1 do begin
-        Inc(i_idxlast);
-        a_steps[i] := i_idxlast;
-        t_step := t_container.StepByIndex(a_steps[i]);
-        if assigned(t_step) then t_stepnrs.Add(t_step.GetFieldValue(SF_NR));
-      end;
     end;
   end;
 end;
@@ -967,15 +968,15 @@ end;
 
 function TTestCase.GetIndexFrom(): integer;
 begin
-  if (Length(a_steps) > 0) then result := a_steps[0]
+  if (assigned(t_container) and (t_stepnrs.Count > 0)) then result := t_container.IndexOfStep(t_stepnrs.Strings[0])
   else result := -1;
 end;
 
 function TTestCase.GetIndexTo(): integer;
 var i_len: integer;
 begin
-  i_len := Length(a_steps);
-  if (i_len > 0) then result := a_steps[i_len - 1]
+  i_len := t_stepnrs.Count;
+  if (assigned(t_container) and (i_len > 0)) then result := t_container.IndexOfStep(t_stepnrs.Strings[i_len - 1])
   else result := -1;
 end;
 
@@ -986,17 +987,27 @@ begin
     t_step := t_container.StepByIndex(idx);
     if assigned(t_step) then begin
       Clear();
-      SetLength(a_steps, 1);
-      a_steps[0] := idx;
-      t_stepnrs.Add(t_step.GetFieldValue(SF_NR));
+      t_stepnrs.AddObject(t_step.GetFieldValue(SF_NR), t_step);
     end;
   end;
 end;
 
 procedure TTestCase.SetIndexTo(const idx: integer);
-var i, i_idxlast, i_cntnew, i_cntold: integer; t_step: TTestStep;
+var i, i_idx, i_idxfirst, i_idxlast: integer; t_step: TTestStep;
 begin
-  i_cntold := Length(a_steps); i_idxlast := GetIndexTo();
+  i_idxlast := GetIndexTo(); i_idxfirst := GetIndexFrom();
+  if ((t_stepnrs.Count > 0) and assigned(t_container) and (idx > i_idxfirst)) then begin
+    if (idx > i_idxlast) then begin
+      for i := i_idxlast + 1 to idx do begin
+        t_step := t_container.StepByIndex(i);
+        if assigned(t_step) then t_stepnrs.AddObject(t_step.GetFieldValue(SF_NR), t_step);
+      end;
+    end else if (idx < i_idxlast) then begin
+
+    end;
+
+  end;
+  i_cntold := Length(a_steps); 
   if ((idx <> i_idxlast) and (i_idxlast >= 0) )then begin
     i_cntnew := i_cntold + (idx - i_idxlast);
     if ((i_cntnew > 0) and assigned(t_container)) then begin
@@ -1028,7 +1039,7 @@ begin
   result := length(a_cases);
 end;
 
-procedure TTestSequence.UpdateCase(const caseidx: byte);
+procedure TTestSequence.UpdateCaseSteps(const caseidx: byte);
 var i, i_curcase, i_steps, i_curstep: integer; 
     t_case: TTestCase; t_step: TTestStep;
 begin
@@ -1079,7 +1090,7 @@ begin
     Clear();
     for i := 0 to i_maxidx do begin
       i_idx := byte(i);
-      if (i_idx in csset) then UpdateCase(i_idx);
+      if (i_idx in csset) then UpdateCaseSteps(i_idx);
     end;
   end;
 end;
@@ -1091,10 +1102,10 @@ begin
   t_casenrs.Clear();
 end;
 
-function  TTestSequence.CurIndexOfStep(): integer;
+function  TTestSequence.CurTestStep(): integer;
 var t_step: TTestStep; i_casenr: integer;
 begin
-  result := inherited CurIndexOfStep();
+  result := inherited GetCurTestStep();
   if assigned(t_container) then begin
      t_step := t_container.StepByIndex(result);
      if assigned(t_step) then begin
