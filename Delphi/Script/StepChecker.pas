@@ -1,7 +1,7 @@
 unit StepChecker;
 
 interface
-uses Classes, FuncBase, StepDescriptor;
+uses Classes, FuncBase, StepData, StepGroup;
 
 type
 //----------------------------------------------------------------------------//

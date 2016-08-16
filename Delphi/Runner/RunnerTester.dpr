@@ -10,7 +10,7 @@ uses
   FuncBase in '..\Function\FuncBase.pas',
   ScriptReader in '..\Script\ScriptReader.pas',
   StepChecker in '..\Script\StepChecker.pas',
-  StepDescriptor in '..\CoreData\StepDescriptor.pas',
+  StepGroup in '..\CoreData\StepGroup.pas',
   StringPairs in '..\General\StringPairs.pas',
   TestDebugger in 'TestDebugger.pas',
   PseudoActor in 'PseudoActor.pas',

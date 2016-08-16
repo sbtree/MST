@@ -32,7 +32,7 @@
     <DelphiCompile Include="RunnerTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
-    <DCCReference Include="..\CoreData\StepDescriptor.pas" />
+    <DCCReference Include="..\CoreData\StepGroup.pas" />
     <DCCReference Include="..\Function\FuncBase.pas" />
     <DCCReference Include="..\Function\FuncCaller.pas" />
     <DCCReference Include="..\General\GenType.pas" />
