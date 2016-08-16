@@ -349,7 +349,7 @@ function  TScriptReader.CheckTestStep(): boolean;
 begin
   result := false;
   if assigned(t_container) then begin
-    result := t_container.AddStep(a_fieldvals);
+    result := t_container.LoadStep(a_fieldvals);
     if result then begin
       t_sentry.i_row := i_rowindex; //update row and column for each idle state
       t_sentry.i_col := i_colindex;
@@ -703,8 +703,8 @@ begin
     t_variables.Clear();
   end;
   if assigned(t_container) then begin
-    i_steps := t_container.CountStep;
-    i_cases := t_container.CountCase;
+    i_steps := t_container.StepCount;
+    i_cases := t_container.CaseGroup.CaseCount;
     t_container.Clear();
   end;
   if b_info then AddMessage(format('All existing variables (%d), test steps (%d) in %d case(s) are unloaded.', [i_vars, i_steps, i_cases]));
@@ -772,8 +772,8 @@ begin
       if assigned(t_variables) then i_vars := t_variables.Count
       else i_vars := 0;
       if assigned(t_container) then begin
-        i_steps := t_container.CountStep;
-        i_cases := t_container.CountCase;
+        i_steps := t_container.StepCount;
+        i_cases := t_container.CaseGroup.CaseCount;
       end else begin
         i_steps := 0;
         i_cases := 0;

@@ -75,9 +75,9 @@ end;
 procedure TfrmScriptTester.btnCurrentCaseClick(Sender: TObject);
 var t_tcase: TTestCase;
 begin
-  t_tcase := t_container.CurrentCase;
+  t_tcase := t_container.CaseGroup.CurrentCase;
   if assigned(t_tcase) then
-    t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, index from=%d, index to=%d', [t_tcase.CaseNr, t_tcase.CaseTitle, t_tcase.IndexFrom, t_tcase.IndexTo]))
+    t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, count=%d, step from=%s, to=%s', [t_tcase.CaseNr, t_tcase.CaseTitle, t_tcase.StepCount, t_tcase.StepNrOf(0), t_tcase.StepNrOf(t_tcase.StepCount - 1)]))
   else
     t_messenger.AddMessage(format('Test Case (Nr=%s) is NOT found.', [trim(txtCase.Text)]));
 end;
@@ -85,10 +85,10 @@ end;
 procedure TfrmScriptTester.btnGetCaseClick(Sender: TObject);
 var t_tcase: TTestCase;
 begin
-  if (t_container.CountCase > 0) then begin
-    t_tcase := t_container.CaseByNr(trim(txtCase.Text));
+  if (t_container.CaseGroup.CaseCount > 0) then begin
+    t_tcase := t_container.CaseGroup.CaseByNr(trim(txtCase.Text));
     if assigned(t_tcase) then
-      t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, index from=%d, index to=%d', [t_tcase.CaseNr, t_tcase.CaseTitle, t_tcase.IndexFrom, t_tcase.IndexTo]))
+      t_messenger.AddMessage(format('Test Case: Nr=%d, T=%s, count=%d, step from=%s, to=%s', [t_tcase.CaseNr, t_tcase.CaseTitle, t_tcase.StepCount, t_tcase.StepNrOf(0), t_tcase.StepNrOf(t_tcase.StepCount - 1)]))
     else
       t_messenger.AddMessage(format('Test Case (Nr=%s) is NOT found.', [trim(txtCase.Text)]));
   end else t_messenger.AddMessage('No case is loaded', '', ML_WARNING);
@@ -111,11 +111,11 @@ end;
 procedure TfrmScriptTester.btnGetStepByIndexClick(Sender: TObject);
 var i_idx: integer;
 begin
-  if (t_container.CountStep > 0) then begin
+  if (t_container.StepCount > 0) then begin
     i_idx := StrToInt(trim(txtStepIndex.Text));
     t_tstep := t_container.StepByIndex(i_idx);
     if assigned(t_tstep) then
-      t_messenger.AddMessage(format('Current step (Index=%d): Nr=%s', [i_idx, t_tstep.GetFieldValue(SF_NR)]))
+      t_messenger.AddMessage(format('Current step (Index=%d): Nr=%s', [i_idx,t_container.StepNrOf(i_idx)]))
     else
       t_messenger.AddMessage(format('Index=%d is NOT found.', [i_idx]));
   end else
@@ -125,7 +125,7 @@ end;
 procedure TfrmScriptTester.btnGetStepByNrClick(Sender: TObject);
 var s_nr: string;
 begin
-  if (t_container.CountStep > 0) then begin
+  if (t_container.StepCount > 0) then begin
     s_nr := trim(txtStepNr.Text);
     t_tstep := t_container.StepByNr(s_nr);
     if assigned(t_tstep) then
@@ -179,20 +179,20 @@ begin
 end;
 
 procedure TfrmScriptTester.btnSequenceCasesClick(Sender: TObject);
-var s_casenrs: string;
+var s_casenrs: string; t_seq: TTestSequence;
 begin
-  t_container.UpdateSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
-  s_casenrs := t_container.TestSequence.CaseNrList.DelimitedText;
+  t_seq := t_container.GetTestSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
+  s_casenrs := t_seq.CaseGroup.CaseNumbers;
 
   if s_casenrs <> '' then t_messenger.AddMessage('Sequence Cases: ' + s_casenrs)
   else t_messenger.AddMessage('Test Sequence: no case')
 end;
 
 procedure TfrmScriptTester.btnSequenceStepsClick(Sender: TObject);
-var s_stepnrs: string;
+var s_stepnrs: string;t_seq: TTestSequence;
 begin
-  t_container.UpdateSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
-  s_stepnrs := t_container.TestSequence.StepNrList.DelimitedText;
+  t_seq := t_container.GetTestSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
+  s_stepnrs := t_seq.StepNumbers;
 
   if s_stepnrs <> '' then t_messenger.AddMessage('Sequence Steps: ' + s_stepnrs)
   else t_messenger.AddMessage('Test Sequence: no step')
