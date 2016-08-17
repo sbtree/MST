@@ -250,6 +250,7 @@ begin
     t_step := StepByIndex(idx);
     if (assigned(t_step) and b_freestep) then t_step.Free();
     t_steps.Delete(idx);
+    if (i_curstep > t_steps.Count) then i_curstep := t_steps.Count;
   end;
 end;
 
@@ -295,8 +296,7 @@ end;
 
 function  TStepGroup.GetCurStep(): TTestStep;
 begin
-  if ((i_curstep >= 0) and (i_curstep < t_steps.Count)) then result := TTestStep(t_steps.Objects[i_curstep])
-  else result := nil;
+  result := StepByIndex(i_curstep);
 end;
 
 function  TStepGroup.GetNextStep(): TTestStep;
@@ -333,10 +333,8 @@ end;
 
 function  TStepGroup.StepByIndex(const idx: integer): TTestStep;
 begin
-  if (idx < 0) then i_curstep := -1
-  else if (idx >= t_steps.Count) then i_curstep := t_steps.Count
-  else i_curstep := idx;
-  result := GetCurStep();
+  if ((idx >= 0) and (idx < t_steps.Count)) then result := TTestStep(t_steps.Objects[idx])
+  else result := nil;
 end;
 
 function  TStepGroup.StepByNr(const nr: string): TTestStep;
@@ -374,12 +372,12 @@ end;
 procedure TStepGroup.Clear();
 var i_idx: integer;
 begin
+  i_curstep := -1;
   i_idx := t_steps.Count - 1;
   while (i_idx >= 0) do begin
     RemoveStepByIndex(i_idx);
     i_idx := t_steps.Count - 1;
   end;
-  i_curstep := -1;
 end;
 
 constructor TTestCase.Create();
