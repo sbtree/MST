@@ -48,14 +48,16 @@ type
 
   //a class representing a step group, which is composed of test steps in the container
   TStepGroup = class(TInterfacedObject, IStepNavigator)
-  class function CalcCaseNr(const stepnr: string; var casenr: integer): boolean;
+  class function CalcMainNr(const stepnr: string; var casenr: integer): boolean;
   protected
     t_steps:    TStrings;       //a list of test steps (step number and object pairs)
     i_curstep:  integer;        //indicate current index of t_steps
+    b_freestep: boolean;        //indicates if free step object by removing
 
   protected
     function GetStepNumbers(): string;
-    procedure RemoveStepByIndex(const idx: integer); virtual;
+    procedure RemoveStepByIndex(const idx: integer);
+    procedure SetFreeByRemove(const bfree: boolean); virtual;
 
   public
     constructor Create();
@@ -79,6 +81,7 @@ type
     property StepCount: integer read GetSteps;
     property StepList: TStrings read t_steps;
     property StepNumbers: string read GetStepNumbers;
+    property FreeByRemove: boolean read b_freestep write SetFreeByRemove;
 
     //additional methods
     function AddStep(const step: TTestStep): boolean; virtual;
@@ -86,6 +89,7 @@ type
     function StepByNr(const nr: string): TTestStep;
     function IndexOfStep(const stepnr: string): integer;
     function StepNrOf(const idx: integer): string;
+    procedure UpdateStepIndex(const stepnr: string);
     procedure RemoveStep(const stepnr: string);
     procedure Clear(); virtual;
   end;
@@ -94,8 +98,8 @@ type
   //e.g. a test case, which have the same main number in field Nr (xxx of xxx.yyy)
   TTestCase = class(TStepGroup)
   protected
-    i_casenr:     integer; //number of the group, e.g. test case number
-    s_title:      string;  //title of this group
+    i_casenr: integer;    //number of the group, e.g. test case number
+    s_title:  string;     //title of this group
 
   public
     constructor Create();
@@ -104,27 +108,6 @@ type
     //properties
     property CaseNr: integer read i_casenr write i_casenr;
     property CaseTitle: string read s_title write s_title;
-
-    //reimplemented methods
-    function AddStep(const step: TTestStep): boolean; override;
-  end;
-
-  //a class, represents a loop in a test case, which starts with script function
-  //'LoopBegin' and ends with 'LoopEnd'
-  //warning: step loops may be nested, but they are only allowed  in one test case.
-  //         a loop is not allowed between two test cases, that means, the beginning
-  //         and its corresponding end muss exist in one case.
-  TStepLoop = class(TStepGroup)
-  protected
-    i_casenr: integer;  //indicates test case, in which the loop exists
-    b_closed: boolean;  //indicates if the loop is closed
-
-  public
-    constructor Create();
-    destructor Destroy(); override;
-
-    //properties
-    property LoopClosed : boolean read b_closed;
 
     //reimplemented methods
     function AddStep(const step: TTestStep): boolean; override;
@@ -188,100 +171,60 @@ type
     function CaseByNr(const nr: integer): TTestCase; overload;
     function IndexOfCase(const casenr: string): integer;
     function CaseNrOf(const idx: integer): string;
+    procedure UpdateCaseIndex(const casenr: integer);
     procedure RemoveCase(const casenr: string);
     procedure Clear(); virtual;
-  end;
-
-
-  ILoopNavigator = interface
-    procedure PushLoop(const tloop: TStepLoop);
-    function PopLoop(): TStepLoop;
-    function GetCurLoop(): TStepLoop;
-
-    property CurrentLoop: TStepLoop read GetCurLoop;
-  end;
-
-  TLoopStack = class(TStepGroup, ILoopNavigator)
-  protected
-    t_loops:    TStrings;     //a list of TStepLoop (step number of loop beginning and loop object pairs)
-    t_curloop:  TStepLoop;    //reference to current loop object
-    t_stack:    TObjectStack; //
-  public
-    constructor Create();
-    destructor Destroy(); override;
-
-    procedure PushLoop(const tloop: TStepLoop);
-    function PopLoop(): TStepLoop;
-    function GetCurLoop(): TStepLoop;
-
-    property CurrentLoop: TStepLoop read GetCurLoop;
   end;
 
   //a class representing a test sequence, which is composed of test groups in the container
   TTestSequence = class(TStepGroup)
   protected
     t_casegrp:  TCaseGroup; //an object of TCaseGroup, to save test cases
-    t_loopstack:TLoopStack; //an object of TLoopStack, to order step loops
     i_lastcnr:  integer;    //to save last case number during reading test script
 
   protected
+    procedure UpdateCaseIndex(const tstep: TTestStep);
     procedure UpdateCaseByStep(const tstep: TTestStep);
+    procedure UpdateStepsByCase(const tcase: TTestCase);
+    procedure SetFreeByRemove(const bfree: boolean); override;
 
   public
     constructor Create();
     destructor Destroy(); override;
 
+    //reimpleemnted methods (interface)
+    function GetCurStep(): TTestStep; override;
+
     //properties
-    property CurrentStep: TTestStep read GetCurStep;
-    property PreviousStep: TTestStep read GetPrevStep;
-    property NextStep: TTestStep read GetNextStep;
-    property FirstStep: TTestStep read GetFirstStep;
-    property LastStep: TTestStep read GetLastStep;
-    property StepCount: integer read GetSteps;
     property CaseGroup: TCaseGroup read t_casegrp;
 
     //additional methods
-    function AddStep(const tstep: TTestStep): boolean; override;
-    function AddCase(const tcase: TTestCase): boolean;
+    function UpdateCaseGroup(): integer; overload;
+    function UpdateCaseGroup(const caseset: TIndexSet; const tseq: TTestSequence): integer; overload;
     procedure Clear(); override;
   end;
 
   //a class composed of all test steps
   TStepContainer = class(TTestSequence)
   protected
-//    t_cases:      TStrings;     //a list of test cases (case number and object pairs)
-    t_sequence:   TTestSequence;//to save current test sequence, in which a case list and a step list are inclusive
-
-    s_inclusive:  string;       //to save expression of inclusive cases, see function TestSequence
-    s_exclusive:  string;       //to save expression of exclusive cases, see function TestSequence
-
-  protected
     function CaseIndexSet(const casenrs: string): TIndexSet;
-    procedure UpdateLoop(const stepnr, funcname: string);
-    procedure RemoveStepByIndex(const idx: integer); override;
-    procedure UpdateSequence(const incl: string; const excl: string = '');
 
   public
     constructor Create();
     destructor  Destroy(); override;
 
     function LoadStep(const fields: FieldStringArray): boolean;
-    function GetTestSequence(const incl: string; const excl: string = ''): TTestSequence;
-
-    procedure Clear(); override;
+    procedure UpdateSequence(var tseq: TTestSequence; const incl: string = 'all'; const excl: string = '');
     procedure SaveFile(const sfile: string);
-    procedure Assign(const source: TStepContainer);
   end;
 
 const
-  CINT_CASES_MAX : integer = 255;
-  CSTR_LOOP_BEGIN:  string = 'LoopBegin';
-  CSTR_LOOP_END:    string = 'LoopEnd';
+  CINT_CASE_INDEX_MAX : integer = 255;
 
 implementation
 uses SysUtils, StrUtils, Variants;
 
-class function TStepGroup.CalcCaseNr(const stepnr: string; var casenr: integer): boolean;
+class function TStepGroup.CalcMainNr(const stepnr: string; var casenr: integer): boolean;
 var t_nrs: TStrings;
 begin
   result := false;
@@ -301,14 +244,25 @@ begin
 end;
 
 procedure TStepGroup.RemoveStepByIndex(const idx: integer);
+var t_step: TTestStep;
 begin
-  if ((idx >= 0) and (idx < t_steps.Count)) then t_steps.Delete(idx);
+  if ((idx >= 0) and (idx < t_steps.Count)) then begin
+    t_step := StepByIndex(idx);
+    if (assigned(t_step) and b_freestep) then t_step.Free();
+    t_steps.Delete(idx);
+  end;
+end;
+
+procedure TStepGroup.SetFreeByRemove(const bfree: boolean);
+begin
+  b_freestep := bfree;
 end;
 
 constructor TStepGroup.Create();
 begin
   inherited Create();
   i_curstep := -1;
+  b_freestep := false;
   t_steps := TStringList.Create();
   t_steps.Delimiter := Char(';');
 end;
@@ -403,6 +357,13 @@ begin
   else result := '';
 end;
 
+procedure TStepGroup.UpdateStepIndex(const stepnr: string);
+var i_idx: integer;
+begin
+  i_idx := t_steps.IndexOf(stepnr);
+  if (i_idx >= 0) then i_curstep := i_idx;
+end;
+
 procedure TStepGroup.RemoveStep(const stepnr: string);
 var i_idx: integer;
 begin
@@ -439,7 +400,7 @@ begin
   result := false;
   if assigned(step) then begin
     s_stepnr := step.GetFieldValue(SF_NR);
-    if TStepContainer.CalcCaseNr(s_stepnr, i_cnr) then begin
+    if TStepGroup.CalcMainNr(s_stepnr, i_cnr) then begin
       //add first step in this test case
       if (t_steps.Count <= 0) then begin
         result := (t_steps.AddObject(s_stepnr, step) >= 0);
@@ -449,42 +410,6 @@ begin
         //only the step which has same case number is allowed
         if (i_cnr = i_casenr) then
           result := (t_steps.AddObject(step.GetFieldValue(SF_NR), step) >= 0);
-      end;
-    end;
-  end;
-end;
-
-constructor TStepLoop.Create();
-begin
-  inherited Create();
-  i_casenr := -1;
-  b_closed := false;
-end;
-
-destructor TStepLoop.Destroy();
-begin
-  //todo:
-  inherited Destroy();
-end;
-
-function TStepLoop.AddStep(const step: TTestStep): boolean;
-var s_func, s_stepnr: string; i_cnr: integer;
-begin
-  result := false;
-  if assigned(step) then begin
-    s_func := step.GetFieldValue(SF_FCT);
-    s_stepnr := step.GetFieldValue(SF_NR);
-    if TStepContainer.CalcCaseNr(s_stepnr, i_cnr) then begin
-      if (t_steps.Count <= 0) then begin    //add only test step with function LoopBegin
-        if SameText(s_func, CSTR_LOOP_BEGIN) then begin
-          result := (t_steps.AddObject(s_stepnr, step) >= 0);
-          i_casenr := i_cnr;
-        end;
-      end else if (not b_closed) then begin //add only test steps between function LoopBegin and LoopBegin
-        if (i_cnr = i_casenr) then begin //a loop is allowed in one test case
-          result := (t_steps.AddObject(step.GetFieldValue(SF_NR), step) >= 0);
-          b_closed := SameText(s_func, CSTR_LOOP_END); //set loop end
-        end;
       end;
     end;
   end;
@@ -612,6 +537,14 @@ begin
   else result := '';
 end;
 
+procedure TCaseGroup.UpdateCaseIndex(const casenr: integer);
+var s_cnr: string; i_idx: integer;
+begin
+  s_cnr := IntToStr(casenr);
+  i_idx := t_cases.IndexOf(s_cnr);
+  if (i_idx >= 0) then i_curcase := i_idx;
+end;
+
 procedure TCaseGroup.RemoveCase(const casenr: string);
 var i_idx: integer;
 begin
@@ -630,65 +563,45 @@ begin
   i_curcase := -1;
 end;
 
-constructor TLoopStack.Create();
-begin
-  //todo:
-end;
-
-destructor TLoopStack.Destroy();
-begin
-  //todo:
-end;
-
-procedure TLoopStack.PushLoop(const tloop: TStepLoop);
-begin
-  //todo:
-end;
-
-function TLoopStack.PopLoop(): TStepLoop;
-begin
-  result := nil;
-  //todo:
-end;
-
-function TLoopStack.GetCurLoop(): TStepLoop;
-begin
-  result := nil;
-  //todo
-end;
-
 constructor TTestSequence.Create();
 begin
   inherited Create();
   t_casegrp := TCaseGroup.Create();
-  t_loopstack := TLoopStack.Create();
 end;
 
 destructor TTestSequence.Destroy();
 begin
   Clear();
   t_casegrp.Free();
-  t_loopstack.Free();
   inherited Destroy();
 end;
 
-function TTestSequence.AddStep(const tstep: TTestStep): boolean;
+function TTestSequence.GetCurStep(): TTestStep;
 begin
-  result := inherited AddStep(tstep);
-  if result then UpdateCaseByStep(tstep);
+  result := inherited GetCurStep();
+  UpdateCaseIndex(result);
 end;
 
-function TTestSequence.AddCase(const tcase: TTestCase): boolean;
+function TTestSequence.UpdateCaseGroup(): integer;
 var i: integer;
 begin
-  result := false;
-  if assigned(tcase) then begin
-    result := t_casegrp.AddCase(tcase);
-    if result then begin
-      for i := 0 to tcase.StepCount - 1 do
-        inherited AddStep(tcase.StepByIndex(i));
-    end;
+  t_casegrp.Clear();
+  for i := 0 to StepCount - 1 do
+    UpdateCaseByStep(StepByIndex(i));
+  result := t_casegrp.CaseCount;
+end;
+
+function TTestSequence.UpdateCaseGroup(const caseset: TIndexSet; const tseq: TTestSequence): integer;
+var i: integer;
+begin
+  if (assigned(tseq) and (tseq <> self)) then begin
+    Clear();
+    FreeByRemove := false;
+    if (tseq.CaseGroup.CaseCount <= 0) then tseq.UpdateCaseGroup();
+    for i := 0 to tseq.CaseGroup.CaseCount - 1 do
+      if (i in caseset) then UpdateStepsByCase(tseq.CaseGroup.CaseByIndex(i));
   end;
+  result := t_casegrp.CaseCount;
 end;
 
 procedure TTestSequence.Clear();
@@ -696,7 +609,15 @@ begin
   inherited Clear();
   t_casegrp.Clear();
   i_lastcnr := -1;
-  //todo: clear loop
+end;
+
+procedure TTestSequence.UpdateCaseIndex(const tstep: TTestStep);
+var s_stepnr: string; i_cnr: integer;
+begin
+  if assigned(tstep) then begin
+    s_stepnr := tstep.GetFieldValue(SF_NR);
+    if TStepGroup.CalcMainNr(s_stepnr, i_cnr) then t_casegrp.UpdateCaseIndex(i_cnr);
+  end;
 end;
 
 procedure  TTestSequence.UpdateCaseByStep(const tstep: TTestStep);
@@ -704,7 +625,7 @@ var t_tcase: TTestCase; i_casenr: integer; s_stepnr, s_casenr: string;
 begin
   if assigned(tstep) then begin
     s_stepnr := tstep.GetFieldValue(SF_NR);
-    if CalcCaseNr(s_stepnr, i_casenr) then begin
+    if TStepGroup.CalcMainNr(s_stepnr, i_casenr) then begin
       s_casenr := IntToStr(i_casenr);
       if (i_casenr = i_lastcnr) then begin //update indexto of last case if the case number is same as last one
         t_tcase := t_casegrp.CaseByNr(i_casenr);
@@ -720,6 +641,22 @@ begin
   end;
 end;
 
+procedure TTestSequence.UpdateStepsByCase(const tcase: TTestCase);
+var i: integer;
+begin
+  if assigned(tcase) then begin
+    if t_casegrp.AddCase(tcase) then begin
+      for i := 0 to tcase.StepCount - 1 do
+        AddStep(tcase.StepByIndex(i));
+    end;
+  end;
+end;
+
+procedure TTestSequence.SetFreeByRemove(const bfree: boolean);
+begin
+  inherited SetFreeByRemove(bfree);
+  t_casegrp.FreeByRemove := bfree;
+end;
 // =============================================================================
 //    Description  : analyze the given string casenrs and return back a list of
 //                   valid test case index in t_casenrs.
@@ -740,7 +677,7 @@ var i, i_maxidx: integer; t_cstrs, t_cnrs: TStrings;
     i_cnr, i_cnr1, i_cnr2, i_idx: integer; s_cnr: string;
 begin
   result := [];
-  if ((t_casegrp.CaseCount - 1) > CINT_CASES_MAX) then i_maxidx := CINT_CASES_MAX
+  if ((t_casegrp.CaseCount - 1) > CINT_CASE_INDEX_MAX) then i_maxidx := CINT_CASE_INDEX_MAX
   else i_maxidx := t_casegrp.CaseCount - 1;
 
   if SameText(casenrs, 'all') then begin
@@ -775,19 +712,25 @@ begin
   end;
 end;
 
-procedure TStepContainer.UpdateLoop(const stepnr, funcname: string);
+constructor TStepContainer.Create();
 begin
-  //todo:
+  inherited Create();
+  FreeByRemove := true;
 end;
 
-procedure TStepContainer.RemoveStepByIndex(const idx: integer);
+destructor TStepContainer.Destroy();
+begin
+  Clear();
+  inherited Destroy();
+end;
+
+function TStepContainer.LoadStep(const fields: FieldStringArray): boolean;
 var t_step: TTestStep;
 begin
-  if ((idx >= 0) and (idx < t_steps.Count)) then begin
-    t_step := TTestStep(t_steps.Objects[idx]);
-    if assigned(t_step) then t_step.Free();
-    t_steps.Delete(idx);
-  end;
+  t_step := TTestStep.Create();
+  t_step.LoadFields(fields);
+  result := AddStep(t_step);
+  if (not result) then FreeAndNil(t_step);
 end;
 
 // =============================================================================
@@ -803,66 +746,16 @@ end;
 //                   CINT_CASES_MAX (255), are not considered.
 //    History      :
 // =============================================================================
-procedure TStepContainer.UpdateSequence(const incl: string; const excl: string);
-var set_incl, set_excl, set_result: TIndexSet; i, i_maxidx: integer; t_case: TTestCase;
+procedure TStepContainer.UpdateSequence(var tseq: TTestSequence; const incl: string; const excl: string);
+var set_incl, set_excl, set_result: TIndexSet;
 begin
-  if ((incl <> s_inclusive) or (excl <> s_exclusive)) then begin
-    t_sequence.Clear();
-    set_incl := CaseIndexSet(incl); s_inclusive := incl;
-    set_excl := CaseIndexSet(excl); s_exclusive := excl;
+  if assigned(tseq) then begin
+    set_incl := CaseIndexSet(incl);
+    set_excl := CaseIndexSet(excl);
     set_result := set_incl - set_excl;
-
-    //only 256 test cases is allowed in moment
-    if ((t_casegrp.CaseCount - 1) > CINT_CASES_MAX) then i_maxidx := CINT_CASES_MAX
-    else i_maxidx := t_casegrp.CaseCount - 1;
-    for i := 0 to i_maxidx do begin
-      if (i in set_result) then begin
-        t_case := t_casegrp.CaseByIndex(i);
-        t_sequence.AddCase(t_case);
-      end;
-    end;
+    tseq.UpdateCaseGroup(set_result, self);
   end;
 end;
-
-constructor TStepContainer.Create();
-begin
-  inherited Create();
-  t_casegrp.FreeByRemove := true;
-  t_sequence := TTestSequence.Create();
-end;
-
-destructor TStepContainer.Destroy();
-begin
-  Clear();
-  t_sequence.Free();
-  inherited Destroy();
-end;
-
-function TStepContainer.LoadStep(const fields: FieldStringArray): boolean;
-var t_step: TTestStep;
-begin
-  t_step := TTestStep.Create();
-  t_step.LoadFields(fields);
-  result := AddStep(t_step);
-  if result then begin
-    UpdateLoop(fields[SF_NR], fields[SF_FCT]);
-  end else  FreeAndNil(t_step);
-end;
-
-function TStepContainer.GetTestSequence(const incl: string; const excl: string): TTestSequence;
-begin
-  UpdateSequence(incl, excl);
-  result := t_sequence;
-end;
-
-procedure TStepContainer.Clear();
-begin
-  inherited Clear();
-  t_sequence.Clear();
-  s_inclusive := '';
-  s_exclusive := ''
-end;
-
 
 // =============================================================================
 //    Description  : save field values of test steps into a file
@@ -883,19 +776,6 @@ begin
   end;
   t_stepvals.SaveToFile(sfile);
   t_stepvals.Free();
-end;
-
-procedure TStepContainer.Assign(const source: TStepContainer);
-var t_step: TTestStep; i: integer;
-begin
-  if assigned(source) then begin
-    Clear();
-    for i := 0 to source.StepCount - 1 do begin
-      t_step := TTestStep.Create();
-      t_step.Assign(source.StepByIndex(i));
-      self.AddStep(t_step);
-    end;
-  end;
 end;
 
 end.

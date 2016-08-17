@@ -769,6 +769,7 @@ begin
       result := ReadFromText(srclist[srclist.Count - 1], true);
     end;
     if result then begin
+      t_container.UpdateCaseGroup();
       if assigned(t_variables) then i_vars := t_variables.Count
       else i_vars := 0;
       if assigned(t_container) then begin
@@ -780,7 +781,7 @@ begin
       end;
       if (t_tsteps.Count > 0) then begin
         AddMessage(format('%d variable(s) and %d step(s) in %d case(s) are now loaded.', [i_vars, i_steps, i_cases]), ML_INFO);
-        if ((i_cases - 1) > CINT_CASES_MAX) then AddMessage(format('The count (%d) of test cases is over the limit (%d).', [i_cases, CINT_CASES_MAX + 1]), ML_WARNING);
+        if ((i_cases - 1) > CINT_CASE_INDEX_MAX) then AddMessage(format('The count (%d) of test cases is over the limit (%d).', [i_cases, CINT_CASE_INDEX_MAX + 1]), ML_WARNING);
       end else AddMessage('No valid line is loaded from the test script.', ML_WARNING);
     end;
   end else AddMessage('Empty script.', ML_WARNING);
@@ -799,7 +800,7 @@ end;
 function TScriptReader.ReadFromFile(const srcfile: string; const bforce: boolean; const bappend: boolean): boolean;
 var t_lines: TStringList; b_update, b_append: boolean; t_fdatetime: TDateTime; i_idx: integer;
 begin
-  result := FileExists(srcfile);
+  result := (FileExists(srcfile) and assigned(VarContainer) and assigned(StepContainer));
   if result then begin
     FileAge(srcfile, t_fdatetime);
     b_append := bappend;
@@ -821,7 +822,11 @@ begin
       end else AddMessage(format('Failed to read this file (%s)', [srcfile]), ML_ERROR);
       t_lines.Free();
     end else AddMessage('This file is already loaded.', ML_INFO);
-  end else AddMessage(format('This file is NOT found (%s).', [srcfile]), ML_WARNING);
+  end else begin
+    if (not assigned(VarContainer)) then AddMessage('The variable container is not given', ML_WARNING)
+    else if (not assigned(StepContainer)) then AddMessage('The step container is not given', ML_WARNING)
+    else AddMessage(format('This file is NOT found (%s).', [srcfile]), ML_WARNING);
+  end;
 end;
 
 // =============================================================================

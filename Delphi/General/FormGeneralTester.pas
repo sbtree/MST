@@ -424,7 +424,7 @@ procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
 var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TStringPairs;
     sNames, sValues, tComPorts: TStrings; v: variant; iInt64: int64; r: double;
 begin
-  QExp_TestCase();
+  //QExp_TestCase();
   v := 1;
   v := '12.5';
   if (VarType(v) = varString) then v := ReplaceStr(v, '.', DecimalSeparator);

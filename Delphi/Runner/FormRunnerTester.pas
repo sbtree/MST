@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, StdCtrls,
-  Dialogs, ScriptReader, TextMessage, StepDescriptor, StringPairs, TestRunner;
+  Dialogs, ScriptReader, TextMessage, StepData, StepGroup, StringPairs, TestRunner;
 
 type
   TForm2 = class(TForm)
@@ -81,7 +81,7 @@ end;
 
 procedure TForm2.btnNextStepClick(Sender: TObject);
 begin
-  t_runner.RunStep(t_container.TestSequence.NextStepIndex);
+  t_runner.RunStep(t_runner.CurrentSequence.NextStep);
 end;
 
 procedure TForm2.btnOpenScriptClick(Sender: TObject);
@@ -100,7 +100,7 @@ end;
 
 procedure TForm2.btnPreviousStepClick(Sender: TObject);
 begin
-  t_runner.RunStep(t_container.TestSequence.PreviousStepIndex);
+  t_runner.RunStep(t_runner.CurrentSequence.PreviousStep);
 end;
 
 procedure TForm2.btnReadScriptClick(Sender: TObject);
@@ -115,12 +115,12 @@ end;
 
 procedure TForm2.btnRunFirstCaseClick(Sender: TObject);
 begin
-  t_runner.RunCase(t_container.TestSequence.FirstCaseIndex);
+  t_runner.RunGroup(t_runner.CurrentSequence.CaseGroup.FirstCase);
 end;
 
 procedure TForm2.btnRunFirstStepClick(Sender: TObject);
 begin
-  t_runner.RunStep(t_container.TestSequence.FirstStepIndex);
+  t_runner.RunStep(t_runner.CurrentSequence.FirstStep);
 end;
 
 procedure TForm2.btnRunSequenceClick(Sender: TObject);
@@ -136,8 +136,8 @@ end;
 procedure TForm2.btnSequenceClick(Sender: TObject);
 var s_casenrs: string;
 begin
-  t_container.UpdateSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
-  s_casenrs := t_container.TestSequence.CaseNrList.DelimitedText;
+  t_runner.SetSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
+  s_casenrs := t_runner.CurrentSequence.CaseGroup.CaseNumbers;
 
   if s_casenrs <> '' then t_messenger.AddMessage('Sequence Cases: ' + s_casenrs)
   else t_messenger.AddMessage('Test Sequence: no case')
@@ -150,17 +150,17 @@ end;
 
 procedure TForm2.btnRunNextCaseClick(Sender: TObject);
 begin
-  t_runner.RunCase(t_container.TestSequence.NextCaseIndex)
+  t_runner.RunGroup(t_runner.CurrentSequence.CaseGroup.NextCase)
 end;
 
 procedure TForm2.btnRunPrevCaseClick(Sender: TObject);
 begin
-  t_runner.RunCase(t_container.TestSequence.PreviousCaseIndex)
+  t_runner.RunGroup(t_runner.CurrentSequence.CaseGroup.PreviousCase);
 end;
 
 procedure TForm2.btnRepeatCaseClick(Sender: TObject);
 begin
-  t_runner.RunCase(t_container.TestSequence.CurrentCaseIndex);
+  t_runner.RunGroup(t_runner.CurrentSequence.CaseGroup.CurrentCase);
 end;
 
 procedure TForm2.btnRepeatSequenceClick(Sender: TObject);

@@ -14,7 +14,8 @@ uses
   StringPairs in '..\General\StringPairs.pas',
   TestDebugger in 'TestDebugger.pas',
   PseudoActor in 'PseudoActor.pas',
-  LoopControl in 'LoopControl.pas';
+  LoopControl in 'LoopControl.pas',
+  StepData in '..\CoreData\StepData.pas';
 
 {$R *.res}
 

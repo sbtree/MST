@@ -2,8 +2,8 @@ unit TestRunner;
 
 interface
 
-uses  Classes, TypInfo, StepDescriptor, TextMessage,
-      FunctionCaller, GenType;
+uses  Classes, TypInfo, StepData, StepGroup, TextMessage,
+      FuncCaller, GenType;
 
 type
 // =============================================================================
@@ -20,6 +20,7 @@ type
   protected
     t_fcaller:  TFunctionCaller;
     e_exemode:  EExecMode;
+    t_curseq:   TTestSequence;
     t_container:TStepContainer;
     t_messenger:TTextMessenger;
     b_jumpmstep:boolean; //indicate, whether to run the steps, which have minus step number, e.g. '-11.02'
@@ -34,9 +35,6 @@ type
     function  StepSave(const val: string): boolean; virtual;
     function  StepFinal(const val: string): boolean; virtual;
 
-    function RunStepT(tstep: TTestStep): boolean;
-    function RunStepGroup(tgroup: TStepGroup): boolean;
-
   public
     constructor Create();
     destructor  Destroy(); override;
@@ -44,8 +42,12 @@ type
     property ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
     property StepContainer: TStepContainer read t_container write t_container;
+    property CurrentSequence: TTestSequence read t_curseq;
     property JumpMinusStep: boolean read b_jumpmstep write b_jumpmstep;
 
+    function RunStep(tstep: TTestStep): boolean; overload;
+    function RunGroup(tgroup: TStepGroup): boolean;
+    
     function RunStep(const stepnr: string): boolean; overload;
     function RunStep(const stepidx: integer): boolean; overload;
     function RunCase(const casenr: string): boolean; overload;
@@ -62,6 +64,7 @@ uses SysUtils;
 constructor TTestRunner.Create();
 begin
   inherited Create();
+  t_curseq := TTestSequence.Create();
   t_fcaller := TFunctionCaller.Create();
   t_fcaller.Messenger := self.Messenger;
   b_jumpmstep := true;
@@ -71,6 +74,7 @@ end;
 destructor  TTestRunner.Destroy();
 begin
   FreeAndNil(t_fcaller);
+  FreeAndNil(t_curseq);
   inherited Destroy();
 end;
 
@@ -149,8 +153,7 @@ begin
   //AddMessage(format('The value (%s) of field (r_off) is accepted.', [val]));
 end;
 
-
-function TTestRunner.RunStepT(tstep: TTestStep): boolean;
+function TTestRunner.RunStep(tstep: TTestStep): boolean;
 var b_runstep: boolean;
 begin
   result := false;
@@ -182,18 +185,19 @@ begin
   end;
 end;
 
-function TTestRunner.RunStepGroup(tgroup: TStepGroup): boolean;
-var i_curidx: integer;
+function TTestRunner.RunGroup(tgroup: TStepGroup): boolean;
+var i: integer;
 begin
   result := false;
-  if (assigned(tgroup) and assigned(t_container)) then begin
-    i_curidx := tgroup.FirstStepIndex;
-    while (i_curidx >= 0) do begin
-      result := RunStepT(t_container.StepByIndex(i_curidx));
+  if assigned(tgroup) then begin
+    for i := 0 to tgroup.StepCount - 1 do begin
+      result := RunStep(tgroup.StepByIndex(i));
       if (not result) then break;
-      i_curidx := tgroup.NextStepIndex;
     end;
-    t_container.TestSequence.UpdateCurStepIndex();
+    if (tgroup <> t_curseq) then begin
+      if (i >= tgroup.StepCount) then Dec(i);
+      t_curseq.UpdateStepIndex(tgroup.StepNrOf(i));
+    end;
   end;
 end;
 
@@ -203,7 +207,7 @@ begin
   result := false;
   if assigned(t_container) then  begin
     t_step := t_container.StepByNr(stepnr);
-    result := RunStepT(t_step);
+    result := RunStep(t_step);
   end;
 end;
 
@@ -213,59 +217,43 @@ begin
   result := false;
   if assigned(t_container) then begin
     t_step := t_container.StepByIndex(stepidx);
-    result := RunStepT(t_step);
+    result := RunStep(t_step);
   end;
 end;
 
 function TTestRunner.RunCase(const casenr: string): boolean;
-var t_case: TStepGroup;
 begin
-  result := false;
-  if assigned(t_container) then begin
-    t_case := t_container.CaseByNr(casenr);
-    result := RunStepGroup(t_case);
-  end;
+  result := RunGroup(t_curseq.CaseGroup.CaseByNr(casenr));
 end;
 
 function TTestRunner.RunCase(const caseidx: integer): boolean;
 var t_case: TStepGroup;
 begin
-  result := false;
-  if assigned(t_container) then begin
-    t_case := t_container.CaseByIndex(caseidx);
-    result := RunStepGroup(t_case);
-  end;
+  result := RunGroup(t_curseq.CaseGroup.CaseByIndex(caseidx));
 end;
 
 function TTestRunner.RunSequence(): boolean;
 begin
   result := false;
-  if assigned(t_container) then begin
-    if (t_container.TestSequence.CountCase > 0) then result := RunStepGroup(t_container.TestSequence)
-    else AddMessage('No test case is found in current test sequence.', ML_WARNING);
-  end;
+  if (t_curseq.StepCount > 0) then RunGroup(t_curseq)
+  else AddMessage('No test step is found in current test sequence.', ML_WARNING);
 end;
 
 function TTestRunner.SetSequence(const csincl, csexcl: string): boolean;
 begin
   result := false;
-  if assigned(t_container) then begin
-    t_container.UpdateSequence(csincl, csexcl);
-    result := (t_container.TestSequence.CountCase > 0);
-  end;
+  if assigned(t_container) then
+    t_container.UpdateSequence(t_curseq, csincl, csexcl);
 end;
 
 function TTestRunner.RepeatStep(): boolean;
 begin
-  result := false;
-  if assigned(t_container) then
-    result := RunStepT(t_container.CurrentStep);
+  result := RunStep(t_curseq.CurrentStep);
 end;
 
 function TTestRunner.RepeatCase(): boolean;
 begin
-  result := false;
-  if assigned(t_container) then result := RunStepGroup(t_container.CurrentCase);
+  result := RunGroup(t_curseq.CaseGroup.CurrentCase);
 end;
 
 end.

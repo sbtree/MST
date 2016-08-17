@@ -43,6 +43,13 @@ type
     function LoadParameter(const par: string): boolean; override;
     function DoTask(): boolean; override;
   end;
+  
+  HexToIntStr = class(TFunctionBase)
+  public
+    function LoadParameter(const par: string): boolean; override;
+    function DoTask(): boolean; override;
+  end;
+
 var
   g_exprparser: TQExprParser;
 
