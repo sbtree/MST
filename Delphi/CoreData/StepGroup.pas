@@ -214,7 +214,7 @@ type
     destructor  Destroy(); override;
 
     function LoadStep(const fields: FieldStringArray): boolean;
-    procedure UpdateSequence(var tseq: TTestSequence; const incl: string = 'all'; const excl: string = '');
+    function UpdateSequence(var tseq: TTestSequence; const incl: string = 'all'; const excl: string = ''): boolean;
     procedure SaveFile(const sfile: string);
   end;
 
@@ -616,7 +616,8 @@ var s_stepnr: string; i_cnr: integer;
 begin
   if assigned(tstep) then begin
     s_stepnr := tstep.GetFieldValue(SF_NR);
-    if TStepGroup.CalcMainNr(s_stepnr, i_cnr) then t_casegrp.UpdateCaseIndex(i_cnr);
+    if TStepGroup.CalcMainNr(s_stepnr, i_cnr) then
+      t_casegrp.UpdateCaseIndex(i_cnr);
   end;
 end;
 
@@ -746,14 +747,15 @@ end;
 //                   CINT_CASES_MAX (255), are not considered.
 //    History      :
 // =============================================================================
-procedure TStepContainer.UpdateSequence(var tseq: TTestSequence; const incl: string; const excl: string);
+function TStepContainer.UpdateSequence(var tseq: TTestSequence; const incl: string; const excl: string): boolean;
 var set_incl, set_excl, set_result: TIndexSet;
 begin
+  result := false;
   if assigned(tseq) then begin
     set_incl := CaseIndexSet(incl);
     set_excl := CaseIndexSet(excl);
     set_result := set_incl - set_excl;
-    tseq.UpdateCaseGroup(set_result, self);
+    result := (tseq.UpdateCaseGroup(set_result, self) > 0);
   end;
 end;
 

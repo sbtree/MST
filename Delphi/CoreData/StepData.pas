@@ -237,7 +237,8 @@ end;
 function  TTestStep.GetFieldValue(const esf: EStepField): string;
 begin
   result := '';
-  if assigned(a_fields[esf]) then result := a_fields[esf].InputString;
+  if assigned(a_fields[esf]) then
+    result := a_fields[esf].InputString;
 end;
 
 procedure TTestStep.SetFieldValue(const esf: EStepField; const sval: string);

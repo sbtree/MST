@@ -106,6 +106,7 @@ end;
 procedure TForm2.btnReadScriptClick(Sender: TObject);
 begin
   t_sreader.ReadFromFile(trim(txtScriptFile.Text), chkForce.Checked, chkAppend.Checked);
+  t_runner.StepContainer := t_sreader.StepContainer;
 end;
 
 procedure TForm2.btnRunCaseClick(Sender: TObject);
@@ -125,7 +126,8 @@ end;
 
 procedure TForm2.btnRunSequenceClick(Sender: TObject);
 begin
-  if t_runner.SetSequence(trim(txtInclusive.Text), trim(txtExclusive.Text)) then t_runner.RunSequence();
+  if t_runner.SetSequence(trim(txtInclusive.Text), trim(txtExclusive.Text)) then
+    t_runner.RunSequence();
 end;
 
 procedure TForm2.btnRunStepByNrClick(Sender: TObject);
@@ -186,7 +188,6 @@ begin
 
   t_runner := TTestRunner.Create();
   t_runner.Messenger := t_messenger;
-  t_runner.StepContainer := t_container;
 end;
 
 end.

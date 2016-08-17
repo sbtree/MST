@@ -26,6 +26,7 @@ type
     b_jumpmstep:boolean; //indicate, whether to run the steps, which have minus step number, e.g. '-11.02'
   protected
     procedure SetExecutionMode(const em: EExecMode);
+    procedure SetStepContainer(const tcon: TStepContainer);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
 
     function  StepInit(const val: string): boolean; virtual;
@@ -41,7 +42,7 @@ type
 
     property ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
-    property StepContainer: TStepContainer read t_container write t_container;
+    property StepContainer: TStepContainer read t_container write SetStepContainer;
     property CurrentSequence: TTestSequence read t_curseq;
     property JumpMinusStep: boolean read b_jumpmstep write b_jumpmstep;
 
@@ -88,6 +89,12 @@ begin
     end;
   end;
   t_fcaller.ExecutionMode := e_exemode;
+end;
+
+procedure TTestRunner.SetStepContainer(const tcon: TStepContainer);
+begin
+  t_container := tcon;
+  if assigned(t_container) then t_container.UpdateSequence(t_curseq);
 end;
 
 // =============================================================================
@@ -202,23 +209,13 @@ begin
 end;
 
 function TTestRunner.RunStep(const stepnr: string): boolean;
-var t_step: TTestStep;
 begin
-  result := false;
-  if assigned(t_container) then  begin
-    t_step := t_container.StepByNr(stepnr);
-    result := RunStep(t_step);
-  end;
+  result := RunStep(t_curseq.StepByNr(stepnr));
 end;
 
 function TTestRunner.RunStep(const stepidx: integer): boolean;
-var t_step: TTestStep;
 begin
-  result := false;
-  if assigned(t_container) then begin
-    t_step := t_container.StepByIndex(stepidx);
-    result := RunStep(t_step);
-  end;
+  result := RunStep(t_curseq.StepByIndex(stepidx));
 end;
 
 function TTestRunner.RunCase(const casenr: string): boolean;
@@ -243,7 +240,7 @@ function TTestRunner.SetSequence(const csincl, csexcl: string): boolean;
 begin
   result := false;
   if assigned(t_container) then
-    t_container.UpdateSequence(t_curseq, csincl, csexcl);
+    result := t_container.UpdateSequence(t_curseq, csincl, csexcl);
 end;
 
 function TTestRunner.RepeatStep(): boolean;
