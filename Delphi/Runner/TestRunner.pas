@@ -201,9 +201,11 @@ begin
       result := RunStep(tgroup.StepByIndex(i));
       if (not result) then break;
     end;
+
+    //update index of current step in current sequence if a case is done
     if (tgroup <> t_curseq) then begin
       if (i >= tgroup.StepCount) then Dec(i);
-      t_curseq.UpdateStepIndex(tgroup.StepNrOf(i));
+      t_curseq.GotoStepNr(tgroup.StepNrOf(i));
     end;
   end;
 end;

@@ -37,6 +37,9 @@ type
     function GetNextStep(): TTestStep;
     function GetLastStep(): TTestStep;
     function GetRelativeStep(const relidx: integer): TTestStep;
+    function MoveStepIndex(const relidx: integer): boolean;
+    function GotoStepIndex(const idx: integer): boolean;
+    function GotoStepNr(const stepnr: string): boolean;
 
     property CurrentStep: TTestStep read GetCurStep;
     property PreviousStep: TTestStep read GetPrevStep;
@@ -71,6 +74,9 @@ type
     function GetNextStep(): TTestStep;
     function GetLastStep(): TTestStep;
     function GetRelativeStep(const relidx: integer): TTestStep;
+    function MoveStepIndex(const relidx: integer): boolean;
+    function GotoStepIndex(const idx: integer): boolean;
+    function GotoStepNr(const stepnr: string): boolean;
 
     //properties
     property CurrentStep: TTestStep read GetCurStep;
@@ -89,7 +95,6 @@ type
     function StepByNr(const nr: string): TTestStep;
     function IndexOfStep(const stepnr: string): integer;
     function StepNrOf(const idx: integer): string;
-    procedure UpdateStepIndex(const stepnr: string);
     procedure RemoveStep(const stepnr: string);
     procedure Clear(); virtual;
   end;
@@ -314,10 +319,28 @@ end;
 
 function  TStepGroup.GetRelativeStep(const relidx: integer): TTestStep;
 begin
-  i_curstep := i_curstep + relidx;
-  if (i_curstep < 0) then i_curstep := -1
-  else if (i_curstep >= t_steps.Count) then i_curstep := t_steps.Count;
+  MoveStepIndex(relidx);
   result := GetCurStep();
+end;
+
+function TStepGroup.MoveStepIndex(const relidx: integer): boolean;
+begin
+  result := GotoStepIndex(i_curstep + relidx);
+end;
+
+function TStepGroup.GotoStepIndex(const idx: integer): boolean;
+begin
+  if (idx < 0) then i_curstep := -1
+  else if (idx >= t_steps.Count) then i_curstep := t_steps.Count
+  else i_curstep := idx;
+  result := ((i_curstep >= 0) and (i_curstep < t_steps.Count))
+end;
+
+function TStepGroup.GotoStepNr(const stepnr: string): boolean;
+var i_idx: integer;
+begin
+  i_idx := t_steps.IndexOf(stepnr);
+  result := GotoStepIndex(i_idx);
 end;
 
 function TStepGroup.AddStep(const step: TTestStep): boolean;
@@ -353,13 +376,6 @@ function  TStepGroup.StepNrOf(const idx: integer): string;
 begin
   if ((idx >= 0) and (idx < t_steps.Count)) then result := t_steps.Strings[idx]
   else result := '';
-end;
-
-procedure TStepGroup.UpdateStepIndex(const stepnr: string);
-var i_idx: integer;
-begin
-  i_idx := t_steps.IndexOf(stepnr);
-  if (i_idx >= 0) then i_curstep := i_idx;
 end;
 
 procedure TStepGroup.RemoveStep(const stepnr: string);
