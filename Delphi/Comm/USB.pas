@@ -11,6 +11,11 @@ type
                       MUP_PID, //product id
                       MUP_PSN  //serial number of the device
                     );
+  ESelectAlgorithm = (SA_PREFER_CONF, //
+                      SA_PREFER_NEW,
+                      SA_PREFER_LAST
+                      );
+
 
   RMtxUsbConfigDesc = packed record
     ConfigDescriptor    : USB_CONFIGURATION_DESCRIPTOR;
@@ -40,10 +45,11 @@ type
     i_actpsn:   integer;          //serial number of usb device, which is actually connected
     i_curdev:   integer;          //index of the found device
     r_devconf:  RMtxUsbDeviceConfig;    //record of usb device configuration
-    t_deviceids:TStrings;         //to save all ids (in format 'vid_pid_sn' hexadecimal) of current usb devices
+    t_deviceids:TStrings;         //to save all ids (in format 'vid_pid_sn', hexadecimal vid and pid, decimal sn) of current usb devices
+    s_curdevice:string;           //save string 'vid_pid_sn' of current usb-device, in order to connect it again if the connection is broken
   protected
-    function GetDeviceIds(const devidx: integer; var vid, pid, snr: integer): boolean;
-    function DetectDevice(const sn: integer; const pid: word = 0; const vid: word = 0): boolean;
+    function GetDeviceInfo(const devidx: integer; var vid, pid: integer; var snr: string): boolean;
+    function SetDeviceInfo(const devidx: integer): boolean;
     function GetDeviceConfig(): boolean;
     function GetProductSN(): integer;
     function Init(const psn: integer): boolean;
@@ -60,7 +66,7 @@ type
     procedure TryConnect(); override;
     procedure SafeArrayToArray(const psarr: PSafeArray; const parr: PByteArray; const size: Integer);
     procedure ClearDeviceInfo();
-    procedure UpdateDeviceIds();
+    procedure UpdateDeviceIds(var idlist: TStrings);
 
     procedure OnReadComplete(sender: TObject; var obj: OleVariant);
     procedure OnWriteComplete(sender: TObject; var obj: OleVariant);
@@ -133,10 +139,9 @@ begin
   end;
 end;
 
-function TMtxUsb.GetDeviceIds(const devidx: integer; var vid, pid, snr: integer): boolean;
-var i_size: integer; s_snr: string; pa_descr1, pa_descr2: PSafeArray;
-    r_strdesc: USB_STRING_DESCRIPTOR; r_devdes: USB_DEVICE_DESCRIPTOR;
-    t_usbinterf: TUSBIOInterface3;
+function TMtxUsb.GetDeviceInfo(const devidx: integer; var vid, pid: integer; var snr: string): boolean;
+var i_size: integer; pa_descr1, pa_descr2: PSafeArray;
+    r_strdesc: USB_STRING_DESCRIPTOR; t_usbinterf: TUSBIOInterface3;
 begin
   result := false;
   t_usbinterf := TUSBIOInterface3.Create(self);
@@ -147,17 +152,16 @@ begin
     pa_descr1 := SafeArrayCreateVector ( VT_UI1, 0, i_size );
     t_usbinterf.GetDeviceDescriptor(pa_descr1, i_size, i_status);
     if (i_status = USBIO_ERR_SUCCESS) then begin
-      SafeArrayToArray(pa_descr1, PByteArray(@r_devdes), i_size);
-      vid := r_devdes.idVendor;
-      pid := r_devdes.idProduct;
+      SafeArrayToArray(pa_descr1, PByteArray(@r_devconf.DeviceDescriptor), i_size);
+      vid := r_devconf.DeviceDescriptor.idVendor;
+      pid := r_devconf.DeviceDescriptor.idProduct;
       i_size := SizeOf(USB_STRING_DESCRIPTOR);
       ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
       pa_descr2 := SafeArrayCreateVector ( VT_UI1, 0, i_size );
-      t_usbinterf.GetStringDescriptor(pa_descr2, i_size, r_devdes.iSerialNumber, 0, i_status);
+      t_usbinterf.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iSerialNumber, 0, i_status);
       if (i_status = USBIO_ERR_SUCCESS) then begin
         SafeArrayToArray(pa_descr2, PByteArray(@r_strdesc), i_size);
-        s_snr := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
-        TryStrToInt(s_snr, snr);
+        snr := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
       end;
       result := true;
       SafeArrayDestroy(pa_descr2);
@@ -168,65 +172,45 @@ begin
   FreeAndNil(t_usbinterf);
 end;
 
-function TMtxUsb.DetectDevice( const sn: integer; const pid, vid: word): boolean;
-var i, i_count, i_size: integer; b_idchecked: boolean;
-    pa_descr1, pa_descr2: PSafeArray; r_strdesc: USB_STRING_DESCRIPTOR;
+function TMtxUsb.SetDeviceInfo(const devidx: integer): boolean;
+var i_vid, i_pid, i_size: integer; s_snr : string; i_snr: integer;
+    pa_descr: PSafeArray; r_strdesc: USB_STRING_DESCRIPTOR;
 begin
-  result := false;
   ClearDeviceInfo();
-  t_usbio.EnumerateDevices(CSTR_MTXUSB_ARS2000_GUID,i_count);
-  for i := 0 to i_count - 1 do begin
-    t_usbio.OpenDevice(i, i_status);
-    if ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_DEVICE_ALREADY_OPEN)))then begin
-      //read device descriptor
-      i_size := SizeOf(USB_DEVICE_DESCRIPTOR);
-      pa_descr1 := SafeArrayCreateVector ( VT_UI1, 0, i_size );
-      t_usbio.GetDeviceDescriptor(pa_descr1, i_size, i_status);
-      if (i_status = USBIO_ERR_SUCCESS) then begin
-        SafeArrayToArray(pa_descr1, PByteArray(@r_devconf.DeviceDescriptor), i_size);
-        //find out the device with expected vid and pid
-        b_idchecked := (((pid = 0) and (vid = 0)) or ((r_devconf.DeviceDescriptor.idVendor = vid) and (r_devconf.DeviceDescriptor.idProduct = pid)));
-        if b_idchecked then begin
-          //get serial number
-          i_size := SizeOf(USB_STRING_DESCRIPTOR);
-          ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
-          pa_descr2 := SafeArrayCreateVector ( VT_UI1, 0, i_size );
-          t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iSerialNumber, 0, i_status);
-          if (i_status = USBIO_ERR_SUCCESS) then begin
-            SafeArrayToArray(pa_descr2, PByteArray(@r_strdesc), i_size);
-            r_devconf.SerialNumber := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
-            if (not TryStrToInt(r_devconf.SerialNumber, i_actpsn)) then i_actpsn := -1;
-          end;
-          if (sn = -1) then result := true
-          else result := (i_actpsn = sn);
-          //get information of manufacturer and product type
-          if result then begin
-            i_size := SizeOf(USB_STRING_DESCRIPTOR);
-            ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
-            t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iManufacturer, 0, i_status);
-            if (i_status = USBIO_ERR_SUCCESS) then begin
-              SafeArrayToArray(pa_descr2, PByteArray(@r_strdesc), i_size);
-              r_devconf.Manufacturer := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
-            end;
+  result := GetDeviceInfo(devidx, i_vid, i_pid, s_snr);
+  if result then begin
 
-            i_size := SizeOf(USB_STRING_DESCRIPTOR);
-            ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
-            t_usbio.GetStringDescriptor(pa_descr2, i_size, r_devconf.DeviceDescriptor.iProduct, 0, i_status);
-            if (i_status = USBIO_ERR_SUCCESS) then begin
-              SafeArrayToArray(pa_descr2, PByteArray(@r_strdesc), i_size);
-              r_devconf.ProductType := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
-            end;
-          end;
-          SafeArrayDestroy(pa_descr2);
-        end;
-      end;
-      SafeArrayDestroy(pa_descr1);
+    r_devconf.SerialNumber := s_snr;
+    if TryStrToInt(s_snr, i_snr) then begin
+      s_curdevice := format('%.4x_%.4x_%d', [i_vid, i_pid, i_snr]);
+      i_actpsn := i_snr;
     end;
+  end;
+  t_usbio.OpenDevice(devidx, i_status);
+  result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_DEVICE_ALREADY_OPEN)));
+  if result then begin
+    //get information of manufacturer and product type
     if result then begin
-      i_curdev := i;
-      GetDeviceConfig();
-      break;
-    end else t_usbio.CloseDevice();
+      i_size := SizeOf(USB_STRING_DESCRIPTOR);
+      ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
+      pa_descr := SafeArrayCreateVector ( VT_UI1, 0, i_size );
+      t_usbio.GetStringDescriptor(pa_descr, i_size, r_devconf.DeviceDescriptor.iManufacturer, 0, i_status);
+      if (i_status = USBIO_ERR_SUCCESS) then begin
+        SafeArrayToArray(pa_descr, PByteArray(@r_strdesc), i_size);
+        r_devconf.Manufacturer := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
+      end;
+
+      i_size := SizeOf(USB_STRING_DESCRIPTOR);
+      ZeroMemory(@r_strdesc.bString, SizeOf(r_strdesc.bString));
+      t_usbio.GetStringDescriptor(pa_descr, i_size, r_devconf.DeviceDescriptor.iProduct, 0, i_status);
+      if (i_status = USBIO_ERR_SUCCESS) then begin
+        SafeArrayToArray(pa_descr, PByteArray(@r_strdesc), i_size);
+        r_devconf.ProductType := WideCharToString(PWideChar(Copy(r_strdesc.bString, 0, r_strdesc.bLength)));
+      end;
+    end;
+    SafeArrayDestroy(pa_descr);
+    i_curdev := devidx;
+    GetDeviceConfig();
   end;
 end;
 
@@ -471,17 +455,19 @@ begin
   r_devconf.ProductType := '';
   r_devconf.SerialNumber := '';
   r_devconf.Configuration := '';
+  s_curdevice := '';
 end;
 
-procedure TMtxUsb.UpdateDeviceIds();
-var i, i_count, i_pid, i_vid, i_snr: integer; s_ids: string;
+procedure TMtxUsb.UpdateDeviceIds(var idlist: TStrings);
+var i, i_count, i_pid, i_vid, i_snr: integer; s_snr, s_ids: string;
 begin
-  t_deviceids.Clear();
+  idlist.Clear();
   t_usbio.EnumerateDevices(CSTR_MTXUSB_ARS2000_GUID,i_count);
   for i := 0 to i_count - 1 do begin
-    GetDeviceIds(i, i_vid, i_pid, i_snr);
+    GetDeviceInfo(i, i_vid, i_pid, s_snr);
+    TryStrToInt(s_snr, i_snr);
     s_ids := format('%.4x_%.4x_%d', [i_vid, i_pid, i_snr]);
-    t_deviceids.Add(s_ids);
+    idlist.Add(s_ids);
   end;
 end;
 
@@ -505,14 +491,14 @@ end;
 procedure TMtxUsb.OnAddDevice(Sender: TObject; var Obj: OleVariant);
 begin
   if (not Connected) then Connect();
-  UpdateDeviceIds();
+  UpdateDeviceIds(t_deviceids);
 end;
 
 procedure TMtxUsb.OnRemoveDevice(Sender: TObject; var Obj: OleVariant);
 begin
   if (Connected) then
     if (not FindDevice(ProductSN, 0)) then Disconnect();
-  UpdateDeviceIds();
+  UpdateDeviceIds(t_deviceids);
 end;
 
 constructor TMtxUsb.Create(owner: TComponent);
@@ -521,8 +507,8 @@ begin
   e_type := CT_USB;
   e_state := CS_UNKNOWN;
   t_deviceids := TStringList.Create();
-  w_vid := $1B97;  //default vendor id of usb device
-  w_pid := $2;     //default product id of usb device
+  w_vid := 0; // $1B97; //default vendor id of MTX
+  w_pid := 0; // $2;     //default product id of MTX-ARS2000 usb device
   i_psn := -1;  //default serial number of usb device, which means the first device with the given vid and pid
   i_actpsn := -1;   //initialize acture serial number with -1, which means that no serial number is not yet found.
   //create and set instances of usbiointerface for EP0, pipe in and out
@@ -542,6 +528,7 @@ begin
   t_usbio.Connect();
   t_usbrx.Connect();
   t_usbtx.Connect();
+  UpdateDeviceIds(t_deviceids);
 end;
 
 destructor TMtxUsb.Destroy;
@@ -561,15 +548,36 @@ begin
 end;
 
 function TMtxUsb.FindDevice(const psn: integer; const tout: integer): boolean;
-var c_time: cardinal;
+var c_time: cardinal; t_idslist: TStrings; i, i_devidx: integer; s_confdev: string;
 begin
   if (tout < 0) then c_time := GetTickCount() + c_timeout
   else c_time := GetTickCount() + cardinal(tout);
 
+  result := false;
+  t_idslist := TStringList.Create();
   repeat
     Application.ProcessMessages();
-    result := DetectDevice(psn, w_pid, w_vid);
+    UpdateDeviceIds(t_idslist);
+    if (psn = -1) then begin //any usb-device
+      i_devidx := -1;
+      if (s_curdevice <> '') then i_devidx := t_idslist.IndexOf(s_curdevice);
+      if (i_devidx < 0) then begin
+        for i := 0 to t_idslist.Count - 1 do begin
+          i_devidx := t_deviceids.IndexOf(t_idslist[i]);
+          if (i_devidx < 0) then begin
+            i_devidx := i;
+            break;
+          end;
+        end;
+      end;
+      if (i_devidx < 0) then i_devidx := t_idslist.Count - 1;
+    end else begin
+      s_confdev := format('%.4x_%.4x_%d', [w_vid, w_pid, i_psn]);
+      i_devidx := t_idslist.IndexOf(s_confdev);
+    end;
+    if (i_devidx >= 0) then result := SetDeviceInfo(i_devidx);
   until (result or (GetTickCount() >= c_time));
+  t_idslist.Free();
 end;
 
 function TMtxUsb.Config(const sconfs: TStrings): boolean;
@@ -598,7 +606,6 @@ begin
       AddMessage(format('Successful to make a connection(%s) to device(sn=%d).', [GetTypeName(), ProductSN]));
     end else AddMessage(format('Failed to make a connection(%s) to device(sn=%d)', [GetTypeName(), ProductSN]), ML_ERROR);
   end else AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
-  UpdateDeviceIds();
 end;
 
 function TMtxUsb.Disconnect: boolean;
