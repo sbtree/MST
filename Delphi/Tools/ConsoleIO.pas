@@ -58,8 +58,7 @@ begin
     try
       {??????????console??}
       if CreateProcess(nil, PChar(DosApp), @Security, @Security, true,
-        NORMAL_PRIORITY_CLASS,
-        nil, nil, start, ProcessInfo) then
+        NORMAL_PRIORITY_CLASS, nil, nil, start, ProcessInfo) then
       begin
        {????????}
         WaitForSingleObject(ProcessInfo.hProcess, INFINITE);

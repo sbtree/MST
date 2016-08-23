@@ -40,7 +40,9 @@
     <DelphiCompile Include="ToolTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\General\StringPairs.pas" />
     <DCCReference Include="ConsoleIO.pas" />
+    <DCCReference Include="FlashTool.pas" />
     <DCCReference Include="FromToolTester.pas">
       <Form>frmToolTester</Form>
     </DCCReference>

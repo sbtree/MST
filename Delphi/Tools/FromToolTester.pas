@@ -33,7 +33,7 @@ begin
 
 //  if t_regexp.Exec('BAUDRATE:9600') then ShowMessage('t_regexp.Match[1]='+t_regexp.Match[1])
 //  else ShowMessage('not matched');
-  RunDosInMemo('test.bat', memTest);
+  RunDosInMemo('N:\SW_INBE\NextGen_STMD-H\Tools\CWFlashProgrammer.bat', memTest);
 end;
 
 end.

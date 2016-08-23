@@ -1,4 +1,4 @@
 echo abc
 cd C:\
 dir
-mem exit
+rem exit

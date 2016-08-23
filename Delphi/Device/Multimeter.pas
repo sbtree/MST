@@ -68,11 +68,11 @@ const
   C_MULTIMETER_OPEN_ALL       = 'ROUT:OPEN:ALL';       // alle Relais oeffnen
   C_MULTIMETER_OPEN           = 'ROUT:MULT:OPEN (@%s)'; //n relays to open. %s: relay numbers with separator ','
   C_MULTIMETER_CLOSE          = 'ROUT:MULT:CLOS (@%s)'; //n relays to clase. %s: relay numbers with separator ','
-  C_MULTIMETER_CLOSE_ASK      = 'ROUT:CLOS?';           // geschlossene Relais erfragen
+  C_MULTIMETER_CLOSE_ASK      = 'ROUT:CLOS?';           // geschlossene Relais abfragen
   C_MULTIMETER_FORMAT_ELEMENT = 'FORM:ELEM READ';       // Datenformat spezifizieren
   C_MULTIMETER_MEAS_ONE       = 'INIT:CONT OFF';        // one-shot measurement mode
-  C_MULTIMETER_MEAS_READ      = 'READ?';                // Einzelmessung triggern
   C_MULTIMETER_MEAS_CONTINU   = 'INIT:CONT ON';         // continuouse measurement mode
+  C_MULTIMETER_MEAS_READ      = 'READ?';                // Einzelmessung triggern
   C_MULTIMETER_DATA_ASK       = 'DATA?';                // Daten lesen
   C_MULTIMETER_SET_FUNC       = 'FUNC "%s"';            // set function to messure
   C_MULTIMETER_FUNC_ASK       = 'FUNC?';                // ask for the current function of the messurement

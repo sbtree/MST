@@ -4,7 +4,9 @@ uses
   Forms,
   FromToolTester in 'FromToolTester.pas' {frmToolTester},
   ToolBase in 'ToolBase.pas',
-  ConsoleIO in 'ConsoleIO.pas';
+  ConsoleIO in 'ConsoleIO.pas',
+  StringPairs in '..\General\StringPairs.pas',
+  FlashTool in 'FlashTool.pas';
 
 {$R *.res}
 

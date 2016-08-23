@@ -17,16 +17,17 @@ type
 
   TGenUtils = class
     //file path
-    class function  GetRelativeFilePath(const filePath, basePath: string ): string;
-    class function  GetAbsoluteFilePath(const filePath, basePath: string): string;
+    class function GetRelativeFilePath(const filePath, basePath: string ): string;
+    class function GetAbsoluteFilePath(const filePath, basePath: string): string;
 
     //string and array
-    class function  StrToCharArray(const sData: string; var aData: array of char): integer;
-    class function  StrFromCharArray(const aData: array of char): string;
-    class function  IsHexText(const sData: string): boolean;
-    class function  HexTextToCharArray(const sData: string; var aData: array of char): integer;
-    class function  HexTextFromCharArray(const aData: array of char; const len: integer = -1): string;
-    class function  IsAsciiValid(const str: string): boolean;
+    class function StrToCharArray(const sData: string; var aData: array of char): integer;
+    class function StrFromCharArray(const aData: array of char): string;
+    class function IsHexText(const sData: string): boolean;
+    class function HexTextToCharArray(const sData: string; var aData: array of char): integer;
+    class function HexTextFromCharArray(const aData: array of char; const len: integer = -1): string;
+    class function IsAsciiValid(const str: string): boolean;
+    class function ClearQuotationMarks(const str: string): string;
 
     //process, thread, windows message and so on
     class procedure Delay(const msec: Cardinal = 10);
@@ -226,6 +227,16 @@ begin
       result := false;
       break;
     end;
+  end;
+end;
+
+class function TGenUtils.ClearQuotationMarks(const str: string): string;
+var p_char: PChar;
+begin
+  result := trim(str); p_char := PChar(result);
+  if (length(result) >= 2) then begin
+    if result[1] = '''' then  result := AnsiExtractQuotedStr(p_char, '''')
+    else  result := AnsiExtractQuotedStr(p_char, '"');
   end;
 end;
 
