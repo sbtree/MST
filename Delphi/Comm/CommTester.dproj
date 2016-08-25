@@ -51,8 +51,9 @@
     <DCCReference Include="FormCommTester.pas">
       <Form>frmCommTester</Form>
     </DCCReference>
+    <DCCReference Include="MtxUSB.pas" />
     <DCCReference Include="RS232.pas" />
-    <DCCReference Include="USB.pas" />
+    <DCCReference Include="TekUSB.pas" />
     <None Include="ModelSupport_CommTester\CAN\default.txvpck" />
     <None Include="ModelSupport_CommTester\CommTester\default.txvpck" />
     <None Include="ModelSupport_CommTester\ConnBase\default.txaPackage" />
@@ -63,9 +64,11 @@
     <None Include="ModelSupport_CommTester\default.txaPackage" />
     <None Include="ModelSupport_CommTester\default.txvpck" />
     <None Include="ModelSupport_CommTester\FormCommTester\default.txvpck" />
+    <None Include="ModelSupport_CommTester\MtxUSB\default.txaPackage" />
     <None Include="ModelSupport_CommTester\ProtocolBase\default.txaPackage" />
     <None Include="ModelSupport_CommTester\ProtocolBase\default.txvpck" />
     <None Include="ModelSupport_CommTester\RS232\default.txvpck" />
+    <None Include="ModelSupport_CommTester\TekUSB\default.txaPackage" />
     <None Include="ModelSupport_CommTester\TextMessage\default.txaPackage" />
     <None Include="ModelSupport_CommTester\UsbIoBuf\default.txaPackage" />
     <None Include="ModelSupport_CommTester\UsbIoBuf\default.txvpck" />

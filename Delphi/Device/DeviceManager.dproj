@@ -45,13 +45,15 @@
     </DelphiCompile>
     <DCCReference Include="..\Comm\CAN.pas" />
     <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\MtxUSB.pas" />
     <DCCReference Include="..\Comm\ProtocolBase.pas" />
     <DCCReference Include="..\Comm\RS232.pas" />
-    <DCCReference Include="..\Comm\USB.pas" />
+    <DCCReference Include="..\Comm\TekUSB.pas" />
     <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
     <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
+    <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="DeviceBase.pas" />
     <DCCReference Include="DeviceConfig.pas" />
     <DCCReference Include="FormDeviceManager.pas">
@@ -73,9 +75,12 @@
     <None Include="ModelSupport_DeviceManager\FormDeviceManager\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\FormDeviceTester\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\GenUtils\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\MtxUSB\default.txaPackage" />
     <None Include="ModelSupport_DeviceManager\Multimeter\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\Oscilloscope\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\ProtocolBase\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\RS232\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\TekUSB\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManager\TextMessage\default.txaPackage" />
   </ItemGroup>
 </Project>

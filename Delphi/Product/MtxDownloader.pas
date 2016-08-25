@@ -1,7 +1,7 @@
 unit MtxDownloader;
 
 interface
-uses Serial3, Classes, Controls;
+uses Serial3, Classes, Controls, ConnBase;
 type
   EBootState = (
                 BS_UNKNOWN,
@@ -29,11 +29,20 @@ type
                 DC_FCW       //Freescale CodeWarrior flash, a software tool for flashing (adapter: usb->jtag)
                 );
 
-  IDownloaderInterf = Interface
-    function EnterService(const cmd: string): boolean;
-    function LoadSourceFile(const sfile: string): boolean;
+  IMtxDownloader = interface
+    function GetBootloaderFile(): string;
+    function GetFirmwareFile(): string;
+    function GetAdditionalFile(): string;
+    function EnterService(): boolean;
     function DoDownload(): boolean;
-  End;
+    procedure SetBootloaderFile(const blfile: string);
+    procedure SetFirmwareFile(const fwfile: string);
+    procedure SetAdditionalFile(const adfile: string);
+
+    property BootloaderFile: string read GetBootloaderFile write SetBootloaderFile;
+    property FirmwareFile: string read GetFirmwareFile write SetFirmwareFile;
+    property AdditionalFile: string read GetAdditionalFile write SetAdditionalFile;
+  end;
 
   TDownloader = class
   protected
@@ -68,13 +77,14 @@ type
   TComDownloader = class(TDownloader)
   protected
     t_ser: TSerial;
+    t_conn: TConnBase;
     s_blmessage: string; //save switch-on message of boot loader
     s_fwmessage: string; //save switch-on message of firmware
   protected
     procedure SwitchBaudrate(const ibaud: integer; const efc: eFlowControl = fcNone);
     function  SendStr(const str: string; const bprint: boolean = true): boolean;
     function  RecvStr(var str: string; const bwait: boolean = true): integer;
-    function  RecvStrTimeout(var str: string; const tend: cardinal): integer;
+    //function  RecvStrTimeout(var str: string; const tend: cardinal): integer;
     function  RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer;
     function  RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
     function  WaitForReading(const tend: cardinal): boolean;
@@ -215,7 +225,7 @@ begin
   if (assigned(t_messager) and (str <> '')) then t_messager.Add(format('[%s]:<%s', [DateTimeToStr(Now()), str]));
 end;
 
-function  TComDownloader.RecvStrTimeout(var str: string; const tend: cardinal): integer;
+{function  TComDownloader.RecvStrTimeout(var str: string; const tend: cardinal): integer;
 var s_recv: string; i_len: integer;
 begin
   result := 0; str := '';
@@ -228,7 +238,7 @@ begin
     end;
   until (tend <= GetTickCount());
   if (assigned(t_messager) and (str <> '')) then t_messager.Add(format('[%s]:<%s', [DateTimeToStr(Now()), str]));
-end;
+end; }
 
 function  TComDownloader.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
 var b_break, b_timeout: boolean; s_recv: string; i_len: integer; c_time: cardinal;
@@ -290,6 +300,7 @@ function  TComDownloader.StartWithMTL(): boolean;
 var i: integer;
 begin
   for i := 0 to t_srecords.Count - 1 do begin
+    t_conn.SendStr(t_srecords[i] + CCHR_RETURN);
     t_ser.WriteString(t_srecords[i] + CCHR_RETURN);
     while t_ser.TxWaiting > 0 do TGenUtils.Delay(C_DELAY_ONCE);
     Application.ProcessMessages();

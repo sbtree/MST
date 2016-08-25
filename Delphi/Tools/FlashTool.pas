@@ -3,11 +3,14 @@ interface
 uses Classes, ToolBase;
 
 type
-  TFDT = class(TToolBase)
+  TFlashTool = class(TToolBase)
+
+  end;
+  TFDT = class(TFlashTool)
 
   end;
 
-  TCWFlashProgrammer = class(TToolBase)
+  TCWFlashProgrammer = class(TFlashTool)
   
   end;
 implementation

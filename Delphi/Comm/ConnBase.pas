@@ -41,6 +41,7 @@ type
     function SendStr(const str: string): boolean;
     function RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer;
     function RecvStr(var str: string; const bwait: boolean): integer;
+    function ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
   end;
 
   //base class of connection
@@ -99,11 +100,12 @@ type
     function SendStr(const str: string): boolean; virtual;
     function RecvBuf(var buf: PChar; const len: longword; const bwait: boolean = true): integer; virtual;
     function RecvStr(var str: string; const bwait: boolean = true): integer; virtual;
+    function ExpectStr(var str: string; const swait: string; const bcase: boolean = false): boolean; virtual;
 
     //additionnal functions
     function RecvStrTimeout(var str: string; const timeout: cardinal): integer; virtual;
     function RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal = 3000): integer; virtual;
-    function RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean = false): integer; virtual;
+    function RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean = false): boolean; virtual;
 
     //sync methods
     procedure SetEventRx();
@@ -572,8 +574,14 @@ begin
     AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
+function TConnBase.ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
+begin
+  result := RecvStrExpected(str, swait, c_timeout, bcase);
+end;
+
+
 // =============================================================================
-// Description  : force to receive string until the time is over
+// Description  : force to receive string until the timeout is over
 // Parameter    : str, output string which is received
 //                timeout, in millisecond
 // Return       : integer, the length of the received string
@@ -652,10 +660,10 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean): integer;
-var b_break: boolean; s_recv: string; tend: cardinal;
+function TConnBase.RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean): boolean;
+var s_recv: string; tend: cardinal;
 begin
-  result := 0; str := '';
+  result := false; str := '';
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
@@ -664,15 +672,14 @@ begin
         str := str + s_recv;
         ClearBuffer();
       end;
-      if bcase then b_break := ContainsStr(str, exstr)
-      else b_break := ContainsText(str, exstr);
+      if bcase then result := ContainsStr(str, exstr)
+      else result := ContainsText(str, exstr);
       Application.ProcessMessages();
-    until (b_break or (GetTickCount() >= tend));
-    result := length(str);
-    if (result > 0) then
+    until (result or (GetTickCount() >= tend));
+    if (result) then
       AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
     else
-      AddMessage('Nothing is receieved.', ML_WARNING);
+      AddMessage('The expected string is not receieved.', ML_WARNING);
   end else
     AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;

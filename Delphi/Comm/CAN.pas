@@ -333,10 +333,11 @@ type
     t_thread:  TPCanReadThread;
     a_pcanfnt: array[EPCanFunction] of Pointer;
   protected
-    function LoadDll(const sdll: string): boolean; virtual;
+    function SetDllFile(const sdll: string): boolean; virtual;
+    function LoadDll(const sdll: string): boolean;
+    function UnloadDll(): boolean;
     function LoadDefaultDll(const hwt: EPCanHardwareType): boolean; overload;
     function LoadDefaultDll(const shwt: string): boolean; overload;
-    function UnloadDll(): boolean; virtual;
     function GetErrorMsg(const errnr: longword): string; virtual;
     function StrToPCanMsg(const msg: string; var canmsg: TPCANMsg): boolean; virtual;
     function PCanMsgToStr(const canmsg: TPCANMsg; var msg: string): boolean; virtual;
@@ -395,7 +396,6 @@ type
     property CountSending: cardinal read lw_sendcnt;
     property CountReceive: cardinal read lw_recvcnt;
 
-    function SetDllFile(const sdll: string): boolean;
     function Config(const sconfs: TStrings): boolean; overload; override;
     function Disconnect: boolean; override;
     function SendBuf(const buf: PChar; const len: longword): boolean; override;
@@ -618,7 +618,7 @@ begin
   end;
 end;
 
-function TPCanLight.LoadDll(const sdll: string): boolean;
+function TPCanLight.SetDllFile(const sdll: string): boolean;
 var i: EPCanFunction;
 begin
   result := false;
@@ -661,16 +661,9 @@ begin
   end else AddMessage(GetErrorMsg(ERR_HARDWARE_TYPE), ML_ERROR);
 end;
 
-function TPCanLight.LoadDefaultDll(const hwt: EPCanHardwareType): boolean;
+function TPCanLight.LoadDll(const sdll: string): boolean;
 begin
-  result := LoadDll(CSTR_PCAN_DLLFILES[hwt]);
-end;
-
-function TPCanLight.LoadDefaultDll(const shwt: string): boolean;
-var e_htype: EPCanHardwareType;
-begin
-  result := FindHardwareType(shwt, e_htype);
-  if result then result := LoadDefaultDll(e_htype);
+  result := SetDllFile(sdll);
 end;
 
 function TPCanLight.UnloadDll(): boolean;
@@ -685,6 +678,18 @@ begin
     end;
   end;
   result := true;
+end;
+
+function TPCanLight.LoadDefaultDll(const hwt: EPCanHardwareType): boolean;
+begin
+  result := LoadDll(CSTR_PCAN_DLLFILES[hwt]);
+end;
+
+function TPCanLight.LoadDefaultDll(const shwt: string): boolean;
+var e_htype: EPCanHardwareType;
+begin
+  result := FindHardwareType(shwt, e_htype);
+  if result then result := LoadDefaultDll(e_htype);
 end;
 
 function TPCanLight.GetErrorMsg(const errnr: longword): string;
@@ -1099,11 +1104,6 @@ destructor TPCanLight.Destroy();
 begin
   UnloadDll();
   inherited Destroy();
-end;
-
-function TPCanLight.SetDllFile(const sdll: string): boolean;
-begin
-  result := LoadDll(sdll);
 end;
 
 function TPCanLight.Config(const sconfs: TStrings): boolean;

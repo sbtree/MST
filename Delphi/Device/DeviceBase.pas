@@ -8,7 +8,7 @@
 unit DeviceBase;
 
 interface
-uses Classes, IniFiles, ConnBase, DataBuffer, ProtocolBase;
+uses Classes, IniFiles, ConnBase, TextMessage;
 
 type
 // =============================================================================
@@ -62,10 +62,7 @@ type
     s_lastmsg: string;      //last message
     s_devname: string;      //name of the device
     b_comhex : boolean;     //convert string, in which the hexadicimal data are presented, into hexadicimal value, if it is true
-
-    t_conns: array[EConnectType] of TConnBase; //array of all possible connections
-    e_actconn: EConnectType; //type of currently active connection
-    t_prot: TProtBase;      //protocol of communication
+    t_curconn: TConnBase;   //current connection
 
     //t_rbuf, t_wbuf: TCharBuffer; //buffer for receiving and sending data
     t_rbuf, t_wbuf: array [0..1023] of char; //buffer for receiving and sending data
@@ -78,7 +75,7 @@ type
     function CheckAnswer(const ans: string): boolean; virtual; abstract;
     //function VerifySendingData(): boolean; virtual; abstract;
     //function VerifyReceivedData(): boolean; virtual; abstract;
-    function ConfigConnections(const ini: TMemIniFile; const secname: string): integer; virtual;
+    //function ConfigConnections(const ini: TMemIniFile; const secname: string): integer; virtual;
     function GetCurConnect(): TConnBase;
 
   public
@@ -96,8 +93,9 @@ type
     function TryToReady(): boolean; virtual;
     function Connect(): Boolean; virtual;
     function Disconnect: boolean; virtual;
-    function ActiveConn(const ct: EConnectType): boolean; virtual;
-    function Reset(): boolean; virtual;
+    //function ActiveConn(const ct: EConnectType): boolean; virtual;
+    function Init(): boolean; virtual;
+    function Reset(const cmd: string): boolean; virtual;
     function SendStr(const sData: string; const bAns: boolean = true): boolean; virtual;
     function RecvStr(var sdata: string): Integer; virtual;
     function GetLastError(var msg: string): Integer; virtual; abstract;
@@ -160,7 +158,6 @@ begin
   c_timeout := C_TIMEOUT_MSEC;
   i_lasterr := 0;
   b_comhex  := false;
-  e_actconn := CT_RS232;
 
   //t_rbuf := TCharBuffer.Create;
   //t_wbuf := TCharBuffer.Create;
@@ -302,7 +299,7 @@ end;
 // First author : 2015-09-18 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.ConfigConnections(const ini: TMemIniFile; const secname: string): integer;
+{function TDeviceBase.ConfigConnections(const ini: TMemIniFile; const secname: string): integer;
 var i: EConnectType; s_inivalue: string;
 begin
   result := 0;
@@ -323,11 +320,11 @@ begin
       end;
     end;
   end;
-end;
+end;}
 
 function TDeviceBase.GetCurConnect(): TConnBase;
 begin
-  result := t_conns[e_actconn];
+  result := t_curconn;
 end;
 
 // =============================================================================
@@ -361,8 +358,8 @@ end;
 function TDeviceBase.Connect: boolean;
 begin
   result := false;
-  if ((e_state in C_DEV_INSTATES[DE_CONNECT]) and assigned(t_conns[e_actconn])) then begin
-    result := t_conns[e_actconn].Connect();
+  if ((e_state in C_DEV_INSTATES[DE_CONNECT]) and assigned(t_curconn)) then begin
+    result := t_curconn.Connect();
     e_state := DS_CONNECTED;
   end;
   result := result and (e_state in C_DEV_INSTATES[DE_DISCONNECT]);
@@ -380,13 +377,10 @@ end;
 // History      :
 // =============================================================================
 function TDeviceBase.Disconnect(): boolean;
-var i: EConnectType;
 begin
   result := true;
-  for i := LOW(EConnectType) to HIGH(EConnectType) do begin
-    if assigned(t_conns[i]) then result := (result and t_conns[i].Disconnect)
-  end;
-  if result then e_state := DS_CONFIGURED;
+  if assigned(t_curconn) then
+    result := t_curconn.Disconnect();
 end;
 
 // =============================================================================
@@ -400,7 +394,7 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.ActiveConn(const ct: EConnectType): boolean;
+{function TDeviceBase.ActiveConn(const ct: EConnectType): boolean;
 begin
   result := false;
   if assigned(t_conns[ct])  then begin
@@ -410,6 +404,12 @@ begin
       e_state := DS_CONNECTED;
     end;
   end;
+end; }
+
+function TDeviceBase.Init(): boolean;
+begin
+  result := false;
+  //todo:
 end;
 
 // =============================================================================
@@ -423,17 +423,14 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.Reset(): boolean;
-var c_time: cardinal;
+function TDeviceBase.Reset(const cmd: string): boolean;
 begin
   result := false;
-  if ((e_state in C_DEV_INSTATES[DE_RESET]) and assigned(t_conns[e_actconn])) then begin
-    c_time := GetTickCount() + C_RESET_MSEC;
-    t_conns[e_actconn].Disconnect();
-    repeat
-      TGenUtils.Delay();
-      result := t_conns[e_actconn].Connect();
-    until ((GetTickCount() > c_time) or result);
+  if assigned(t_curconn) then begin
+    t_curconn.Disconnect();
+    result := t_curconn.Connect();
+    if result then
+      result := Init();
   end;
 end;
 // =============================================================================
@@ -450,14 +447,8 @@ end;
 function TDeviceBase.SendStr(const sData: string; const bAns: boolean): boolean;
 begin
   result := false;
-  if TryToReady() then begin
-    //send string and wait til write-buffer is completely sent
-    result := t_conns[e_actconn].SendStr(sData);
-    if result then begin
-      if bAns then e_state := DS_BUSY
-      else e_state := DS_COMMOK;
-    end;
-  end;
+  if assigned(t_curconn) then 
+    result := t_curconn.SendStr(sData);
 end;
 
 // =============================================================================
@@ -471,15 +462,10 @@ end;
 // History      :
 // =============================================================================
 function TDeviceBase.RecvStr(var sdata: string): integer;
-var b_ok: boolean;
 begin
   result := 0;
-  if (e_state in C_DEV_INSTATES[DE_RECV]) then begin
-    result := t_conns[e_actconn].RecvStr(sdata);
-    b_ok := CheckAnswer(sdata);
-    if b_ok then e_state := DS_COMMOK
-    else e_state := DS_COMMERR;
-  end;
+  if assigned(t_curconn) then
+    result := t_curconn.RecvStr(sData, true);
 end;
 
 end.

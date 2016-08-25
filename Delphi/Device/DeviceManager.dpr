@@ -15,9 +15,11 @@ uses
   Thermometer in 'Thermometer.pas',
   DeviceConfig in 'DeviceConfig.pas',
   CAN in '..\Comm\CAN.pas',
-  USB in '..\Comm\USB.pas',
+  MtxUSB in '..\Comm\MtxUSB.pas',
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
-  Usbspec in '..\Externals\USBIO\Usbspec.pas';
+  Usbspec in '..\Externals\USBIO\Usbspec.pas',
+  TekUSB in '..\Comm\TekUSB.pas',
+  TextMessage in '..\General\TextMessage.pas';
 
 {$R *.res}
 

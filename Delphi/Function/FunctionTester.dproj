@@ -44,8 +44,8 @@
     </DelphiCompile>
     <DCCReference Include="..\Comm\CAN.pas" />
     <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\MtxUSB.pas" />
     <DCCReference Include="..\Comm\RS232.pas" />
-    <DCCReference Include="..\Comm\USB.pas" />
     <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
     <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
     <DCCReference Include="..\General\GenType.pas" />
@@ -73,6 +73,7 @@
     <None Include="ModelSupport_FunctionTester\FunctionCaller\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\FunctionTester\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\FunctionTester\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\MtxUSB\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\USBIOCOMLib_TLB\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\USBSPEC\default.txaPackage" />
   </ItemGroup>

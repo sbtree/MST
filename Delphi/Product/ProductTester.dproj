@@ -42,21 +42,36 @@
     <DelphiCompile Include="ProductTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\RS232.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
+    <DCCReference Include="..\General\NewProgressbar.pas" />
     <DCCReference Include="..\General\StringPairs.pas" />
+    <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="FormProdTester.pas">
       <Form>frmProdTester</Form>
     </DCCReference>
+    <DCCReference Include="MtxDownloader.pas" />
     <DCCReference Include="ProductConfig.pas" />
+    <None Include="ModelSupport_ProductTester\ConnBase\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\GenUtils\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\Main\default.txvpck" />
     <None Include="ModelSupport_ProductTester\MtxDIS2\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\MtxDIS2\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\MtxDownloader\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\MtxDownloader\default.txvpck" />
     <None Include="ModelSupport_ProductTester\MtxProduct\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\MtxProduct\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\MtxUSB\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\MtxUSB\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\NewProgressbar\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\PRODTester\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\ProductConfig\default.txvpck" />
     <None Include="ModelSupport_ProductTester\ProductTester\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\RS232\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\TextMessage\default.txaPackage" />
   </ItemGroup>
 </Project>

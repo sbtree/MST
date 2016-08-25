@@ -9,9 +9,10 @@ uses
   TextMessage in '..\General\TextMessage.pas',
   ConnBase in 'ConnBase.pas',
   CAN in 'CAN.pas',
-  USB in 'USB.pas',
+  MtxUSB in 'MtxUSB.pas',
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
-  Usbspec in '..\Externals\USBIO\Usbspec.pas';
+  Usbspec in '..\Externals\USBIO\Usbspec.pas',
+  TekUSB in 'TekUSB.pas';
 
 {$R *.res}
 
