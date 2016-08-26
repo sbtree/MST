@@ -13,7 +13,7 @@ type
 //    First author : 2015-12-17 /bsu/
 //    History      :
 // =============================================================================
-  TTestRunner = class
+  TTestRunner = class(TInterfacedObject, ITextMessengerImpl)
   private
      p_ptinfo:   PTypeInfo;    //a pointer to type info of EParseState
 
@@ -22,12 +22,11 @@ type
     e_exemode:  EExecMode;
     t_curseq:   TTestSequence;
     t_container:TStepContainer;
-    t_messenger:TTextMessenger;
+    t_msgrimpl: TTextMessengerImpl; //for delegation of interface TTextMessengerImpl
     b_jumpmstep:boolean; //indicate, whether to run the steps, which have minus step number, e.g. '-11.02'
   protected
     procedure SetExecutionMode(const em: EExecMode);
     procedure SetStepContainer(const tcon: TStepContainer);
-    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
 
     function  StepInit(const val: string): boolean; virtual;
     function  StepInputM(const val: string): boolean; virtual;
@@ -40,8 +39,10 @@ type
     constructor Create();
     destructor  Destroy(); override;
 
+    //delegate interface ITextMessengerImpl
+    property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
+    
     property ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
-    property Messenger: TTextMessenger read t_messenger write t_messenger;
     property StepContainer: TStepContainer read t_container write SetStepContainer;
     property CurrentSequence: TTestSequence read t_curseq;
     property JumpMinusStep: boolean read b_jumpmstep write b_jumpmstep;
@@ -65,15 +66,18 @@ uses SysUtils;
 constructor TTestRunner.Create();
 begin
   inherited Create();
+  t_msgrimpl := TTextMessengerImpl.Create();
+  t_msgrimpl.OwnerName := ClassName();
   t_curseq := TTestSequence.Create();
   t_fcaller := TFunctionCaller.Create();
-  t_fcaller.Messenger := self.Messenger;
+  ITextMessengerImpl(t_fcaller).Messenger := t_msgrimpl.Messenger;
   b_jumpmstep := true;
   ExecutionMode := EM_NORMAL;
 end;
 
 destructor  TTestRunner.Destroy();
 begin
+  t_msgrimpl.Free();
   FreeAndNil(t_fcaller);
   FreeAndNil(t_curseq);
   inherited Destroy();
@@ -82,10 +86,10 @@ end;
 procedure TTestRunner.SetExecutionMode(const em: EExecMode);
 begin
   e_exemode := em;
-  if assigned(t_messenger) then begin
+  if assigned(t_msgrimpl.Messenger) then begin
     case e_exemode of
-      EM_NORMAL, EM_SIMULATE: t_messenger.MessageThreshold := ML_ERROR;
-      EM_DIAGNOSE: t_messenger.MessageThreshold := ML_INFO;
+      EM_NORMAL, EM_SIMULATE: t_msgrimpl.Messenger.MessageThreshold := ML_ERROR;
+      EM_DIAGNOSE: t_msgrimpl.Messenger.MessageThreshold := ML_INFO;
     end;
   end;
   t_fcaller.ExecutionMode := e_exemode;
@@ -95,22 +99,6 @@ procedure TTestRunner.SetStepContainer(const tcon: TStepContainer);
 begin
   t_container := tcon;
   if assigned(t_container) then t_container.UpdateSequence(t_curseq);
-end;
-
-// =============================================================================
-//    Description  : add a message into t_messenger if it exists
-//    Parameter    : text, text of the message
-//                   level, level of the message (see EMessageLevel in TextMessage)
-//    Return       : --
-//    First author : 2016-05-09 /bsu/
-//    History      :
-// =============================================================================
-procedure TTestRunner.AddMessage(const text: string; const level: EMessageLevel);
-begin
-  if assigned(t_messenger) then begin
-    //if (level in [ML_INFO, ML_WARNING]) then t_messenger.AddMessage(text, ClassName, level)
-    t_messenger.AddMessage(format('%s', [text]), 'TTestRunner', level);
-  end;
 end;
 
 function  TTestRunner.StepInit(const val: string): boolean;
@@ -184,10 +172,10 @@ begin
       //todo: 6. finalize this step 'final' or 'r_off'
       if result then result := StepFinal(tstep.GetFieldValue(SF_FINAL));
       //t_curstep.StepResult.Resulted := result;
-      AddMessage(format('The step (%s) is done successfully.', [tstep.GetFieldValue(SF_NR)]));
+      t_msgrimpl.AddMessage(format('The step (%s) is done successfully.', [tstep.GetFieldValue(SF_NR)]));
     end else begin
       result := true;
-      AddMessage(format('The minus step (%s) is jumped.', [tstep.GetFieldValue(SF_NR)]));
+      t_msgrimpl.AddMessage(format('The minus step (%s) is jumped.', [tstep.GetFieldValue(SF_NR)]));
     end;
   end;
 end;
@@ -226,7 +214,6 @@ begin
 end;
 
 function TTestRunner.RunCase(const caseidx: integer): boolean;
-var t_case: TStepGroup;
 begin
   result := RunGroup(t_curseq.CaseGroup.CaseByIndex(caseidx));
 end;
@@ -235,7 +222,7 @@ function TTestRunner.RunSequence(): boolean;
 begin
   result := false;
   if (t_curseq.StepCount > 0) then RunGroup(t_curseq)
-  else AddMessage('No test step is found in current test sequence.', ML_WARNING);
+  else t_msgrimpl.AddMessage('No test step is found in current test sequence.', ML_WARNING);
 end;
 
 function TTestRunner.SetSequence(const csincl, csexcl: string): boolean;

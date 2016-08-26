@@ -75,8 +75,8 @@ begin
   end;
   ph[cchReadBuffer] := chr(0);
   OutputInfo(t_outputs, ph);
-  if assigned(t_messenger) then begin
-    for i := 0 to t_outputs.Count - 1 do t_messenger.AddMessage(t_outputs[i]);
+  if assigned(t_msgrimpl.Messenger) then begin
+    for i := 0 to t_outputs.Count - 1 do t_msgrimpl.AddMessage(t_outputs[i]);
   end;
   FreeAndNil(t_outputs);
   CloseHandle(hReadPipe);

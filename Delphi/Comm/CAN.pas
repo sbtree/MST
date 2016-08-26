@@ -651,14 +651,14 @@ begin
         if result then s_dllfile := sdll
         else begin
           UnloadDll();
-          AddMessage(format('No expected function is found in the dll "%s"', [sdll]), ML_ERROR);
+          t_msgrimpl.AddMessage(format('No expected function is found in the dll "%s"', [sdll]), ML_ERROR);
         end;
-      end else AddMessage(format('Failed to load dll: %s', [sdll]), ML_ERROR);
+      end else t_msgrimpl.AddMessage(format('Failed to load dll: %s', [sdll]), ML_ERROR);
     except
       UnloadDll();
       result := false;
     end;
-  end else AddMessage(GetErrorMsg(ERR_HARDWARE_TYPE), ML_ERROR);
+  end else t_msgrimpl.AddMessage(GetErrorMsg(ERR_HARDWARE_TYPE), ML_ERROR);
 end;
 
 function TPCanLight.LoadDll(const sdll: string): boolean;
@@ -813,7 +813,7 @@ begin
       end;
       end;
     end;
-    AddMessage(s_errmsg, ML_ERROR);
+    t_msgrimpl.AddMessage(s_errmsg, ML_ERROR);
   end;
 end;
 
@@ -908,7 +908,7 @@ begin
     p_pcanmsg := PPCANMsg(buf);
     lw_ret := CanWrite(p_pcanmsg^);
     result := (lw_ret = CAN_ERR_OK);
-  end else AddMessage(format('Found invalid PCAN-message by sending data (% bytes).', [len]), ML_ERROR);
+  end else t_msgrimpl.AddMessage(format('Found invalid PCAN-message by sending data (% bytes).', [len]), ML_ERROR);
 end;
 
 function TPCanLight.RecvData(): boolean;
@@ -1010,8 +1010,8 @@ begin
     if ((result AND (CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) then begin
       result := CanClose();
       TryConnect();
-      if IsConnected() then AddMessage('Successful to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
-      else AddMessage('Failed to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
+      if IsConnected() then t_msgrimpl.AddMessage('Successful to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
+      else t_msgrimpl.AddMessage('Failed to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
     end;
   end;
 end;
@@ -1024,8 +1024,8 @@ begin
     if ((result AND (CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) then begin
       result := CanClose();
       TryConnect();
-      if IsConnected() then AddMessage('Successful to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
-      else AddMessage('Failed to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
+      if IsConnected() then t_msgrimpl.AddMessage('Successful to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
+      else t_msgrimpl.AddMessage('Failed to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
     end;
   end;
 end;
@@ -1117,8 +1117,8 @@ begin
       if not result then break;
     end;
     if result then e_state := CS_CONFIGURED
-    else AddMessage(format('Failed to configurate the configuration (%s).', [GetTypeName()]), ML_ERROR);
-  end else AddMessage(format('The current state (%s) is not suitable for configuration.', [GetStateStr()]), ML_WARNING);
+    else t_msgrimpl.AddMessage(format('Failed to configurate the configuration (%s).', [GetTypeName()]), ML_ERROR);
+  end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for configuration.', [GetStateStr()]), ML_WARNING);
 end;
 
 function TPCanLight.Disconnect: boolean;
@@ -1150,10 +1150,10 @@ begin
     if result then result := WaitForWriting(c_tend);
     p_pcanmsg := PPCANMsg(buf);
     PCanMsgToStr(p_pcanmsg^, s_msg);
-    if result then AddMessage(format('Successful to send data (%d bytes): %s ', [len, s_msg]))
-    else AddMessage(format('Failed to send data (%d bytes): %s', [len, s_msg]), ML_ERROR);
+    if result then t_msgrimpl.AddMessage(format('Successful to send data (%d bytes): %s ', [len, s_msg]))
+    else t_msgrimpl.AddMessage(format('Failed to send data (%d bytes): %s', [len, s_msg]), ML_ERROR);
   end else
-    AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 function TPCanLight.SendStr(const str: string): boolean;
@@ -1166,12 +1166,12 @@ begin
     if result then begin
       result := (CanWrite(t_pcanmsg) = CAN_ERR_OK);
       if result then result := WaitForWriting(c_tend);
-      if result then AddMessage(format('Successful to send string: %s (data length: %d bytes)', [str, t_pcanmsg.LEN]))
-      else AddMessage(format('Failed to send string: %s', [str]), ML_ERROR)
+      if result then t_msgrimpl.AddMessage(format('Successful to send string: %s (data length: %d bytes)', [str, t_pcanmsg.LEN]))
+      else t_msgrimpl.AddMessage(format('Failed to send string: %s', [str]), ML_ERROR)
     end else
-      AddMessage(format('Failed to build PCAN-message by sending string: %s', [str]), ML_ERROR);
+      t_msgrimpl.AddMessage(format('Failed to build PCAN-message by sending string: %s', [str]), ML_ERROR);
   end else
-    AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 procedure TPCanReadThread.ReadCanMessage();

@@ -21,9 +21,9 @@ interface
 uses Classes, TextMessage, GenType;
 
 type
-  TFunctionBase = class(TPersistent)
+  TFunctionBase = class(TPersistent, ITextMessengerImpl)
   protected
-    t_messenger:TTextMessenger; //a pointer, which can be asssigned through property Messager
+    t_msgrimpl: TTextMessengerImpl; //for delegation of interface ITextMessengerImpl
     e_exemode:  EExecMode;      //execution mode, which can be changed through property ExecutionMode
     b_aborted:  boolean;        //indicates if current execution should be aborted
     t_pars:     TStrings;       //tos save parameters
@@ -31,14 +31,14 @@ type
     ch_separator: char;         //separator of the parameters. The default value is a space
   protected
      procedure SetAborted(const aborted: boolean);
-     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
+
   public
     constructor Create();
     destructor Destroy; override;
 
+    property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
     property ResultString: string read s_result write s_result;
     property ExecutionMode: EExecMode read e_exemode write e_exemode;
-    property Messenger: TTextMessenger read t_messenger write t_messenger;
     property Aborted: boolean read b_aborted write SetAborted;
     property ParamSeparator: Char read ch_separator write ch_separator;
 
@@ -69,11 +69,6 @@ end;
 procedure TFunctionBase.SetAborted(const aborted: boolean);
 begin
   b_aborted := aborted;
-end;
-
-procedure TFunctionBase.AddMessage(const text: string; const level: EMessageLevel);
-begin
-  if assigned(t_messenger) then t_messenger.AddMessage(text, '', level);
 end;
 
 function TFunctionBase.LoadParameter(const par: string): boolean;

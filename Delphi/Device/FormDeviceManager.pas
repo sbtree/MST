@@ -25,6 +25,7 @@ var
 implementation
 
 {$R *.dfm}
+uses DeviceBase, Multimeter, TextMessage;
 
 procedure TfrmDeviceManager.btnCreateTreeClick(Sender: TObject);
 var
@@ -59,8 +60,10 @@ begin
 end;
 
 procedure TfrmDeviceManager.btnFRClick(Sender: TObject);
-//var fIni: TMemIniFile; fr: TFlashRunner; bOk: boolean; sTmp: string;
+var dmm: ITextMessengerImpl; bOk: boolean; sTmp: string; t_msgr: TTextMessenger;
 begin
+  dmm := TMultimeter.Create(self);
+  dmm.Messenger := t_msgr;
   {fIni := TMemIniFile.Create('FlashRunner.ini');
   fr := TFlashRunner.Create(self);
   

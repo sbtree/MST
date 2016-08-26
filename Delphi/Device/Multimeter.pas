@@ -42,9 +42,6 @@ type
     property ContinueMode : EContinueMode read e_cont write e_cont;
     property CountCards: word read w_cards;
 
-    function ConfigDevice(const ini: TMemIniFile): Boolean; override;
-    function GetLastError(var msg: string): Integer; override;
-
     function CloseRelays(const relays: string): boolean; virtual;
     function OpenRelays(const relays: string): boolean; virtual;
     function QueryRelays(var relnrs: string): boolean; virtual;
@@ -103,18 +100,6 @@ end;
 destructor TMultimeter.Destroy;
 begin
 	inherited Destroy;
-end;
-
-function TMultimeter.ConfigDevice(const ini: TMemIniFile): Boolean;
-begin
-  //todo
-  result := false;
-end;
-
-function TMultimeter.GetLastError(var msg: string): Integer;
-begin
-  //todo
-  result := 0;
 end;
 
 function TMultimeter.CloseRelays(const relays: string): boolean;

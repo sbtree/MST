@@ -18,14 +18,7 @@ type
                     ML_ERROR,   //error message
                     ML_FATAL    //fatal message
                   );
-  ITextMessengerImpl = interface
-    procedure AddMessage(const text: string; const sender: string; const level: EMessageLevel);
-    procedure UpdateMessage(const text: string; const sender: string; const level: EMessageLevel);
-    procedure ExportMessages(const fname: string);
-    procedure Clear(const bextern: boolean);
-  end;
-
-  TTextMessenger = class(TInterfacedObject, ITextMessengerImpl)
+  TTextMessenger = class(TInterfacedObject)
   protected
     t_msgintern:  TStrings; //saves messages. it is created in constructor
     t_msgextern:  TStrings; //default pointing to t_msgintern, but it will be replaced by SetMessages
@@ -50,6 +43,27 @@ type
     procedure UpdateMessage(const text: string; const sender: string = ''; const level: EMessageLevel = ML_INFO);
     procedure ExportMessages(const fname: string);
     procedure Clear(const bextern: boolean = false);
+  end;
+
+  ITextMessengerImpl = interface
+    function GetMessenger(): TTextMessenger;
+    procedure SetMessenger(tmessenger: TTextMessenger);
+    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    property Messenger: TTextMessenger read GetMessenger write SetMessenger;
+  end;
+
+  TTextMessengerImpl = class(TInterfacedObject, ITextMessengerImpl)
+  protected
+    t_messenger:  TTextMessenger;
+    s_ownername:  string;
+  public
+    function GetMessenger(): TTextMessenger;
+    procedure SetMessenger(tmessenger: TTextMessenger);
+    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    property Messenger: TTextMessenger read GetMessenger write SetMessenger;
+    property OwnerName: string read s_ownername write s_ownername;
   end;
 
 implementation
@@ -139,6 +153,46 @@ begin
     msg := '[' + CSTR_MLKEYS[level] + ']' + msg;
     if b_tstamp then msg := '[' + DateTimeToStr(Now()) + ']: ' + msg;
   end else result := false;
+end;
+
+function TTextMessengerImpl.GetMessenger(): TTextMessenger;
+begin
+  result := t_messenger;
+end;
+
+procedure TTextMessengerImpl.SetMessenger(tmessenger: TTextMessenger);
+begin
+  t_messenger := tmessenger;
+end;
+
+// =============================================================================
+// Description  : append a new message in t_messenger
+// Parameter    : text, text of the message to update
+//                level, message level, see the definition of EMessageLevel
+// Exceptions   : --
+// First author : 2016-08-26 /bsu/
+// History      :
+// =============================================================================
+procedure TTextMessengerImpl.AddMessage(const text: string; const level: EMessageLevel);
+begin
+  if assigned(t_messenger) then begin
+    t_messenger.AddMessage(format('%s', [text]), s_ownername, level);
+  end;
+end;
+
+// =============================================================================
+// Description  : update the text of last message, which is appended through
+//                function AddMessage
+// Parameter    : text, text of the message to update
+// Exceptions   : --
+// First author : 2016-06-15 /bsu/
+// History      :
+// =============================================================================
+procedure TTextMessengerImpl.UpdateMessage(const text: string; const level: EMessageLevel);
+begin
+  if assigned(t_messenger) then begin
+    t_messenger.UpdateMessage(format('%s', [text]), s_ownername, level);
+  end;
 end;
 
 end.

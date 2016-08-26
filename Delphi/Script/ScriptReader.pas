@@ -97,7 +97,7 @@ type
                 );
   PParseState = ^EParseState;
 
-  TScriptReader = class
+  TScriptReader = class(TInterfacedObject, ITextMessengerImpl)
   type
     StateEntry = record
       e_state:EParseState;//save state
@@ -130,10 +130,9 @@ type
     t_container:TStepContainer;     //a container to save steps
     a_fieldvals:FieldStringArray;   //an array to save field values of current test step
     s_curkey:   string;       //to save current key word, e.g. field name, variable name
-    t_messenger:TTextMessenger;     //to reference a extern messenger, see property Messenger
+    t_msgrimpl: TTextMessengerImpl;   //for delegation of interface ITextMessengerImpl
 
   protected
-    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure PushState(const state: EParseState);
     procedure PopState();
     procedure ClearStates();
@@ -145,14 +144,16 @@ type
     function  ReadChar(const curch, nextch: char): boolean;
 
   public
+    constructor Create();
+    destructor Destroy(); override;
+
+    //delegate interface ITextMessengerImpl
+    property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
+    
     property VarContainer: TStringPairs read t_variables write t_variables;
     property StepContainer: TStepContainer read t_container write t_container;
     property FieldNameChecker: TFieldNameChecker read t_fnchecker;
     property FieldValueChecker: TFieldValueChecker read t_fvchecker;
-    property Messenger: TTextMessenger read t_messenger write t_messenger;
-
-    constructor Create();
-    destructor Destroy(); override;
 
     procedure Clear();
     function  ReadFromText(const srctext: string; const blast: boolean = false): boolean; virtual;
@@ -186,22 +187,6 @@ const
 
 implementation
 uses SysUtils, StrUtils, FuncBase;
-
-// =============================================================================
-//    Description  : add a message into t_messenger if it exists
-//    Parameter    : text, text of the message
-//                   level, level of the message (see EMessageLevel in TextMessage)
-//    Return       : --
-//    First author : 2016-05-06 /bsu/
-//    History      :
-// =============================================================================
-procedure TScriptReader.AddMessage(const text: string; const level: EMessageLevel);
-begin
-  if assigned(t_messenger) then begin
-    if (level in [ML_INFO, ML_WARNING]) then t_messenger.AddMessage(text, ClassName, level)
-    else t_messenger.AddMessage(format('[r:%d, c:%d, s:%s]%s', [i_rowindex, i_colindex, GetEnumName(p_ptinfo, integer(e_curstate)), text]), ClassName, level);
-  end;
-end;
 
 // =============================================================================
 //    Description  : push a EParseState into state stack
@@ -291,10 +276,10 @@ begin
   result := t_fnchecker.IsNameValid(name, e_lastfield);
   if result then begin
     if (t_fnchecker.IsNameUsed(e_lastfield)) then begin
-      AddMessage(format('Dopplicated field name (%s).', [t_fnchecker.FieldName(e_lastfield)]),ML_ERROR);
+      t_msgrimpl.AddMessage(format('Dopplicated field name (%s).', [t_fnchecker.FieldName(e_lastfield)]),ML_ERROR);
       result := false
     end else  t_fnchecker.SetNameUsed(e_lastfield, true);
-  end else AddMessage(format('Invalid field name (%s).', [name]),ML_ERROR);
+  end else t_msgrimpl.AddMessage(format('Invalid field name (%s).', [name]),ML_ERROR);
 end;
 
 // =============================================================================
@@ -311,7 +296,7 @@ begin
   if result then
     a_fieldvals[e_lastfield] := val
   else
-    AddMessage(format('Invalid value (%s) for the field (%s).', [val, t_fnchecker.FieldName(e_lastfield)]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('Invalid value (%s) for the field (%s).', [val, t_fnchecker.FieldName(e_lastfield)]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -330,9 +315,9 @@ begin
   if assigned(t_variables) then begin
     result := t_variables.AddPair(name, value);
     if (not result) then
-      AddMessage(format('Failed to input variable (name=%s), dupplicated?',[name]), ML_ERROR);
+      t_msgrimpl.AddMessage(format('Failed to input variable (name=%s), dupplicated?',[name]), ML_ERROR);
   end else
-    AddMessage('No container is given for variables', ML_ERROR);
+    t_msgrimpl.AddMessage('No container is given for variables', ML_ERROR);
 end;
 
 // =============================================================================
@@ -357,9 +342,9 @@ begin
       t_fnchecker.ResetUnused();
       ResetFieldValues();
     end else
-      AddMessage(format('Failed to input a test step (Nr=%s).',[a_fieldvals[SF_NR]]), ML_ERROR);
+      t_msgrimpl.AddMessage(format('Failed to input a test step (Nr=%s).',[a_fieldvals[SF_NR]]), ML_ERROR);
   end else
-    AddMessage('No container is given for test steps.', ML_ERROR);
+    t_msgrimpl.AddMessage('No container is given for test steps.', ML_ERROR);
 end;
 // =============================================================================
 //    Description  : input a new char and next char
@@ -386,7 +371,7 @@ begin
         PushState(PS_VARVAL);
       end else begin  //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDGROUP]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -403,7 +388,7 @@ begin
         end else result := false; // error is already handled in CheckFieldName
       end else begin  //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDVAL, PS_FIELDGROUP]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -423,11 +408,11 @@ begin
           PopState(); PopState();
         end else begin
           result := false;
-          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+          t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -438,7 +423,7 @@ begin
         //todo:
       end else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -449,7 +434,7 @@ begin
         //todo:
       end else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -461,7 +446,7 @@ begin
         else if (e_curstate in [PS_VARVAL, PS_FIELDVAL]) then PushState(PS_SQUOTATION);
       end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -473,7 +458,7 @@ begin
         else if (e_curstate in [PS_VARVAL, PS_FIELDVAL]) then PushState(PS_DQUOTATION);
       end else begin //[PS_IDLE, PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -491,7 +476,7 @@ begin
             //b_allowvar := false;
           end else begin
             result := false;
-            AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+            t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
           end;
         end else if (e_curstate = PS_FIELDVAL) then begin
           if (trim(s_curtoken) = '') then begin
@@ -501,7 +486,7 @@ begin
         end else if (e_curstate = PS_VARVAL) then s_curtoken := s_curtoken + curch
         else begin  //[PS_VARNAME, PS_STEP, PS_FIELDKEY, PS_FIELDGROUP]
           result := false;
-          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+          t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end;
     end;
@@ -517,7 +502,7 @@ begin
           if (e_curstate = PS_FIELDGROUP) then e_lastfield := t_sentry.e_field;
         end else begin
           result := false;
-          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+          t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end else if (e_curstate in [PS_FIELDGROUP, PS_STEP]) then begin
         PopState();
@@ -528,11 +513,11 @@ begin
           result := CheckTestStep();
         end else if (e_curstate <> PS_FIELDVAL) then begin
           result := false;
-          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+          t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end else begin   //[PS_IDLE, PS_VARNAME, PS_FIELDKEY]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -548,7 +533,7 @@ begin
       else if (e_curstate = PS_BRACECOMMENT) then PopState()
       else begin  //[PS_IDLE, PS_STEP, PS_VARNAME, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -564,7 +549,7 @@ begin
         if (e_curstate in [PS_VARVAL, PS_FIELDVAL]) then s_curtoken := s_curtoken + curch
         else begin //[PS_IDLE, PS_STEP, PS_VARNAME, PS_FIELDKEY, PS_FIELDGROUP]
           result := false;
-          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+          t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end;
     end;
@@ -579,7 +564,7 @@ begin
         end;
       end else begin  //[PS_IDLE, PS_STEP, PS_VARNAME, PS_FIELDKEY, PS_FIELDGROUP]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -602,7 +587,7 @@ begin
         PopState();
       end else begin  //[PS_VARNAME, PS_SQUOTATION, PS_DQUOTATION, PS_FIELDKEY, PS_FIELDVAL]
         result := false;
-        AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
       end;
     end;
   end;
@@ -618,7 +603,7 @@ begin
               PushState(PS_VARNAME);
             end else begin
               result := false;
-              AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+              t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
             end;
           end else begin //[PS_STEP, PS_FIELDGROUP]
             s_curtoken := s_curtoken + curch;
@@ -626,7 +611,7 @@ begin
           end;
         end else if (not (curch in CSET_BLANK_CHARS)) then begin
           result := false;
-          AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
+          t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
       end;
     end;
@@ -655,6 +640,8 @@ begin
   t_tsteps := TStringList.Create();
   t_fnchecker := TFieldNameChecker.Create();
   t_fvchecker := TFieldValueChecker.Create();
+  t_msgrimpl := TTextMessengerImpl.Create();
+  t_msgrimpl.OwnerName := ClassName();
 end;
 
 // =============================================================================
@@ -666,7 +653,7 @@ end;
 // =============================================================================
 destructor TScriptReader.Destroy();
 begin
-	inherited Destroy;
+  t_msgrimpl.Free();
   ClearStates();
   t_srcfiles.Free();
   SetLength(a_fstemps, 0);
@@ -674,6 +661,7 @@ begin
   t_tsteps.Free();
   t_fnchecker.Free();
   t_fvchecker.Free();
+	inherited Destroy;
 end;
 
 // =============================================================================
@@ -707,7 +695,7 @@ begin
     i_cases := t_container.CaseGroup.CaseCount;
     t_container.Clear();
   end;
-  if b_info then AddMessage(format('All existing variables (%d), test steps (%d) in %d case(s) are unloaded.', [i_vars, i_steps, i_cases]));
+  if b_info then t_msgrimpl.AddMessage(format('All existing variables (%d), test steps (%d) in %d case(s) are unloaded.', [i_vars, i_steps, i_cases]));
 end;
 
 // =============================================================================
@@ -738,7 +726,7 @@ begin
   if blast then begin
     s_curtext := trim(s_curtext);
     result := (result and (s_curtext = '') and (e_curstate = PS_IDLE) and (t_states.Count = 0));
-    if (not result) then AddMessage(format('Script end: text=%s, state=%s', [s_curtext, GetEnumName(p_ptinfo, integer(e_curstate))]), ML_ERROR);
+    if (not result) then t_msgrimpl.AddMessage(format('Script end: text=%s, state=%s', [s_curtext, GetEnumName(p_ptinfo, integer(e_curstate))]), ML_ERROR);
   end;
 end;
 
@@ -754,7 +742,7 @@ var i, i_vars, i_steps, i_cases: integer;
 begin
   result := false;
   if bappend then begin
-    if (t_tsteps.Count > 0) then AddMessage('All variables and test steps from this script will be appended.');
+    if (t_tsteps.Count > 0) then t_msgrimpl.AddMessage('All variables and test steps from this script will be appended.');
   end else Clear();
 
   if srclist.Count > 0 then  begin
@@ -780,11 +768,11 @@ begin
         i_cases := 0;
       end;
       if (t_tsteps.Count > 0) then begin
-        AddMessage(format('%d variable(s) and %d step(s) in %d case(s) are now loaded.', [i_vars, i_steps, i_cases]), ML_INFO);
-        if ((i_cases - 1) > CINT_CASE_INDEX_MAX) then AddMessage(format('The count (%d) of test cases is over the limit (%d).', [i_cases, CINT_CASE_INDEX_MAX + 1]), ML_WARNING);
-      end else AddMessage('No valid line is loaded from the test script.', ML_WARNING);
+        t_msgrimpl.AddMessage(format('%d variable(s) and %d step(s) in %d case(s) are now loaded.', [i_vars, i_steps, i_cases]), ML_INFO);
+        if ((i_cases - 1) > CINT_CASE_INDEX_MAX) then t_msgrimpl.AddMessage(format('The count (%d) of test cases is over the limit (%d).', [i_cases, CINT_CASE_INDEX_MAX + 1]), ML_WARNING);
+      end else t_msgrimpl.AddMessage('No valid line is loaded from the test script.', ML_WARNING);
     end;
-  end else AddMessage('Empty script.', ML_WARNING);
+  end else t_msgrimpl.AddMessage('Empty script.', ML_WARNING);
 end;
 
 // =============================================================================
@@ -819,13 +807,13 @@ begin
         t_srcfiles.Add(srcfile);
         SetLength(a_fstemps, t_srcfiles.Count);
         a_fstemps[t_srcfiles.Count - 1] := t_fdatetime;
-      end else AddMessage(format('Failed to read this file (%s)', [srcfile]), ML_ERROR);
+      end else t_msgrimpl.AddMessage(format('Failed to read this file (%s)', [srcfile]), ML_ERROR);
       t_lines.Free();
-    end else AddMessage('This file is already loaded.', ML_INFO);
+    end else t_msgrimpl.AddMessage('This file is already loaded.', ML_INFO);
   end else begin
-    if (not assigned(VarContainer)) then AddMessage('The variable container is not given', ML_WARNING)
-    else if (not assigned(StepContainer)) then AddMessage('The step container is not given', ML_WARNING)
-    else AddMessage(format('This file is NOT found (%s).', [srcfile]), ML_WARNING);
+    if (not assigned(VarContainer)) then t_msgrimpl.AddMessage('The variable container is not given', ML_WARNING)
+    else if (not assigned(StepContainer)) then t_msgrimpl.AddMessage('The step container is not given', ML_WARNING)
+    else t_msgrimpl.AddMessage(format('This file is NOT found (%s).', [srcfile]), ML_WARNING);
   end;
 end;
 
@@ -852,9 +840,9 @@ begin
     result := (t_tsteps.Count > 0);
   end;
   if result then begin
-    if t_tsteps.Count> 1 then AddMessage(format('%d lines are saved in "%s"', [t_tsteps.Count, s_fname]), ML_INFO)
-    else AddMessage(format('Only %d line is saved in "%s"', [t_tsteps.Count, s_fname]), ML_INFO);
-  end else AddMessage('No line is saved.', ML_WARNING);
+    if t_tsteps.Count> 1 then t_msgrimpl.AddMessage(format('%d lines are saved in "%s"', [t_tsteps.Count, s_fname]), ML_INFO)
+    else t_msgrimpl.AddMessage(format('Only %d line is saved in "%s"', [t_tsteps.Count, s_fname]), ML_INFO);
+  end else t_msgrimpl.AddMessage('No line is saved.', ML_WARNING);
 end;
 
 end.

@@ -39,7 +39,7 @@ begin
   ShowMessage(format('length = %d, %s', [length(s_show), s_show]));
   t_fcaller := TFunctionCaller.Create;
   t_fcaller.ExecutionMode := EM_DIAGNOSE;
-  t_fcaller.Messenger := t_messenger;
+  ITextMessengerImpl(t_fcaller).Messenger := t_messenger;
   t_fcaller.CallFunction('ExecConsoleCmd', 'N:\SW_INBE\DIS-2\Tools\flash_over_jtag.exe');
   t_fcaller.CallFunction('Nil', 'abc');
   t_fcaller.CallFunction('abcd', 'abc');

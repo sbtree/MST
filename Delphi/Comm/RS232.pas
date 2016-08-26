@@ -363,7 +363,7 @@ begin
   c_tend := GetTickCount() + c_timeout;
   repeat
     if RecvData() then  //read out data from read buffer
-      AddMessage(format('Rx-Buffer (%d bytes) is cleared', [w_rlen]), ML_WARNING);
+      t_msgrimpl.AddMessage(format('Rx-Buffer (%d bytes) is cleared', [w_rlen]), ML_WARNING);
   until ((w_rlen <= 0) or (GetTickCount() >= c_tend));
   ZeroMemory(@ba_rbuf, w_rlen);
   w_rlen := 0;
@@ -432,8 +432,8 @@ begin
       if not result then break;
     end;
     if result then e_state := CS_CONFIGURED
-    else AddMessage(format('Failed to configurate the configuration (%s).', [GetTypeName()]), ML_ERROR);
-  end else AddMessage(format('The current state (%s) is not suitable for configuration.', [GetStateStr()]), ML_WARNING);
+    else t_msgrimpl.AddMessage(format('Failed to configurate the configuration (%s).', [GetTypeName()]), ML_ERROR);
+  end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for configuration.', [GetStateStr()]), ML_WARNING);
 end;
 
 // =============================================================================

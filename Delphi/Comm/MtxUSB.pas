@@ -591,8 +591,8 @@ begin
       if not result then break;
     end;
     if result then e_state := CS_CONFIGURED
-    else AddMessage(format('Failed to configurate the configuration (%s).', [GetTypeName()]), ML_ERROR);
-  end else AddMessage(format('The current state is not suitable to config (state=%d).', [Ord(e_state)]), ML_ERROR);
+    else t_msgrimpl.AddMessage(format('Failed to configurate the configuration (%s).', [GetTypeName()]), ML_ERROR);
+  end else t_msgrimpl.AddMessage(format('The current state is not suitable to config (state=%d).', [Ord(e_state)]), ML_ERROR);
 end;
 
 function TMtxUsb.Connect(): boolean;
@@ -603,15 +603,15 @@ begin
     result := WaitForConnecting(GetTickCount() + c_timeout);
     if result then begin
       e_state := CS_CONNECTED;
-      AddMessage(format('Successful to make a connection(%s) to device(sn=%d).', [GetTypeName(), ProductSN]));
-    end else AddMessage(format('Failed to make a connection(%s) to device(sn=%d)', [GetTypeName(), ProductSN]), ML_ERROR);
-  end else AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
+      t_msgrimpl.AddMessage(format('Successful to make a connection(%s) to device(sn=%d).', [GetTypeName(), ProductSN]));
+    end else t_msgrimpl.AddMessage(format('Failed to make a connection(%s) to device(sn=%d)', [GetTypeName(), ProductSN]), ML_ERROR);
+  end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
 end;
 
 function TMtxUsb.Disconnect: boolean;
 begin
   result := Uninit();
-  AddMessage('The device is disconnected.');
+  t_msgrimpl.AddMessage('The device is disconnected.');
 end;
 
 end.

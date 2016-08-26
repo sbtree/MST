@@ -46,8 +46,8 @@ type
   
   HexToIntStr = class(TFunctionBase)
   public
-    function LoadParameter(const par: string): boolean; override;
-    function DoTask(): boolean; override;
+    //function LoadParameter(const par: string): boolean; override;
+    //function DoTask(): boolean; override;
   end;
 
 var
@@ -66,7 +66,7 @@ begin
 
     result := true;
   except
-    AddMessage('The given expression can not be parsed.', ML_ERROR);
+    t_msgrimpl.AddMessage('The given expression can not be parsed.', ML_ERROR);
     result := false;
   end;
 end;

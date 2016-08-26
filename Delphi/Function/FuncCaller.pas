@@ -15,22 +15,24 @@ type
   //ScriptFunction = function(const par: string): boolean of object;
 
   //define class of function caller, which calls script functions
-  TFunctionCaller = class
+  TFunctionCaller = class(TInterfacedObject, ITextMessengerImpl)
   protected
     t_func:       TFunctionBase;
     e_exemode:    EExecMode;
     s_result:     string;
-    t_messenger:  TTextMessenger;
+    t_msgrimpl:   TTextMessengerImpl;
   protected
-    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    //procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure SetExecutionMode(const em: EExecMode);
     function  FindFunction(const func: string): TFunctionBase; virtual;
   public
     constructor Create();
     destructor Destroy(); override;
-    
+
+    //delegate interface ITextMessengerImpl
+    property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
+
     property  ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
-    property  Messenger: TTextMessenger read t_messenger write t_messenger;
     property  ResultString: string read s_result write s_result;
     function  CallFunction(const func, par: string): boolean;
   end;
@@ -38,18 +40,13 @@ type
 implementation
 uses SysUtils;
 
-procedure TFunctionCaller.AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
-begin
-  //todo:
-end;
-
 procedure TFunctionCaller.SetExecutionMode(const em: EExecMode);
 begin
   e_exemode := em;
-  if assigned(t_messenger) then begin
+  if assigned(t_msgrimpl.Messenger) then begin
     case e_exemode of
-      EM_NORMAL, EM_SIMULATE: t_messenger.MessageThreshold := ML_ERROR;
-      EM_DIAGNOSE: t_messenger.MessageThreshold := ML_INFO;
+      EM_NORMAL, EM_SIMULATE: t_msgrimpl.Messenger.MessageThreshold := ML_ERROR;
+      EM_DIAGNOSE: t_msgrimpl.Messenger.MessageThreshold := ML_INFO;
     end;
   end;
 end;
@@ -68,30 +65,34 @@ end;
 constructor TFunctionCaller.Create;
 begin
   inherited Create();
+  t_msgrimpl := TTextMessengerImpl.Create();
+  t_msgrimpl.OwnerName := ClassName();
   ExecutionMode := EM_NORMAL;
 end;
 
 destructor TFunctionCaller.Destroy();
 begin
+  t_msgrimpl.Free();
+  inherited Destroy();
 end;
 
 function TFunctionCaller.CallFunction(const func, par: string): boolean;
 begin
   result := false;
-  if (SameText(func, 'nil') or (func = '')) then AddMessage('No function is called.')
+  if (SameText(func, 'nil') or (func = '')) then t_msgrimpl.AddMessage('No function is called.')
   else begin
     t_func := FindFunction(func);
     if assigned(t_func) then
     begin
-      t_func.Messenger := t_messenger;
+      ITextMessengerImpl(t_func).Messenger := t_msgrimpl.Messenger;
       t_func.ExecutionMode := e_exemode;
       result := t_func.LoadParameter(par);
       if (result) then begin
         result := t_func.DoTask();
         s_result := t_func.ResultString;
-      end else AddMessage('The called function "' + func + '" is not executed because of an error in its parameter.', ML_ERROR);
+      end else t_msgrimpl.AddMessage('The called function "' + func + '" is not executed because of an error in its parameter.', ML_ERROR);
       FreeAndNil(t_func);
-    end else AddMessage('The called function "' + func + '" is not available.', ML_ERROR);
+    end else t_msgrimpl.AddMessage('The called function "' + func + '" is not available.', ML_ERROR);
   end;
 end;
 

@@ -22,13 +22,13 @@ uses SysUtils;
 
 function EvaluateStr.LoadParameter(const par: string): boolean;
 begin
-  AddMessage(format('todo->"LoadParameter" must be reimplemented in class "%s".', [self.ClassName]), ML_WARNING);
+  t_msgrimpl.AddMessage(format('todo->"LoadParameter" must be reimplemented in class "%s".', [self.ClassName]), ML_WARNING);
   result := true;
 end;
 
 function EvaluateStr.DoTask(): boolean;
 begin
-  AddMessage(format('todo->"Execute" must be reimplemented in class "%s".', [self.ClassName]), ML_WARNING);
+  t_msgrimpl.AddMessage(format('todo->"Execute" must be reimplemented in class "%s".', [self.ClassName]), ML_WARNING);
   result := true;
 end;
 

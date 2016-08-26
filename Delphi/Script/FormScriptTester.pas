@@ -219,7 +219,7 @@ begin
   t_container := TStepContainer.Create();
   t_vars := TStringPairs.Create();
   t_messenger.Messages := memInfo.Lines;
-  t_sreader.Messenger := t_messenger;
+  ITextMessengerImpl(t_sreader).Messenger := t_messenger;
   t_sreader.StepContainer := t_container;
   t_sreader.VarContainer := t_vars;
 end;

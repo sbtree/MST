@@ -45,7 +45,7 @@ type
   end;
 
   //base class of connection
-  TConnBase = class(TComponent, IConnInterf)
+  TConnBase = class(TComponent, IConnInterf, ITextMessengerImpl)
   class function GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
   class function GetConnectTypeName(const etype: EConnectType): string;
   class function GetConnectState(const estate: EConnectState): string;
@@ -54,7 +54,7 @@ type
     t_connobj:  TObject;        //actural instance for communication, e.g. TSerial
     e_state:    EConnectState;  //connection state
     c_timeout:  cardinal;       //timeout in milli seconds
-    t_messenger:TTextMessenger; //for transfering messages
+    t_msgrimpl: TTextMessengerImpl; //for transfering messages
     ch_nullshow:Char;           //indicate a char to show null, if it is received
     i_cntnull:  integer;        //count of received nulls
     ba_rbuf:    array[0..C_BUFFER_SIZE_DEFAULT-1] of Char; //buffer for data received from device
@@ -75,15 +75,14 @@ type
     function RecvData(): boolean; virtual; abstract;
     procedure TryConnect(); virtual; abstract;
     procedure ClearBuffer(); virtual;
-    procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO); virtual;
-    procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO); virtual;
   public
     //constructor and destructor
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
+    //delegate interface ITextMessengerImpl
+    property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
     //base properties
-    property Messenger: TTextMessenger read t_messenger write t_messenger;
     property Connected: boolean read IsConnected;
     property ConnectType: EConnectType read e_type;
     property ConnectTypeName: string read GetTypeName;
@@ -254,12 +253,12 @@ begin
   b_wait := ((not b_read) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for reading: %ds';
-    t_messenger.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+    t_msgrimpl.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing in gui
-        t_messenger.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
         c_count := c_tcur;
       end;
       b_read := IsReadComplete();
@@ -286,12 +285,12 @@ begin
   b_wait := ((not b_write) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for completing write: %ds';
-    t_messenger.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+    t_msgrimpl.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        t_messenger.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
         c_count := c_tcur;
       end;
       b_write := IsWriteComplete();
@@ -318,13 +317,13 @@ begin
   b_wait := ((not IsConnected()) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for connecting: %ds';
-    t_messenger.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+    t_msgrimpl.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
     repeat
       Application.ProcessMessages();
       TryConnect();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        t_messenger.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
         c_count := c_tcur;
       end;
       b_wait := ((not IsConnected()) and (c_tcur < tend));
@@ -361,36 +360,6 @@ begin
 end;
 
 // =============================================================================
-// Description  : append a new message in t_messenger
-// Parameter    : text, text of the message to update
-//                level, message level, see the definition of EMessageLevel
-// Exceptions   : --
-// First author : 2016-06-15 /bsu/
-// History      :
-// =============================================================================
-procedure TConnBase.AddMessage(const text: string; const level: EMessageLevel);
-begin
-  if assigned(t_messenger) then begin
-    t_messenger.AddMessage(format('%s', [text]), ClassName(), level);
-  end;
-end;
-
-// =============================================================================
-// Description  : update the text of last message, which is appended through
-//                function AddMessage
-// Parameter    : text, text of the message to update
-// Exceptions   : --
-// First author : 2016-06-15 /bsu/
-// History      :
-// =============================================================================
-procedure TConnBase.UpdateMessage(const text: string; const level: EMessageLevel);
-begin
-  if assigned(t_messenger) then begin
-    t_messenger.UpdateMessage(format('%s', [text]), ClassName(), level);
-  end;
-end;
-
-// =============================================================================
 // Description  : constuctor
 // Parameter    : --
 // Exceptions   : --
@@ -408,6 +377,8 @@ begin
   w_rlen := 0;
   t_rxwait := TEvent.Create(nil, false, false, 'TMtxConn.Rx');
   t_txwait := TEvent.Create(nil, false, false, 'TMtxConn.Tx');
+  t_msgrimpl := TTextMessengerImpl.Create();
+  t_msgrimpl.OwnerName := ClassName();
 end;
 
 // =============================================================================
@@ -419,7 +390,8 @@ end;
 // =============================================================================
 destructor TConnBase.Destroy;
 begin
-  FreeAndNil(t_messenger);
+  t_msgrimpl.Free();
+  //FreeAndNil(t_messenger);
   FreeAndNil(t_rxwait);
   FreeAndNil(t_txwait);
   inherited Destroy();
@@ -465,11 +437,11 @@ begin
     result := WaitForConnecting(GetTickCount() + c_timeout);
     if result then begin
       e_state := CS_CONNECTED;
-      AddMessage(format('Successful to make a connection(%s).', [GetTypeName()]));
+      t_msgrimpl.AddMessage(format('Successful to make a connection(%s).', [GetTypeName()]));
     end else
-      AddMessage(format('Failed to make a connection(%s)', [GetTypeName()]), ML_ERROR);
+      t_msgrimpl.AddMessage(format('Failed to make a connection(%s)', [GetTypeName()]), ML_ERROR);
   end else
-    AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
+    t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
 end;
 
 // =============================================================================
@@ -491,11 +463,11 @@ begin
     result := SendData(buf, len);
     if result then result := WaitForWriting(c_tend);
     if result then
-      AddMessage(format('Successful to send data (%d bytes): %s', [len, buf]))
+      t_msgrimpl.AddMessage(format('Successful to send data (%d bytes): %s', [len, buf]))
     else
-      AddMessage(format('Failed to send data (%d bytes): %s', [len, buf]), ML_ERROR)
+      t_msgrimpl.AddMessage(format('Failed to send data (%d bytes): %s', [len, buf]), ML_ERROR)
   end else
-    AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -538,11 +510,11 @@ begin
       ClearBuffer();
     end;
     if (result > 0) then
-      AddMessage(format('Successful to receieve data (%d bytes): %s', [result, buf]))
+      t_msgrimpl.AddMessage(format('Successful to receieve data (%d bytes): %s', [result, buf]))
     else
-      AddMessage('Nothing is receieved.', ML_WARNING);
+      t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
   end else
-    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -568,11 +540,11 @@ begin
       ClearBuffer();
     end;
     if (result > 0) then
-      AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
     else
-      AddMessage('Nothing is receieved.', ML_WARNING);
+      t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
   end else
-    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 function TConnBase.ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
@@ -606,11 +578,11 @@ begin
     until (GetTickCount() >= tend);
     result := length(str);
     if (result > 0) then
-      AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
     else
-      AddMessage('Nothing is receieved.', ML_WARNING);
+      t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
   end else
-    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -643,11 +615,11 @@ begin
     until (b_break or (GetTickCount() >= tend));
     result := length(str);
     if (result > 0) then
-      AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
     else
-      AddMessage('Nothing is receieved.', ML_WARNING);
+      t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
   end else
-    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -678,11 +650,11 @@ begin
       Application.ProcessMessages();
     until (result or (GetTickCount() >= tend));
     if (result) then
-      AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
     else
-      AddMessage('The expected string is not receieved.', ML_WARNING);
+      t_msgrimpl.AddMessage('The expected string is not receieved.', ML_WARNING);
   end else
-    AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 // =============================================================================
