@@ -16,8 +16,8 @@ type
   EDownloadProtocol = (
                 DP_UNDEFINED, //undefined download protocol
                 DP_MOTOROLA,  //download protocol of Motorola S-Record loader
-                DP_METRONIX1, //download protocol of metronix boot loader, z.B. DIS2
-                DP_METRONIX2  //download protocol of metronix boot loader, z.B. ARS2000
+                DP_MTXDIS2,   //download protocol of metronix boot loader, z.B. DIS2
+                DP_MTXARS   //download protocol of metronix boot loader, z.B. ARS2000
                 );
 
   EDownloadChannel = (
@@ -462,8 +462,8 @@ begin
             Inc(i_trials);
           until (result or (i_trials > CINT_TRIALS_MAX));
         end;
-        if ContainsText(s_recv, CSTR_SERVICE_MENU) then e_dlprotocol := DP_METRONIX2
-        else e_dlprotocol := DP_METRONIX1;
+        if ContainsText(s_recv, CSTR_SERVICE_MENU) then e_dlprotocol := DP_MTXARS
+        else e_dlprotocol := DP_MTXDIS2;
         break;
       end else if ContainsText(s_recv, CSTR_UNKNOWNCMD) then begin
         if assigned(t_messager) then t_messager.Add(format('[%s]: ''%s'' is not supported.', [DateTimeToStr(Now()), cmd]));
@@ -495,8 +495,8 @@ begin
   i_curline := 0;
   if assigned(t_messager) then t_messager.Add(format('[%s]: download started with protocol %s', [DateTimeToStr(Now()), GetEnumName(TypeInfo(EDownloadProtocol), Ord(e_dlprotocol))]));
   case e_dlprotocol of
-  DP_METRONIX2: result := StartWithMTX2();
-  DP_METRONIX1: result := StartWithMTX1();
+  DP_MTXARS: result := StartWithMTX2();
+  DP_MTXDIS2: result := StartWithMTX1();
   DP_MOTOROLA : result := StartWithMTL();
   else result := false;
   end;

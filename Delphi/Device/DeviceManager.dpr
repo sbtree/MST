@@ -19,7 +19,8 @@ uses
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
   Usbspec in '..\Externals\USBIO\Usbspec.pas',
   TekUSB in '..\Comm\TekUSB.pas',
-  TextMessage in '..\General\TextMessage.pas';
+  TextMessage in '..\General\TextMessage.pas',
+  StringPairs in '..\General\StringPairs.pas';
 
 {$R *.res}
 

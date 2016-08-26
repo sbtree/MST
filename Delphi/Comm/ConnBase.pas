@@ -83,8 +83,8 @@ type
     destructor Destroy; override;
 
     //base properties
-    property Connected: boolean read IsConnected;
     property Messenger: TTextMessenger read t_messenger write t_messenger;
+    property Connected: boolean read IsConnected;
     property ConnectType: EConnectType read e_type;
     property ConnectTypeName: string read GetTypeName;
     property ConnectState: EConnectState read e_state;
@@ -254,12 +254,12 @@ begin
   b_wait := ((not b_read) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for reading: %ds';
-    AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+    t_messenger.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing in gui
-        UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+        t_messenger.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
         c_count := c_tcur;
       end;
       b_read := IsReadComplete();
@@ -286,12 +286,12 @@ begin
   b_wait := ((not b_write) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for completing write: %ds';
-    AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+    t_messenger.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+        t_messenger.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
         c_count := c_tcur;
       end;
       b_write := IsWriteComplete();
@@ -318,13 +318,13 @@ begin
   b_wait := ((not IsConnected()) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for connecting: %ds';
-    AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+    t_messenger.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
     repeat
       Application.ProcessMessages();
       TryConnect();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+        t_messenger.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
         c_count := c_tcur;
       end;
       b_wait := ((not IsConnected()) and (c_tcur < tend));
@@ -419,6 +419,7 @@ end;
 // =============================================================================
 destructor TConnBase.Destroy;
 begin
+  FreeAndNil(t_messenger);
   FreeAndNil(t_rxwait);
   FreeAndNil(t_txwait);
   inherited Destroy();

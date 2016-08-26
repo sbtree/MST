@@ -53,6 +53,7 @@
     <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
+    <DCCReference Include="..\General\StringPairs.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="DeviceBase.pas" />
     <DCCReference Include="DeviceConfig.pas" />

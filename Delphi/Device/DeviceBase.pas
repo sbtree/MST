@@ -3,12 +3,12 @@
 // Description  : This unit implements a base class of measurement device
 // Compiler     : Delphi 2007
 // Author       : 2015-08-14 /bsu/
-// History      :
+// History      : 2016-08-26 /bsu/ changed using general connection object (TConnBase)
 //==============================================================================
 unit DeviceBase;
 
 interface
-uses Classes, IniFiles, ConnBase, TextMessage;
+uses Classes, IniFiles, ConnBase, TextMessage, StringPairs;
 
 type
 // =============================================================================
@@ -44,6 +44,17 @@ type
                   );
   DeviceStateSet = set of EDeviceState;
 
+  IDeviceBase = interface
+    function SetConfig(const conf: TStringPairs; const cname: string): boolean;
+    function GetState(): EDeviceState;
+    function InitDevice(): boolean;
+    function SendCommand(const cmd: string): boolean;
+    function RecvAnswer(var ans: string): boolean;
+    function SendPacket(packet: array of byte): boolean;
+    function RecvPacket(packet: array of byte): boolean;
+    function ReleaseDevice(): boolean;
+  end;
+
   // =============================================================================
   // Class        : TDeviceBase
   // Description  : Definition of class TDeviceBase, which is a base class of measurement device
@@ -53,15 +64,15 @@ type
   // First author : 2015-08-14 /bsu/
   // History      :
   // =============================================================================
-  TDeviceBase=class(TComponent)
+  TDeviceBase=class(TComponent, IDeviceBase)
   protected
   var
     e_state: EDeviceState;  //device state
-    c_timeout: cardinal;    //timeout in millisecond
-    i_lasterr: integer;     //last error number
-    s_lastmsg: string;      //last message
+    //c_timeout: cardinal;    //timeout in millisecond
+    //i_lasterr: integer;     //last error number
+    //s_lastmsg: string;      //last message
     s_devname: string;      //name of the device
-    b_comhex : boolean;     //convert string, in which the hexadicimal data are presented, into hexadicimal value, if it is true
+    //b_comhex : boolean;     //convert string, in which the hexadicimal data are presented, into hexadicimal value, if it is true
     t_curconn: TConnBase;   //current connection
 
     //t_rbuf, t_wbuf: TCharBuffer; //buffer for receiving and sending data
@@ -71,8 +82,8 @@ type
 
   protected
     //procedure PostEvent(const event: EDeviceEvent; const ok: boolean);
-    function CheckComm(): boolean; virtual;
-    function CheckAnswer(const ans: string): boolean; virtual; abstract;
+    //function CheckComm(): boolean; virtual;
+    //function CheckAnswer(const ans: string): boolean; virtual; abstract;
     //function VerifySendingData(): boolean; virtual; abstract;
     //function VerifyReceivedData(): boolean; virtual; abstract;
     //function ConfigConnections(const ini: TMemIniFile; const secname: string): integer; virtual;
@@ -84,21 +95,28 @@ type
 
     property State : EDeviceState read e_state;
     property StateText : string read GetStateText;
-    property HexComm : boolean read b_comhex write b_comhex;
-    property Timeout : cardinal read c_timeout write c_timeout;
+    //property HexComm : boolean read b_comhex write b_comhex;
+    //property Timeout : cardinal read c_timeout write c_timeout;
     property CurConnect: TConnBase read GetCurConnect;
 
-    function ConfigDevice(const ini: TMemIniFile): Boolean; virtual;abstract;
-    function ReleaseDevice(): Boolean; virtual;
-    function TryToReady(): boolean; virtual;
-    function Connect(): Boolean; virtual;
-    function Disconnect: boolean; virtual;
+    //function ConfigDevice(const ini: TMemIniFile): Boolean; virtual;abstract;
+    //function TryToReady(): boolean; virtual;
+    //function Connect(): Boolean; virtual;
+    //function Disconnect: boolean; virtual;
     //function ActiveConn(const ct: EConnectType): boolean; virtual;
-    function Init(): boolean; virtual;
+
+    function SetConfig(const conf: TStringPairs; const cname: string): boolean; virtual;
+    function GetState(): EDeviceState;
+    function InitDevice(): boolean; virtual;
+    function SendCommand(const cmd: string): boolean; virtual;
+    function RecvAnswer(var ans: string): boolean; virtual;
+    function SendPacket(packet: array of byte): boolean; virtual;
+    function RecvPacket(packet: array of byte): boolean; virtual;
+    function ReleaseDevice(): Boolean; virtual;
+
+    //
     function Reset(const cmd: string): boolean; virtual;
-    function SendStr(const sData: string; const bAns: boolean = true): boolean; virtual;
-    function RecvStr(var sdata: string): Integer; virtual;
-    function GetLastError(var msg: string): Integer; virtual; abstract;
+    //function GetLastError(var msg: string): Integer; virtual; abstract;
   end;
   PDeviceBase = ^TDeviceBase;
 
@@ -155,9 +173,7 @@ constructor TDeviceBase.Create(owner: TComponent);
 begin
 	inherited Create(owner);
   e_state := DS_NONE;
-  c_timeout := C_TIMEOUT_MSEC;
-  i_lasterr := 0;
-  b_comhex  := false;
+  //c_timeout := C_TIMEOUT_MSEC;
 
   //t_rbuf := TCharBuffer.Create;
   //t_wbuf := TCharBuffer.Create;
@@ -258,11 +274,11 @@ end;  }
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.CheckComm(): boolean;
+{function TDeviceBase.CheckComm(): boolean;
 begin
   result := (e_state in C_DEV_INSTATES[DE_SYNC]);
   if result then e_state := DS_COMMOK;
-end;
+end; }
 
 // =============================================================================
 // Class        : TDeviceBase
@@ -274,7 +290,7 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.TryToReady: boolean;
+{function TDeviceBase.TryToReady: boolean;
 begin
   case e_state of
     DS_NONE: ; //not possible. ConfigDevice has firstly to be called with ini outside of this class
@@ -284,7 +300,7 @@ begin
     DS_BUSY: ;//not possible because the answer is expected.
   end;
   result := (e_state = DS_COMMOK);
-end;
+end; }
 
 // =============================================================================
 // Class        : TDeviceBase
@@ -340,7 +356,8 @@ end;
 // =============================================================================
 function TDeviceBase.ReleaseDevice(): boolean;
 begin
-  result := Disconnect();
+  result := false; //Disconnect();
+  //todo:
   if result then e_state := DS_NONE;
 end;
 
@@ -355,7 +372,7 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.Connect: boolean;
+{function TDeviceBase.Connect: boolean;
 begin
   result := false;
   if ((e_state in C_DEV_INSTATES[DE_CONNECT]) and assigned(t_curconn)) then begin
@@ -363,7 +380,7 @@ begin
     e_state := DS_CONNECTED;
   end;
   result := result and (e_state in C_DEV_INSTATES[DE_DISCONNECT]);
-end;
+end; }
 
 // =============================================================================
 // Class        : TFlashRunner
@@ -376,12 +393,12 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.Disconnect(): boolean;
+{function TDeviceBase.Disconnect(): boolean;
 begin
   result := true;
   if assigned(t_curconn) then
     result := t_curconn.Disconnect();
-end;
+end; }
 
 // =============================================================================
 // Class        : TDeviceBase
@@ -406,10 +423,45 @@ begin
   end;
 end; }
 
-function TDeviceBase.Init(): boolean;
+function TDeviceBase.InitDevice(): boolean;
 begin
   result := false;
   //todo:
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : SendStr
+//                send string to device
+// Parameter    : str, a string to send
+//                bAns, indicates if an answer is expected
+// Return       : integer, count of sent chars
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.SendCommand(const cmd: string): boolean;
+begin
+  result := false;
+  if assigned(t_curconn) then
+    result := t_curconn.SendStr(cmd);
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
+// Function     : RecvAnswer
+//                receiv string from device
+// Parameter    : str, a string for receiving
+// Return       : integer, count of the received char
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.RecvAnswer(var ans: string): boolean;
+begin
+  result := false;
+  if assigned(t_curconn) then
+    result := (t_curconn.RecvStr(ans) > 0);
 end;
 
 // =============================================================================
@@ -430,42 +482,8 @@ begin
     t_curconn.Disconnect();
     result := t_curconn.Connect();
     if result then
-      result := Init();
+      result := InitDevice();
   end;
-end;
-// =============================================================================
-// Class        : TDeviceBase
-// Function     : SendStr
-//                send string to device
-// Parameter    : str, a string to send
-//                bAns, indicates if an answer is expected
-// Return       : integer, count of sent chars
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TDeviceBase.SendStr(const sData: string; const bAns: boolean): boolean;
-begin
-  result := false;
-  if assigned(t_curconn) then 
-    result := t_curconn.SendStr(sData);
-end;
-
-// =============================================================================
-// Class        : TDeviceBase
-// Function     : RecvStr
-//                receiv string from device
-// Parameter    : str, a string for receiving
-// Return       : integer, count of the received char
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TDeviceBase.RecvStr(var sdata: string): integer;
-begin
-  result := 0;
-  if assigned(t_curconn) then
-    result := t_curconn.RecvStr(sData, true);
 end;
 
 end.

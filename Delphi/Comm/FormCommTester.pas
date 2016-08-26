@@ -45,7 +45,7 @@ var
 implementation
 
 {$R *.dfm}
-uses RS232, USB;
+uses RS232, MtxUSB;
 
 procedure TfrmCommTester.btnCanClick(Sender: TObject);
 var s_conf: string;

@@ -18,8 +18,14 @@ type
                     ML_ERROR,   //error message
                     ML_FATAL    //fatal message
                   );
+  ITextMessengerImpl = interface
+    procedure AddMessage(const text: string; const sender: string; const level: EMessageLevel);
+    procedure UpdateMessage(const text: string; const sender: string; const level: EMessageLevel);
+    procedure ExportMessages(const fname: string);
+    procedure Clear(const bextern: boolean);
+  end;
 
-  TTextMessenger = class
+  TTextMessenger = class(TInterfacedObject, ITextMessengerImpl)
   protected
     t_msgintern:  TStrings; //saves messages. it is created in constructor
     t_msgextern:  TStrings; //default pointing to t_msgintern, but it will be replaced by SetMessages
