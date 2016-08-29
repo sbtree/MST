@@ -44,6 +44,7 @@
     </DelphiCompile>
     <DCCReference Include="..\Comm\ConnBase.pas" />
     <DCCReference Include="..\Comm\RS232.pas" />
+    <DCCReference Include="..\Device\DeviceBase.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="..\General\NewProgressbar.pas" />
@@ -53,6 +54,7 @@
       <Form>frmProdTester</Form>
     </DCCReference>
     <DCCReference Include="MtxDownloader.pas" />
+    <DCCReference Include="ProductBase.pas" />
     <DCCReference Include="ProductConfig.pas" />
     <None Include="ModelSupport_ProductTester\ConnBase\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\default.txaPackage" />

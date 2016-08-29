@@ -10,7 +10,9 @@ uses
   RS232 in '..\Comm\RS232.pas',
   TextMessage in '..\General\TextMessage.pas',
   GenUtils in '..\General\GenUtils.pas',
-  NewProgressbar in '..\General\NewProgressbar.pas';
+  NewProgressbar in '..\General\NewProgressbar.pas',
+  ProductBase in 'ProductBase.pas',
+  DeviceBase in '..\Device\DeviceBase.pas';
 
 {$R *.res}
 
