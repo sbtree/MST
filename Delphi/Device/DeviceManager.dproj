@@ -63,6 +63,7 @@
     <DCCReference Include="Multimeter.pas" />
     <DCCReference Include="Oscilloscope.pas" />
     <DCCReference Include="PowerSupply.pas" />
+    <DCCReference Include="RelayControl.pas" />
     <DCCReference Include="Thermometer.pas" />
     <None Include="ModelSupport_DeviceManager\ConnBase\default.txvpck" />
     <None Include="ModelSupport_DeviceManager\DataBuffer\default.txvpck" />

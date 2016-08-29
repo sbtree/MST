@@ -155,7 +155,8 @@ function TFieldValueChecker.CheckNr(const str: string): boolean;
 var s_snr: string; f_stepnr: single;
 begin
   result := false;
-  s_snr := ReplaceStr(str, '.', DecimalSeparator); //replace '.' with the system decimal separator
+  //replace '.' with the system decimal separator, e.g. the separator is ',' in german local setting
+  s_snr := ReplaceStr(str, '.', DecimalSeparator);
   if TryStrToFloat(s_snr, f_stepnr) then begin
     f_stepnr := abs(f_stepnr);
     if (f_stepnr > f_lastnr) then begin

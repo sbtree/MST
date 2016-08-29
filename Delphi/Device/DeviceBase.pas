@@ -20,10 +20,10 @@ type
   EDeviceState = (
                   DS_UNKNOWN,     //none state, in which the device object is just created and yet configured
                   DS_CONFIGURED,  //configured state, in which the device is configured
-                  DS_CONNECTED,   //connected state, in which the device is connected
-                  DS_COMREADY,    //communication ok state, in which the device is ready to communicate
-                  DS_BUSY, //busy state, in which the device is transfering data or waiting for answer
-                  DS_COMMERR //communication error state, in which an error exists in the last communication
+                  //DS_CONNECTED, //connected state, in which the device is connected
+                  DS_COMREADY     //communication ok state, in which the device is ready to communicate
+                  //DS_BUSY,      //busy state, in which the device is transfering data or waiting for answer
+                  //DS_COMMERR    //communication error state, in which an error exists in the last communication
                   );
 
 // =============================================================================
@@ -32,7 +32,7 @@ type
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-  EDeviceEvent = (
+  {EDeviceEvent = (
                   DE_CONFIG, //event, which configs device, e.g. ConfigDevice is called
                   DE_CONNECT, //event, which connects device, e.g. Connect is called
                   DE_SYNC, //event, which tries to communicate with device, e.g. Sync is called
@@ -42,11 +42,11 @@ type
                   DE_RESET, //event to reset device
                   DE_FREE //event, which releases device, e.g. FreeDevice is called
                   );
-  DeviceStateSet = set of EDeviceState;
+  DeviceStateSet = set of EDeviceState;}
 
   IDeviceBase = interface
-    //function SetConfig(const conf: TStringPairs; const cname: string): boolean;
-    //function GetState(): EDeviceState;
+    function LoadConfig(const confs: TStrings): boolean;
+    function GetState(): EDeviceState;
     function InitDevice(): boolean;
     function SendCommand(const cmd: string): boolean;
     function RecvAnswer(var ans: string): boolean;
@@ -69,21 +69,21 @@ type
   var
     e_state: EDeviceState;  //device state
     t_curconn: TConnBase;   //current connection
-    s_devname: string;      //name of the device
-    t_messenger:TTextMessenger; //for transfering messages
+    t_conf:   TStringPairs; //config in a list of string pairs
     t_msgrimpl: TTextMessengerImpl;
   private
-    function GetStateText : string;
+    function GetStateText(): string;
 
   protected
+    function InitFromFile(const sfile: string): boolean;
     function GetCurConnect(): TConnBase;
-    //procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO); virtual;
-    //procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO); virtual;
 
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
+    function LoadConfig(const confs: TStrings): boolean;
+    function GetState(): EDeviceState;
     function InitDevice(): boolean; virtual;
     function SendCommand(const cmd: string): boolean; virtual;
     function RecvAnswer(var ans: string): boolean; virtual;
@@ -92,8 +92,7 @@ type
     function ReleaseDevice(): Boolean; virtual;
 
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
-    //property Messenger: TTextMessenger read t_messenger write t_messenger;
-    property State : EDeviceState read e_state;
+    property State : EDeviceState read GetState;
     property StateText : string read GetStateText;
     property CurConnect: TConnBase read GetCurConnect;
 
@@ -111,7 +110,7 @@ const
   C_ERR_UNKNOWN = $8000; // base error number as unknown
 
   //define sets of device states, which are allowed for each event
-  C_DEV_INSTATES: array[EDeviceEvent] of DeviceStateSet = (
+  {C_DEV_INSTATES: array[EDeviceEvent] of DeviceStateSet = (
                   [DS_UNKNOWN], //states, in which config is allowed
                   [DS_CONFIGURED], //allowed states for connect
                   [DS_CONNECTED, DS_COMMERR], //allowed states for sync
@@ -120,7 +119,7 @@ const
                   [DS_CONNECTED, DS_COMREADY, DS_BUSY, DS_COMMERR], //allowed states for disconnect
                   [DS_CONFIGURED, DS_CONNECTED, DS_COMREADY, DS_BUSY, DS_COMMERR],
                   [DS_UNKNOWN, DS_CONFIGURED, DS_CONNECTED, DS_COMREADY, DS_BUSY, DS_COMMERR]  //allowed states for free
-                  );
+                  );}
 
   CSTR_DEV_TIMEOUT    : string = 'TIMEOUT';
   CSTR_DEV_DESCRIPTION: string = 'DESCRIPTION';
@@ -186,7 +185,7 @@ end;
 // First author : 2015-09-03 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.GetStateText: string;
+function TDeviceBase.GetStateText(): string;
 begin
   result := CSTR_DEV_STATES[e_state];
 end;
@@ -196,28 +195,22 @@ begin
   result := t_curconn;
 end;
 
-// =============================================================================
-// Class        : TDeviceBase
-// Function     : FreeDevice
-//                release device, undo what is done in ConfigDevice
-// Parameter    : --
-// Return       : true, if the device is released successfully
-//                false, otherwise
-// Exceptions   : --
-// First author : 2015-08-14 /bsu/
-// History      :
-// =============================================================================
-function TDeviceBase.ReleaseDevice(): boolean;
+function TDeviceBase.LoadConfig(const confs: TStrings): boolean;
 begin
-  result := false; //Disconnect();
+  result := false;
   //todo:
-  if result then e_state := DS_UNKNOWN;
+end;
+
+function TDeviceBase.GetState(): EDeviceState;
+begin
+  result := e_state;
 end;
 
 function TDeviceBase.InitDevice(): boolean;
 begin
   result := false;
   //todo:
+  e_state := DS_COMREADY;
 end;
 
 // =============================================================================
@@ -257,6 +250,24 @@ end;
 
 // =============================================================================
 // Class        : TDeviceBase
+// Function     : FreeDevice
+//                release device, undo what is done in ConfigDevice
+// Parameter    : --
+// Return       : true, if the device is released successfully
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-08-14 /bsu/
+// History      :
+// =============================================================================
+function TDeviceBase.ReleaseDevice(): boolean;
+begin
+  result := t_curconn.Disconnect();
+  //todo:
+  if result then e_state := DS_CONFIGURED;
+end;
+
+// =============================================================================
+// Class        : TDeviceBase
 // Function     : Reset
 //                activate connection of the given type
 // Parameter    : ct, connection type to be activated
@@ -272,8 +283,7 @@ begin
   if assigned(t_curconn) then begin
     t_curconn.Disconnect();
     result := t_curconn.Connect();
-    if result then
-      result := InitDevice();
+    if result then result := InitDevice();
   end;
 end;
 

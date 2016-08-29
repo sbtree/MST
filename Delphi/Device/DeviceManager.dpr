@@ -20,7 +20,8 @@ uses
   Usbspec in '..\Externals\USBIO\Usbspec.pas',
   TekUSB in '..\Comm\TekUSB.pas',
   TextMessage in '..\General\TextMessage.pas',
-  StringPairs in '..\General\StringPairs.pas';
+  StringPairs in '..\General\StringPairs.pas',
+  RelayControl in 'RelayControl.pas';
 
 {$R *.res}
 

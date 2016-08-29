@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, IniFiles, StdCtrls, ComCtrls;
+  Dialogs, IniFiles, StdCtrls, ComCtrls, TextMessage;
 
 type
   TfrmDeviceManager = class(TForm)
@@ -13,7 +13,10 @@ type
     btnCreateTree: TButton;
     procedure btnFRClick(Sender: TObject);
     procedure btnCreateTreeClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
+    t_msgr : TTextMessenger;
     { Private-Deklarationen }
   public
     { Public-Deklarationen }
@@ -25,7 +28,7 @@ var
 implementation
 
 {$R *.dfm}
-uses DeviceBase, Multimeter, TextMessage;
+uses DeviceBase, Multimeter;
 
 procedure TfrmDeviceManager.btnCreateTreeClick(Sender: TObject);
 var
@@ -60,10 +63,11 @@ begin
 end;
 
 procedure TfrmDeviceManager.btnFRClick(Sender: TObject);
-var dmm: ITextMessengerImpl; bOk: boolean; sTmp: string; t_msgr: TTextMessenger;
+var dmm: TMultimeter;
 begin
   dmm := TMultimeter.Create(self);
-  dmm.Messenger := t_msgr;
+  ITextMessengerImpl(dmm).Messenger := t_msgr;
+  dmm.Free();
   {fIni := TMemIniFile.Create('FlashRunner.ini');
   fr := TFlashRunner.Create(self);
   
@@ -73,6 +77,16 @@ begin
   bOk := fr.RunScript('bt_24v.frs', 30000);
   FreeAndNil(fr);
   FreeAndNil(fIni);}
+end;
+
+procedure TfrmDeviceManager.FormCreate(Sender: TObject);
+begin
+  t_msgr := TTextMessenger.Create();
+end;
+
+procedure TfrmDeviceManager.FormDestroy(Sender: TObject);
+begin
+  t_msgr.Free();
 end;
 
 end.
