@@ -29,22 +29,7 @@ type
                 DC_FCW       //Freescale CodeWarrior flash, a software tool for flashing (adapter: usb->jtag)
                 );
 
-  IMtxDownloader = interface
-    function GetBootloaderFile(): string;
-    function GetFirmwareFile(): string;
-    function GetAdditionalFile(): string;
-    function EnterService(): boolean;
-    function DoDownload(): boolean;
-    procedure SetBootloaderFile(const blfile: string);
-    procedure SetFirmwareFile(const fwfile: string);
-    procedure SetAdditionalFile(const adfile: string);
-
-    property BootloaderFile: string read GetBootloaderFile write SetBootloaderFile;
-    property FirmwareFile: string read GetFirmwareFile write SetFirmwareFile;
-    property AdditionalFile: string read GetAdditionalFile write SetAdditionalFile;
-  end;
-
-  TDownloader = class
+  TMtxDownloader = class
   protected
     e_dlprotocol: EDownloadProtocol;//to save protocol
     s_lastmsg:    string;           //to save information in the last action
@@ -74,7 +59,7 @@ type
     function Download(const cmd, fname: string): boolean; virtual; abstract;
   end;
 
-  TComDownloader = class(TDownloader)
+  TMtxComDownloader = class(TMtxDownloader)
   protected
     t_ser: TSerial;
     t_conn: TConnBase;
@@ -84,7 +69,6 @@ type
     procedure SwitchBaudrate(const ibaud: integer; const efc: eFlowControl = fcNone);
     function  SendStr(const str: string; const bprint: boolean = true): boolean;
     function  RecvStr(var str: string; const bwait: boolean = true): integer;
-    //function  RecvStrTimeout(var str: string; const tend: cardinal): integer;
     function  RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal = 3000): integer;
     function  RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
     function  WaitForReading(const tend: cardinal): boolean;
@@ -107,7 +91,7 @@ type
     function Download(const cmd, fname: string): boolean; override;
   end;
 
-  var t_comdownloader: TComDownloader;
+  var t_comdownloader: TMtxComDownloader;
 implementation
 uses Windows, SysUtils, StrUtils, GenUtils, Forms, TypInfo, ComCtrls, NewProgressBar;
 
@@ -148,7 +132,7 @@ const
   C_RECV_INTERVAL: cardinal = 50;
   C_DOWNLOAD_INTERVAL: cardinal = 6000;
 
-procedure TDownloader.InitProgressBar();
+procedure TMtxDownloader.InitProgressBar();
 begin
   if assigned(t_progress) then begin
     if (t_progress is TProgressBar) then begin
@@ -162,7 +146,7 @@ begin
     end;
   end;
 end;
-procedure TDownloader.UpdateProgressBar(const val: integer);
+procedure TMtxDownloader.UpdateProgressBar(const val: integer);
 begin
   if assigned(t_progress) then begin
     if (t_progress is TProgressBar) then (t_progress as TProgressBar).Position := val
@@ -170,7 +154,7 @@ begin
   end;
 end;
 
-constructor TDownloader.Create;
+constructor TMtxDownloader.Create;
 begin
 	inherited Create;
   e_dlprotocol := DP_UNDEFINED;
@@ -182,14 +166,14 @@ begin
   r_baudfactor := 1.0;
 end;
 
-destructor TDownloader.Destroy;
+destructor TMtxDownloader.Destroy;
 begin
   t_srecords.Clear();
   FreeAndNil(t_srecords);
 	inherited Destroy;
 end;
 
-procedure TComDownloader.SwitchBaudrate(const ibaud: integer; const efc: eFlowControl);
+procedure TMtxComDownloader.SwitchBaudrate(const ibaud: integer; const efc: eFlowControl);
 var b_actived: boolean; i_baud: integer;
 begin
   i_baud := Round(ibaud * r_baudfactor);
@@ -202,7 +186,7 @@ begin
   end;
 end;
 
-function  TComDownloader.SendStr(const str: string; const bprint: boolean = true): boolean;
+function  TMtxComDownloader.SendStr(const str: string; const bprint: boolean = true): boolean;
 var c_time: cardinal; s_recv: string;
 begin
   RecvStr(s_recv, false); //clear reading buffer of the serial interface
@@ -213,7 +197,7 @@ begin
   if assigned(t_messager) then t_messager.Add(format('[%s]:>%s', [DateTimeToStr(Now()), str]));
 end;
 
-function  TComDownloader.RecvStr(var str: string; const bwait: boolean): integer;
+function  TMtxComDownloader.RecvStr(var str: string; const bwait: boolean): integer;
 var c_time: cardinal;
 begin
   str := '';
@@ -225,22 +209,7 @@ begin
   if (assigned(t_messager) and (str <> '')) then t_messager.Add(format('[%s]:<%s', [DateTimeToStr(Now()), str]));
 end;
 
-{function  TComDownloader.RecvStrTimeout(var str: string; const tend: cardinal): integer;
-var s_recv: string; i_len: integer;
-begin
-  result := 0; str := '';
-  repeat
-    s_recv := ''; WaitForReading(tend);
-    i_len := t_ser.ReadString(s_recv);
-    if (i_len > 0) then begin
-      str := str + s_recv;
-      result := result + i_len;
-    end;
-  until (tend <= GetTickCount());
-  if (assigned(t_messager) and (str <> '')) then t_messager.Add(format('[%s]:<%s', [DateTimeToStr(Now()), str]));
-end; }
-
-function  TComDownloader.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
+function  TMtxComDownloader.RecvStrInterval(var str: string; const tend: cardinal; const interv: cardinal): integer;
 var b_break, b_timeout: boolean; s_recv: string; i_len: integer; c_time: cardinal;
 begin
   result := 0; str := '';
@@ -259,7 +228,7 @@ begin
   if (assigned(t_messager) and (str <> '')) then t_messager.Add(format('[%s]:<%s', [DateTimeToStr(Now()), str]));
 end;
 
-function  TComDownloader.RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
+function  TMtxComDownloader.RecvStrExpected(var str: string; const exstr: string; tend: cardinal; const bcase: boolean = false): integer;
 const C_SHORT_INTERVAL: cardinal = 50;
 var s_input, s_temp: string; b_found: boolean; i_len: integer; b_timeout: boolean;
 begin
@@ -278,7 +247,7 @@ begin
   until (b_timeout or b_found);
 end;
 
-function  TComDownloader.WaitForReading(const tend: cardinal): boolean;
+function  TMtxComDownloader.WaitForReading(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tend, c_count: cardinal;
 begin
   c_tend := GetTickCount(); c_count := c_tend;
@@ -296,7 +265,7 @@ begin
   result := (t_ser.RxWaiting > 0);
 end;
 
-function  TComDownloader.StartWithMTL(): boolean;
+function  TMtxComDownloader.StartWithMTL(): boolean;
 var i: integer;
 begin
   for i := 0 to t_srecords.Count - 1 do begin
@@ -311,7 +280,7 @@ begin
   result := (i_curline = t_srecords.Count);
 end;
 
-function  TComDownloader.StartWithMTX1(): boolean;
+function  TMtxComDownloader.StartWithMTX1(): boolean;
 var i, i_trial: integer; b_ok, b_break: boolean; s_line, s_recv: string;
 begin
   for i := 0 to t_srecords.Count - 1 do begin
@@ -344,7 +313,7 @@ begin
   result := (i_curline = t_srecords.Count);
 end;
 
-function  TComDownloader.StartWithMTX2(): boolean;
+function  TMtxComDownloader.StartWithMTX2(): boolean;
 var s_recv: string;
 begin
   SendStr(CSTR_EPR + CCHR_RETURN);
@@ -352,7 +321,7 @@ begin
   if result then result := StartWithMTX1();
 end;
 
-function  TComDownloader.TryBootMessageMTL(var msg: string): integer;
+function  TMtxComDownloader.TryBootMessageMTL(var msg: string): integer;
 const CSTR_TEST_CMD: string= 'abcdefg';
       C_WAITING_INTERVAL: cardinal = 3000;
       C_RESTART_INTERVAL: cardinal = 2000;
@@ -366,7 +335,7 @@ begin
   SwitchBaudrate(i_baud);
 end;
 
-procedure TComDownloader.UpdateStartMessage();
+procedure TMtxComDownloader.UpdateStartMessage();
 const C_BL_FW_INTERVAL: cardinal = 6000; C_FW_OUTPUT_INTERVAL: cardinal = 1500;
 var c_time: cardinal; s_temp: string; i_pos: integer;
 begin
@@ -400,7 +369,7 @@ begin
   end;
 end;
 
-function  TComDownloader.ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean): boolean;
+function  TMtxComDownloader.ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean): boolean;
 const C_MANUAL_RESET: cardinal = 30000;
 var c_time: cardinal; i_relay: integer;
     s_recv, s_cmd, s_last: string;
@@ -432,7 +401,7 @@ begin
   if (bmsg and result) then UpdateStartMessage();
 end;
 
-function TComDownloader.EnterService(const cmd: string): boolean;
+function TMtxComDownloader.EnterService(const cmd: string): boolean;
 var s_recv, s_temp: string; c_endtime: cardinal; i_trials: integer;
 begin
   result := false;
@@ -490,7 +459,7 @@ begin
   end;
 end;
 
-function  TComDownloader.StartDownload(): boolean;
+function  TMtxComDownloader.StartDownload(): boolean;
 begin
   i_curline := 0;
   if assigned(t_messager) then t_messager.Add(format('[%s]: download started with protocol %s', [DateTimeToStr(Now()), GetEnumName(TypeInfo(EDownloadProtocol), Ord(e_dlprotocol))]));
@@ -509,14 +478,14 @@ begin
   end;
 end;
 
-constructor TComDownloader.Create();
+constructor TMtxComDownloader.Create();
 begin
   inherited Create();
   s_blmessage := '';
   s_fwmessage := '';
 end;
 
-function TComDownloader.TestApp(): boolean;
+function TMtxComDownloader.TestApp(): boolean;
 var c_time: cardinal; s_recv: string; b_repeat: boolean; i_trials: integer;
 begin
   result := false;
@@ -546,7 +515,7 @@ begin
   end;
 end;
 
-function  TComDownloader.GetBootState(const cmd: string): EBootState;
+function  TMtxComDownloader.GetBootState(const cmd: string): EBootState;
 const
   C_MTLBL   = $00010000;
   C_MTXBL   = $00020000;
@@ -609,7 +578,7 @@ begin
   if assigned(t_messager) then t_messager.Add(format('[%s]: boot state is %s', [DateTimeToStr(Now()), GetEnumName(TypeInfo(EBootState), Ord(result))]));
 end;
 
-function TComDownloader.Download(const cmd, fname: string): boolean;
+function TMtxComDownloader.Download(const cmd, fname: string): boolean;
 var s_file: string; 
 begin
   result := false; b_dlcancel := false;
@@ -635,5 +604,5 @@ begin
 end;
 
 initialization
-  t_comdownloader := TComDownloader.Create();
+  t_comdownloader := TMtxComDownloader.Create();
 end.

@@ -42,7 +42,7 @@ type
     e_curma:  EMeasureAction; //current setting for the measurement
     w_cards:  word; //count of installed model 7700 switching module
   protected
-    function InitFromFile(const sfile: string): boolean;
+    function InitFromFile(const sfile: string): boolean; virtual;
     function SwitchMeasurement(const meas: EMeasureAction): boolean; virtual;
     function ReadData(var val: real): boolean; virtual;
     procedure TriggerMesssure(); virtual;
@@ -106,16 +106,22 @@ type
 implementation
 uses SysUtils, TextMessage;
 
+function TMultimeter.InitFromFile(const sfile: string): boolean;
+begin
+  result := false;
+  AddMessage(format('"%s.InitFromFile" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
+end;
+
 function TMultimeter.SwitchMeasurement(const meas: EMeasureAction): boolean;
 begin
   result := false;
-  AddMessage(format('"%s.SwitchMeasurement" must be implemented in its subclass.', [ClassName()]), ML_ERROR);
+  AddMessage(format('"%s.SwitchMeasurement" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
 end;
 
 function TMultimeter.ReadData(var val: real): boolean;
 begin
   result := false;
-  AddMessage(format('"%s.ReadData" must be implemented in its subclass.', [ClassName()]), ML_ERROR);
+  AddMessage(format('"%s.ReadData" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
 end;
 
 procedure TMultimeter.TriggerMesssure();

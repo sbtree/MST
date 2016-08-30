@@ -71,6 +71,7 @@
     <None Include="ModelSupport_ProductTester\MtxUSB\default.txvpck" />
     <None Include="ModelSupport_ProductTester\NewProgressbar\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\PRODTester\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\ProductBase\default.txvpck" />
     <None Include="ModelSupport_ProductTester\ProductConfig\default.txvpck" />
     <None Include="ModelSupport_ProductTester\ProductTester\default.txvpck" />
     <None Include="ModelSupport_ProductTester\RS232\default.txaPackage" />

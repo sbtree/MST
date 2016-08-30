@@ -65,6 +65,7 @@
     <DCCReference Include="FuncTmm.pas" />
     <None Include="ModelSupport_FunctionTester\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FuncCaller\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\FuncFlashRunner\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\FuncFlashRunner\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\FunctionBase\default.txaPackage" />

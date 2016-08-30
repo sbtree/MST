@@ -58,12 +58,15 @@ begin
   b_aborted := false;
   t_pars := TStringList.Create();
   ch_separator := ' '; //default separator
+  t_msgrimpl := TTextMessengerImpl.Create();
+  t_msgrimpl.OwnerName := ClassName();
 end;
 
 destructor TFunctionBase.Destroy;
 begin
 	inherited Destroy;
   t_pars.Free();
+  t_msgrimpl.Free();
 end;
 
 procedure TFunctionBase.SetAborted(const aborted: boolean);

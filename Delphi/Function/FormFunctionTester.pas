@@ -31,16 +31,16 @@ procedure TFormFTMain.btnTestClick(Sender: TObject);
 //var t_fr_set_dm: FR_Set_DM;
 var t_fcaller: TFunctionCaller; s_test, s_show: string; i: integer;
 begin
-  s_test := 'Restarting' + Char(0) + 'Motorola';
+{  s_test := 'Restarting' + Char(0) + 'Motorola';
   for i := 0 to length(s_test) do
     if s_test[i] = Char(0) then s_show :=  s_show + Char(13)
     else s_show :=  s_show + s_test[i];
 
-  ShowMessage(format('length = %d, %s', [length(s_show), s_show]));
+  ShowMessage(format('length = %d, %s', [length(s_show), s_show])); }
   t_fcaller := TFunctionCaller.Create;
   t_fcaller.ExecutionMode := EM_DIAGNOSE;
   ITextMessengerImpl(t_fcaller).Messenger := t_messenger;
-  t_fcaller.CallFunction('ExecConsoleCmd', 'N:\SW_INBE\DIS-2\Tools\flash_over_jtag.exe');
+  t_fcaller.CallFunction('XYZ', 'N:\SW_INBE\DIS-2\Tools\flash_over_jtag.exe');
   t_fcaller.CallFunction('Nil', 'abc');
   t_fcaller.CallFunction('abcd', 'abc');
   t_fcaller.CallFunction('EvaluateStr', '@abc');

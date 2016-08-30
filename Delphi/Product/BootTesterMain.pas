@@ -106,7 +106,7 @@ type
     c_timeout: cardinal;
     e_bootstate: EBootState;
     e_dlprotocol: EDownloadProtocol;
-    t_downloader: TMtxDownloader;
+    t_downloader: TComDownloader;
   public
     { Public-Deklarationen }
   end;

@@ -53,6 +53,8 @@ type
     //function SendPacket(packet: array of byte): boolean;
     //function RecvPacket(packet: array of byte): boolean;
     function ReleaseDevice(): boolean;
+    function GetConnection(): TConnBase;
+    property Connection: TConnBase read GetConnection;
   end;
 
   // =============================================================================
@@ -76,13 +78,12 @@ type
 
   protected
     function InitFromFile(const sfile: string): boolean;
-    function GetCurConnect(): TConnBase;
 
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
-    function LoadConfig(const confs: TStrings): boolean;
+    function LoadConfig(const confs: TStrings): boolean; virtual;
     function GetState(): EDeviceState;
     function InitDevice(): boolean; virtual;
     function SendCommand(const cmd: string): boolean; virtual;
@@ -90,11 +91,12 @@ type
     //function SendPacket(packet: array of byte): boolean; virtual;
     //function RecvPacket(packet: array of byte): boolean; virtual;
     function ReleaseDevice(): Boolean; virtual;
+    function GetConnection(): TConnBase;
 
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
     property State : EDeviceState read GetState;
     property StateText : string read GetStateText;
-    property CurConnect: TConnBase read GetCurConnect;
+    property CurConnect: TConnBase read GetConnection;
 
     //additional functions of device
     function Reset(const cmd: string): boolean; virtual;
@@ -133,11 +135,17 @@ const
   CSTR_DEV_STATES : array[EDeviceState] of string = (
                     'unusable',
                     'configured',
-                    'connected',
-                    'communicable',
-                    'waiting',
-                    'error'
+                    //'connected',
+                    'communicable'
+                    //'waiting',
+                    //'error'
                     );
+
+function TDeviceBase.InitFromFile(const sfile: string): boolean;
+begin
+  result := false;
+  //todo:
+end;
 
 // =============================================================================
 // Class        : TDeviceBase
@@ -155,6 +163,7 @@ begin
 	inherited Create(owner);
   t_msgrimpl := TTextMessengerImpl.Create();
   t_msgrimpl.OwnerName := ClassName();
+  t_conf := TStringPairs.Create();
   e_state := DS_UNKNOWN;
 end;
 
@@ -170,6 +179,7 @@ end;
 // =============================================================================
 destructor TDeviceBase.Destroy;
 begin
+  t_conf.Free();
   t_msgrimpl.Free();
 	inherited Destroy;
 end;
@@ -190,15 +200,9 @@ begin
   result := CSTR_DEV_STATES[e_state];
 end;
 
-function TDeviceBase.GetCurConnect(): TConnBase;
-begin
-  result := t_curconn;
-end;
-
 function TDeviceBase.LoadConfig(const confs: TStrings): boolean;
 begin
-  result := false;
-  //todo:
+  result := (t_conf.AddPairs(confs, true) > 0);
 end;
 
 function TDeviceBase.GetState(): EDeviceState;
@@ -264,6 +268,11 @@ begin
   result := t_curconn.Disconnect();
   //todo:
   if result then e_state := DS_CONFIGURED;
+end;
+
+function TDeviceBase.GetConnection(): TConnBase;
+begin
+  result := t_curconn;
 end;
 
 // =============================================================================

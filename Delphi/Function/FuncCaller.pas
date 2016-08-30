@@ -9,22 +9,22 @@
 unit FuncCaller;
 
 interface
-uses Classes,TextMessage, FuncBase, GenType;
-type
-  //define prototype of script functions
-  //ScriptFunction = function(const par: string): boolean of object;
+uses Classes, TextMessage, FuncBase, GenType;
 
+type
   //define class of function caller, which calls script functions
   TFunctionCaller = class(TInterfacedObject, ITextMessengerImpl)
   protected
-    t_func:       TFunctionBase;
-    e_exemode:    EExecMode;
-    s_result:     string;
-    t_msgrimpl:   TTextMessengerImpl;
+    t_aliases:  TStrings;
+    t_func:     TFunctionBase;
+    e_exemode:  EExecMode;
+    s_result:   string;
+    t_msgrimpl: TTextMessengerImpl;
   protected
-    //procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    procedure InitAliases();
     procedure SetExecutionMode(const em: EExecMode);
-    function  FindFunction(const func: string): TFunctionBase; virtual;
+    function  FindFunctionByAlias(const alias: string): TFunctionClass;
+    function  FindFunctionByName(const func: string): TFunctionClass;
   public
     constructor Create();
     destructor Destroy(); override;
@@ -34,11 +34,21 @@ type
 
     property  ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     property  ResultString: string read s_result write s_result;
+    //function FindFunction(const fnname: string): boolean;
+    function  CreateFunction(const func: string): TFunctionBase; virtual;
     function  CallFunction(const func, par: string): boolean;
   end;
 
 implementation
 uses SysUtils;
+
+procedure TFunctionCaller.InitAliases();
+begin
+  t_aliases.Add('FsmDownloadFW=FlashOverFDT');
+  t_aliases.Add('Frage_JaNein=YesNoQuery');
+  t_aliases.Add('XYZ=ExecConsoleCmd');
+  //todo: extention
+end;
 
 procedure TFunctionCaller.SetExecutionMode(const em: EExecMode);
 begin
@@ -51,15 +61,18 @@ begin
   end;
 end;
 
-function TFunctionCaller.FindFunction(const func: string) : TFunctionBase;
-var
-  t_class : TFunctionClass;
+function TFunctionCaller.FindFunctionByAlias(const alias: string) : TFunctionClass;
+var i_ftidx: integer;
 begin
-  result := nil;
-  if func <> '' then begin
-    t_class := TFunctionClass(GetClass(func));
-    if (t_class <> nil) then result := t_class.Create();
-  end;
+  i_ftidx := t_aliases.IndexOfName(alias);
+  if (i_ftidx < 0) then result := nil
+  else result := FindFunctionByName(t_aliases.Values[alias]);
+end;
+
+function  TFunctionCaller.FindFunctionByName(const func: string): TFunctionClass;
+begin
+  if (SameText(func, 'nil') or (func = '')) then result := nil
+  else result := TFunctionClass(GetClass(func));
 end;
 
 constructor TFunctionCaller.Create;
@@ -68,31 +81,41 @@ begin
   t_msgrimpl := TTextMessengerImpl.Create();
   t_msgrimpl.OwnerName := ClassName();
   ExecutionMode := EM_NORMAL;
+  t_aliases := TStringList.Create();
+  InitAliases();
 end;
 
 destructor TFunctionCaller.Destroy();
 begin
+  t_aliases.Free();
   t_msgrimpl.Free();
   inherited Destroy();
+end;
+
+function TFunctionCaller.CreateFunction(const func: string) : TFunctionBase;
+var t_class : TFunctionClass;
+begin
+  result := nil;
+  t_class := FindFunctionByName(func);
+  if (not assigned(t_class)) then t_class := FindFunctionByAlias(func);
+  if assigned(t_class) then result := t_class.Create()
+  else if ((not SameText(func, 'nil')) and (func <> '')) then
+    t_msgrimpl.AddMessage(format('The script function %s is not found.', [func]), ML_ERROR);
 end;
 
 function TFunctionCaller.CallFunction(const func, par: string): boolean;
 begin
   result := false;
-  if (SameText(func, 'nil') or (func = '')) then t_msgrimpl.AddMessage('No function is called.')
-  else begin
-    t_func := FindFunction(func);
-    if assigned(t_func) then
-    begin
-      ITextMessengerImpl(t_func).Messenger := t_msgrimpl.Messenger;
-      t_func.ExecutionMode := e_exemode;
-      result := t_func.LoadParameter(par);
-      if (result) then begin
-        result := t_func.DoTask();
-        s_result := t_func.ResultString;
-      end else t_msgrimpl.AddMessage('The called function "' + func + '" is not executed because of an error in its parameter.', ML_ERROR);
-      FreeAndNil(t_func);
-    end else t_msgrimpl.AddMessage('The called function "' + func + '" is not available.', ML_ERROR);
+  t_func := CreateFunction(func);
+  if assigned(t_func) then begin
+    ITextMessengerImpl(t_func).Messenger := t_msgrimpl.Messenger;
+    t_func.ExecutionMode := e_exemode;
+    result := t_func.LoadParameter(par);
+    if (result) then begin
+      result := t_func.DoTask();
+      s_result := t_func.ResultString;
+    end else t_msgrimpl.AddMessage('The called function "' + func + '" is not executed because of an error in its parameter.', ML_ERROR);
+    FreeAndNil(t_func);
   end;
 end;
 
