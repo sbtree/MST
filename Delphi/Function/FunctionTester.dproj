@@ -46,6 +46,8 @@
     <DCCReference Include="..\Comm\ConnBase.pas" />
     <DCCReference Include="..\Comm\MtxUSB.pas" />
     <DCCReference Include="..\Comm\RS232.pas" />
+    <DCCReference Include="..\CoreData\StepData.pas" />
+    <DCCReference Include="..\CoreData\StepGroup.pas" />
     <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
     <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
     <DCCReference Include="..\General\GenType.pas" />

@@ -20,7 +20,9 @@ uses
   CAN in '..\Comm\CAN.pas',
   ConnBase in '..\Comm\ConnBase.pas',
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
-  Usbspec in '..\Externals\USBIO\Usbspec.pas';
+  Usbspec in '..\Externals\USBIO\Usbspec.pas',
+  StepGroup in '..\CoreData\StepGroup.pas',
+  StepData in '..\CoreData\StepData.pas';
 
 {$R *.res}
 

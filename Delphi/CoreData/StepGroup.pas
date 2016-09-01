@@ -340,7 +340,8 @@ function TStepGroup.GotoStepNr(const stepnr: string): boolean;
 var i_idx: integer;
 begin
   i_idx := t_steps.IndexOf(stepnr);
-  result := GotoStepIndex(i_idx);
+  if ((i_idx >= 0) and (i_idx < t_steps.Count)) then result := GotoStepIndex(i_idx)
+  else result := false;
 end;
 
 function TStepGroup.AddStep(const step: TTestStep): boolean;
