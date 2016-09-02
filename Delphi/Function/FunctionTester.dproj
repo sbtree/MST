@@ -27,6 +27,7 @@
     <DCC_ObjPath>..\Externals</DCC_ObjPath>
     <DCC_IncludePath>..\Externals</DCC_IncludePath>
     <DCC_Optimize>False</DCC_Optimize>
+    <DCC_IntegerOverflowCheck>True</DCC_IntegerOverflowCheck>
   </PropertyGroup>
   <ProjectExtensions>
     <Borland.Personality>Delphi.Personality</Borland.Personality>

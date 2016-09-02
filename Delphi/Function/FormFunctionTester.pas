@@ -40,6 +40,10 @@ begin
   t_fcaller := TFunctionCaller.Create;
   t_fcaller.ExecutionMode := EM_DIAGNOSE;
   ITextMessengerImpl(t_fcaller).Messenger := t_messenger;
+  t_fcaller.CallFunction('JumpIfFalse', 'abc PS_100');
+  t_fcaller.CallFunction('JumpIfTrue', 'abc PS_200');
+  t_fcaller.CallFunction('RepeatIfFalse', 'abc PS_100');
+  t_fcaller.CallFunction('RepeatIfTrue', 'abc PS_200');
   t_fcaller.CallFunction('XYZ', 'N:\SW_INBE\DIS-2\Tools\flash_over_jtag.exe');
   t_fcaller.CallFunction('Nil', 'abc');
   t_fcaller.CallFunction('abcd', 'abc');

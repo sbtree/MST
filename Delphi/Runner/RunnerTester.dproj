@@ -46,6 +46,7 @@
     </DCCReference>
     <DCCReference Include="LoopControl.pas" />
     <DCCReference Include="PseudoActor.pas" />
+    <DCCReference Include="ResultValidator.pas" />
     <DCCReference Include="TestDebugger.pas" />
     <DCCReference Include="TestRunner.pas" />
     <None Include="ModelSupport_RunnerTester\default.txaPackage" />

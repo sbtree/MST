@@ -33,7 +33,7 @@ type
      procedure SetAborted(const aborted: boolean);
 
   public
-    constructor Create();
+    constructor Create(); virtual;
     destructor Destroy; override;
 
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
@@ -53,7 +53,7 @@ uses SysUtils;
 
 constructor TFunctionBase.Create;
 begin
-	inherited Create;
+	inherited Create();
   e_exemode := EM_NORMAL;
   b_aborted := false;
   t_pars := TStringList.Create();

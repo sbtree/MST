@@ -15,7 +15,8 @@ uses
   TestDebugger in 'TestDebugger.pas',
   PseudoActor in 'PseudoActor.pas',
   LoopControl in 'LoopControl.pas',
-  StepData in '..\CoreData\StepData.pas';
+  StepData in '..\CoreData\StepData.pas',
+  ResultValidator in 'ResultValidator.pas';
 
 {$R *.res}
 

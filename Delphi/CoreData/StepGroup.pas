@@ -95,6 +95,7 @@ type
     function StepByNr(const nr: string): TTestStep;
     function IndexOfStep(const stepnr: string): integer;
     function StepNrOf(const idx: integer): string;
+    function CurStepNr(): string;
     procedure RemoveStep(const stepnr: string);
     procedure Clear(); virtual;
   end;
@@ -376,6 +377,12 @@ end;
 function  TStepGroup.StepNrOf(const idx: integer): string;
 begin
   if ((idx >= 0) and (idx < t_steps.Count)) then result := t_steps.Strings[idx]
+  else result := '';
+end;
+
+function TStepGroup.CurStepNr(): string;
+begin
+  if ((i_curstep >= 0) and (i_curstep < t_steps.Count)) then result := t_steps.Strings[i_curstep]
   else result := '';
 end;
 
