@@ -382,8 +382,7 @@ end;
 
 function TStepGroup.CurStepNr(): string;
 begin
-  if ((i_curstep >= 0) and (i_curstep < t_steps.Count)) then result := t_steps.Strings[i_curstep]
-  else result := '';
+  result := StepNrOf(i_curstep);
 end;
 
 procedure TStepGroup.RemoveStep(const stepnr: string);
