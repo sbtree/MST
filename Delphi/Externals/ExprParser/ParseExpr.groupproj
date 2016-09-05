@@ -1,0 +1,74 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{274b4601-5466-4285-874a-0571e1d30fd8}</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Projects Include="Demo1\FormulaEval.dproj" />
+    <Projects Include="Demo1\MultCalc.dproj" />
+    <Projects Include="Demo1\MultiCalc.dproj" />
+    <Projects Include="Demo\Calculator.dproj" />
+    <Projects Include="Speed\Speed.dproj" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Default.Personality</Borland.Personality>
+    <Borland.ProjectType />
+    <BorlandProject>
+  <BorlandProject xmlns=""> <Default.Personality> </Default.Personality> </BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Target Name="Speed">
+    <MSBuild Projects="Speed\Speed.dproj" Targets="" />
+  </Target>
+  <Target Name="Speed:Clean">
+    <MSBuild Projects="Speed\Speed.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="Speed:Make">
+    <MSBuild Projects="Speed\Speed.dproj" Targets="Make" />
+  </Target>
+  <Target Name="Calculator">
+    <MSBuild Projects="Demo\Calculator.dproj" Targets="" />
+  </Target>
+  <Target Name="Calculator:Clean">
+    <MSBuild Projects="Demo\Calculator.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="Calculator:Make">
+    <MSBuild Projects="Demo\Calculator.dproj" Targets="Make" />
+  </Target>
+  <Target Name="FormulaEval">
+    <MSBuild Projects="Demo1\FormulaEval.dproj" Targets="" />
+  </Target>
+  <Target Name="FormulaEval:Clean">
+    <MSBuild Projects="Demo1\FormulaEval.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="FormulaEval:Make">
+    <MSBuild Projects="Demo1\FormulaEval.dproj" Targets="Make" />
+  </Target>
+  <Target Name="MultCalc">
+    <MSBuild Projects="Demo1\MultCalc.dproj" Targets="" />
+  </Target>
+  <Target Name="MultCalc:Clean">
+    <MSBuild Projects="Demo1\MultCalc.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="MultCalc:Make">
+    <MSBuild Projects="Demo1\MultCalc.dproj" Targets="Make" />
+  </Target>
+  <Target Name="MultiCalc">
+    <MSBuild Projects="Demo1\MultiCalc.dproj" Targets="" />
+  </Target>
+  <Target Name="MultiCalc:Clean">
+    <MSBuild Projects="Demo1\MultiCalc.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="MultiCalc:Make">
+    <MSBuild Projects="Demo1\MultiCalc.dproj" Targets="Make" />
+  </Target>
+  <Target Name="Build">
+    <CallTarget Targets="Speed;Calculator;FormulaEval;MultCalc;MultiCalc" />
+  </Target>
+  <Target Name="Clean">
+    <CallTarget Targets="Speed:Clean;Calculator:Clean;FormulaEval:Clean;MultCalc:Clean;MultiCalc:Clean" />
+  </Target>
+  <Target Name="Make">
+    <CallTarget Targets="Speed:Make;Calculator:Make;FormulaEval:Make;MultCalc:Make;MultiCalc:Make" />
+  </Target>
+  <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
+</Project>

@@ -10,16 +10,36 @@
 unit FuncAux;
 
 interface
-uses Classes, FuncBase, QExp;
+uses Classes, FuncBase, ParseExpr;
 type
   SubStr = class(TFunctionBase)
-  
+  end;
+
+  StrToInt = class(TFunctionBase)
+  end;
+
+  IntToStr = class(TFunctionBase)
+  end;
+
+  IntToHex = class(TFunctionBase)
+  end;
+
+  HexToInt = class(TFunctionBase)
+  end;
+
+  BitsMaskOne = class(TFunctionBase)
+  end;
+
+  BitsMaskZero = class(TFunctionBase)
   end;
 
   TEvalExprBase = class(TFunctionBase)
   protected
-    t_expr: TQExprParser;
+    t_exprparser: TExpressionParser;
   public
+    constructor Create(); override;
+    destructor Destroy; override;
+
     function LoadParameter(const par: string): boolean; override;
     function DoTask(): boolean; override;
   end;
@@ -32,51 +52,47 @@ type
   EvalExprInt = class(TEvalExprBase)
   end;
 
-  EvalExprReal = class(TEvalExprBase)
+  EvalExprFloat = class(TEvalExprBase)
   end;
 
   EvalExprBool = class(TEvalExprBase)
   end;
 
-  IntToHexStr = class(TFunctionBase)
-  public
-    function LoadParameter(const par: string): boolean; override;
-    function DoTask(): boolean; override;
-  end;
-  
-  HexToIntStr = class(TFunctionBase)
-  public
-    //function LoadParameter(const par: string): boolean; override;
-    //function DoTask(): boolean; override;
-  end;
-
-var
-  g_exprparser: TQExprParser;
-
 implementation
-uses TextMessage;
+uses Math, SysUtils, TextMessage, ParseClass;
+
+constructor TEvalExprBase.Create();
+begin
+  inherited Create();
+  t_exprparser := TExpressionParser.Create();
+  t_exprparser.ClearExpressions;
+end;
+destructor TEvalExprBase.Destroy;
+begin
+  t_exprparser.Free();
+end;
 
 function TEvalExprBase.LoadParameter(const par: string): boolean;
 begin
-  //todo:
-  //1. replace pseudo strings with their actual values, e.g. @LastInt, @LastReal, @VarInt, @VarReal
-  //2. call g_exprparser.parse in block of try ... except ...
-  //3. set returned value
+  result := false;
   try
-
-    result := true;
+    //todo: replace pseudo strings with their actual values, e.g. @LastInt, @LastReal, @VarInt, @VarReal
+    result := (t_exprparser.Evaluate(par) <> NaN);
   except
-    t_msgrimpl.AddMessage('The given expression can not be parsed.', ML_ERROR);
-    result := false;
+    on E: EParserException do t_msgrimpl.AddMessage(E.Message, ML_ERROR);
+    else t_msgrimpl.AddMessage(format('The given expression(%s) can not be parsed.', [par]), ML_ERROR);
   end;
 end;
 
 function TEvalExprBase.DoTask(): boolean;
 begin
-  //todo:
-  //1. call g_exprparser.calc in block of try ... except ...
-  //2. set result string and returned value
-  result := true;
+  result := false;
+  try
+    result := (t_exprparser.EvaluateCurrent() <> NaN);
+  except
+    on E: EParserException do t_msgrimpl.AddMessage(E.Message, ML_ERROR);
+    else t_msgrimpl.AddMessage(format('Failed to evaluate the expression (%s).', [t_exprparser.Expression[0]]), ML_ERROR);
+  end;
 end;
 
 function EvalExprStr.LoadParameter(const par: string): boolean;
@@ -88,31 +104,31 @@ begin
   result := true
 end;
 
-function IntToHexStr.LoadParameter(const par: string): boolean;
-begin
-  //todo:
-  result := true;
-end;
-function IntToHexStr.DoTask(): boolean;
-begin
-  //todo:
-  result := true;
-end;
 
 
 initialization
-  g_exprparser := TQExprParser.Create();
+  Classes.RegisterClass(SubStr);
+  Classes.RegisterClass(IntToStr);
+  Classes.RegisterClass(StrToInt);
+  Classes.RegisterClass(IntToHex);
+  Classes.RegisterClass(HexToInt);
+  Classes.RegisterClass(BitsMaskOne);
+  Classes.RegisterClass(BitsMaskZero);
   Classes.RegisterClass(EvalExprStr);
   Classes.RegisterClass(EvalExprInt);
-  Classes.RegisterClass(EvalExprReal);
+  Classes.RegisterClass(EvalExprFloat);
   Classes.RegisterClass(EvalExprBool);
-  Classes.RegisterClass(IntToHexStr);
 
 finalization
-  g_exprparser.Free();
+  Classes.UnregisterClass(SubStr);
+  Classes.UnregisterClass(IntToStr);
+  Classes.UnregisterClass(StrToInt);
+  Classes.UnregisterClass(IntToHex);
+  Classes.UnregisterClass(HexToInt);
+  Classes.UnregisterClass(BitsMaskOne);
+  Classes.UnregisterClass(BitsMaskZero);
   Classes.UnregisterClass(EvalExprStr);
   Classes.UnregisterClass(EvalExprInt);
-  Classes.UnregisterClass(EvalExprReal);
+  Classes.UnregisterClass(EvalExprFloat);
   Classes.UnregisterClass(EvalExprBool);
-  Classes.UnregisterClass(IntToHexStr);
 end.

@@ -93,6 +93,8 @@ type
 
 implementation
 uses Windows, SysUtils, StrUtils, Contnrs;
+const
+  CINT_ELAPSE_REPEAT = 10000; //default time for repeating
 
 constructor TStepControlHelper.Create();
 begin
@@ -139,8 +141,8 @@ begin
     f_tsnr := abs(f_tsnr);
     if bforward then result := (f_tsnr >= f_ssnr)
     else result := (f_tsnr <= f_ssnr);
-    if (not result) then t_msgrimpl.AddMessage('The step number of destination is allowed in this function.', ML_ERROR);
-  end else t_msgrimpl.AddMessage('The step number of destination is invalid', ML_ERROR);
+    if (not result) then t_msgrimpl.AddMessage(format('The target step(%s) is not allowed.',[s_tsnr]), ML_ERROR);
+  end else t_msgrimpl.AddMessage(format('The target step(%s) is invalid', [s_tsnr]), ML_ERROR);
 end;
 
 constructor TConditionControl.Create();
@@ -187,11 +189,16 @@ end;
 function JumpIfFalse.DoTask(): boolean;
 begin
   result := inherited DoTask();
-  if result then begin
-    if (BooleanCondition(s_expr) = b_valid) then result := t_schelper.GotoStep(s_tosnr)
-    else result := false;
+  if (result and ValidStepNrs(true)) then begin
+    if (BooleanCondition(s_expr) = b_valid) then begin
+      result := t_schelper.GotoStep(s_tosnr);
+      if result then t_msgrimpl.AddMessage(format('Successful to jump to test step %s', [s_tosnr]))
+      else t_msgrimpl.AddMessage(format('Failed to jump to test step %s', [s_tosnr]), ML_ERROR);
+    end else begin
+      t_msgrimpl.AddMessage(format('The jumping condition is not fulfilled(%s <> %s).', [s_expr, BoolToStr(b_valid, true)]));
+      result := true; //do nothing, if the condition is not fulfilled
+    end;
   end;
-  if (not result) then t_msgrimpl.AddMessage(format('Failed to go to step "%s"', [s_tosnr]), ML_ERROR);
 end;
 
 constructor JumpIfTrue.Create();
@@ -204,7 +211,7 @@ constructor TRepeatControl.Create();
 begin
   inherited Create();
   b_reset := true;
-  c_elapse := 10000;
+  c_elapse := CINT_ELAPSE_REPEAT;
   i_ninit := -1;
   i_counter := 0;
 end;
@@ -247,18 +254,24 @@ begin
     i_counter := 0;
     b_reset := false;
   end;
-  if result then begin
+  if (result and ValidStepNrs(false)) then begin
     if (i_ninit >= 0) then b_dorepeat := (i_counter <= i_ninit)
     else b_dorepeat := (GetTickCount() <= c_tend);
     b_dorepeat := (b_dorepeat and (BooleanCondition(s_expr) = b_valid));
 
     if b_dorepeat then begin
       result := t_schelper.GotoStep(s_tosnr);
-      if (not result) then b_reset := true; //ready for next run
-    end else b_reset := true; //ready for next run
+      if result then t_msgrimpl.AddMessage(format('Successful to go to test step %s', [s_tosnr]))
+      else begin
+        t_msgrimpl.AddMessage(format('Failed to go to test step %s', [s_tosnr]), ML_ERROR);
+        b_reset := true; //ready for next run
+      end
+    end else begin
+      b_reset := true; //ready for next run
+      t_msgrimpl.AddMessage(format('The repeating condition is not fulfilled(%s <> %s).', [s_expr, BoolToStr(b_valid, true)]));
+    end;
   end;
   Inc(i_counter);
-  if (not result) then t_msgrimpl.AddMessage(format('Failed to go to step "%s"', [s_tosnr]), ML_ERROR);
 end;
 
 constructor RepeatIfTrue.Create();

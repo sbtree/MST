@@ -16,7 +16,8 @@ uses
   PseudoActor in 'PseudoActor.pas',
   LoopControl in 'LoopControl.pas',
   StepData in '..\CoreData\StepData.pas',
-  ResultValidator in 'ResultValidator.pas';
+  ResultValidator in 'ResultValidator.pas',
+  FuncSys in '..\Function\FuncSys.pas';
 
 {$R *.res}
 

@@ -68,7 +68,7 @@ begin
   inherited Create();
   t_msgrimpl := TTextMessengerImpl.Create();
   t_msgrimpl.OwnerName := ClassName();
-  t_curseq := TTestSequence.Create();
+  //t_curseq := TTestSequence.Create();
   t_fcaller := TFunctionCaller.Create();
   ITextMessengerImpl(t_fcaller).Messenger := t_msgrimpl.Messenger;
   b_jumpmstep := true;
@@ -79,7 +79,7 @@ destructor  TTestRunner.Destroy();
 begin
   t_msgrimpl.Free();
   FreeAndNil(t_fcaller);
-  FreeAndNil(t_curseq);
+  //FreeAndNil(t_curseq);
   inherited Destroy();
 end;
 
@@ -98,7 +98,7 @@ end;
 procedure TTestRunner.SetStepContainer(const tcon: TStepContainer);
 begin
   t_container := tcon;
-  if assigned(t_container) then t_container.UpdateSequence(t_curseq);
+  if assigned(t_container) then t_curseq := t_container;
 end;
 
 function  TTestRunner.StepInit(const val: string): boolean;
@@ -228,8 +228,10 @@ end;
 function TTestRunner.SetSequence(const csincl, csexcl: string): boolean;
 begin
   result := false;
-  if assigned(t_container) then
-    result := t_container.UpdateSequence(t_curseq, csincl, csexcl);
+  if assigned(t_container) then begin
+    t_curseq := t_container.TestSequence(csincl, csexcl);
+    result := assigned(t_curseq);
+  end;
 end;
 
 function TTestRunner.RepeatStep(): boolean;

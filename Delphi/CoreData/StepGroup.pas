@@ -213,14 +213,17 @@ type
   //a class composed of all test steps
   TStepContainer = class(TTestSequence)
   protected
+    t_curseq: TTestSequence;
+  protected
     function CaseIndexSet(const casenrs: string): TIndexSet;
+    function UpdateSequence(var tseq: TTestSequence; const incl: string = 'all'; const excl: string = ''): boolean;
 
   public
     constructor Create();
     destructor  Destroy(); override;
 
     function LoadStep(const fields: FieldStringArray): boolean;
-    function UpdateSequence(var tseq: TTestSequence; const incl: string = 'all'; const excl: string = ''): boolean;
+    function TestSequence(const incl: string = 'all'; const excl: string = ''): TTestSequence;
     procedure SaveFile(const sfile: string);
   end;
 
@@ -734,27 +737,6 @@ begin
   end;
 end;
 
-constructor TStepContainer.Create();
-begin
-  inherited Create();
-  FreeByRemove := true;
-end;
-
-destructor TStepContainer.Destroy();
-begin
-  Clear();
-  inherited Destroy();
-end;
-
-function TStepContainer.LoadStep(const fields: FieldStringArray): boolean;
-var t_step: TTestStep;
-begin
-  t_step := TTestStep.Create();
-  t_step.LoadFields(fields);
-  result := AddStep(t_step);
-  if (not result) then FreeAndNil(t_step);
-end;
-
 // =============================================================================
 //    Description  : analyze the given strings incl and excl and update t_sequence
 //    Parameter    : incl, a string to represent inclusive test cases
@@ -778,6 +760,35 @@ begin
     set_result := set_incl - set_excl;
     result := (tseq.UpdateCaseGroup(set_result, self) > 0);
   end;
+end;
+
+constructor TStepContainer.Create();
+begin
+  inherited Create();
+  FreeByRemove := true;
+  t_curseq := TTestSequence.Create();
+end;
+
+destructor TStepContainer.Destroy();
+begin
+  t_curseq.Free();
+  Clear();
+  inherited Destroy();
+end;
+
+function TStepContainer.LoadStep(const fields: FieldStringArray): boolean;
+var t_step: TTestStep;
+begin
+  t_step := TTestStep.Create();
+  t_step.LoadFields(fields);
+  result := AddStep(t_step);
+  if (not result) then FreeAndNil(t_step);
+end;
+
+function TStepContainer.TestSequence(const incl: string = 'all'; const excl: string = ''): TTestSequence;
+begin
+  result := nil;
+  if UpdateSequence(t_curseq, incl, excl) then result := t_curseq;
 end;
 
 // =============================================================================

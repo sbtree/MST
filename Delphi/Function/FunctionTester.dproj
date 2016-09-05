@@ -49,11 +49,17 @@
     <DCCReference Include="..\Comm\RS232.pas" />
     <DCCReference Include="..\CoreData\StepData.pas" />
     <DCCReference Include="..\CoreData\StepGroup.pas" />
+    <DCCReference Include="..\Externals\ExprParser\OObjects.pas" />
+    <DCCReference Include="..\Externals\ExprParser\ParseClass.pas" />
+    <DCCReference Include="..\Externals\ExprParser\ParseExpr.pas" />
     <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
     <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
     <DCCReference Include="..\General\GenType.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
+    <DCCReference Include="..\General\StringPairs.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
-    <DCCReference Include="FlashUpdater.pas" />
+    <DCCReference Include="..\Script\ScriptReader.pas" />
+    <DCCReference Include="..\Script\StepChecker.pas" />
     <DCCReference Include="FormFunctionTester.pas">
       <Form>FormFTMain</Form>
     </DCCReference>
@@ -68,9 +74,12 @@
     <DCCReference Include="FuncTmm.pas" />
     <None Include="ModelSupport_FunctionTester\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FormFunctionTester\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FuncAux\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\FuncCaller\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\FuncFlashRunner\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\FuncFlashRunner\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FuncSys\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\FunctionBase\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\FunctionBase\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\FunctionCaller\default.txaPackage" />
@@ -78,6 +87,13 @@
     <None Include="ModelSupport_FunctionTester\FunctionTester\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\FunctionTester\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\MtxUSB\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\OObjects\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\ParseClass\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\ParseExpr\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\ScriptReader\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\StepChecker\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\StepGroup\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\StringPairs\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\USBIOCOMLib_TLB\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\USBSPEC\default.txaPackage" />
   </ItemGroup>

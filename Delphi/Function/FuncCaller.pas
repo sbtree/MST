@@ -9,7 +9,7 @@
 unit FuncCaller;
 
 interface
-uses Classes, TextMessage, FuncBase, GenType;
+uses Classes, TextMessage, FuncBase, GenType, StepGroup;
 
 type
   //define class of function caller, which calls script functions
@@ -20,6 +20,7 @@ type
     e_exemode:  EExecMode;
     s_result:   string;
     t_msgrimpl: TTextMessengerImpl;
+    t_curgroup: TStepGroup;
   protected
     procedure InitAliases();
     procedure SetExecutionMode(const em: EExecMode);
@@ -31,16 +32,18 @@ type
 
     //delegate interface ITextMessengerImpl
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
+    property CurStepGroup: TStepGroup read t_curgroup write t_curgroup;
 
     property  ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     property  ResultString: string read s_result write s_result;
     //function FindFunction(const fnname: string): boolean;
     function  CreateFunction(const func: string): TFunctionBase; virtual;
+    function  RunFunction(const func: TFunctionBase; const par: string): boolean; virtual;
     function  CallFunction(const func, par: string): boolean;
   end;
 
 implementation
-uses SysUtils;
+uses SysUtils, FuncSys;
 
 procedure TFunctionCaller.InitAliases();
 begin
@@ -98,24 +101,41 @@ begin
   result := nil;
   t_class := FindFunctionByName(func);
   if (not assigned(t_class)) then t_class := FindFunctionByAlias(func);
-  if assigned(t_class) then result := t_class.Create()
-  else if ((not SameText(func, 'nil')) and (func <> '')) then
-    t_msgrimpl.AddMessage(format('The script function %s is not found.', [func]), ML_ERROR);
+  if assigned(t_class) then begin
+    result := t_class.Create();
+    if assigned(result) then begin
+      if (result is TConditionControl) then IStepControlImpl(TConditionControl(result)).CurStepGroup := t_curgroup;
+      ITextMessengerImpl(result).Messenger := t_msgrimpl.Messenger;
+      result.ExecutionMode := e_exemode;
+    end;
+  end else if ((not SameText(func, 'nil')) and (func <> '')) then
+    t_msgrimpl.AddMessage(format('The called function %s is not found.', [func]), ML_ERROR);
+end;
+
+function  TFunctionCaller.RunFunction(const func: TFunctionBase; const par: string): boolean;
+begin
+  result := false;
+  if assigned(func) then begin
+    result := func.LoadParameter(par);
+    if (result) then begin
+      result := func.DoTask();
+      s_result := func.ResultString;
+    end else t_msgrimpl.AddMessage('The called function "' + func.ClassName() + '" is not executed because of an error in its parameter.', ML_ERROR);
+  end;
 end;
 
 function TFunctionCaller.CallFunction(const func, par: string): boolean;
 begin
-  result := false;
-  t_func := CreateFunction(func);
-  if assigned(t_func) then begin
-    ITextMessengerImpl(t_func).Messenger := t_msgrimpl.Messenger;
-    t_func.ExecutionMode := e_exemode;
-    result := t_func.LoadParameter(par);
-    if (result) then begin
-      result := t_func.DoTask();
-      s_result := t_func.ResultString;
-    end else t_msgrimpl.AddMessage('The called function "' + func + '" is not executed because of an error in its parameter.', ML_ERROR);
-    FreeAndNil(t_func);
+  if (SameText(func, 'nil') or (func = '')) then begin
+    result := true;
+    t_msgrimpl.AddMessage(format('No function is executed with this function name("%s").', [func]));
+  end else begin
+    result := false;
+    t_func := CreateFunction(func);
+    if assigned(t_func) then begin
+      result := RunFunction(t_func, par);
+      FreeAndNil(t_func);
+    end;
   end;
 end;
 

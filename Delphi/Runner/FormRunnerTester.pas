@@ -56,6 +56,7 @@ type
     procedure btnRunPrevCaseClick(Sender: TObject);
     procedure btnRunNextCaseClick(Sender: TObject);
     procedure chkJumpClick(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
     { Private-Deklarationen }
     t_sreader:  TScriptReader;
@@ -188,6 +189,15 @@ begin
 
   t_runner := TTestRunner.Create();
   ITextMessengerImpl(t_runner).Messenger := t_messenger;
+end;
+
+procedure TForm2.FormDestroy(Sender: TObject);
+begin
+  t_vars.Free();
+  t_container.Free();
+  t_sreader.Free();
+  t_messenger.Free();
+  t_runner.Free();
 end;
 
 end.

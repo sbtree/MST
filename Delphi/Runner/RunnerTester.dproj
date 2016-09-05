@@ -36,6 +36,7 @@
     <DCCReference Include="..\CoreData\StepGroup.pas" />
     <DCCReference Include="..\Function\FuncBase.pas" />
     <DCCReference Include="..\Function\FuncCaller.pas" />
+    <DCCReference Include="..\Function\FuncSys.pas" />
     <DCCReference Include="..\General\GenType.pas" />
     <DCCReference Include="..\General\StringPairs.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
@@ -53,13 +54,19 @@
     <None Include="ModelSupport_RunnerTester\default.txvpck" />
     <None Include="ModelSupport_RunnerTester\FormRunnerTester\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\FuncBase\default.txvpck" />
+    <None Include="ModelSupport_RunnerTester\FuncCaller\default.txaPackage" />
+    <None Include="ModelSupport_RunnerTester\FuncSys\default.txaPackage" />
+    <None Include="ModelSupport_RunnerTester\GenType\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\RunnerTester\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\RunnerTester\default.txvpck" />
     <None Include="ModelSupport_RunnerTester\StepContainer\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\StepContainer\default.txvpck" />
     <None Include="ModelSupport_RunnerTester\StepDescriptor\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\StepDescriptor\default.txvpck" />
+    <None Include="ModelSupport_RunnerTester\StepGroup\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\TestDebugger\default.txaPackage" />
     <None Include="ModelSupport_RunnerTester\TestRunner\default.txaPackage" />
+    <None Include="ModelSupport_RunnerTester\TestRunner\default.txvpck" />
+    <None Include="ModelSupport_RunnerTester\TextMessage\default.txaPackage" />
   </ItemGroup>
 </Project>
