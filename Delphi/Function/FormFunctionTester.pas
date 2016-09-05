@@ -40,13 +40,13 @@ begin
     else s_show :=  s_show + s_test[i];
 
   ShowMessage(format('length = %d, %s', [length(s_show), s_show])); }
-  t_sreader.ReadFromFile('C:\Users\C1C65\Documents\GitHub\MST\Delphi\Script\PST_BT_FT_PS_liste.TXT');
+  t_sreader.ReadFromFile('..\Script\PST_BT_FT_PS_liste.TXT');
   t_container.FirstStep;
   t_fcaller := TFunctionCaller.Create;
   t_fcaller.CurStepGroup := t_container;
   t_fcaller.ExecutionMode := EM_DIAGNOSE;
   ITextMessengerImpl(t_fcaller).Messenger := t_messenger;
-  t_fcaller.CallFunction('EvalExprFloat', 'sin(1,0)*cos(2,0)');
+  t_fcaller.CallFunction('EvalExprFloat', 'sqr(sin(1,0)*cos(2,0))');
   t_fcaller.CallFunction('JumpIfFalse', 'abc PS_11.02');
   t_fcaller.CallFunction('JumpIfTrue', 'abc PS_200');
   t_fcaller.CallFunction('RepeatIfFalse', 'abc PS_11.00');

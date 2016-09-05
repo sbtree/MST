@@ -120,7 +120,7 @@ begin
     if (result) then begin
       result := func.DoTask();
       s_result := func.ResultString;
-    end else t_msgrimpl.AddMessage('The called function "' + func.ClassName() + '" is not executed because of an error in its parameter.', ML_ERROR);
+    end else t_msgrimpl.AddMessage(format('Failed to load parameter("%s") by calling %s.', [par, func.ClassName()]), ML_ERROR);
   end;
 end;
 

@@ -10,7 +10,7 @@
 unit FuncSys;
 
 interface
-uses Classes, FuncBase, TextMessage, StepGroup;
+uses Classes, FuncBase, TextMessage, StepGroup, FuncAux;
 
 type
   IStepControlImpl = interface
@@ -34,9 +34,10 @@ type
     property CurStepGroup: TStepGroup read GetStepGroup write SetStepGroup;
   end;
 
-  TConditionControl = class(TFunctionBase, IStepControlImpl)
+  TConditionControl = class(TFunctionBase, IStepControlImpl, IExprParserImpl)
   protected
-    t_schelper: TStepControlHelper;
+    t_schelper:   TStepControlHelper;
+    t_parserimpl: TExprParserImpl;
     s_expr:     string; //conditional expression
     s_selfsnr:  string; //current step number
     s_tosnr:    string; //step number of destination
@@ -52,6 +53,7 @@ type
     function BooleanCondition(const expr: string): boolean; virtual;
     function LoadParameters(const pars: TStrings): boolean; override;
     property StepControl: TStepControlHelper read t_schelper implements IStepControlImpl;
+    property ParserService: TExprParserImpl read t_parserimpl implements IExprParserImpl;
   end;
 
   JumpIfFalse = class(TConditionControl)
@@ -149,25 +151,27 @@ constructor TConditionControl.Create();
 begin
   inherited Create();
   t_schelper := TStepControlHelper.Create();
+  t_parserimpl := TExprParserImpl.Create();
   b_valid := false;
 end;
 
 destructor TConditionControl.Destroy;
 begin
+  t_parserimpl.Free();
   t_schelper.Free();
   inherited Destroy();
 end;
 
 function TConditionControl.BooleanCondition(const expr: string): boolean;
 begin
-  //todo
-  result := false;
+  t_parserimpl.EvalAsBoolean(expr, result);
 end;
 
 function TConditionControl.DoTask(): boolean;
 begin
   s_selfsnr := t_schelper.CurStepNr();
   result := (s_selfsnr <> '');
+  if (not result) then t_msgrimpl.AddMessage('Failed to get current test step.', ML_ERROR);  
 end;
 
 function TConditionControl.LoadParameters(const pars: TStrings): boolean;
@@ -177,6 +181,7 @@ begin
   if (pars.Count >= 2) then begin
     s_expr := pars[0];
     //todo: replace #Pseudo
+    s_expr := '5>9'; //test
     s_par := pars[1];
     if StartsText('PS_', s_par) then
       s_tosnr := MidStr(s_par, 4, length(s_par) - 3)
