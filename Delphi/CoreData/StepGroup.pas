@@ -59,6 +59,7 @@ type
 
   protected
     function GetStepNumbers(): string;
+    function IndexOfStepNr(const stepnr: string; var correct: string): integer;
     procedure RemoveStepByIndex(const idx: integer);
     procedure SetFreeByRemove(const bfree: boolean); virtual;
 
@@ -252,6 +253,44 @@ begin
   result := t_steps.DelimitedText;
 end;
 
+function TStepGroup.IndexOfStepNr(const stepnr: string; var correct: string): integer;
+var i, i_len, i_pos: integer; s_snr: string;
+begin
+  s_snr := stepnr;
+  result := t_steps.IndexOf(s_snr);
+  if (result < 0) then begin
+    i_pos := Pos('.', s_snr);
+    if (i_pos > 0) then begin
+      i_len := length(s_snr);
+      while (i_len > 0) do begin
+        if (s_snr[i_len] = '0') then begin //remove last '0' in sub number, e.g. 'xx.200'
+          Dec(i_len);
+          s_snr := LeftStr(s_snr, i_len);
+          result := t_steps.IndexOf(s_snr);
+          if (result >= 0) then break;
+        end else break;
+      end;
+      if (result < 0) then begin
+        s_snr := stepnr;
+        i_pos := length(s_snr) - i_pos + 1;
+      end;
+    end else begin
+      s_snr := s_snr + '.';
+      i_pos := 1;
+    end;
+
+    if (result < 0) then begin
+      for i := i_pos to 3 do begin
+        s_snr := s_snr + '0';
+        result := t_steps.IndexOf(s_snr);
+        if (result >= 0) then break;
+      end;
+    end;
+  end;
+  if (result < 0) then correct := ''
+  else correct := s_snr;
+end;
+
 procedure TStepGroup.RemoveStepByIndex(const idx: integer);
 var t_step: TTestStep;
 begin
@@ -341,21 +380,9 @@ begin
 end;
 
 function TStepGroup.GotoStepNr(const stepnr: string): boolean;
-var i_len, i_idx, i_pos: integer; s_snr: string;
-const CSTR_POINT_ZEROS = '.000';
+var i_idx: integer; s_snr: string;
 begin
-  i_idx := t_steps.IndexOf(stepnr);
-  if (i_idx < 0) then begin
-    i_pos := Pos('.', stepnr);
-    if (i_pos > 0) then begin
-      i_pos := length(stepnr) - i_pos + 1;
-      while ((i_pos <= 3) and (i_idx < 0)) do begin
-      end;
-    end else begin
-      i_pos := 1;
-      //todo:
-    end;
-  end;
+  i_idx := IndexOfStepNr(stepnr, s_snr); //t_steps.IndexOf(stepnr);
   if ((i_idx >= 0) and (i_idx < t_steps.Count)) then result := GotoStepIndex(i_idx)
   else result := false;
 end;
