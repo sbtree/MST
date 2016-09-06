@@ -1692,6 +1692,8 @@ begin
     Add(TLeftBracket.Create('(', nil));
     Add(TRightBracket.Create(')', nil));
     Add(TComma.Create(ArgSeparator, nil));
+    //Add(TBooleanConstant.Create('true', '1'));
+    //Add(TBooleanConstant.Create('false', '0'));
     Add(TConstant.CreateAsDouble('pi', 'pi = 3.1415926535897932385', Pi));
 {$IFDEF NAN}
     Add(TConstant.CreateAsDouble('nan',

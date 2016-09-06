@@ -12,7 +12,42 @@ unit FuncAux;
 interface
 uses Classes, FuncBase, ParseExpr;
 type
+  IExprParserImpl = interface
+    function EvalAsFloat(const expr: string; var val: double): boolean;
+    function EvalAsInteger(const expr: string; var val: integer): boolean;
+    function EvalAsBoolean(const expr: string; var val: boolean): boolean;
+    function EvalAsString(const expr: string; var val: string): boolean;
+    function EvalAsHex(const expr: string; var val: string; const len: byte): boolean;
+    function GetParserErrorMsg(): string;
+    property ParserErrorMsg: string read GetParserErrorMsg;
+  end;
+
+  TExprParserImpl = class(TInterfacedObject, IExprParserImpl)
+  protected
+    t_eparser:TExpressionParser;
+    s_expr:   string;
+    s_lastmsg:string;
+  public
+    constructor Create();
+    destructor Destroy; override;
+
+    function EvalAsFloat(const expr: string; var val: double): boolean;
+    function EvalAsInteger(const expr: string; var val: integer): boolean;
+    function EvalAsBoolean(const expr: string; var val: boolean): boolean;
+    function EvalAsString(const expr: string; var val: string): boolean;
+    function EvalAsHex(const expr: string; var val: string; const len: byte): boolean;
+    function GetParserErrorMsg(): string;
+    property ParserErrorMsg: string read GetParserErrorMsg;
+  end;
+
+  CatStr = class(TFunctionBase)
+  protected
+    s_expr:   string;
+  end;
+
   SubStr = class(TFunctionBase)
+  protected
+    s_expr:   string;
   end;
 
   StrToInt = class(TFunctionBase)
@@ -33,67 +68,56 @@ type
   BitsMaskZero = class(TFunctionBase)
   end;
 
-  IExprParserImpl = interface
-    function Evaluate(const expr: string): boolean;
-    function EvalAsFloat(const expr: string; var val: double): boolean;
-    function EvalAsInteger(const expr: string; var val: integer): boolean;
-    function EvalAsBoolean(const expr: string; var val: boolean): boolean;
-    function EvalAsString(const expr: string; var val: string): boolean;
-    function EvalAsHex(const expr: string; var val: string; const len: byte): boolean;
-    function GetParserErrorMsg(): string;
-    property ParserErrorMsg: string read GetParserErrorMsg;
-  end;
-
-  TExprParserImpl = class(TInterfacedObject, IExprParserImpl)
-  protected
-    t_eparser:TExpressionParser;
-    s_expr:   string;
-    d_curval:    double;
-    s_lastmsg:string;
-  public
-    constructor Create();
-    destructor Destroy; override;
-
-    function Evaluate(const expr: string): boolean;
-    function EvalAsFloat(const expr: string; var val: double): boolean;
-    function EvalAsInteger(const expr: string; var val: integer): boolean;
-    function EvalAsBoolean(const expr: string; var val: boolean): boolean;
-    function EvalAsString(const expr: string; var val: string): boolean;
-    function EvalAsHex(const expr: string; var val: string; const len: byte): boolean;
-    function GetParserErrorMsg(): string;
-    property ParserErrorMsg: string read GetParserErrorMsg;
-  end;
-
   TEvalExprBase = class(TFunctionBase, IExprParserImpl)
   protected
     s_expr:   string;
-    d_curval: double;
     t_parserimpl: TExprParserImpl;
   protected
-    function Evaluate(const expr: string): boolean;
-
+    function Evaluate(const expr: string): boolean; virtual; abstract;
   public
     constructor Create(); override;
     destructor Destroy; override;
 
     property ParserService: TExprParserImpl read t_parserimpl implements IExprParserImpl;
+    //function LoadParameter(const par: string): boolean; override;
+    function LoadParameters(const pars: TStrings): boolean; override;
+    //function DoTask(): boolean; override;
+  end;
 
-    function LoadParameter(const par: string): boolean; override;
+  EvalExprFloat = class(TEvalExprBase)
+  protected
+    d_curval: double;
+  protected
+    function Evaluate(const expr: string): boolean; override;
+  public
     function DoTask(): boolean; override;
   end;
 
   EvalExprStr = class(TEvalExprBase)
+  protected
+    s_curval: string;
+  protected
+    function Evaluate(const expr: string): boolean; override;
   public
-    function LoadParameter(const par: string): boolean; override;
+    function DoTask(): boolean; override;
   end;
 
   EvalExprInt = class(TEvalExprBase)
-  end;
-
-  EvalExprFloat = class(TEvalExprBase)
+  protected
+    i_curval: integer;
+  protected
+    function Evaluate(const expr: string): boolean; override;
+  public
+    function DoTask(): boolean; override;
   end;
 
   EvalExprBool = class(TEvalExprBase)
+  protected
+    b_curval: boolean;
+  protected
+    function Evaluate(const expr: string): boolean; override;
+  public
+    function DoTask(): boolean; override;
   end;
 
 implementation
@@ -113,11 +137,6 @@ destructor TExprParserImpl.Destroy;
 begin
   t_eparser.Free();
   inherited Destroy();
-end;
-
-function TExprParserImpl.Evaluate(const expr: string): boolean;
-begin
-  result := EvalAsFloat(expr, d_curval);
 end;
 
 function TExprParserImpl.EvalAsFloat(const expr: string; var val: double): boolean;
@@ -183,12 +202,6 @@ begin
   result := s_lastmsg;
 end;
 
-function TEvalExprBase.Evaluate(const expr: string): boolean;
-begin
-  result := t_parserimpl.EvalAsFloat(expr, d_curval);
-  if (not result) then t_msgrimpl.AddMessage(t_parserimpl.ParserErrorMsg, ML_ERROR);
-end;
-
 constructor TEvalExprBase.Create();
 begin
   inherited Create();
@@ -201,29 +214,73 @@ begin
   inherited Destroy();
 end;
 
-function TEvalExprBase.LoadParameter(const par: string): boolean;
+{function TEvalExprBase.LoadParameter(const par: string): boolean;
 begin
   //todo: replace pseudo strings with their actual values, e.g. @LastInt, @LastReal, @VarInt, @VarReal
   s_expr := par;
   result := Evaluate(s_expr);
+end;}
+
+function TEvalExprBase.LoadParameters(const pars: TStrings): boolean;
+begin
+  result := false;
+  if assigned(pars) then begin
+    if pars.Count > 0 then begin
+      //todo: replace pseudo strings with their actual values, e.g. @LastInt, @LastReal, @VarInt, @VarReal
+      s_expr := pars[0];
+      result := Evaluate(s_expr);
+    end;
+  end;
 end;
 
-function TEvalExprBase.DoTask(): boolean;
+function EvalExprFloat.Evaluate(const expr: string): boolean;
+begin
+  result := t_parserimpl.EvalAsFloat(expr, d_curval);
+  if (not result) then t_msgrimpl.AddMessage(t_parserimpl.ParserErrorMsg, ML_ERROR);
+end;
+
+function EvalExprFloat.DoTask(): boolean;
 begin
   result := Evaluate(s_expr);
-  if result then t_msgrimpl.AddMessage(format('The expression is evaluated: %s = %.3f.', [s_expr, d_curval]));
+  //todo: reuslt
+  if result then t_msgrimpl.AddMessage(format('Successful to evaluate floating point expression: %s = %.5f.', [s_expr, d_curval]));
 end;
 
-function EvalExprStr.LoadParameter(const par: string): boolean;
+function EvalExprStr.Evaluate(const expr: string): boolean;
 begin
-  //todo:
-  //1. replace pseudo strings with their actual values in double quotation, e.g. '"0010:00030002"' for @LastStr
-  //2. call g_exprparser.parse in block of try ... except ...
-  //3. set returned value
-  result := true
+  result := t_parserimpl.EvalAsString(expr, s_curval);
+  if (not result) then t_msgrimpl.AddMessage(t_parserimpl.ParserErrorMsg, ML_ERROR);
 end;
 
+function EvalExprStr.DoTask(): boolean;
+begin
+  result := Evaluate(s_expr);
+  if result then t_msgrimpl.AddMessage(format('Successful to evaluate string expression: %s = ''%s''.', [s_expr, s_curval]));
+end;
 
+function EvalExprInt.Evaluate(const expr: string): boolean;
+begin
+  result := t_parserimpl.EvalAsInteger(expr, i_curval);
+  if (not result) then t_msgrimpl.AddMessage(t_parserimpl.ParserErrorMsg, ML_ERROR);
+end;
+
+function EvalExprInt.DoTask(): boolean;
+begin
+  result := Evaluate(s_expr);
+  if result then t_msgrimpl.AddMessage(format('Successful to evaluate integer expression: %s = %d.', [s_expr, i_curval]));
+end;
+
+function EvalExprBool.Evaluate(const expr: string): boolean;
+begin
+  result := t_parserimpl.EvalAsBoolean(expr, b_curval);
+  if (not result) then t_msgrimpl.AddMessage(t_parserimpl.ParserErrorMsg, ML_ERROR);
+end;
+
+function EvalExprBool.DoTask(): boolean;
+begin
+  result := Evaluate(s_expr);
+  if result then t_msgrimpl.AddMessage(format('Successful to evaluate boolean expression: %s = %s.', [s_expr, BoolToStr(b_curval, true)]));
+end;
 
 initialization
   Classes.RegisterClass(SubStr);

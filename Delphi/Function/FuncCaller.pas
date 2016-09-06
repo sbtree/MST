@@ -109,7 +109,7 @@ begin
       result.ExecutionMode := e_exemode;
     end;
   end else if ((not SameText(func, 'nil')) and (func <> '')) then
-    t_msgrimpl.AddMessage(format('The called function %s is not found.', [func]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('The called function ''%s'' is not found.', [func]), ML_ERROR);
 end;
 
 function  TFunctionCaller.RunFunction(const func: TFunctionBase; const par: string): boolean;
@@ -120,7 +120,7 @@ begin
     if (result) then begin
       result := func.DoTask();
       s_result := func.ResultString;
-    end else t_msgrimpl.AddMessage(format('Failed to load parameter("%s") by calling %s.', [par, func.ClassName()]), ML_ERROR);
+    end else t_msgrimpl.AddMessage(format('Failed to load parameter(''%s'') by calling %s.', [par, func.ClassName()]), ML_ERROR);
   end;
 end;
 
@@ -128,7 +128,7 @@ function TFunctionCaller.CallFunction(const func, par: string): boolean;
 begin
   if (SameText(func, 'nil') or (func = '')) then begin
     result := true;
-    t_msgrimpl.AddMessage(format('No function is executed with this function name("%s").', [func]));
+    t_msgrimpl.AddMessage(format('No function is executed with function name ''%s''.', [func]));
   end else begin
     result := false;
     t_func := CreateFunction(func);

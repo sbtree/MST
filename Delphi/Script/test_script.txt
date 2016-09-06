@@ -13,7 +13,7 @@ Include=.\TestCase100.txt;.\TestCase200.txt{}
              (*
              block comment 1)
              *)                
-             FkT:EvaluateStr;     PAR:'MyTestCase';
+             FkT:EvaluateStr;     PAR:''MyTestCase' dir   '   ;
              r_off:;                            
              TOL:'[@var,20]';
              {block comment 2

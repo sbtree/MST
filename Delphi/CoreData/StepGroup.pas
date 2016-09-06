@@ -341,9 +341,21 @@ begin
 end;
 
 function TStepGroup.GotoStepNr(const stepnr: string): boolean;
-var i_idx: integer;
+var i_len, i_idx, i_pos: integer; s_snr: string;
+const CSTR_POINT_ZEROS = '.000';
 begin
   i_idx := t_steps.IndexOf(stepnr);
+  if (i_idx < 0) then begin
+    i_pos := Pos('.', stepnr);
+    if (i_pos > 0) then begin
+      i_pos := length(stepnr) - i_pos + 1;
+      while ((i_pos <= 3) and (i_idx < 0)) do begin
+      end;
+    end else begin
+      i_pos := 1;
+      //todo:
+    end;
+  end;
   if ((i_idx >= 0) and (i_idx < t_steps.Count)) then result := GotoStepIndex(i_idx)
   else result := false;
 end;
@@ -739,7 +751,8 @@ end;
 
 // =============================================================================
 //    Description  : analyze the given strings incl and excl and update t_sequence
-//    Parameter    : incl, a string to represent inclusive test cases
+//    Parameter    : tseq, a test sequence to return
+//                   incl, a string to represent inclusive test cases
 //                   excl, a string to represent exclusive test cases
 //                   see function IndexSet
 //    Return       : --
@@ -787,8 +800,8 @@ end;
 
 function TStepContainer.TestSequence(const incl: string = 'all'; const excl: string = ''): TTestSequence;
 begin
-  result := nil;
-  if UpdateSequence(t_curseq, incl, excl) then result := t_curseq;
+  UpdateSequence(t_curseq, incl, excl);
+  result := t_curseq;
 end;
 
 // =============================================================================

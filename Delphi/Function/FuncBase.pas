@@ -26,7 +26,7 @@ type
     t_msgrimpl: TTextMessengerImpl; //for delegation of interface ITextMessengerImpl
     e_exemode:  EExecMode;      //execution mode, which can be changed through property ExecutionMode
     b_aborted:  boolean;        //indicates if current execution should be aborted
-    t_pars:     TStrings;       //tos save parameters
+    t_pars:     TStrings;       //to save parameters
     s_result:   string;         //a string to save result
     ch_separator: char;         //separator of the parameters. The default value is a space
   protected

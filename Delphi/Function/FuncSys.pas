@@ -143,8 +143,8 @@ begin
     f_tsnr := abs(f_tsnr);
     if bforward then result := (f_tsnr >= f_ssnr)
     else result := (f_tsnr <= f_ssnr);
-    if (not result) then t_msgrimpl.AddMessage(format('The target step(%s) is not allowed.',[s_tsnr]), ML_ERROR);
-  end else t_msgrimpl.AddMessage(format('The target step(%s) is invalid', [s_tsnr]), ML_ERROR);
+    if (not result) then t_msgrimpl.AddMessage(format('The target step(%s) is not allowed by current step(%s).',[s_tsnr, s_ssnr]), ML_ERROR);
+  end else t_msgrimpl.AddMessage(format('The target step(%s) or current step(%s) is invalid', [s_tsnr, s_ssnr]), ML_ERROR);
 end;
 
 constructor TConditionControl.Create();
@@ -181,7 +181,7 @@ begin
   if (pars.Count >= 2) then begin
     s_expr := pars[0];
     //todo: replace #Pseudo
-    s_expr := '5>9'; //test
+    //s_expr := '1'; //test
     s_par := pars[1];
     if StartsText('PS_', s_par) then
       s_tosnr := MidStr(s_par, 4, length(s_par) - 3)
@@ -196,11 +196,12 @@ begin
   result := inherited DoTask();
   if (result and ValidStepNrs(true)) then begin
     if (BooleanCondition(s_expr) = b_valid) then begin
+      t_msgrimpl.AddMessage(format('The jumping condition is fulfilled( (%s) = %s ).', [s_expr, BoolToStr(b_valid, true)]));
       result := t_schelper.GotoStep(s_tosnr);
       if result then t_msgrimpl.AddMessage(format('Successful to jump to test step %s', [s_tosnr]))
       else t_msgrimpl.AddMessage(format('Failed to jump to test step %s', [s_tosnr]), ML_ERROR);
     end else begin
-      t_msgrimpl.AddMessage(format('The jumping condition is not fulfilled(%s <> %s).', [s_expr, BoolToStr(b_valid, true)]));
+      t_msgrimpl.AddMessage(format('The jumping condition is not fulfilled( (%s) <> %s ).', [s_expr, BoolToStr(b_valid, true)]));
       result := true; //do nothing, if the condition is not fulfilled
     end;
   end;
@@ -273,7 +274,7 @@ begin
       end
     end else begin
       b_reset := true; //ready for next run
-      t_msgrimpl.AddMessage(format('The repeating condition is not fulfilled(%s <> %s).', [s_expr, BoolToStr(b_valid, true)]));
+      t_msgrimpl.AddMessage(format('The repeating condition is not fulfilled( (%s) <> %s ).', [s_expr, BoolToStr(b_valid, true)]));
     end;
   end;
   Inc(i_counter);
