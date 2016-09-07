@@ -20,7 +20,7 @@ type
     property CurStepGroup: TStepGroup read GetStepGroup write SetStepGroup;
   end;
 
-  TStepControlHelper = class(TInterfacedObject, IStepControlImpl)
+  TStepControlImpl = class(TInterfacedObject, IStepControlImpl)
   protected
     t_group: TStepGroup;
   public
@@ -36,7 +36,7 @@ type
 
   TConditionControl = class(TFunctionBase, IStepControlImpl, IExprParserImpl)
   protected
-    t_schelper:   TStepControlHelper;
+    t_sctrlimpl:  TStepControlImpl;
     t_parserimpl: TExprParserImpl;
     s_expr:     string; //conditional expression
     s_selfsnr:  string; //current step number
@@ -52,7 +52,7 @@ type
     function DoTask(): boolean; override;
     function BooleanCondition(const expr: string): boolean; virtual;
     function LoadParameters(const pars: TStrings): boolean; override;
-    property StepControl: TStepControlHelper read t_schelper implements IStepControlImpl;
+    property StepControl: TStepControlImpl read t_sctrlimpl implements IStepControlImpl;
     property ParserService: TExprParserImpl read t_parserimpl implements IExprParserImpl;
   end;
 
@@ -98,35 +98,35 @@ uses Windows, SysUtils, StrUtils, Contnrs;
 const
   CINT_ELAPSE_REPEAT = 10000; //default time for repeating
 
-constructor TStepControlHelper.Create();
+constructor TStepControlImpl.Create();
 begin
   inherited Create();
   t_group := nil;
 end;
-destructor TStepControlHelper.Destroy;
+destructor TStepControlImpl.Destroy;
 begin
   inherited Destroy();
 end;
 
-function TStepControlHelper.GotoStep(const stepnr: string): boolean;
+function TStepControlImpl.GotoStep(const stepnr: string): boolean;
 begin
   result := false;
   if assigned(t_group) then result := t_group.GotoStepNr(stepnr);
 end;
 
-function TStepControlHelper.CurStepNr(): string;
+function TStepControlImpl.CurStepNr(): string;
 begin
   result := '';
   if assigned(t_group) then
     result := t_group.CurStepNr();
 end;
 
-function TStepControlHelper.GetStepGroup(): TStepGroup;
+function TStepControlImpl.GetStepGroup(): TStepGroup;
 begin
   result := t_group;
 end;
 
-procedure TStepControlHelper.SetStepGroup(const group: TStepGroup);
+procedure TStepControlImpl.SetStepGroup(const group: TStepGroup);
 begin
   t_group := group;
 end;
@@ -143,14 +143,14 @@ begin
     f_tsnr := abs(f_tsnr);
     if bforward then result := (f_tsnr >= f_ssnr)
     else result := (f_tsnr <= f_ssnr);
-    if (not result) then t_msgrimpl.AddMessage(format('The target step(%s) is not allowed by current step(%s).',[s_tsnr, s_ssnr]), ML_ERROR);
-  end else t_msgrimpl.AddMessage(format('The target step(%s) or current step(%s) is invalid', [s_tsnr, s_ssnr]), ML_ERROR);
+    if (not result) then t_msgrimpl.AddMessage(format('The target step(%s) is not allowed from current step(%s).',[s_tosnr, s_selfsnr]), ML_ERROR);
+  end else t_msgrimpl.AddMessage(format('The target step(%s) or current step(%s) is invalid', [s_tosnr, s_selfsnr]), ML_ERROR);
 end;
 
 constructor TConditionControl.Create();
 begin
   inherited Create();
-  t_schelper := TStepControlHelper.Create();
+  t_sctrlimpl := TStepControlImpl.Create();
   t_parserimpl := TExprParserImpl.Create();
   b_valid := false;
 end;
@@ -158,7 +158,7 @@ end;
 destructor TConditionControl.Destroy;
 begin
   t_parserimpl.Free();
-  t_schelper.Free();
+  t_sctrlimpl.Free();
   inherited Destroy();
 end;
 
@@ -169,7 +169,7 @@ end;
 
 function TConditionControl.DoTask(): boolean;
 begin
-  s_selfsnr := t_schelper.CurStepNr();
+  s_selfsnr := t_sctrlimpl.CurStepNr();
   result := (s_selfsnr <> '');
   if (not result) then t_msgrimpl.AddMessage('Failed to get current test step.', ML_ERROR);  
 end;
@@ -197,7 +197,7 @@ begin
   if (result and ValidStepNrs(true)) then begin
     if (BooleanCondition(s_expr) = b_valid) then begin
       t_msgrimpl.AddMessage(format('The jumping condition is fulfilled( (%s) = %s ).', [s_expr, BoolToStr(b_valid, true)]));
-      result := t_schelper.GotoStep(s_tosnr);
+      result := t_sctrlimpl.GotoStep(s_tosnr);
       if result then t_msgrimpl.AddMessage(format('Successful to jump to test step %s', [s_tosnr]))
       else t_msgrimpl.AddMessage(format('Failed to jump to test step %s', [s_tosnr]), ML_ERROR);
     end else begin
@@ -266,7 +266,7 @@ begin
     b_dorepeat := (b_dorepeat and (BooleanCondition(s_expr) = b_valid));
 
     if b_dorepeat then begin
-      result := t_schelper.GotoStep(s_tosnr);
+      result := t_sctrlimpl.GotoStep(s_tosnr);
       if result then t_msgrimpl.AddMessage(format('Successful to go to test step %s', [s_tosnr]))
       else begin
         t_msgrimpl.AddMessage(format('Failed to go to test step %s', [s_tosnr]), ML_ERROR);

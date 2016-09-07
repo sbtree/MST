@@ -24,7 +24,7 @@
 unit StepGroup;
 
 interface
-uses Classes, Contnrs, StepData;
+uses Classes, Contnrs, StepData, TextMessage;
 
 type
   TIndexSet = set of byte;
@@ -50,12 +50,13 @@ type
   end;
 
   //a class representing a step group, which is composed of test steps in the container
-  TStepGroup = class(TInterfacedObject, IStepNavigator)
+  TStepGroup = class(TInterfacedObject, IStepNavigator, ITextMessengerImpl)
   class function CalcMainNr(const stepnr: string; var casenr: integer): boolean;
   protected
     t_steps:    TStrings;       //a list of test steps (step number and object pairs)
     i_curstep:  integer;        //indicate current index of t_steps
     b_freestep: boolean;        //indicates if free step object by removing
+    t_msgrimpl:TTextMessengerImpl;
 
   protected
     function GetStepNumbers(): string;
@@ -80,6 +81,7 @@ type
     function GotoStepNr(const stepnr: string): boolean;
 
     //properties
+    property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
     property CurrentStep: TTestStep read GetCurStep;
     property PreviousStep: TTestStep read GetPrevStep;
     property NextStep: TTestStep read GetNextStep;
@@ -259,6 +261,8 @@ begin
   s_snr := stepnr;
   result := t_steps.IndexOf(s_snr);
   if (result < 0) then begin
+    //search equivalent step number to stepnr in the list t_steps. Equivalent step number looks like:
+    //e.g. 'xx'='xx.'='xx.0'='xx.00'='xx.000', 'xx.y'='xx.y0'='x.y00'. The found step number is saved in correct
     i_pos := Pos('.', s_snr);
     if (i_pos > 0) then begin
       i_len := length(s_snr);
@@ -286,9 +290,12 @@ begin
         if (result >= 0) then break;
       end;
     end;
+    if (result >= 0) then t_msgrimpl.AddMessage(format('An equivalent step number(%s) is found for the given step number(%s)', [s_snr, stepnr]));
   end;
-  if (result < 0) then correct := ''
-  else correct := s_snr;
+  if (result < 0) then begin
+    correct := '';
+    t_msgrimpl.AddMessage(format('No step is found for the given step number(%s)', [stepnr]), ML_ERROR);
+  end else correct := s_snr;
 end;
 
 procedure TStepGroup.RemoveStepByIndex(const idx: integer);
@@ -314,11 +321,14 @@ begin
   b_freestep := false;
   t_steps := TStringList.Create();
   t_steps.Delimiter := Char(';');
+  t_msgrimpl := TTextMessengerImpl.Create();
+  t_msgrimpl.OwnerName := ClassName();
 end;
 
 destructor TStepGroup.Destroy();
 begin
   Clear();
+  t_msgrimpl.Free();
   t_steps.Free();
   inherited Destroy();
 end;
@@ -373,18 +383,19 @@ end;
 
 function TStepGroup.GotoStepIndex(const idx: integer): boolean;
 begin
-  if (idx < 0) then i_curstep := -1
-  else if (idx >= t_steps.Count) then i_curstep := t_steps.Count
-  else i_curstep := idx;
-  result := ((i_curstep >= 0) and (i_curstep < t_steps.Count))
+  if ((idx >= 0) and (idx < t_steps.Count)) then begin
+    i_curstep := idx;
+    result := true;
+  end else result := false;
 end;
 
 function TStepGroup.GotoStepNr(const stepnr: string): boolean;
 var i_idx: integer; s_snr: string;
 begin
   i_idx := IndexOfStepNr(stepnr, s_snr); //t_steps.IndexOf(stepnr);
-  if ((i_idx >= 0) and (i_idx < t_steps.Count)) then result := GotoStepIndex(i_idx)
-  else result := false;
+  result := GotoStepIndex(i_idx);
+  if result then t_msgrimpl.AddMessage(format('Successful to go to step %s', [s_snr]))
+  else t_msgrimpl.AddMessage(format('Failed to go to step %s', [stepnr]), ML_ERROR)
 end;
 
 function TStepGroup.AddStep(const step: TTestStep): boolean;

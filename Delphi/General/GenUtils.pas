@@ -28,6 +28,7 @@ type
     class function HexTextFromCharArray(const aData: array of char; const len: integer = -1): string;
     class function IsAsciiValid(const str: string): boolean;
     class function ClearQuotationMarks(const str: string): string;
+    class function ShowStrHex(const str: string): string;
 
     //process, thread, windows message and so on
     class procedure Delay(const msec: Cardinal = 10);
@@ -237,6 +238,16 @@ begin
   if (length(result) >= 2) then begin
     if result[1] = '''' then  result := AnsiExtractQuotedStr(p_char, '''')
     else  result := AnsiExtractQuotedStr(p_char, '"');
+  end;
+end;
+
+class function TGenUtils.ShowStrHex(const str: string): string;
+var i: integer; byte_char: byte;
+begin
+  result := '';
+  for i := 1 to length(str) do begin
+    byte_char := byte(str[i]);
+    result := result + IntToHex(byte_char, 2);
   end;
 end;
 
