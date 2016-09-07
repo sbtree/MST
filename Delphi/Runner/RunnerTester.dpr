@@ -17,7 +17,11 @@ uses
   LoopControl in 'LoopControl.pas',
   StepData in '..\CoreData\StepData.pas',
   ResultValidator in 'ResultValidator.pas',
-  FuncSys in '..\Function\FuncSys.pas';
+  FuncSys in '..\Function\FuncSys.pas',
+  FuncAux in '..\Function\FuncAux.pas',
+  OObjects in '..\Externals\ExprParser\OObjects.pas',
+  ParseClass in '..\Externals\ExprParser\ParseClass.pas',
+  ParseExpr in '..\Externals\ExprParser\ParseExpr.pas';
 
 {$R *.res}
 

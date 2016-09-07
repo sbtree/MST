@@ -28,13 +28,12 @@ type
     procedure SetExecutionMode(const em: EExecMode);
     procedure SetStepContainer(const tcon: TStepContainer);
 
-    function  StepInit(const val: string): boolean; virtual;
-    function  StepInputM(const val: string): boolean; virtual;
-    function  StepFunc(const func, par: string): boolean; virtual;
-    function  StepEval(const val: string): boolean; virtual;
-    function  StepSave(const val: string): boolean; virtual;
-    function  StepFinal(const val: string): boolean; virtual;
-
+    function StepInit(const val: string): boolean; virtual;
+    function StepInputM(const val: string): boolean; virtual;
+    function StepFunc(const func, par: string): boolean; virtual;
+    function StepEval(const val: string): boolean; virtual;
+    function StepSave(const val: string): boolean; virtual;
+    function StepFinal(const val: string): boolean; virtual;
   public
     constructor Create();
     destructor  Destroy(); override;
@@ -44,7 +43,7 @@ type
     
     property ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     property StepContainer: TStepContainer read t_container write SetStepContainer;
-    property CurrentSequence: TTestSequence read t_curseq;
+    property TestSequence: TTestSequence read t_curseq;
     property JumpMinusStep: boolean read b_jumpmstep write b_jumpmstep;
 
     function RunStep(tstep: TTestStep): boolean; overload;
@@ -55,7 +54,7 @@ type
     function RunCase(const casenr: string): boolean; overload;
     function RunCase(const caseidx: integer): boolean; overload;
     function RunSequence(): boolean;
-    function SetSequence(const csincl, csexcl: string): boolean;
+    function UpdateSequence(const csincl, csexcl: string): boolean;
     function RepeatStep(): boolean;
     function RepeatCase(): boolean;
   end;
@@ -66,20 +65,20 @@ uses SysUtils;
 constructor TTestRunner.Create();
 begin
   inherited Create();
+  b_jumpmstep := true;
   t_msgrimpl := TTextMessengerImpl.Create();
   t_msgrimpl.OwnerName := ClassName();
-  //t_curseq := TTestSequence.Create();
   t_fcaller := TFunctionCaller.Create();
-  ITextMessengerImpl(t_fcaller).Messenger := t_msgrimpl.Messenger;
-  b_jumpmstep := true;
+  t_fcaller.ExecutionMode := ExecutionMode;
   ExecutionMode := EM_NORMAL;
+  t_curseq := TTestSequence.Create();
 end;
 
 destructor  TTestRunner.Destroy();
 begin
+  t_curseq.Free();
   t_msgrimpl.Free();
-  FreeAndNil(t_fcaller);
-  //FreeAndNil(t_curseq);
+  t_fcaller.Free();
   inherited Destroy();
 end;
 
@@ -98,10 +97,13 @@ end;
 procedure TTestRunner.SetStepContainer(const tcon: TStepContainer);
 begin
   t_container := tcon;
-  if assigned(t_container) then t_curseq := t_container;
+  if assigned(t_container) then begin
+    t_container.UpdateSequence(t_curseq);
+    ITextMessengerImpl(t_curseq).Messenger := ITextMessengerImpl(t_container).Messenger;
+  end;
 end;
 
-function  TTestRunner.StepInit(const val: string): boolean;
+function TTestRunner.StepInit(const val: string): boolean;
 begin
   result := true;
   //todo:
@@ -111,7 +113,7 @@ begin
   //AddMessage(format('The value (%s) of field (r_on) is accepted.', [val]));
 end;
 
-function  TTestRunner.StepInputM(const val: string): boolean;
+function TTestRunner.StepInputM(const val: string): boolean;
 begin
   result := true;
   //todo:
@@ -121,27 +123,27 @@ begin
   //AddMessage(format('The value (%s) of field (M) is accepted.', [val]));
 end;
 
-function  TTestRunner.StepFunc(const func, par: string): boolean;
+function TTestRunner.StepFunc(const func, par: string): boolean;
 begin
   result := true; //todo: t_fcaller.CallFunction(func, par);
   //AddMessage(format('The function (%s) with parameter (%s) is executed.', [func, par]));
 end;
 
-function  TTestRunner.StepEval(const val: string): boolean;
+function TTestRunner.StepEval(const val: string): boolean;
 begin
   result := true;
   //todo:
   //AddMessage(format('The value (%s) is evaluated.', [val]));
 end;
 
-function  TTestRunner.StepSave(const val: string): boolean;
+function TTestRunner.StepSave(const val: string): boolean;
 begin
   result := true;
   //todo:
   //AddMessage(format('The resault (%s)  is saved.', [val]));
 end;
 
-function  TTestRunner.StepFinal(const val: string): boolean;
+function TTestRunner.StepFinal(const val: string): boolean;
 begin
   result := true;
   //todo:
@@ -225,13 +227,11 @@ begin
   else t_msgrimpl.AddMessage('No test step is found in current test sequence.', ML_WARNING);
 end;
 
-function TTestRunner.SetSequence(const csincl, csexcl: string): boolean;
+function TTestRunner.UpdateSequence(const csincl, csexcl: string): boolean;
 begin
-  result := false;
-  if assigned(t_container) then begin
-    t_curseq := t_container.TestSequence(csincl, csexcl);
-    result := assigned(t_curseq);
-  end;
+  if assigned(t_container) then
+    result := t_container.UpdateSequence(t_curseq, csincl, csexcl)
+  else result := false;
 end;
 
 function TTestRunner.RepeatStep(): boolean;

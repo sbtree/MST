@@ -34,6 +34,10 @@
     </DelphiCompile>
     <DCCReference Include="..\CoreData\StepData.pas" />
     <DCCReference Include="..\CoreData\StepGroup.pas" />
+    <DCCReference Include="..\Externals\ExprParser\OObjects.pas" />
+    <DCCReference Include="..\Externals\ExprParser\ParseClass.pas" />
+    <DCCReference Include="..\Externals\ExprParser\ParseExpr.pas" />
+    <DCCReference Include="..\Function\FuncAux.pas" />
     <DCCReference Include="..\Function\FuncBase.pas" />
     <DCCReference Include="..\Function\FuncCaller.pas" />
     <DCCReference Include="..\Function\FuncSys.pas" />

@@ -216,17 +216,15 @@ type
   //a class composed of all test steps
   TStepContainer = class(TTestSequence)
   protected
-    t_curseq: TTestSequence;
-  protected
     function CaseIndexSet(const casenrs: string): TIndexSet;
-    function UpdateSequence(var tseq: TTestSequence; const incl: string = 'all'; const excl: string = ''): boolean;
 
   public
     constructor Create();
     destructor  Destroy(); override;
 
     function LoadStep(const fields: FieldStringArray): boolean;
-    function TestSequence(const incl: string = 'all'; const excl: string = ''): TTestSequence;
+    function CreateSequence(const incl: string = 'all'; const excl: string = ''): TTestSequence;
+    function UpdateSequence(var tseq: TTestSequence; const incl: string = 'all'; const excl: string = ''): boolean;
     procedure SaveFile(const sfile: string);
   end;
 
@@ -392,7 +390,7 @@ end;
 function TStepGroup.GotoStepNr(const stepnr: string): boolean;
 var i_idx: integer; s_snr: string;
 begin
-  i_idx := IndexOfStepNr(stepnr, s_snr); //t_steps.IndexOf(stepnr);
+  i_idx := IndexOfStepNr(stepnr, s_snr);
   result := GotoStepIndex(i_idx);
   if result then t_msgrimpl.AddMessage(format('Successful to go to step %s', [s_snr]))
   else t_msgrimpl.AddMessage(format('Failed to go to step %s', [stepnr]), ML_ERROR)
@@ -416,15 +414,16 @@ begin
 end;
 
 function  TStepGroup.StepByNr(const nr: string): TTestStep;
-var i_idx: integer;
+var i_idx: integer; s_snr: string;
 begin
-  i_idx := t_steps.IndexOf(nr);
+  i_idx := IndexOfStepNr(nr, s_snr);
   result := StepByIndex(i_idx);
 end;
 
 function  TStepGroup.IndexOfStep(const stepnr: string): integer;
+var s_snr: string;
 begin
-  result := t_steps.IndexOf(stepnr);
+  result := IndexOfStepNr(stepnr, s_snr);
 end;
 
 function  TStepGroup.StepNrOf(const idx: integer): string;
@@ -439,9 +438,9 @@ begin
 end;
 
 procedure TStepGroup.RemoveStep(const stepnr: string);
-var i_idx: integer;
+var i_idx: integer; s_snr: string;
 begin
-  i_idx := t_steps.IndexOf(stepnr);
+  i_idx := IndexOfStepNr(stepnr, s_snr);
   RemoveStepByIndex(i_idx);
 end;
 
@@ -787,6 +786,33 @@ begin
   end;
 end;
 
+constructor TStepContainer.Create();
+begin
+  inherited Create();
+  FreeByRemove := true;
+end;
+
+destructor TStepContainer.Destroy();
+begin
+  Clear();
+  inherited Destroy();
+end;
+
+function TStepContainer.LoadStep(const fields: FieldStringArray): boolean;
+var t_step: TTestStep;
+begin
+  t_step := TTestStep.Create();
+  t_step.LoadFields(fields);
+  result := AddStep(t_step);
+  if (not result) then FreeAndNil(t_step);
+end;
+
+function TStepContainer.CreateSequence(const incl: string = 'all'; const excl: string = ''): TTestSequence;
+begin
+  result := TTestSequence.Create();
+  UpdateSequence(result, incl, excl);
+end;
+
 // =============================================================================
 //    Description  : analyze the given strings incl and excl and update t_sequence
 //    Parameter    : tseq, a test sequence to return
@@ -811,35 +837,6 @@ begin
     set_result := set_incl - set_excl;
     result := (tseq.UpdateCaseGroup(set_result, self) > 0);
   end;
-end;
-
-constructor TStepContainer.Create();
-begin
-  inherited Create();
-  FreeByRemove := true;
-  t_curseq := TTestSequence.Create();
-end;
-
-destructor TStepContainer.Destroy();
-begin
-  t_curseq.Free();
-  Clear();
-  inherited Destroy();
-end;
-
-function TStepContainer.LoadStep(const fields: FieldStringArray): boolean;
-var t_step: TTestStep;
-begin
-  t_step := TTestStep.Create();
-  t_step.LoadFields(fields);
-  result := AddStep(t_step);
-  if (not result) then FreeAndNil(t_step);
-end;
-
-function TStepContainer.TestSequence(const incl: string = 'all'; const excl: string = ''): TTestSequence;
-begin
-  UpdateSequence(t_curseq, incl, excl);
-  result := t_curseq;
 end;
 
 // =============================================================================

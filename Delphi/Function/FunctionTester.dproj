@@ -94,6 +94,7 @@
     <None Include="ModelSupport_FunctionTester\StepChecker\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\StepGroup\default.txvpck" />
     <None Include="ModelSupport_FunctionTester\StringPairs\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\TextMessage\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\USBIOCOMLib_TLB\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\USBSPEC\default.txaPackage" />
   </ItemGroup>
