@@ -57,6 +57,7 @@ type
     procedure btnRunNextCaseClick(Sender: TObject);
     procedure chkJumpClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure btnSaveScriptClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_sreader:  TScriptReader;
@@ -136,6 +137,11 @@ begin
   t_runner.RunStep(trim(txtStepNr.Text));
 end;
 
+procedure TForm2.btnSaveScriptClick(Sender: TObject);
+begin
+  t_sreader.SaveToFile();
+end;
+
 procedure TForm2.btnSequenceClick(Sender: TObject);
 var s_casenrs: string;
 begin
@@ -192,6 +198,7 @@ begin
 
   t_runner := TTestRunner.Create();
   ITextMessengerImpl(t_runner).Messenger := t_messenger;
+  ITextMessengerImpl(t_runner.FunctionCaller).Messenger := t_messenger;
 end;
 
 procedure TForm2.FormDestroy(Sender: TObject);

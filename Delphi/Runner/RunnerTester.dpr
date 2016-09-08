@@ -21,7 +21,8 @@ uses
   FuncAux in '..\Function\FuncAux.pas',
   OObjects in '..\Externals\ExprParser\OObjects.pas',
   ParseClass in '..\Externals\ExprParser\ParseClass.pas',
-  ParseExpr in '..\Externals\ExprParser\ParseExpr.pas';
+  ParseExpr in '..\Externals\ExprParser\ParseExpr.pas',
+  GenUtils in '..\General\GenUtils.pas';
 
 {$R *.res}
 

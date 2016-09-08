@@ -47,6 +47,7 @@ type
     property StepContainer: TStepContainer read t_container write SetStepContainer;
     property TestSequence: TTestSequence read t_curseq;
     property JumpMinusStep: boolean read b_jumpmstep write b_jumpmstep;
+    property FunctionCaller: TFunctionCaller read t_fcaller;
 
     function RunStep(tstep: TTestStep): boolean; overload;
     function RunGroup(tgroup: TStepGroup): boolean;
@@ -98,7 +99,6 @@ begin
       EM_DIAGNOSE: t_msgrimpl.Messenger.MessageThreshold := ML_INFO;
     end;
   end;
-  t_fcaller.ExecutionMode := e_exemode;
 end;
 
 procedure TTestRunner.SetStepContainer(const tcon: TStepContainer);
@@ -151,8 +151,11 @@ begin
   result := false;
   i_idx := t_curseq.CurStepIndex();
   if ((i_idx >= 0) and (i_idx < t_funcobjs.Count)) then begin
-    t_func := TFunctionBase(t_funcobjs.Items[i_idx]);
-    result := t_fcaller.RunFunction(t_func, par);
+    if (SameText(func, 'nil') or (func = '')) then result := true
+    else begin
+      t_func := TFunctionBase(t_funcobjs.Items[i_idx]);
+      result := t_fcaller.RunFunction(t_func, par);
+    end;
   end;
 end;
 
@@ -178,30 +181,31 @@ begin
 end;
 
 function TTestRunner.RunStep(tstep: TTestStep): boolean;
-var b_runstep: boolean;
 begin
   result := false;
   if assigned(tstep) then begin
-    if tstep.IsMinusStep then b_runstep := (not b_jumpmstep)
-    else b_runstep := true;
-
-    if b_runstep then begin
+    if ((not tstep.IsMinusStep) or (not b_jumpmstep)) then begin
       //todo: 1. initialize this step and execute statements of 'init' or 'r_on'
       result := StepInit(tstep.GetFieldValue(SF_INIT));
       //todo: 2. read information of 'm' and control the execution of this step
-      if result then result := StepInputM(tstep.GetFieldValue(SF_M));
+      if result then
+        result := StepInputM(tstep.GetFieldValue(SF_M));
       //todo: 3. call script function to execute 'fct' with 'par'
-      if result then result := StepFunc(tstep.GetFieldValue(SF_FCT), tstep.GetFieldValue(SF_PAR));
+      if result then
+        result := StepFunc(tstep.GetFieldValue(SF_FCT), tstep.GetFieldValue(SF_PAR));
       //t_fcaller.CallFunction('','');
       //4. save result string of this step //todo: consider of result pattern here
       //t_curstep.StepResult.ResultString := t_fcaller.ResultString;
 
       //todo: 5. evaluate the resualt of calling function with 'tol'
-      if result then result := StepEval(tstep.GetFieldValue(SF_TOL_A));
+      if result then
+        result := StepEval(tstep.GetFieldValue(SF_TOL_A));
       //todo: 6. finalize this step 'final' or 'r_off'
-      if result then result := StepFinal(tstep.GetFieldValue(SF_FINAL));
+      if result then
+        result := StepFinal(tstep.GetFieldValue(SF_FINAL));
       //t_curstep.StepResult.Resulted := result;
-      t_msgrimpl.AddMessage(format('The step (%s) is done successfully.', [tstep.GetFieldValue(SF_NR)]));
+      if result then t_msgrimpl.AddMessage(format('The step (%s) is done successfully.', [tstep.GetFieldValue(SF_NR)]))
+      else t_msgrimpl.AddMessage(format('The step (%s) is not done exactly.', [tstep.GetFieldValue(SF_NR)]));
     end else begin
       result := true;
       t_msgrimpl.AddMessage(format('The minus step (%s) is jumped.', [tstep.GetFieldValue(SF_NR)]));

@@ -79,6 +79,7 @@ object Form2: TForm2
     Height = 25
     Caption = 'Save'
     TabOrder = 5
+    OnClick = btnSaveScriptClick
   end
   object memInfo: TMemo
     Left = 8

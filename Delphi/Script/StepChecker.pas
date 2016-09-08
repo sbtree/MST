@@ -187,8 +187,11 @@ end;
 function TFieldValueChecker.CheckFct(const str: string): boolean;
 var t_class : TFunctionClass;
 begin
-  t_class := TFunctionClass(GetClass(str));
-  result := (t_class <> nil);
+  if (SameText(str, 'nil') or  (str= '')) then result := true
+  else begin
+    t_class := TFunctionClass(GetClass(str));
+    result := (t_class <> nil);
+  end;
 end;
 
 function TFieldValueChecker.CheckPar(const str: string): boolean;

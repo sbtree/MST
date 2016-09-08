@@ -1,0 +1,16 @@
+VERSION=2.0.100012.2.3
+RAZOR_REVISION=$Revision: 1.1 $
+(Nr:11.00;T:'Test PST supply & Test variant';R_on:'';Fkt:nil;M:'';Par:'Standard-Test';R_off:'';Tol:(A:'';Min:0;Max:0);)
+(Nr:11.02;T:'Test DMM-measuring bus without supply';R_on:'';Fkt:JumpIfTrue;M:'V';Par:'3>2 PS_41';R_off:'';Tol:(A:'';Min:-0.2;Max:0.2);)
+(Nr:11.03;T:'voltage measurement ext. supply +30V_in [118,128]';R_on:'118,128';Fkt:SubStr;M:'V';Par:'';R_off:'118';Tol:(A:'';Min:28;Max:33);)
+(Nr:11.04;T:'supply +30V_int switch on';R_on:'107,@SonderRel_01,129,111,131';Fkt:SubStr;M:'';Par:'';R_off:'';Tol:(A:'';Min:0;Max:0);)
+(Nr:11.05;T:'Test DMM-measuringbus without supply';R_on:'';Fkt:SubStr;M:'V';Par:'';R_off:'';Tol:(A:'';Min:-0.2;Max:0.2);)
+(Nr:11.08;T:'voltage measurement +30V_int [108,128]';R_on:'108,128';Fkt:RepeatIfFalse;M:'V';Par:'3>2 PS_11.03';R_off:'108';Tol:(A:'';Min:28;Max:33);)
+(Nr:11.21;T:'Test DMM-measuringbus without supply';R_on:'';Fkt:SubStr;M:'V';Par:'';R_off:'';Tol:(A:'';Min:-0.2;Max:0.2);)
+(Nr:11.99;T:'Finished';R_on:'';Fkt:nil;M:'';Par:'';R_off:'128';Tol:(A:'';Min:0;Max:0);)
+(Nr:41.00;T:'Test voltage +3.3V on X401.2';R_on:'';Fkt:nil;M:'';Par:'NIO-Loop:1';R_off:'';Tol:(A:'';Min:0;Max:0);)
+(Nr:-41.02;T:'Supply +30V_int turn on';R_on:'107,@SonderRel_01,129,111,131';Fkt:nil;M:'';Par:'';R_off:'';Tol:(A:'';Min:0;Max:0);)
+(Nr:41.05;T:'Test DMM-measuringbus without supply';R_on:'';Fkt:nil;M:'V';Par:'';R_off:'';Tol:(A:'';Min:-0.2;Max:0.2);)
+(Nr:41.06;T:'Measurement +3.3V [104,128]';R_on:'104,128';Fkt:nil;M:'V';Par:'';R_off:'104,128';Tol:(A:'';Min:3.2;Max:3.4);)
+(Nr:41.99;T:'Finished';R_on:'';Fkt:nil;M:'';Par:'';R_off:'';Tol:(A:'';Min:0;Max:0);)
+(Nr:990.00;T:'END OF TEST';R_on:'';Fkt:nil;M:'';Par:'';R_off:'';Tol:(A:'';Min:0;Max:0);)

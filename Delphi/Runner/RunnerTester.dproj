@@ -42,6 +42,7 @@
     <DCCReference Include="..\Function\FuncCaller.pas" />
     <DCCReference Include="..\Function\FuncSys.pas" />
     <DCCReference Include="..\General\GenType.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="..\General\StringPairs.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="..\Script\ScriptReader.pas" />

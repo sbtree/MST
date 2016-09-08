@@ -186,7 +186,7 @@ const
   CSET_DIGIT_CHARS: set of char = ['0'..'9'];
 
 implementation
-uses SysUtils, StrUtils, FuncBase;
+uses SysUtils, StrUtils, FuncBase, GenUtils;
 
 // =============================================================================
 //    Description  : push a EParseState into state stack
@@ -396,6 +396,7 @@ begin
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
       else if (e_curstate = PS_FIELDVAL) then begin
+        //s_curtoken := TGenUtils.ClearQuotationMarks(s_curtoken);
         if CheckFieldValue(trim(s_curtoken)) then begin
           PopState();
           s_curtext := s_curtext + a_fieldvals[e_lastfield] + curch;

@@ -17,13 +17,13 @@ type
   protected
     t_aliases:  TStrings;
     t_func:     TFunctionBase;
-    e_exemode:  EExecMode;
+    //e_exemode:  EExecMode;
     s_result:   string;
     t_msgrimpl: TTextMessengerImpl;
     t_curgroup: TStepGroup;
   protected
     procedure InitAliases();
-    procedure SetExecutionMode(const em: EExecMode);
+    //procedure SetExecutionMode(const em: EExecMode);
     function  FindFunctionByAlias(const alias: string): TFunctionClass;
     function  FindFunctionByName(const func: string): TFunctionClass;
   public
@@ -34,7 +34,7 @@ type
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
     property CurStepGroup: TStepGroup read t_curgroup write t_curgroup;
 
-    property  ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
+    //property  ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     property  ResultString: string read s_result write s_result;
     //function FindFunction(const fnname: string): boolean;
     function  CreateFunction(const func: string): TFunctionBase; virtual;
@@ -53,7 +53,7 @@ begin
   //todo: extention
 end;
 
-procedure TFunctionCaller.SetExecutionMode(const em: EExecMode);
+{procedure TFunctionCaller.SetExecutionMode(const em: EExecMode);
 begin
   e_exemode := em;
   if assigned(t_msgrimpl.Messenger) then begin
@@ -62,7 +62,7 @@ begin
       EM_DIAGNOSE: t_msgrimpl.Messenger.MessageThreshold := ML_INFO;
     end;
   end;
-end;
+end;}
 
 function TFunctionCaller.FindFunctionByAlias(const alias: string) : TFunctionClass;
 var i_ftidx: integer;
@@ -83,7 +83,7 @@ begin
   inherited Create();
   t_msgrimpl := TTextMessengerImpl.Create();
   t_msgrimpl.OwnerName := ClassName();
-  ExecutionMode := EM_NORMAL;
+
   t_aliases := TStringList.Create();
   InitAliases();
 end;
@@ -106,7 +106,6 @@ begin
     if assigned(result) then begin
       if (result is TConditionControl) then IStepControlImpl(TConditionControl(result)).CurStepGroup := t_curgroup;
       ITextMessengerImpl(result).Messenger := t_msgrimpl.Messenger;
-      result.ExecutionMode := e_exemode;
     end;
   end else if ((not SameText(func, 'nil')) and (func <> '')) then
     t_msgrimpl.AddMessage(format('The called function ''%s'' is not found.', [func]), ML_ERROR);

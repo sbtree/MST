@@ -28,8 +28,9 @@ type
     b_aborted:  boolean;        //indicates if current execution should be aborted
     t_pars:     TStrings;       //to save parameters
     s_result:   string;         //a string to save result
-    ch_separator: char;         //separator of the parameters. The default value is a space
   protected
+     function GetParamSeparator(): Char;
+     procedure SetParamSeparator(separator: Char);
      procedure SetAborted(const aborted: boolean);
 
   public
@@ -40,7 +41,7 @@ type
     property ResultString: string read s_result write s_result;
     property ExecutionMode: EExecMode read e_exemode write e_exemode;
     property Aborted: boolean read b_aborted write SetAborted;
-    property ParamSeparator: Char read ch_separator write ch_separator;
+    property ParamSeparator: Char read GetParamSeparator write SetParamSeparator; //separator of the parameters. The default value is a space
 
     function LoadParameter(const par: string): boolean; virtual;
     function LoadParameters(const pars: TStrings): boolean; virtual;
@@ -57,7 +58,8 @@ begin
   e_exemode := EM_NORMAL;
   b_aborted := false;
   t_pars := TStringList.Create();
-  ch_separator := ' '; //default separator
+  t_pars.Delimiter := ' ';
+  t_pars.StrictDelimiter := true;
   t_msgrimpl := TTextMessengerImpl.Create();
   t_msgrimpl.OwnerName := ClassName();
 end;
@@ -69,6 +71,16 @@ begin
   t_msgrimpl.Free();
 end;
 
+function TFunctionBase.GetParamSeparator(): Char;
+begin
+  result := t_pars.Delimiter;
+end;
+
+procedure TFunctionBase.SetParamSeparator(separator: Char);
+begin
+  t_pars.Delimiter := separator;
+end;
+
 procedure TFunctionBase.SetAborted(const aborted: boolean);
 begin
   b_aborted := aborted;
@@ -76,7 +88,8 @@ end;
 
 function TFunctionBase.LoadParameter(const par: string): boolean;
 begin
-  ExtractStrings([ch_separator], [' ', #9], PChar(par), t_pars);
+  t_pars.Clear();
+  t_pars.DelimitedText := par;
   result := LoadParameters(t_pars);
 end;
 

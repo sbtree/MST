@@ -237,7 +237,7 @@ begin
   result := trim(str); p_char := PChar(result);
   if (length(result) >= 2) then begin
     if result[1] = '''' then  result := AnsiExtractQuotedStr(p_char, '''')
-    else  result := AnsiExtractQuotedStr(p_char, '"');
+    else  result := AnsiExtractQuotedStr(p_char, '"');  //???it does not work
   end;
 end;
 
