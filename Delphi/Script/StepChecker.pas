@@ -188,8 +188,7 @@ function TFieldValueChecker.CheckFct(const str: string): boolean;
 var t_class : TFunctionClass;
 begin
   t_class := TFunctionClass(GetClass(str));
-  result := true;//(t_class <> nil);  //todo:
-  //todo: check special function, e.g. LoopBegin, LoopEnd
+  result := (t_class <> nil);
 end;
 
 function TFieldValueChecker.CheckPar(const str: string): boolean;

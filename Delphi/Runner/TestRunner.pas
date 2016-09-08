@@ -2,13 +2,13 @@ unit TestRunner;
 
 interface
 
-uses  Classes, TypInfo, StepData, StepGroup, TextMessage,
+uses  Classes, Contnrs, TypInfo, StepData, StepGroup, TextMessage,
       FuncCaller, GenType;
 
 type
 // =============================================================================
 //    Description  : class of script runner, executes a script
-//                   NOTE: Thread-Safety should be considered of this class if 
+//                   NOTE: Thread-Safety should be considered of this class if
 //                   an instance of this class runs in a work thread
 //    First author : 2015-12-17 /bsu/
 //    History      :
@@ -19,6 +19,7 @@ type
 
   protected
     t_fcaller:  TFunctionCaller;
+    t_funcobjs: TObjectList;
     e_exemode:  EExecMode;
     t_curseq:   TTestSequence;
     t_container:TStepContainer;
@@ -27,6 +28,7 @@ type
   protected
     procedure SetExecutionMode(const em: EExecMode);
     procedure SetStepContainer(const tcon: TStepContainer);
+    procedure UpdateFuncObjs();
 
     function StepInit(const val: string): boolean; virtual;
     function StepInputM(const val: string): boolean; virtual;
@@ -60,18 +62,22 @@ type
   end;
 
 implementation
-uses SysUtils;
+uses SysUtils, FuncBase;
 
 constructor TTestRunner.Create();
 begin
   inherited Create();
   b_jumpmstep := true;
+  t_funcobjs := TObjectList.Create();
+
   t_msgrimpl := TTextMessengerImpl.Create();
   t_msgrimpl.OwnerName := ClassName();
-  t_fcaller := TFunctionCaller.Create();
-  t_fcaller.ExecutionMode := ExecutionMode;
-  ExecutionMode := EM_NORMAL;
+
   t_curseq := TTestSequence.Create();
+  t_fcaller := TFunctionCaller.Create();
+  t_fcaller.CurStepGroup := t_curseq;
+
+  ExecutionMode := EM_NORMAL;
 end;
 
 destructor  TTestRunner.Destroy();
@@ -79,6 +85,7 @@ begin
   t_curseq.Free();
   t_msgrimpl.Free();
   t_fcaller.Free();
+  t_funcobjs.Free();
   inherited Destroy();
 end;
 
@@ -99,7 +106,22 @@ begin
   t_container := tcon;
   if assigned(t_container) then begin
     t_container.UpdateSequence(t_curseq);
-    ITextMessengerImpl(t_curseq).Messenger := ITextMessengerImpl(t_container).Messenger;
+    UpdateFuncObjs();
+    ITextMessengerImpl(t_curseq).Messenger := ITextMessengerImpl(self).Messenger;
+    ITextMessengerImpl(t_fcaller).Messenger := ITextMessengerImpl(self).Messenger;
+  end;
+end;
+
+procedure TTestRunner.UpdateFuncObjs();
+var i: integer; t_step: TTestStep; s_fname: string;
+begin
+  t_funcobjs.Clear();
+  for i := 0 to t_curseq.StepCount - 1 do begin
+    t_step := t_curseq.StepByIndex(i);
+    if assigned(t_step) then begin
+      s_fname := t_step.GetFieldValue(SF_FCT);
+      t_funcobjs.Add(t_fcaller.CreateFunction(s_fname));
+    end else t_funcobjs.Add(nil);
   end;
 end;
 
@@ -124,9 +146,14 @@ begin
 end;
 
 function TTestRunner.StepFunc(const func, par: string): boolean;
+var i_idx: integer; t_func: TFunctionBase;
 begin
-  result := true; //todo: t_fcaller.CallFunction(func, par);
-  //AddMessage(format('The function (%s) with parameter (%s) is executed.', [func, par]));
+  result := false;
+  i_idx := t_curseq.CurStepIndex();
+  if ((i_idx >= 0) and (i_idx < t_funcobjs.Count)) then begin
+    t_func := TFunctionBase(t_funcobjs.Items[i_idx]);
+    result := t_fcaller.RunFunction(t_func, par);
+  end;
 end;
 
 function TTestRunner.StepEval(const val: string): boolean;
@@ -183,7 +210,7 @@ begin
 end;
 
 function TTestRunner.RunGroup(tgroup: TStepGroup): boolean;
-var i: integer;
+var i: integer; s_stepnr: string;
 begin
   result := false;
   if assigned(tgroup) then begin
@@ -192,22 +219,26 @@ begin
       if (not result) then break;
     end;
 
-    //update index of current step in current sequence if a case is done
+    //update index of current step in current sequence if a test case is done
     if (tgroup <> t_curseq) then begin
       if (i >= tgroup.StepCount) then Dec(i);
-      t_curseq.GotoStepNr(tgroup.StepNrOf(i));
+      s_stepnr := tgroup.StepNrOf(i);
+      t_curseq.GotoStepIndex(t_curseq.IndexOfStep(s_stepnr));
     end;
   end;
 end;
 
 function TTestRunner.RunStep(const stepnr: string): boolean;
+var s_snr: string; i_idx: integer;
 begin
-  result := RunStep(t_curseq.StepByNr(stepnr));
+  s_snr := stepnr; i_idx := t_curseq.IndexOfStep(s_snr);
+  result := RunStep(i_idx);
 end;
 
 function TTestRunner.RunStep(const stepidx: integer): boolean;
 begin
-  result := RunStep(t_curseq.StepByIndex(stepidx));
+  result := t_curseq.GotoStepIndex(stepidx);
+  if result then result := RunStep(t_curseq.StepByIndex(stepidx));
 end;
 
 function TTestRunner.RunCase(const casenr: string): boolean;
@@ -229,9 +260,10 @@ end;
 
 function TTestRunner.UpdateSequence(const csincl, csexcl: string): boolean;
 begin
-  if assigned(t_container) then
-    result := t_container.UpdateSequence(t_curseq, csincl, csexcl)
-  else result := false;
+  if assigned(t_container) then begin
+    result := t_container.UpdateSequence(t_curseq, csincl, csexcl);
+    UpdateFuncObjs();
+  end else result := false;
 end;
 
 function TTestRunner.RepeatStep(): boolean;

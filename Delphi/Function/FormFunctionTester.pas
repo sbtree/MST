@@ -87,20 +87,23 @@ begin
 end;
 
 procedure TFormFTMain.btnGoToClick(Sender: TObject);
+var s_snr: string;
 begin
-  t_container.GotoStepNr(trim(txtStepNr.Text));
+  s_snr := trim(txtStepNr.Text);
+  t_container.GotoStepNr(s_snr);
+  txtStepNr.Text := s_snr;
 end;
 
 procedure TFormFTMain.FormCreate(Sender: TObject);
 begin
-  t_sreader := TScriptReader.Create();
-  ITextMessengerImpl(t_sreader).Messenger := t_messenger;
-  t_sreader := TScriptReader.Create();
   t_messenger := TTextMessenger.Create();
+  t_messenger.Messages := memInfo.Lines;
+
+  t_vars := TStringPairs.Create();
   t_container := TStepContainer.Create();
   ITextMessengerImpl(t_container).Messenger := t_messenger;
-  t_vars := TStringPairs.Create();
-  t_messenger.Messages := memInfo.Lines;
+
+  t_sreader := TScriptReader.Create();
   ITextMessengerImpl(t_sreader).Messenger := t_messenger;
   t_sreader.StepContainer := t_container;
   t_sreader.VarContainer := t_vars;

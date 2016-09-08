@@ -43,6 +43,7 @@ object FormFTMain: TFormFTMain
     Top = 8
     Width = 614
     Height = 265
+    ScrollBars = ssBoth
     TabOrder = 1
   end
   object txtScriptFile: TEdit

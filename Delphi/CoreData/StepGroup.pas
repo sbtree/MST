@@ -39,7 +39,7 @@ type
     function GetRelativeStep(const relidx: integer): TTestStep;
     function MoveStepIndex(const relidx: integer): boolean;
     function GotoStepIndex(const idx: integer): boolean;
-    function GotoStepNr(const stepnr: string): boolean;
+    function GotoStepNr(var stepnr: string): boolean;
 
     property CurrentStep: TTestStep read GetCurStep;
     property PreviousStep: TTestStep read GetPrevStep;
@@ -60,7 +60,7 @@ type
 
   protected
     function GetStepNumbers(): string;
-    function IndexOfStepNr(const stepnr: string; var correct: string): integer;
+    function IndexOfStepNr(var stepnr: string): integer;
     procedure RemoveStepByIndex(const idx: integer);
     procedure SetFreeByRemove(const bfree: boolean); virtual;
 
@@ -78,7 +78,7 @@ type
     function GetRelativeStep(const relidx: integer): TTestStep;
     function MoveStepIndex(const relidx: integer): boolean;
     function GotoStepIndex(const idx: integer): boolean;
-    function GotoStepNr(const stepnr: string): boolean;
+    function GotoStepNr(var stepnr: string): boolean;
 
     //properties
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
@@ -95,11 +95,12 @@ type
     //additional methods
     function AddStep(const step: TTestStep): boolean; virtual;
     function StepByIndex(const idx: integer): TTestStep;
-    function StepByNr(const nr: string): TTestStep;
-    function IndexOfStep(const stepnr: string): integer;
+    function StepByNr(var stepnr: string): TTestStep;
+    function IndexOfStep(var stepnr: string): integer;
     function StepNrOf(const idx: integer): string;
     function CurStepNr(): string;
-    procedure RemoveStep(const stepnr: string);
+    function CurStepIndex(): integer;
+    procedure RemoveStep(var stepnr: string);
     procedure Clear(); virtual;
   end;
 
@@ -253,19 +254,32 @@ begin
   result := t_steps.DelimitedText;
 end;
 
-function TStepGroup.IndexOfStepNr(const stepnr: string; var correct: string): integer;
+// =============================================================================
+//    Description  : return index of the test step with number stepnr
+//                   stepnr will be replaced if an equivalent number is found
+//                   NOTE: equivalent number means any zeros are alllowed at end
+//                   of the sub step number till the third digital after point, e.g.
+//                   'xx'='xx.'='xx.0'='xx.00'='xx.000' or 'xx.y'='xx.y0'='x.y00'
+//    Parameter    : stepnr, input and output parameter, the number of test step
+//                   which is expected. It will be replaced if its equivalent
+//                   number is found in the step list.
+//    Return       : integer, index of the step with the given number if it's found.
+//                   -1 is returned if neither the step number nor its equivalent
+//                   number is found.
+//    First author : 2016-09-08 /bsu/
+//    History      :
+// =============================================================================
+function TStepGroup.IndexOfStepNr(var stepnr: string): integer;
 var i, i_len, i_pos: integer; s_snr: string;
 begin
   s_snr := stepnr;
   result := t_steps.IndexOf(s_snr);
   if (result < 0) then begin
-    //search equivalent step number to stepnr in the list t_steps. Equivalent step number looks like:
-    //e.g. 'xx'='xx.'='xx.0'='xx.00'='xx.000', 'xx.y'='xx.y0'='x.y00'. The found step number is saved in correct
     i_pos := Pos('.', s_snr);
     if (i_pos > 0) then begin
       i_len := length(s_snr);
       while (i_len > 0) do begin
-        if (s_snr[i_len] = '0') then begin //remove last '0' in sub number, e.g. 'xx.200'
+        if (s_snr[i_len] = '0') then begin //remove last '0' in sub number
           Dec(i_len);
           s_snr := LeftStr(s_snr, i_len);
           result := t_steps.IndexOf(s_snr);
@@ -282,7 +296,7 @@ begin
     end;
 
     if (result < 0) then begin
-      for i := i_pos to 3 do begin
+      for i := i_pos to 3 do begin  //append '0' and search it in the list 
         s_snr := s_snr + '0';
         result := t_steps.IndexOf(s_snr);
         if (result >= 0) then break;
@@ -291,9 +305,8 @@ begin
     if (result >= 0) then t_msgrimpl.AddMessage(format('An equivalent step number(%s) is found for the given step number(%s)', [s_snr, stepnr]));
   end;
   if (result < 0) then begin
-    correct := '';
     t_msgrimpl.AddMessage(format('No step is found for the given step number(%s)', [stepnr]), ML_ERROR);
-  end else correct := s_snr;
+  end else stepnr := s_snr; //return the equivalent step number
 end;
 
 procedure TStepGroup.RemoveStepByIndex(const idx: integer);
@@ -387,12 +400,12 @@ begin
   end else result := false;
 end;
 
-function TStepGroup.GotoStepNr(const stepnr: string): boolean;
-var i_idx: integer; s_snr: string;
+function TStepGroup.GotoStepNr(var stepnr: string): boolean;
+var i_idx: integer;
 begin
-  i_idx := IndexOfStepNr(stepnr, s_snr);
+  i_idx := IndexOfStepNr(stepnr);
   result := GotoStepIndex(i_idx);
-  if result then t_msgrimpl.AddMessage(format('Successful to go to step %s', [s_snr]))
+  if result then t_msgrimpl.AddMessage(format('Successful to go to step %s', [stepnr]))
   else t_msgrimpl.AddMessage(format('Failed to go to step %s', [stepnr]), ML_ERROR)
 end;
 
@@ -413,17 +426,16 @@ begin
   else result := nil;
 end;
 
-function  TStepGroup.StepByNr(const nr: string): TTestStep;
-var i_idx: integer; s_snr: string;
+function  TStepGroup.StepByNr(var stepnr: string): TTestStep;
+var i_idx: integer;
 begin
-  i_idx := IndexOfStepNr(nr, s_snr);
+  i_idx := IndexOfStepNr(stepnr);
   result := StepByIndex(i_idx);
 end;
 
-function  TStepGroup.IndexOfStep(const stepnr: string): integer;
-var s_snr: string;
+function  TStepGroup.IndexOfStep(var stepnr: string): integer;
 begin
-  result := IndexOfStepNr(stepnr, s_snr);
+  result := IndexOfStepNr(stepnr);
 end;
 
 function  TStepGroup.StepNrOf(const idx: integer): string;
@@ -437,10 +449,15 @@ begin
   result := StepNrOf(i_curstep);
 end;
 
-procedure TStepGroup.RemoveStep(const stepnr: string);
-var i_idx: integer; s_snr: string;
+function TStepGroup.CurStepIndex(): integer;
 begin
-  i_idx := IndexOfStepNr(stepnr, s_snr);
+  result := i_curstep;
+end;
+
+procedure TStepGroup.RemoveStep(var stepnr: string);
+var i_idx: integer;
+begin
+  i_idx := IndexOfStepNr(stepnr);
   RemoveStepByIndex(i_idx);
 end;
 

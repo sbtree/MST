@@ -111,7 +111,7 @@ type
   protected
     a_fields:   StepFieldArray;
     t_result:   TStepResult;
-    t_fvalues:  TStrings;     //to save the list of a field value, which is split. See SplitFieldValues
+    t_fvalues:  TStrings;     //temporary variable to save the list of a field value, which is split. See SplitFieldValues
   protected
     procedure FreeFields();
     function  IsMinusStepNr(): boolean;
