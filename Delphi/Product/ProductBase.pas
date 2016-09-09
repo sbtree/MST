@@ -5,7 +5,7 @@ uses Classes, ConnBase, DeviceBase, MtxDownloader;
 type
   IMtxProduct = interface
     function Reset(const cmd: string): boolean;
-    function EnterService(const cmd: string; const expe: string = ''): boolean;
+    {function EnterService(const cmd: string; const expe: string = ''): boolean;
 
     function FlashBootloader(const sfile: string): boolean;
     function FlashFirmware(const sfile: string): boolean;
@@ -21,22 +21,22 @@ type
     function WriteBoardNr(const snr: string): boolean;
 
     function CheckBootloaderVer(const isver, exver: string): boolean;
-    function CheckFirmwareVer(const isver, exver: string): boolean;
+    function CheckFirmwareVer(const isver, exver: string): boolean; }
   end;
 
   TMtxProduct = class(TDeviceBase, IMtxProduct)
   protected
     t_connlist: TStrings;     //a list of all available connections
   protected
-    function AddConnect(const cnname: string; const conn: TConnBase): boolean;
+    {function AddConnect(const cnname: string; const conn: TConnBase): boolean;
     function RemoveConnect(const cnname: string): boolean;
-    procedure ClearConnections();
+    procedure ClearConnections();  }
 
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
-    function Reset(const cmd: string): boolean; virtual;
+    {function Reset(const cmd: string): boolean; override;
     function EnterService(const cmd: string; const expe: string = ''): boolean; virtual;
     function FlashBootloader(const sfile: string): boolean; virtual;
     function FlashFirmware(const sfile: string): boolean; virtual;
@@ -49,7 +49,7 @@ type
     function WriteSerialNr(const snr: string): boolean; virtual;
     function WriteBoardNr(const snr: string): boolean; virtual;
     function CheckBootloaderVer(const isver, exver: string): boolean; virtual;
-    function CheckFirmwareVer(const isver, exver: string): boolean; virtual;
+    function CheckFirmwareVer(const isver, exver: string): boolean; virtual;}
   end;
 
 implementation
@@ -62,7 +62,7 @@ end;
 
 destructor TMtxProduct.Destroy;
 begin
-  ClearConnections();
+  //ClearConnections();
   t_connlist.Free();
   inherited Destroy();
 end;

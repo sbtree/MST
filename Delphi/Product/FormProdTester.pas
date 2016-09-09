@@ -217,7 +217,7 @@ end;
 
 procedure TfrmProdTester.lsvConfigCustomDrawItem(Sender: TCustomListView;
   Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
-var t_varnames: TStrings; i_idx: integer;
+var t_varnames: TStrings;
 begin
   t_varnames := TStringList.Create();
   if (t_pconfigurator.CurConfig.ConfigVars.GetPairNames(t_varnames) > 0) then begin

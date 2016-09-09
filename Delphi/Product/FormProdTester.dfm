@@ -241,6 +241,9 @@ object frmProdTester: TfrmProdTester
     Top = 512
     Width = 384
     Height = 21
+    Hint = 'names of selected variables'
+    ParentShowHint = False
+    ShowHint = True
     TabOrder = 22
   end
   object btnPromote: TButton
@@ -257,7 +260,10 @@ object frmProdTester: TfrmProdTester
     Top = 513
     Width = 20
     Height = 20
-    Caption = 'R'
+    Hint = 'clear the names of selected variables'
+    Caption = 'X'
+    ParentShowHint = False
+    ShowHint = True
     TabOrder = 24
     OnClick = btnClearVarNamesClick
   end
