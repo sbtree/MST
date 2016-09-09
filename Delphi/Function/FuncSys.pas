@@ -257,7 +257,7 @@ begin
       end else if StartsText('REPEAT_', s_par) then begin
         s_sub := MidStr(s_par, 8, length(s_par) - 7);
         if TryStrToInt(s_sub,i_val) then begin
-          if (i_val >= 0) then c_elapse := i_val
+          if (i_val >= 0) then i_ninit := i_val
           else t_msgrimpl.AddMessage(format(CSTR_INVALID_PARA, [s_par]), ML_WARNING);
         end else t_msgrimpl.AddMessage(format(CSTR_INVALID_PARA, [s_par]), ML_WARNING);
       end;
@@ -266,7 +266,7 @@ begin
 end;
 
 function TRepeatControl.DoTask(): boolean;
-var b_dorepeat: boolean;
+var b_dorepeat, b_cond: boolean;
 begin
   result := inherited DoTask();
   if b_reset then begin
@@ -274,27 +274,33 @@ begin
     i_counter := 0;
     b_reset := false;
   end;
+  Inc(i_counter);
   if (result and ValidStepNrs(false)) then begin
-    if (i_ninit >= 0) then b_dorepeat := (i_counter <= i_ninit)
-    else b_dorepeat := (GetTickCount() <= c_tend);
-    b_dorepeat := (b_dorepeat and (BooleanCondition(s_expr) = b_valid));
+    if (i_ninit >= 0) then begin
+      b_dorepeat := (i_counter < i_ninit);
+      if (not b_dorepeat) then t_msgrimpl.AddMessage(format('Repeating counter (%d) is reached.', [i_counter]));
+    end else begin
+      b_dorepeat := (GetTickCount() <= c_tend);
+      if (not b_dorepeat) then t_msgrimpl.AddMessage(format('Timeout (%d ms) is reached.', [c_elapse]));
+    end;
+    b_cond := (BooleanCondition(s_expr) = b_valid);
+    if (not b_cond) then t_msgrimpl.AddMessage(format('The repeating condition is not fulfilled( (%s) <> %s ).', [s_expr, BoolToStr(b_valid, true)]));
 
+    b_dorepeat := (b_dorepeat and b_cond);
     if b_dorepeat then begin
       result := t_sctrlimpl.GotoStep(s_tosnr);
       if result then t_msgrimpl.AddMessage(format('Successful to go from step %s to step %s', [s_selfsnr, s_tosnr]))
       else begin
         b_reset := true; //ready for next run
-        t_msgrimpl.AddMessage(format('Failed to go from step %s to step %s', [s_selfsnr, s_tosnr]), ML_ERROR);
+        t_msgrimpl.AddMessage(format('Failed to go from step %s to step %s (repeating counter = %d)', [s_selfsnr, s_tosnr, i_counter]), ML_ERROR);
       end
     end else begin
       b_reset := true; //ready for next run
-      t_msgrimpl.AddMessage(format('The repeating condition is not fulfilled( (%s) <> %s ) or timeout.', [s_expr, BoolToStr(b_valid, true)]));
       result := t_sctrlimpl.NextStep();
-      if result then t_msgrimpl.AddMessage('Successful to go to next step automatically.')
-      else t_msgrimpl.AddMessage('Failed to go to next step.')
+      if result then t_msgrimpl.AddMessage(format('Successful to go to next step automatically.', [i_counter]))
+      else t_msgrimpl.AddMessage(format('Failed to go to next step (repeating counter = %d).', [i_counter]), ML_ERROR);
     end;
   end;
-  Inc(i_counter);
 end;
 
 constructor RepeatIfTrue.Create();

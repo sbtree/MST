@@ -234,10 +234,10 @@ end;
 class function TGenUtils.ClearQuotationMarks(const str: string): string;
 var p_char: PChar;
 begin
-  result := trim(str); p_char := PChar(result);
+  result := trim(str); p_char := PChar(str);
   if (length(result) >= 2) then begin
-    if result[1] = '''' then  result := AnsiExtractQuotedStr(p_char, '''')
-    else  result := AnsiExtractQuotedStr(p_char, '"');  //???it does not work
+    if (result[1] = '''') then  result := AnsiExtractQuotedStr(p_char, '''')
+    else if (result[1] = '"') then result := AnsiExtractQuotedStr(p_char, '"');
   end;
 end;
 

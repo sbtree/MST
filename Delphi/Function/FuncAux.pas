@@ -42,12 +42,11 @@ type
 
   CatStr = class(TFunctionBase)
   protected
-    s_expr:   string;
   end;
 
   SubStr = class(TFunctionBase)
-  protected
-    s_expr:   string;
+  public
+    function LoadParameters(const pars: TStrings): boolean; override;
   end;
 
   StrToInt = class(TFunctionBase)
@@ -79,9 +78,7 @@ type
     destructor Destroy; override;
 
     property ParserService: TExprParserImpl read t_parserimpl implements IExprParserImpl;
-    //function LoadParameter(const par: string): boolean; override;
     function LoadParameters(const pars: TStrings): boolean; override;
-    //function DoTask(): boolean; override;
   end;
 
   EvalExprFloat = class(TEvalExprBase)
@@ -200,6 +197,12 @@ end;
 function TExprParserImpl.GetParserErrorMsg(): string;
 begin
   result := s_lastmsg;
+end;
+
+function SubStr.LoadParameters(const pars: TStrings): boolean;
+begin
+  result := true;
+  //todo:
 end;
 
 constructor TEvalExprBase.Create();

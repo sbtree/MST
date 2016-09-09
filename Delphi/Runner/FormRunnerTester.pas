@@ -78,6 +78,7 @@ implementation
 
 procedure TForm2.btnClearClick(Sender: TObject);
 begin
+  t_messenger.Clear(true);
   t_sreader.Clear();
 end;
 

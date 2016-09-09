@@ -3,7 +3,7 @@ unit TestRunner;
 interface
 
 uses  Classes, Contnrs, TypInfo, StepData, StepGroup, TextMessage,
-      FuncCaller, GenType;
+      FuncCaller, GenType, FuncBase;
 
 type
 // =============================================================================
@@ -21,6 +21,7 @@ type
     t_fcaller:  TFunctionCaller;
     t_funcobjs: TObjectList;
     e_exemode:  EExecMode;
+    t_curstep:  TTestStep;          //temporary variable to save the reference of test step, which is being done.
     t_curseq:   TTestSequence;
     t_container:TStepContainer;
     t_msgrimpl: TTextMessengerImpl; //for delegation of interface TTextMessengerImpl
@@ -29,13 +30,15 @@ type
     procedure SetExecutionMode(const em: EExecMode);
     procedure SetStepContainer(const tcon: TStepContainer);
     procedure UpdateFuncObjs();
+    function GetFunctionObj(const tstep: TTestStep): TFunctionBase;
 
-    function StepInit(const val: string): boolean; virtual;
-    function StepInputM(const val: string): boolean; virtual;
-    function StepFunc(const func, par: string): boolean; virtual;
-    function StepEval(const val: string): boolean; virtual;
-    function StepSave(const val: string): boolean; virtual;
-    function StepFinal(const val: string): boolean; virtual;
+    function RunStep(): boolean; overload;
+    function StepInit(): boolean; virtual;
+    function StepInputM(): boolean; virtual;
+    function StepFunc(): boolean; virtual;
+    function StepEval(): boolean; virtual;
+    function StepSave(): boolean; virtual;
+    function StepFinal(): boolean; virtual;
   public
     constructor Create();
     destructor  Destroy(); override;
@@ -51,7 +54,7 @@ type
 
     function RunStep(tstep: TTestStep): boolean; overload;
     function RunGroup(tgroup: TStepGroup): boolean;
-    
+
     function RunStep(const stepnr: string): boolean; overload;
     function RunStep(const stepidx: integer): boolean; overload;
     function RunCase(const casenr: string): boolean; overload;
@@ -63,7 +66,7 @@ type
   end;
 
 implementation
-uses SysUtils, FuncBase;
+uses SysUtils, FuncSys;
 
 constructor TTestRunner.Create();
 begin
@@ -125,7 +128,56 @@ begin
   end;
 end;
 
-function TTestRunner.StepInit(const val: string): boolean;
+function TTestRunner.GetFunctionObj(const tstep: TTestStep): TFunctionBase;
+var i_idx: integer; s_snr: string;
+begin
+  result := nil;
+  if assigned(tstep) then begin
+    s_snr := tstep.GetFieldValue(SF_NR);
+    i_idx := t_curseq.IndexOfStep(s_snr);
+    if ((i_idx >= 0) and (i_idx < t_funcobjs.Count)) then
+      result := TFunctionBase(t_funcobjs.Items[i_idx]);
+  end;
+end;
+
+function TTestRunner.RunStep(): boolean;
+var s_snr: string;
+begin
+  result := false;
+  if assigned(t_curstep) then begin
+    t_msgrimpl.AddEmptyLine();
+    s_snr := t_curstep.GetFieldValue(SF_NR);
+    t_curseq.GotoStepIndex(t_curseq.IndexOfStep(s_snr));
+    if ((not t_curstep.IsMinusStep) or (not b_jumpmstep)) then begin
+      //todo: 1. initialize this step and execute statements of 'init' or 'r_on'
+      result := StepInit();
+      //todo: 2. read information of 'm' and control the execution of this step
+      if result then
+        result := StepInputM();
+      //todo: 3. call script function to execute 'fct' with 'par'
+      if result then
+        result := StepFunc();
+      //t_fcaller.CallFunction('','');
+      //4. save result string of this step //todo: consider of result pattern here
+      //t_curstep.StepResult.ResultString := t_fcaller.ResultString;
+
+      //todo: 5. evaluate the resualt of calling function with 'tol'
+      if result then
+        result := StepEval();
+      //todo: 6. finalize this step 'final' or 'r_off'
+      if result then
+        result := StepFinal();
+      //t_curstep.StepResult.Resulted := result;
+      if result then t_msgrimpl.AddMessage(format('The step (%s) is done successfully.', [t_curstep.GetFieldValue(SF_NR)]))
+      else t_msgrimpl.AddMessage(format('The step (%s) is not done exactly.', [t_curstep.GetFieldValue(SF_NR)]));
+    end else begin
+      result := true;
+      t_msgrimpl.AddMessage(format('The minus step (%s) is jumped.', [t_curstep.GetFieldValue(SF_NR)]));
+    end;
+  end;
+end;
+
+function TTestRunner.StepInit(): boolean;
 begin
   result := true;
   //todo:
@@ -135,7 +187,7 @@ begin
   //AddMessage(format('The value (%s) of field (r_on) is accepted.', [val]));
 end;
 
-function TTestRunner.StepInputM(const val: string): boolean;
+function TTestRunner.StepInputM(): boolean;
 begin
   result := true;
   //todo:
@@ -145,35 +197,33 @@ begin
   //AddMessage(format('The value (%s) of field (M) is accepted.', [val]));
 end;
 
-function TTestRunner.StepFunc(const func, par: string): boolean;
-var i_idx: integer; t_func: TFunctionBase;
+function TTestRunner.StepFunc(): boolean;
+var t_func: TFunctionBase; s_fname, s_fpar: string;
 begin
-  result := false;
-  i_idx := t_curseq.CurStepIndex();
-  if ((i_idx >= 0) and (i_idx < t_funcobjs.Count)) then begin
-    if (SameText(func, 'nil') or (func = '')) then result := true
-    else begin
-      t_func := TFunctionBase(t_funcobjs.Items[i_idx]);
-      result := t_fcaller.RunFunction(t_func, par);
-    end;
+  s_fname := t_curstep.GetFieldValue(SF_FCT);
+  if (SameText(s_fname, 'nil') or (s_fname = '')) then result := true
+  else begin
+    t_func := GetFunctionObj(t_curstep);
+    s_fpar := t_curstep.GetFieldValue(SF_PAR);
+    result := t_fcaller.RunFunction(t_func, s_fpar);
   end;
 end;
 
-function TTestRunner.StepEval(const val: string): boolean;
+function TTestRunner.StepEval(): boolean;
 begin
   result := true;
   //todo:
   //AddMessage(format('The value (%s) is evaluated.', [val]));
 end;
 
-function TTestRunner.StepSave(const val: string): boolean;
+function TTestRunner.StepSave(): boolean;
 begin
   result := true;
   //todo:
   //AddMessage(format('The resault (%s)  is saved.', [val]));
 end;
 
-function TTestRunner.StepFinal(const val: string): boolean;
+function TTestRunner.StepFinal(): boolean;
 begin
   result := true;
   //todo:
@@ -182,52 +232,30 @@ end;
 
 function TTestRunner.RunStep(tstep: TTestStep): boolean;
 begin
-  result := false;
-  if assigned(tstep) then begin
-    if ((not tstep.IsMinusStep) or (not b_jumpmstep)) then begin
-      //todo: 1. initialize this step and execute statements of 'init' or 'r_on'
-      result := StepInit(tstep.GetFieldValue(SF_INIT));
-      //todo: 2. read information of 'm' and control the execution of this step
-      if result then
-        result := StepInputM(tstep.GetFieldValue(SF_M));
-      //todo: 3. call script function to execute 'fct' with 'par'
-      if result then
-        result := StepFunc(tstep.GetFieldValue(SF_FCT), tstep.GetFieldValue(SF_PAR));
-      //t_fcaller.CallFunction('','');
-      //4. save result string of this step //todo: consider of result pattern here
-      //t_curstep.StepResult.ResultString := t_fcaller.ResultString;
-
-      //todo: 5. evaluate the resualt of calling function with 'tol'
-      if result then
-        result := StepEval(tstep.GetFieldValue(SF_TOL_A));
-      //todo: 6. finalize this step 'final' or 'r_off'
-      if result then
-        result := StepFinal(tstep.GetFieldValue(SF_FINAL));
-      //t_curstep.StepResult.Resulted := result;
-      if result then t_msgrimpl.AddMessage(format('The step (%s) is done successfully.', [tstep.GetFieldValue(SF_NR)]))
-      else t_msgrimpl.AddMessage(format('The step (%s) is not done exactly.', [tstep.GetFieldValue(SF_NR)]));
-    end else begin
-      result := true;
-      t_msgrimpl.AddMessage(format('The minus step (%s) is jumped.', [tstep.GetFieldValue(SF_NR)]));
-    end;
-  end;
+  t_curstep := tstep;
+  result := RunStep();
 end;
 
 function TTestRunner.RunGroup(tgroup: TStepGroup): boolean;
-var i: integer; s_stepnr: string;
+var t_func: TFunctionBase; s_snr: string; i_cnr: integer;
 begin
   result := false;
   if assigned(tgroup) then begin
-    for i := 0 to tgroup.StepCount - 1 do begin
-      result := RunStep(tgroup.StepByIndex(i));
-      if (not result) then break;
-    end;
-
-    //update index of current step in current sequence if a test case is done
-    if (tgroup <> t_curseq) then begin
-      if (i >= tgroup.StepCount) then Dec(i);
-      s_stepnr := tgroup.StepNrOf(i);
-      t_curseq.GotoStepIndex(t_curseq.IndexOfStep(s_stepnr));
+    t_curstep := tgroup.FirstStep;
+    result := true;
+    while (result and (tgroup.CurStepIndex < tgroup.StepCount)) do begin
+      t_func := GetFunctionObj(t_curstep);
+      result := RunStep(t_curstep);
+      if (t_func is TConditionControl) then begin //if goto is done
+        s_snr := t_curseq.StepNrOf(t_curseq.CurStepIndex);
+        if tgroup.GotoStepNr(s_snr) then t_curstep := tgroup.CurrentStep
+        else begin //it's running into another test case
+          t_curstep := t_curseq.CurrentStep;
+          if TStepGroup.CalcMainNr(s_snr, i_cnr) then
+            t_curseq.CaseGroup.GotoCaseNr(IntToStr(i_cnr)); //update case index in the case group
+          break;
+        end;
+      end else t_curstep := tgroup.NextStep;
     end;
   end;
 end;
@@ -242,7 +270,10 @@ end;
 function TTestRunner.RunStep(const stepidx: integer): boolean;
 begin
   result := t_curseq.GotoStepIndex(stepidx);
-  if result then result := RunStep(t_curseq.StepByIndex(stepidx));
+  if result then begin
+    t_curstep := t_curseq.StepByIndex(stepidx);
+    result := RunStep(t_curstep);
+  end;
 end;
 
 function TTestRunner.RunCase(const casenr: string): boolean;

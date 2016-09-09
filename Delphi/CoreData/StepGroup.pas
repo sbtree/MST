@@ -131,6 +131,8 @@ type
     function GetNextCase(): TTestCase;
     function GetLastCase(): TTestCase;
     function GetRelativeCase(const relidx: integer): TTestCase;
+    function GotoCaseIndex(const caseidx: integer): boolean;
+    function GotoCaseNr(const casenr: string): boolean;
 
     property CurrentCase: TTestCase read GetCurCase;
     property PreviousCase: TTestCase read GetPrevCase;
@@ -162,6 +164,9 @@ type
     function GetNextCase(): TTestCase;
     function GetLastCase(): TTestCase;
     function GetRelativeCase(const relidx: integer): TTestCase;
+    function GotoCaseIndex(const caseidx: integer): boolean;
+    function GotoCaseNr(const casenr: string): boolean; overload;
+    function GotoCaseNr(const casenr: integer): boolean; overload;
 
     //properties
     property CurrentCase: TTestCase read GetCurCase;
@@ -187,7 +192,7 @@ type
   end;
 
   //a class representing a test sequence, which is composed of test groups in the container
-  TTestSequence = class(TStepGroup)
+  TTestSequence = class(TStepGroup, ICaseNavigator)
   protected
     t_casegrp:  TCaseGroup; //an object of TCaseGroup, to save test cases
     i_lastcnr:  integer;    //to save last case number during reading test script
@@ -206,7 +211,7 @@ type
     function GetCurStep(): TTestStep; override;
 
     //properties
-    property CaseGroup: TCaseGroup read t_casegrp;
+    property CaseGroup: TCaseGroup read t_casegrp implements ICaseNavigator;
 
     //additional methods
     function UpdateCaseGroup(): integer; overload;
@@ -557,8 +562,7 @@ end;
 
 function TCaseGroup.GetCurCase(): TTestCase;
 begin
-  if ((i_curcase >= 0) and (i_curcase < t_cases.Count)) then result := TTestCase(t_cases.Objects[i_curcase])
-  else result := nil;
+  result := CaseByIndex(i_curcase);
 end;
 
 function TCaseGroup.GetNextCase(): TTestCase;
@@ -582,6 +586,29 @@ begin
   result := GetCurCase();
 end;
 
+function TCaseGroup.GotoCaseIndex(const caseidx: integer): boolean;
+begin
+  result := ((caseidx >= 0) and (caseidx < t_cases.Count));
+  if result then i_curcase := caseidx;
+end;
+
+function TCaseGroup.GotoCaseNr(const casenr: string): boolean;
+var i_caseidx, i_casenr: integer;
+begin
+  if TryStrToInt(casenr, i_casenr) then i_caseidx := t_cases.IndexOf(IntToStr(i_casenr))
+  else i_caseidx := t_cases.IndexOf(casenr);
+  result := GotoCaseIndex(i_caseidx);
+end;
+
+function TCaseGroup.GotoCaseNr(const casenr: integer): boolean;
+var s_cnr: string; i_idx: integer;
+begin
+  s_cnr := IntToStr(casenr);
+  i_idx := t_cases.IndexOf(s_cnr);
+  result := (i_idx >= 0);
+  if result then i_curcase := i_idx;
+end;
+
 function TCaseGroup.AddCase(const tcase: TTestCase): boolean;
 var s_casenr: string;
 begin
@@ -595,16 +622,14 @@ end;
 
 function  TCaseGroup.CaseByIndex(const idx: integer): TTestCase;
 begin
-  if (idx < 0) then i_curcase := -1
-  else if (idx >= t_cases.Count) then i_curcase := t_cases.Count
-  else i_curcase := idx;
-  result := GetCurCase();
+  if ((idx >= 0) and (idx < t_cases.Count)) then result := TTestCase(t_cases.Objects[idx])
+  else result := nil;
 end;
 
 function  TCaseGroup.CaseByNr(const casenr: string): TTestCase;
 var i_caseidx, i_casenr: integer;
 begin
-  if TryStrToInt(casenr, i_casenr) then i_caseidx := t_cases.IndexOf(IntToStr(i_casenr))
+  if TryStrToInt(casenr, i_casenr) then i_caseidx := t_cases.IndexOf(IntToStr(i_casenr)) //remove prefix zeros, e.g. '010'=>'10'
   else i_caseidx := t_cases.IndexOf(casenr);
   result := CaseByIndex(i_caseidx);
 end;
@@ -707,7 +732,7 @@ begin
   if assigned(tstep) then begin
     s_stepnr := tstep.GetFieldValue(SF_NR);
     if TStepGroup.CalcMainNr(s_stepnr, i_cnr) then
-      t_casegrp.UpdateCaseIndex(i_cnr);
+      t_casegrp.GotoCaseNr(i_cnr);
   end;
 end;
 

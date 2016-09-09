@@ -294,7 +294,7 @@ function  TScriptReader.CheckFieldValue(const val: string): boolean;
 begin
   result := t_fvchecker.CheckField(e_lastfield, val);
   if result then
-    a_fieldvals[e_lastfield] := val
+    a_fieldvals[e_lastfield] := TGenUtils.ClearQuotationMarks(val)
   else
     t_msgrimpl.AddMessage(format('Invalid value (%s) for the field (%s).', [val, t_fnchecker.FieldName(e_lastfield)]), ML_ERROR);
 end;
@@ -396,7 +396,6 @@ begin
     if (not (e_curstate in [PS_LINECOMMENT, PS_BRACKETCOMMENT, PS_BRACECOMMENT])) then begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARVAL]) then s_curtoken := s_curtoken + curch
       else if (e_curstate = PS_FIELDVAL) then begin
-        //s_curtoken := TGenUtils.ClearQuotationMarks(s_curtoken);
         if CheckFieldValue(trim(s_curtoken)) then begin
           PopState();
           s_curtext := s_curtext + a_fieldvals[e_lastfield] + curch;

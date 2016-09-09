@@ -127,7 +127,7 @@ function TFunctionCaller.CallFunction(const func, par: string): boolean;
 begin
   if (SameText(func, 'nil') or (func = '')) then begin
     result := true;
-    t_msgrimpl.AddMessage(format('No function is executed with function name ''%s''.', [func]));
+    t_msgrimpl.AddMessage(format('No function is called with the name ''%s''.', [func]));
   end else begin
     result := false;
     t_func := CreateFunction(func);

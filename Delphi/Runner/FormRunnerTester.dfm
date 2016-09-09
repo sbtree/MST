@@ -2,8 +2,8 @@ object Form2: TForm2
   Left = 0
   Top = 0
   Caption = 'Test Runner'
-  ClientHeight = 358
-  ClientWidth = 562
+  ClientHeight = 422
+  ClientWidth = 683
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,22 +16,22 @@ object Form2: TForm2
   PixelsPerInch = 96
   TextHeight = 13
   object lblInclusive: TLabel
-    Left = 136
-    Top = 303
+    Left = 189
+    Top = 359
     Width = 25
     Height = 13
     Caption = 'Incl.:'
   end
   object lblExclusive: TLabel
-    Left = 136
-    Top = 332
+    Left = 189
+    Top = 388
     Width = 27
     Height = 13
     Caption = 'Excl.:'
   end
   object btnRunStepByNr: TButton
-    Left = 64
-    Top = 298
+    Left = 111
+    Top = 351
     Width = 64
     Height = 25
     Caption = 'RunStep'
@@ -39,24 +39,24 @@ object Form2: TForm2
     OnClick = btnRunStepByNrClick
   end
   object txtStepNr: TEdit
-    Left = 8
-    Top = 300
-    Width = 49
+    Left = 9
+    Top = 353
+    Width = 96
     Height = 21
     TabOrder = 1
     Text = '895.68'
   end
   object txtScriptFile: TEdit
     Left = 8
-    Top = 240
-    Width = 404
+    Top = 301
+    Width = 344
     Height = 21
     TabOrder = 2
     Text = 'PST_BT_FT_PS_liste.txt'
   end
   object btnOpenScript: TButton
-    Left = 418
-    Top = 240
+    Left = 358
+    Top = 301
     Width = 24
     Height = 21
     Caption = '...'
@@ -64,8 +64,8 @@ object Form2: TForm2
     OnClick = btnOpenScriptClick
   end
   object btnReadScript: TButton
-    Left = 8
-    Top = 267
+    Left = 513
+    Top = 299
     Width = 50
     Height = 25
     Caption = 'Read'
@@ -73,8 +73,8 @@ object Form2: TForm2
     OnClick = btnReadScriptClick
   end
   object btnSaveScript: TButton
-    Left = 64
-    Top = 267
+    Left = 569
+    Top = 299
     Width = 50
     Height = 25
     Caption = 'Save'
@@ -84,23 +84,22 @@ object Form2: TForm2
   object memInfo: TMemo
     Left = 8
     Top = 8
-    Width = 546
-    Height = 224
-    ReadOnly = True
+    Width = 667
+    Height = 285
     ScrollBars = ssBoth
     TabOrder = 6
   end
   object txtCase: TEdit
-    Left = 8
-    Top = 329
-    Width = 49
+    Left = 9
+    Top = 382
+    Width = 96
     Height = 21
     TabOrder = 7
     Text = '11'
   end
   object btnRunCase: TButton
-    Left = 64
-    Top = 327
+    Left = 111
+    Top = 380
     Width = 64
     Height = 25
     Caption = 'RunCase'
@@ -108,17 +107,17 @@ object Form2: TForm2
     OnClick = btnRunCaseClick
   end
   object txtInclusive: TEdit
-    Left = 167
-    Top = 300
-    Width = 92
+    Left = 220
+    Top = 356
+    Width = 144
     Height = 21
     Hint = 'inclusive test cases'
     TabOrder = 9
     Text = 'all'
   end
   object btnSequence: TButton
-    Left = 265
-    Top = 298
+    Left = 370
+    Top = 354
     Width = 81
     Height = 25
     Caption = 'Sequence'
@@ -126,17 +125,17 @@ object Form2: TForm2
     OnClick = btnSequenceClick
   end
   object txtExclusive: TEdit
-    Left = 167
-    Top = 329
-    Width = 92
+    Left = 220
+    Top = 385
+    Width = 144
     Height = 21
     Hint = 'exclusive test cases'
     TabOrder = 11
     Text = '10-80'
   end
   object btnClear: TButton
-    Left = 129
-    Top = 267
+    Left = 625
+    Top = 299
     Width = 50
     Height = 25
     Caption = 'Clear'
@@ -144,24 +143,24 @@ object Form2: TForm2
     OnClick = btnClearClick
   end
   object chkForce: TCheckBox
-    Left = 449
-    Top = 242
+    Left = 389
+    Top = 303
     Width = 45
     Height = 17
     Caption = 'Force'
     TabOrder = 13
   end
   object chkAppend: TCheckBox
-    Left = 500
-    Top = 242
+    Left = 440
+    Top = 303
     Width = 54
     Height = 17
     Caption = 'Append'
     TabOrder = 14
   end
   object btnRunSequence: TButton
-    Left = 265
-    Top = 327
+    Left = 370
+    Top = 383
     Width = 32
     Height = 25
     Caption = 'Run'
@@ -169,8 +168,8 @@ object Form2: TForm2
     OnClick = btnRunSequenceClick
   end
   object btnRepeatSequence: TButton
-    Left = 303
-    Top = 327
+    Left = 408
+    Top = 383
     Width = 43
     Height = 25
     Caption = 'Repeat'
@@ -178,10 +177,10 @@ object Form2: TForm2
     OnClick = btnRepeatSequenceClick
   end
   object GroupBox1: TGroupBox
-    Left = 352
-    Top = 274
+    Left = 466
+    Top = 330
     Width = 97
-    Height = 82
+    Height = 84
     Caption = 'Step Mode'
     TabOrder = 17
     object btnRunFirstStep: TButton
@@ -224,8 +223,8 @@ object Form2: TForm2
     end
   end
   object GroupBox2: TGroupBox
-    Left = 457
-    Top = 274
+    Left = 578
+    Top = 330
     Width = 97
     Height = 82
     Caption = 'Case Mode'
@@ -270,8 +269,8 @@ object Form2: TForm2
     end
   end
   object chkJump: TCheckBox
-    Left = 265
-    Top = 275
+    Left = 370
+    Top = 331
     Width = 81
     Height = 17
     Caption = 'Jump Minus'

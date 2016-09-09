@@ -31,6 +31,7 @@ type
     t_sreader:  TScriptReader;
     t_vars:     TStringPairs;
     t_container:TStepContainer;
+    t_fcaller: TFunctionCaller;
   public
     { Public-Deklarationen }
   end;
@@ -63,13 +64,8 @@ begin
 end;
 
 procedure TFormFTMain.btnTestClick(Sender: TObject);
-var t_fcaller: TFunctionCaller;
 begin
   //t_container.FirstStep;
-  t_fcaller := TFunctionCaller.Create;
-  t_fcaller.CurStepGroup := t_container;
-  t_fcaller.ExecutionMode := EM_DIAGNOSE;
-  ITextMessengerImpl(t_fcaller).Messenger := t_messenger;
   t_fcaller.CallFunction(trim(txtFuncName.Text), trim(txtFuncPara.Text));
   //t_fcaller.CallFunction('EvalExprFloat', 'sqr(sin(1,0)*cos(2,0))');
   //t_fcaller.CallFunction('EvalExprInt', '9,5*2,5');
@@ -83,7 +79,6 @@ begin
   //t_fcaller.CallFunction('Nil', 'abc');
   //t_fcaller.CallFunction('', 'abc');
   //t_fcaller.CallFunction('abcd', 'abc');
-  t_fcaller.Free;
 end;
 
 procedure TFormFTMain.btnGoToClick(Sender: TObject);
@@ -107,10 +102,15 @@ begin
   ITextMessengerImpl(t_sreader).Messenger := t_messenger;
   t_sreader.StepContainer := t_container;
   t_sreader.VarContainer := t_vars;
+
+  t_fcaller := TFunctionCaller.Create;
+  t_fcaller.CurStepGroup := t_container;
+  ITextMessengerImpl(t_fcaller).Messenger := t_messenger;
 end;
 
 procedure TFormFTMain.FormDestroy(Sender: TObject);
 begin
+  t_fcaller.Free();
   t_vars.Free();
   t_container.Free();
   t_sreader.Free();

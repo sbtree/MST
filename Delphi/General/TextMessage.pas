@@ -40,6 +40,7 @@ type
     property  LineText[idx: integer]: string read GetLineText;
 
     procedure AddMessage(const text: string; const sender: string = ''; const level: EMessageLevel = ML_INFO);
+    procedure AddEmptyLine();
     procedure UpdateMessage(const text: string; const sender: string = ''; const level: EMessageLevel = ML_INFO);
     procedure ExportMessages(const fname: string);
     procedure Clear(const bextern: boolean = false);
@@ -49,6 +50,7 @@ type
     function GetMessenger(): TTextMessenger;
     procedure SetMessenger(tmessenger: TTextMessenger);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    procedure AddEmptyLine();
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
     property Messenger: TTextMessenger read GetMessenger write SetMessenger;
   end;
@@ -61,6 +63,7 @@ type
     function GetMessenger(): TTextMessenger;
     procedure SetMessenger(tmessenger: TTextMessenger);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    procedure AddEmptyLine();
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
     property Messenger: TTextMessenger read GetMessenger write SetMessenger;
     property OwnerName: string read s_ownername write s_ownername;
@@ -100,6 +103,12 @@ begin
     t_msgintern.Add(s_msg);
     if (t_msgextern <> t_msgintern) then t_msgextern.Add(s_msg);
   end;
+end;
+
+procedure TTextMessenger.AddEmptyLine();
+begin
+    t_msgintern.Add('');
+    if (t_msgextern <> t_msgintern) then t_msgextern.Add('');
 end;
 
 procedure TTextMessenger.UpdateMessage(const text: string; const sender: string; const level: EMessageLevel);
@@ -178,6 +187,11 @@ begin
   if assigned(t_messenger) then begin
     t_messenger.AddMessage(format('%s', [text]), s_ownername, level);
   end;
+end;
+
+procedure TTextMessengerImpl.AddEmptyLine();
+begin
+  if assigned(t_messenger) then t_messenger.AddEmptyLine();
 end;
 
 // =============================================================================
