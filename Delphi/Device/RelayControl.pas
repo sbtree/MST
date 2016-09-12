@@ -52,6 +52,7 @@ type
   //together are 200 channels for 5 cards. Die mapping:
   //101, 102, ..., 140, 201, 202, ..., 240, ......, 501, 502, ..., 540
   //0,   1,   ..., 39,  40,  41,  ..., 79,  ......, 160, 161, ..., 199
+  //using channel set it's easy to compare two groups of relays, see in VerifyClosedRelays
   TKeithleyChannelIndex = 0..199;
   TKeithleyChannelSet = set of TKeithleyChannelIndex;
 
@@ -60,6 +61,7 @@ type
   protected
     t_cards:  TStrings;
   protected
+    procedure UpdateCardInfo();
     procedure SetConnection(const conn: TConnBase); override;
     function GetCardCount(): integer;
     function GetCardName(idx: integer): string;
@@ -152,19 +154,16 @@ end;
 function TRelayControl.QueryRelays(var relnrs: string): boolean;
 begin
   result := false;
-  //todo:
 end;
 
 function TRelayControl.VerifyClosedRelays(const refrelnrs: string): boolean;
 begin
   result := false;
-  //todo:
 end;
 
-procedure TRelayKeithley.SetConnection(const conn: TConnBase);
+procedure TRelayKeithley.UpdateCardInfo();
 var s_recv: string;
 begin
-  inherited SetConnection(conn);
   t_cards.Clear();
   if assigned(t_curconn) then begin
     if t_curconn.SendStr(C_MULTIMETER_OPT + Char(13)) then begin
@@ -173,6 +172,12 @@ begin
       ExtractStrings([','], [' '], PChar(s_recv), t_cards);
     end;
   end;
+end;
+
+procedure TRelayKeithley.SetConnection(const conn: TConnBase);
+begin
+  inherited SetConnection(conn);
+  UpdateCardInfo();
 end;
 
 function TRelayKeithley.GetCardCount(): integer;
