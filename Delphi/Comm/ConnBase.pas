@@ -650,7 +650,7 @@ begin
       Application.ProcessMessages();
     until (result or (GetTickCount() >= tend));
     if (result) then
-      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [length(str), str]))
     else
       t_msgrimpl.AddMessage('The expected string is not receieved.', ML_WARNING);
   end else

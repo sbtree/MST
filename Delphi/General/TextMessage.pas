@@ -52,6 +52,7 @@ type
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure AddEmptyLine();
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    procedure SetMessageThreshold(const msglevel: EMessageLevel);
     property Messenger: TTextMessenger read GetMessenger write SetMessenger;
   end;
 
@@ -65,6 +66,7 @@ type
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure AddEmptyLine();
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
+    procedure SetMessageThreshold(const msglevel: EMessageLevel);
     property Messenger: TTextMessenger read GetMessenger write SetMessenger;
     property OwnerName: string read s_ownername write s_ownername;
   end;
@@ -207,6 +209,11 @@ begin
   if assigned(t_messenger) then begin
     t_messenger.UpdateMessage(format('%s', [text]), s_ownername, level);
   end;
+end;
+
+procedure TTextMessengerImpl.SetMessageThreshold(const msglevel: EMessageLevel);
+begin
+  if assigned(t_messenger) then t_messenger.MessageThreshold := msglevel;
 end;
 
 end.

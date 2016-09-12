@@ -13,8 +13,8 @@ type
   //define execution mode for a program
   EExecMode = (
               EM_NORMAL,   //a program runs normally
-              EM_DIAGNOSE, //a program runs in mode of diagnose
-              EM_SIMULATE  //a program runs in mode of simulation
+              EM_SIMULATE, //a program runs in mode of simulation
+              EM_DIAGNOSE  //a program runs in mode of diagnose
               );
 
 implementation

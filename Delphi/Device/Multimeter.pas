@@ -68,13 +68,8 @@ type
   const
     // Keithley-Multimert 2700
     C_MULTIMETER_BEEP_OFF       = 'SYST:BEEP 0';          // Beep off
-    C_MULTIMETER_OPTIONEN       = '*OPT?';                // Optionen erfragen
     C_MULTIMETER_CLEAR_ERROR    = '*CLS';                 // alle 'Event register' und 'error queue' loeschen
     C_MULTIMETER_SELF_TEST      = '*TST?';                // Eigentest
-    C_MULTIMETER_OPEN_ALL       = 'ROUT:OPEN:ALL';        // alle Relais oeffnen
-    C_MULTIMETER_OPEN           = 'ROUT:MULT:OPEN (@%s)'; //n relays to open. %s: relay numbers with separator ','
-    C_MULTIMETER_CLOSE          = 'ROUT:MULT:CLOS (@%s)'; //n relays to clase. %s: relay numbers with separator ','
-    C_MULTIMETER_CLOSE_ASK      = 'ROUT:CLOS?';           // geschlossene Relais abfragen
     C_MULTIMETER_FORMAT_ELEMENT = 'FORM:ELEM READ';       // Datenformat spezifizieren
     C_MULTIMETER_MEAS_ONE       = 'INIT:CONT OFF';        // one-shot measurement mode
     C_MULTIMETER_MEAS_CONTINU   = 'INIT:CONT ON';         // continuouse measurement mode
@@ -93,15 +88,14 @@ type
                     'PER',
                     'TEMP'
                     );
-
   protected
-    function SwitchMeasurement(const meas: EMeasureAction): boolean; virtual;
-    function ReadData(var val: real): boolean; virtual;
-    procedure TriggerMesssure(); virtual;
+    //function SwitchMeasurement(const meas: EMeasureAction): boolean; virtual;
+    //function ReadData(var val: real): boolean; virtual;
+    //procedure TriggerMesssure(); virtual;
 
   public
-    constructor Create(owner: TComponent); override;
-    destructor Destroy; override;
+    //constructor Create(owner: TComponent); override;
+    //destructor Destroy; override;
   end;
 implementation
 uses SysUtils, TextMessage;
@@ -109,19 +103,19 @@ uses SysUtils, TextMessage;
 function TMultimeter.InitFromFile(const sfile: string): boolean;
 begin
   result := false;
-  AddMessage(format('"%s.InitFromFile" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
+  ITextMessengerImpl(self).AddMessage(format('"%s.InitFromFile" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
 end;
 
 function TMultimeter.SwitchMeasurement(const meas: EMeasureAction): boolean;
 begin
   result := false;
-  AddMessage(format('"%s.SwitchMeasurement" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
+  ITextMessengerImpl(self).AddMessage(format('"%s.SwitchMeasurement" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
 end;
 
 function TMultimeter.ReadData(var val: real): boolean;
 begin
   result := false;
-  AddMessage(format('"%s.ReadData" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
+  ITextMessengerImpl(self).AddMessage(format('"%s.ReadData" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
 end;
 
 procedure TMultimeter.TriggerMesssure();

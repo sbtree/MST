@@ -14,7 +14,6 @@ uses
   StringPairs in '..\General\StringPairs.pas',
   TestDebugger in 'TestDebugger.pas',
   PseudoActor in 'PseudoActor.pas',
-  LoopControl in 'LoopControl.pas',
   StepData in '..\CoreData\StepData.pas',
   ResultValidator in 'ResultValidator.pas',
   FuncSys in '..\Function\FuncSys.pas',

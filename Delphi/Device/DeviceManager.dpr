@@ -13,7 +13,6 @@ uses
   RS232 in '..\Comm\RS232.pas',
   PowerSupply in 'PowerSupply.pas',
   Thermometer in 'Thermometer.pas',
-  DeviceConfig in 'DeviceConfig.pas',
   CAN in '..\Comm\CAN.pas',
   MtxUSB in '..\Comm\MtxUSB.pas',
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
@@ -21,7 +20,8 @@ uses
   TekUSB in '..\Comm\TekUSB.pas',
   TextMessage in '..\General\TextMessage.pas',
   StringPairs in '..\General\StringPairs.pas',
-  RelayControl in 'RelayControl.pas';
+  RelayControl in 'RelayControl.pas',
+  DeviceConfig in '..\Config\DeviceConfig.pas';
 
 {$R *.res}
 

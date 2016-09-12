@@ -217,13 +217,6 @@ begin
   inherited Destroy();
 end;
 
-{function TEvalExprBase.LoadParameter(const par: string): boolean;
-begin
-  //todo: replace pseudo strings with their actual values, e.g. @LastInt, @LastReal, @VarInt, @VarReal
-  s_expr := par;
-  result := Evaluate(s_expr);
-end;}
-
 function TEvalExprBase.LoadParameters(const pars: TStrings): boolean;
 begin
   result := false;

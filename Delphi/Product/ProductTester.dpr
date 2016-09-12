@@ -3,7 +3,6 @@ program ProductTester;
 uses
   Forms,
   FormProdTester in 'FormProdTester.pas' {frmProdTester},
-  ProductConfig in 'ProductConfig.pas',
   StringPairs in '..\General\StringPairs.pas',
   MtxDownloader in 'MtxDownloader.pas',
   ConnBase in '..\Comm\ConnBase.pas',
@@ -12,7 +11,8 @@ uses
   GenUtils in '..\General\GenUtils.pas',
   NewProgressbar in '..\General\NewProgressbar.pas',
   ProductBase in 'ProductBase.pas',
-  DeviceBase in '..\Device\DeviceBase.pas';
+  DeviceBase in '..\Device\DeviceBase.pas',
+  ProductConfig in '..\Config\ProductConfig.pas';
 
 {$R *.res}
 

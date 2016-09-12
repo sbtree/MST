@@ -27,6 +27,7 @@ type
     t_msgrimpl: TTextMessengerImpl; //for delegation of interface TTextMessengerImpl
     b_jumpmstep:boolean; //indicate, whether to run the steps, which have minus step number, e.g. '-11.02'
   protected
+    procedure SetMessengerReim(tmessenger: TTextMessenger);
     procedure SetExecutionMode(const em: EExecMode);
     procedure SetStepContainer(const tcon: TStepContainer);
     procedure UpdateFuncObjs();
@@ -45,6 +46,7 @@ type
 
     //delegate interface ITextMessengerImpl
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
+    procedure ITextMessengerImpl.SetMessenger = SetMessengerReim;
     
     property ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     property StepContainer: TStepContainer read t_container write SetStepContainer;
@@ -93,14 +95,22 @@ begin
   inherited Destroy();
 end;
 
+procedure TTestRunner.SetMessengerReim(tmessenger: TTextMessenger);
+begin
+  t_msgrimpl.Messenger := tmessenger;
+  case e_exemode of
+    EM_NORMAL, EM_SIMULATE: t_msgrimpl.SetMessageThreshold(ML_ERROR);
+    EM_DIAGNOSE: t_msgrimpl.SetMessageThreshold(ML_INFO);
+  end;
+  ITextMessengerImpl(t_fcaller).Messenger := t_msgrimpl.Messenger;
+end;
+
 procedure TTestRunner.SetExecutionMode(const em: EExecMode);
 begin
   e_exemode := em;
-  if assigned(t_msgrimpl.Messenger) then begin
-    case e_exemode of
-      EM_NORMAL, EM_SIMULATE: t_msgrimpl.Messenger.MessageThreshold := ML_ERROR;
-      EM_DIAGNOSE: t_msgrimpl.Messenger.MessageThreshold := ML_INFO;
-    end;
+  case e_exemode of
+    EM_NORMAL, EM_SIMULATE: t_msgrimpl.SetMessageThreshold(ML_ERROR);
+    EM_DIAGNOSE: t_msgrimpl.SetMessageThreshold(ML_INFO);
   end;
 end;
 

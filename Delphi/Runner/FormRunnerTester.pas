@@ -75,6 +75,7 @@ var
 implementation
 
 {$R *.dfm}
+uses GenType;
 
 procedure TForm2.btnClearClick(Sender: TObject);
 begin
@@ -187,6 +188,7 @@ procedure TForm2.FormCreate(Sender: TObject);
 begin
   t_messenger := TTextMessenger.Create();
   t_messenger.Messages := memInfo.Lines;
+  t_messenger.MessageThreshold := ML_INFO;
 
   t_vars := TStringPairs.Create();
   t_container := TStepContainer.Create();
@@ -199,7 +201,7 @@ begin
 
   t_runner := TTestRunner.Create();
   ITextMessengerImpl(t_runner).Messenger := t_messenger;
-  ITextMessengerImpl(t_runner.FunctionCaller).Messenger := t_messenger;
+  t_runner.ExecutionMode := EM_DIAGNOSE;
 end;
 
 procedure TForm2.FormDestroy(Sender: TObject);

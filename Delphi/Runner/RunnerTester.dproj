@@ -50,7 +50,6 @@
     <DCCReference Include="FormRunnerTester.pas">
       <Form>Form2</Form>
     </DCCReference>
-    <DCCReference Include="LoopControl.pas" />
     <DCCReference Include="PseudoActor.pas" />
     <DCCReference Include="ResultValidator.pas" />
     <DCCReference Include="TestDebugger.pas" />
