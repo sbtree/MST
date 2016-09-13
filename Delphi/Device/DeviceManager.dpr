@@ -21,7 +21,8 @@ uses
   TextMessage in '..\General\TextMessage.pas',
   StringPairs in '..\General\StringPairs.pas',
   RelayControl in 'RelayControl.pas',
-  DeviceConfig in '..\Config\DeviceConfig.pas';
+  DeviceConfig in '..\Config\DeviceConfig.pas',
+  Serial3 in '..\Externals\Serial3.pas';
 
 {$R *.res}
 

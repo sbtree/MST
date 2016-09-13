@@ -104,6 +104,7 @@ constructor TRelayControl.Create();
 begin
   inherited Create();
   t_msgrimpl := TTextMessengerImpl.Create();
+  t_msgrimpl.OwnerName := ClassName();
 end;
 
 destructor TRelayControl.Destroy;
@@ -261,10 +262,19 @@ begin
 end;
 
 function TRelayKeithley.OpenRelays(const relays: string): boolean;
+var set_relopen, set_relclose: TKeithleyChannelSet; s_relclose: string;
 begin
   result := false;
   if assigned(t_curconn) then begin
     result := t_curconn.SendStr(format(C_MULTIMETER_OPEN + Char(13), [relays]));
+    if result then begin
+      result := QueryRelays(s_relclose);
+      if result then begin
+        set_relclose := ChannelIndexSet(s_relclose);
+        set_relopen := ChannelIndexSet(relays);
+        result := ((set_relopen * set_relclose) = []);
+      end;
+    end;
   end;
 end;
 

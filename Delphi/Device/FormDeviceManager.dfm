@@ -15,31 +15,30 @@ object frmDeviceManager: TfrmDeviceManager
   OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
-  object btnFR: TButton
+  object Label1: TLabel
+    Left = 8
+    Top = 309
+    Width = 36
+    Height = 13
+    Caption = 'Relays:'
+  end
+  object btnReset: TButton
     Left = 588
     Top = 304
     Width = 75
     Height = 25
-    Caption = '&Flash Runner'
+    Caption = '&Reset'
     TabOrder = 0
-    OnClick = btnFRClick
+    OnClick = btnResetClick
   end
-  object btnCreateTree: TButton
-    Left = 507
+  object btnMeasure: TButton
+    Left = 498
     Top = 304
     Width = 75
     Height = 25
-    Caption = 'Create Tree'
+    Caption = '&Measure'
     TabOrder = 1
-  end
-  object btnTest: TButton
-    Left = 426
-    Top = 304
-    Width = 75
-    Height = 25
-    Caption = 'Test'
-    TabOrder = 2
-    OnClick = btnTestClick
+    OnClick = btnMeasureClick
   end
   object memInfo: TMemo
     Left = 8
@@ -47,6 +46,51 @@ object frmDeviceManager: TfrmDeviceManager
     Width = 655
     Height = 281
     ScrollBars = ssBoth
+    TabOrder = 2
+  end
+  object cmbMeasure: TComboBox
+    Left = 376
+    Top = 306
+    Width = 116
+    Height = 21
+    ItemHeight = 13
+    ItemIndex = 1
     TabOrder = 3
+    Text = 'VOLT:DC'
+    Items.Strings = (
+      'RES'
+      'VOLT:DC'
+      'VOLT:AC'
+      'CURR:DC'
+      'CURR:AC'
+      'FREQ'
+      'PER  '
+      'TEMP')
+  end
+  object txtRelays: TEdit
+    Left = 50
+    Top = 306
+    Width = 175
+    Height = 21
+    TabOrder = 4
+    Text = '101,102,205'
+  end
+  object btnClose: TButton
+    Left = 231
+    Top = 304
+    Width = 58
+    Height = 25
+    Caption = '&Close'
+    TabOrder = 5
+    OnClick = btnCloseClick
+  end
+  object btnOpen: TButton
+    Left = 295
+    Top = 304
+    Width = 58
+    Height = 25
+    Caption = '&Open'
+    TabOrder = 6
+    OnClick = btnOpenClick
   end
 end

@@ -402,7 +402,7 @@ end;
 // =============================================================================
 destructor TMtxRS232.Destroy;
 begin
-  FreeAndNil(t_ser);
+  t_ser.Free();
   t_connobj := nil;
   inherited Destroy();
 end;

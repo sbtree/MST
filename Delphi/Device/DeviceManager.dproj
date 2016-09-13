@@ -50,6 +50,7 @@
     <DCCReference Include="..\Comm\RS232.pas" />
     <DCCReference Include="..\Comm\TekUSB.pas" />
     <DCCReference Include="..\Config\DeviceConfig.pas" />
+    <DCCReference Include="..\Externals\Serial3.pas" />
     <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
     <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
     <DCCReference Include="..\General\DataBuffer.pas" />
