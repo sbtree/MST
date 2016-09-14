@@ -64,7 +64,7 @@ type
       State: TCustomDrawState; var DefaultDraw: Boolean);
   private
     { Private-Deklarationen }
-    t_pconfigurator: TProdConfigurator;
+    t_pconfigurator: TProdConfig;
     procedure UpdateConfig();
     procedure UpdateFilter(const bforce: boolean = false);
   public
@@ -115,7 +115,7 @@ procedure TfrmProdTester.btnLoadClick(Sender: TObject);
 begin
   t_pconfigurator.Clear();
   trvProduct.Items.Clear();
-  if t_pconfigurator.ReadFromFile(txtConfigFile.Text) then  UpdateFilter(true);
+  if t_pconfigurator.UpdateFromFile(txtConfigFile.Text) then  UpdateFilter(true);
 end;
 
 procedure TfrmProdTester.btnOpenIniClick(Sender: TObject);
@@ -161,7 +161,7 @@ end;
 
 procedure TfrmProdTester.btnMoveClick(Sender: TObject);
 begin
-  t_pconfigurator.MoveConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
+  t_pconfigurator.MoveConfigTo(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
   t_pconfigurator.UpdateTreeView(trvProduct);;
 end;
 
@@ -207,7 +207,7 @@ end;
 
 procedure TfrmProdTester.FormCreate(Sender: TObject);
 begin
-  t_pconfigurator := TProdConfigurator.Create();
+  t_pconfigurator := TProdConfig.Create();
 end;
 
 procedure TfrmProdTester.FormDestroy(Sender: TObject);
@@ -220,7 +220,7 @@ procedure TfrmProdTester.lsvConfigCustomDrawItem(Sender: TCustomListView;
 var t_varnames: TStrings;
 begin
   t_varnames := TStringList.Create();
-  if (t_pconfigurator.CurConfig.ConfigVars.GetPairNames(t_varnames) > 0) then begin
+  if (t_pconfigurator.CurConfig.GetPairNames(t_varnames) > 0) then begin
     if (t_varnames.IndexOf(Item.Caption) >= 0) then Sender.Canvas.Font.Color := clBlack
     else Sender.Canvas.Font.Color := clDkGray;
   end;

@@ -13,7 +13,7 @@ uses Classes;
 
 Type
 
-  TStringPairs = class
+  TStringPairs = class(TInterfacedObject)
   protected
     t_namevals: TStrings;
   protected
@@ -44,7 +44,7 @@ Type
     function  CopyValuesFrom(const source: TStringPairs; const varnames: TStrings): integer;
     procedure RemovePair(const idx: integer); overload;
     procedure RemovePair(const sname: string); overload;
-    procedure Clear();
+    procedure Clear(); virtual;
   end;
 
 implementation
@@ -92,12 +92,14 @@ end;
 
 constructor TStringPairs.Create();
 begin
+  inherited Create();
   t_namevals := TStringList.Create();
 end;
 
 destructor TStringPairs.Destroy();
 begin
   t_namevals.Free();
+  inherited Destroy();
 end;
 
 function TStringPairs.FindPair(const sname: string): boolean;

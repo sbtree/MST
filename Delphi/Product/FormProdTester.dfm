@@ -45,7 +45,7 @@ object frmProdTester: TfrmProdTester
     OnClick = btnOpenIniClick
   end
   object btnLoad: TButton
-    Left = 331
+    Left = 335
     Top = 481
     Width = 40
     Height = 21

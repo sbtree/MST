@@ -8,7 +8,7 @@
 unit DeviceBase;
 
 interface
-uses Classes, ConnBase, TextMessage, DeviceConfig, StringPairs;
+uses Classes, ConnBase, TextMessage, ConfigBase, StringPairs;
 
 type
 // =============================================================================
@@ -46,7 +46,7 @@ type
 
   IDeviceBase = interface
     function GetState(): EDeviceState;
-    function InitDevice(const defconf: TDeviceConfig): boolean;
+    function InitDevice(const defconf: TConfigBase): boolean;
     function SendCommand(const cmd: string): boolean;
     function RecvAnswer(var ans: string): boolean;
     //function SendPacket(packet: array of byte): boolean;
@@ -70,7 +70,7 @@ type
   protected
     e_state:    EDeviceState; //device state
     t_curconn:  TConnBase;    //current connection
-    t_devconf:  TDeviceConfig;//config of device, reference to the object, which is given by calling InitDevice
+    t_devconf:  TConfigBase;  //config of device, reference to the object, which is given by calling InitDevice
     t_msgrimpl: TTextMessengerImpl;
   private
     function GetStateText(): string;
@@ -83,7 +83,7 @@ type
     destructor Destroy; override;
 
     function GetState(): EDeviceState;
-    function InitDevice(const devconf: TDeviceConfig): boolean; virtual;
+    function InitDevice(const devconf: TConfigBase): boolean; virtual;
     function SendCommand(const cmd: string): boolean; virtual;
     function RecvAnswer(var ans: string): boolean; virtual;
     //function SendPacket(packet: array of byte): boolean; virtual;
@@ -161,7 +161,6 @@ begin
 	inherited Create(owner);
   t_msgrimpl := TTextMessengerImpl.Create();
   t_msgrimpl.OwnerName := ClassName();
-  t_devconf := TDeviceConfig.Create();
   e_state := DS_UNKNOWN;
 end;
 
@@ -177,7 +176,6 @@ end;
 // =============================================================================
 destructor TDeviceBase.Destroy;
 begin
-  t_devconf.Free();
   t_msgrimpl.Free();
 	inherited Destroy;
 end;
@@ -203,7 +201,7 @@ begin
   result := e_state;
 end;
 
-function TDeviceBase.InitDevice(const devconf: TDeviceConfig): boolean;
+function TDeviceBase.InitDevice(const devconf: TConfigBase): boolean;
 begin
   result := assigned(devconf);
   t_devconf := devconf;
