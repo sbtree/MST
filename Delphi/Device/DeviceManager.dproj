@@ -49,6 +49,7 @@
     <DCCReference Include="..\Comm\ProtocolBase.pas" />
     <DCCReference Include="..\Comm\RS232.pas" />
     <DCCReference Include="..\Comm\TekUSB.pas" />
+    <DCCReference Include="..\Config\ConfigBase.pas" />
     <DCCReference Include="..\Config\DeviceConfig.pas" />
     <DCCReference Include="..\Externals\Serial3.pas" />
     <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
@@ -58,6 +59,7 @@
     <DCCReference Include="..\General\StringPairs.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="DeviceBase.pas" />
+    <DCCReference Include="DeviceManager.pas" />
     <DCCReference Include="FormDeviceManager.pas">
       <Form>frmDeviceManager</Form>
     </DCCReference>

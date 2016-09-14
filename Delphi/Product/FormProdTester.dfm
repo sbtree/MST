@@ -33,7 +33,7 @@ object frmProdTester: TfrmProdTester
     Width = 287
     Height = 21
     TabOrder = 1
-    Text = 'ARS21xx.INI'
+    Text = '..\config\ARS21xx.INI'
   end
   object btnOpenIni: TButton
     Left = 301

@@ -22,7 +22,9 @@ uses
   StringPairs in '..\General\StringPairs.pas',
   RelayControl in 'RelayControl.pas',
   DeviceConfig in '..\Config\DeviceConfig.pas',
-  Serial3 in '..\Externals\Serial3.pas';
+  Serial3 in '..\Externals\Serial3.pas',
+  DeviceManager in 'DeviceManager.pas',
+  ConfigBase in '..\Config\ConfigBase.pas';
 
 {$R *.res}
 

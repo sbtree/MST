@@ -1,7 +1,7 @@
 unit DeviceConfig;
 
 interface
-uses Classes, SysUtils, StringPairs;
+uses Classes, SysUtils, ConfigBase, StringPairs;
 
 type
   TDeviceConfig = class
@@ -9,13 +9,16 @@ type
     s_fname:  string;
     t_fstemp: TDateTime;
     t_confs:  TStrings;
-  protected
 
+  protected
+    function UpdateFromIni(const fname: string): boolean;
+    function UpdateFromXml(const fname: string): boolean;
   public
     constructor Create();
     destructor Destroy(); override;
 
     function UpdateFromFile(const fname: string; const bforce: boolean = false): boolean;
+    function SaveToFile(const fname:string): boolean;
     function GetConfigSection(const secname: string): TStringPairs;
     procedure ClearConfigs();
   end;
@@ -34,7 +37,34 @@ type
   end;
 
 implementation
-uses IniFiles;
+uses StrUtils, IniFiles;
+
+function TDeviceConfig.UpdateFromIni(const fname: string): boolean;
+var i: integer; t_ini: TIniFile; t_secnames, t_secvals: TStrings; t_conf: TStringPairs;
+begin
+  t_ini := TIniFile.Create(fname);
+  t_secnames := TStringList.Create();
+  t_secvals := TStringList.Create();
+  t_ini.ReadSections(t_secnames);
+  result := (t_secnames.Count > 0);
+  for i := 0 to t_secnames.Count - 1 do begin
+    t_conf := GetConfigSection(t_secnames[i]);
+    if (not assigned(t_conf)) then t_conf := TStringPairs.Create();
+    t_secvals.Clear();
+    t_ini.ReadSectionValues(t_secnames[i], t_secvals);
+    t_conf.AddPairs(t_secvals, true);
+    t_confs.AddObject(t_secnames[i], t_conf);
+  end;
+  t_secvals.Free();
+  t_secnames.Free();
+  t_ini.Free();
+end;
+
+function TDeviceConfig.UpdateFromXml(const fname: string): boolean;
+begin
+  result := false;
+  //todo:
+end;
 
 constructor TDeviceConfig.Create();
 begin
@@ -50,32 +80,27 @@ begin
 end;
 
 function TDeviceConfig.UpdateFromFile(const fname: string; const bforce: boolean): boolean;
-var i: integer; t_ini: TIniFile; t_dtime: TDateTime;
-    t_secnames, t_secvals: TStrings; t_conf: TStringPairs;
+var t_dtime: TDateTime;
 begin
   result := FileExists(fname);
   if result then begin
     FileAge(fname, t_dtime);
     if (bforce or (t_dtime <> t_fstemp) or (fname <> s_fname)) then begin
-      t_ini := TIniFile.Create(fname);
-      t_secnames := TStringList.Create();
-      t_secvals := TStringList.Create();
-      t_ini.ReadSections(t_secnames);
-      for i := 0 to t_secnames.Count - 1 do begin
-        t_conf := GetConfigSection(t_secnames[i]);
-        if (not assigned(t_conf)) then t_conf := TStringPairs.Create();
-        t_secvals.Clear();
-        t_ini.ReadSectionValues(t_secnames[i], t_secvals);
-        t_conf.AddPairs(t_secvals, true);
-        t_confs.AddObject(t_secnames[i], t_conf);
+      if EndsText('.ini', fname) then result := UpdateFromIni(fname)
+      else if EndsText('.xml', fname) then result := UpdateFromXml(fname)
+      else result := false;
+      if result then begin
+        t_fstemp := t_dtime;
+        s_fname := fname;
       end;
-      t_fstemp := t_dtime;
-      s_fname := fname;
-      t_secvals.Free();
-      t_secnames.Free();
-      t_ini.Free();
     end;
   end;
+end;
+
+function TDeviceConfig.SaveToFile(const fname:string): boolean;
+begin
+  result := false;
+  //todo:
 end;
 
 function TDeviceConfig.GetConfigSection(const secname: string): TStringPairs;

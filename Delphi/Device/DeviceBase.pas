@@ -8,7 +8,7 @@
 unit DeviceBase;
 
 interface
-uses Classes, ConnBase, TextMessage, StringPairs;
+uses Classes, ConnBase, TextMessage, DeviceConfig, StringPairs;
 
 type
 // =============================================================================
@@ -45,9 +45,8 @@ type
   DeviceStateSet = set of EDeviceState;}
 
   IDeviceBase = interface
-    function LoadConfig(const confs: TStrings): boolean;
     function GetState(): EDeviceState;
-    function InitDevice(): boolean;
+    function InitDevice(const defconf: TDeviceConfig): boolean;
     function SendCommand(const cmd: string): boolean;
     function RecvAnswer(var ans: string): boolean;
     //function SendPacket(packet: array of byte): boolean;
@@ -55,6 +54,7 @@ type
     function ReleaseDevice(): boolean;
     function GetConnection(): TConnBase;
     property Connection: TConnBase read GetConnection;
+    property DeviceState: EDeviceState read GetState;
   end;
 
   // =============================================================================
@@ -68,10 +68,9 @@ type
   // =============================================================================
   TDeviceBase=class(TComponent, IDeviceBase, ITextMessengerImpl)
   protected
-  var
-    e_state: EDeviceState;  //device state
-    t_curconn: TConnBase;   //current connection
-    t_conf:   TStringPairs; //config in a list of string pairs
+    e_state:    EDeviceState; //device state
+    t_curconn:  TConnBase;    //current connection
+    t_devconf:  TDeviceConfig;//config of device, reference to the object, which is given by calling InitDevice
     t_msgrimpl: TTextMessengerImpl;
   private
     function GetStateText(): string;
@@ -83,9 +82,8 @@ type
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
-    function LoadConfig(const confs: TStrings): boolean; virtual;
     function GetState(): EDeviceState;
-    function InitDevice(): boolean; virtual;
+    function InitDevice(const devconf: TDeviceConfig): boolean; virtual;
     function SendCommand(const cmd: string): boolean; virtual;
     function RecvAnswer(var ans: string): boolean; virtual;
     //function SendPacket(packet: array of byte): boolean; virtual;
@@ -94,7 +92,7 @@ type
     function GetConnection(): TConnBase;
 
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
-    property State : EDeviceState read GetState;
+    property DeviceState : EDeviceState read GetState;
     property StateText : string read GetStateText;
     property CurConnect: TConnBase read GetConnection;
 
@@ -163,7 +161,7 @@ begin
 	inherited Create(owner);
   t_msgrimpl := TTextMessengerImpl.Create();
   t_msgrimpl.OwnerName := ClassName();
-  t_conf := TStringPairs.Create();
+  t_devconf := TDeviceConfig.Create();
   e_state := DS_UNKNOWN;
 end;
 
@@ -179,7 +177,7 @@ end;
 // =============================================================================
 destructor TDeviceBase.Destroy;
 begin
-  t_conf.Free();
+  t_devconf.Free();
   t_msgrimpl.Free();
 	inherited Destroy;
 end;
@@ -200,19 +198,15 @@ begin
   result := CSTR_DEV_STATES[e_state];
 end;
 
-function TDeviceBase.LoadConfig(const confs: TStrings): boolean;
-begin
-  result := (t_conf.AddPairs(confs, true) > 0);
-end;
-
 function TDeviceBase.GetState(): EDeviceState;
 begin
   result := e_state;
 end;
 
-function TDeviceBase.InitDevice(): boolean;
+function TDeviceBase.InitDevice(const devconf: TDeviceConfig): boolean;
 begin
-  result := false;
+  result := assigned(devconf);
+  t_devconf := devconf;
   //todo:
   e_state := DS_COMREADY;
 end;
@@ -292,7 +286,7 @@ begin
   if assigned(t_curconn) then begin
     t_curconn.Disconnect();
     result := t_curconn.Connect();
-    if result then result := InitDevice();
+    if result then result := InitDevice(t_devconf);
   end;
 end;
 
