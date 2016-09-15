@@ -3,37 +3,9 @@ unit ProductConfig;
 interface
 uses Classes, IniFiles, ComCtrls, ConfigBase, StringPairs;
 type
-  TTreeSection = class;
-
-  ITreeSection = interface
-    function FindConfig(const sname: string): TTreeSection;
-    function GetChild(idx: integer): TTreeSection; overload;
-    function GetChild(const sname: string; var idx: integer): TTreeSection; overload;
-    function CreateChild(const sname: string): TTreeSection;
-    function AddChild(citem: TTreeSection): boolean;
-    function TakeChild(const sname: string): TTreeSection;
-    function MoveChildTo(const sname: string; dest: TTreeSection): TTreeSection;
-    function HasChildren(): boolean;
-    function PumpOwnConfig(const secname: string; var conf: TStringPairs): boolean;
-    function PumpFullConfig(var conf: TStringPairs): boolean;
-    function GetValue(const varname: string; var varval: string): boolean;
-    function GetValueFromParent(const varname: string; var varval: string): boolean;
-    function SaveConfig(var slines: TStrings; const cf: EConfigFormat): boolean;
-    function UpdateConfigFrom(const conf: TTreeSection): boolean;
-    function BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode): boolean;
-    procedure TakeToRemove(var conflist: TStrings);
-    procedure CleanConfig();
-    procedure CompleteOwnConfig();
-    procedure ResetParent(parent: TTreeSection);
-    procedure SetConfigVars(const vals: TStrings);
-    procedure Filter(const varname, filtertext: string);
-    procedure Unfilter();
-  end;
-
   //a class for section of configuration in tree structure
-  TTreeSection = class(TStringPairs, ITreeSection)
+  TTreeSection = class(TStringPairs)
   protected
-    //t_conf:     TStringPairs;
     s_confname: string;
     t_parent:   TTreeSection;
     t_children: TStringList;
@@ -55,7 +27,6 @@ type
 
     property ConfigName: string read s_confname write s_confname;
     property ConfigId: string read GetConfigId write SetConfigId;
-    //property ConfigVars: TStringPairs read t_conf;
     property Visible: boolean read IsVisible write b_visible;
     property Parent: TTreeSection read t_parent write t_parent;
     property ChildCount: integer read GetChildren;
@@ -73,10 +44,12 @@ type
     function SaveConfig(var slines: TStrings; const cf: EConfigFormat): boolean;
     function UpdateConfigFrom(const conf: TTreeSection): boolean;
     function BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode): boolean;
+    function DepthLevel(): integer;
+    function NearestSectionTo(const child: TTreeSection): TTreeSection;
     procedure TakeToRemove(var conflist: TStrings);
     procedure Clear(); override;
     procedure CleanConfig();
-    procedure CompleteOwnConfig();
+    procedure CompleteConfig();
     procedure ResetParent(parent: TTreeSection);
     procedure SetConfigVars(const vals: TStrings);
     procedure Filter(const varname, filtertext: string);
@@ -89,7 +62,7 @@ type
     t_cursec:   TTreeSection;     //to point config item, which is selected
     t_names:    TStringList;        //to arrange in order with names
     t_ids:      TStringList;        //to arrange in order with id_string
-    t_curconf:  TStringPairs;       //to save a settings for the current selection
+    t_curconf:  TStringPairs;       //to save a settings for the current selection, dynamical content
     s_filtervar:string;             //to save a variable name in the config to filter
     s_filtertxt:string;             //to save current filter text
 
@@ -97,7 +70,7 @@ type
     function AddConfig(const confname: string; const vals: TStrings): TTreeSection;
     function ReadFromIni(const sfile: string): boolean; override;
     function BuildTreeFromIni(const ini: TIniFile): boolean;
-    function WriteToIni(var slines: TStrings; const bRoot: boolean = true): boolean;
+    function WriteToIni(var slines: TStrings): boolean;
     //function ReadFromXml(const sfile: string): boolean; override;
     function WriteToXml(const sfile: string; const bRoot: boolean = true): boolean;
     function GetSection(const name: string): TTreeSection; overload;
@@ -109,7 +82,8 @@ type
     function GetOwnCurConfigVars(): TStringPairs;
     function GetFullCurConfigVars(): TStringPairs;
     function GetCount(): integer;
-
+    function CompleteName(const sname: string; const depth: integer): string;
+    function NearestConfigTo(const tconf: TTreeSection): TTreeSection;
   public
     constructor Create();
     destructor Destroy(); override;
@@ -126,7 +100,6 @@ type
     property FilterVarName: string read s_filtervar write s_filtervar;
     property FilterText: string read s_filtertxt;
 
-    //function LoadFromFile(const cfgfile: string; const bforce: boolean = false): boolean; virtual;
     function SaveToFile(const destfile: string = ''; const cf: EConfigFormat = CF_INI): boolean; override;
     function CreateConfig(const confname: string; const parent: string = ''): boolean;
     function PromoteConfig(const confname, confref: string; const varnames: TStrings): boolean;
@@ -135,6 +108,7 @@ type
     function RemoveConfig(const confname: string): boolean;
     procedure UpdateDefault(const confref: string);
     procedure UpdateTreeView(var trv: TTreeView; const bclear: boolean = true);
+    procedure GotoTreeNode(var trv: TTreeView);
     procedure UpdateListView(var lsv: TListView; const bfull: boolean = false; const bsorted: boolean = false; const bclear: boolean = true);
     procedure Select(const sname: string);
     procedure Filter(const ftext: string);
@@ -333,8 +307,8 @@ end;
 function TTreeSection.UpdateConfigFrom(const conf: TTreeSection): boolean;
 var t_vars: TStringPairs;
 begin
-  result := false;
-  if assigned(conf) then begin
+  result := (conf = self);
+  if ((not result) and assigned(conf)) then begin
     t_vars := TStringPairs.Create();
     if conf.PumpFullConfig(t_vars) then begin
       //id_string has to be removed for updating because the config section has its own id
@@ -358,6 +332,29 @@ begin
       else t_curnode := trvnodes.Add(nil, t_citem.ConfigName);
       result := t_citem.BuildTreeNode(trvnodes, t_curnode);
     end;
+  end;
+end;
+
+//return the depth level of this tree object. Root-Object has depth level 0
+//its children have 1, grandchildren 2, and so an
+function TTreeSection.DepthLevel(): integer;
+begin
+  if assigned(t_parent) then result := t_parent.DepthLevel() + 1
+  else result := 0;
+end;
+
+//return index of the given child, if it is found
+//otherwise - 1
+function TTreeSection.NearestSectionTo(const child: TTreeSection): TTreeSection;
+var i_idx: integer;
+begin
+  result := self;
+  if assigned(child) then begin
+    i_idx := t_children.IndexOfObject(child);
+    if (i_idx > 0) then
+      result := TTreeSection(t_children.Objects[i_idx - 1])
+    else if ((i_idx = 0) and (t_children.Count > 1)) then
+      result := TTreeSection(t_children.Objects[i_idx + 1]);
   end;
 end;
 
@@ -431,7 +428,7 @@ begin
 end;
 
 //complete own string pairs with the string pairs of its parent, but not overwrite
-procedure TTreeSection.CompleteOwnConfig();
+procedure TTreeSection.CompleteConfig();
 var t_spairs: TStringPairs;
 begin
   t_spairs := TStringPairs.Create();
@@ -562,10 +559,8 @@ begin
 end;
 
 //write all configs into a string list with ini-format
-function TProdConfig.WriteToIni(var slines: TStrings; const bRoot: boolean): boolean;
-var i: integer;
+function TProdConfig.WriteToIni(var slines: TStrings): boolean;
 begin
-  result := false;
   slines.Add(';======================================================================================');
   slines.Add('; This file is created by Metronix program automatically.');
   slines.Add('; (c) Metronix 2016');
@@ -574,13 +569,7 @@ begin
   slines.Add('[revision]');
   slines.Add('VERSION=4.1.0.1.1');
   slines.Add('FILE_VISION=$Revision: 1.1$');
-  if bRoot then  result := t_croot.WriteToIni(slines)
-  else begin
-    for i := 0 to t_croot.ChildCount - 1 do begin
-      result := t_croot.Children[i].WriteToIni(slines);
-      if (not result) then break;
-    end;
-  end;
+  result := t_croot.WriteToIni(slines)
 end;
 
 //write configs into an xml-files
@@ -591,10 +580,12 @@ begin
 end;
 
 //get reference of a config by name
+//return root (t_croot) if name is empty, return nil if name is not found
 function TProdConfig.GetSection(const name: string): TTreeSection;
 var i_idx: integer;
 begin
-  if t_names.Find(name, i_idx) then result := GetSection(i_idx)
+  if (name = '') then result := t_croot
+  else if t_names.Find(name, i_idx) then result := GetSection(i_idx)
   else result := nil;
 end;
 
@@ -642,13 +633,30 @@ end;
 //get full settings of current config (inclusive the settings of its parent)
 function TProdConfig.GetFullCurConfigVars(): TStringPairs;
 begin
-  result := GetFullConfigVars(t_cursec);
+  if assigned(t_cursec) then result := GetFullConfigVars(t_cursec)
+  else result := GetFullConfigVars(t_croot);
 end;
 
 //get count of the configs
 function TProdConfig.GetCount(): integer;
 begin
   result := t_names.Count;
+end;
+
+function TProdConfig.CompleteName(const sname: string; const depth: integer): string;
+begin
+  case depth of
+  1: if (not StartsText(CSTR_FAMILY, sname)) then result := CSTR_FAMILY + sname;
+  2: if (not StartsText(CSTR_VARIANT, sname)) then result := CSTR_VARIANT + sname;
+  3: if (not StartsText(CSTR_ARTICLE, sname)) then result := CSTR_ARTICLE + sname;
+  else result := sname;
+  end;
+end;
+
+function TProdConfig.NearestConfigTo(const tconf: TTreeSection): TTreeSection;
+begin
+  result := t_croot;
+  if assigned(tconf.Parent) then result := tconf.Parent.NearestSectionTo(tconf);
 end;
 
 constructor TProdConfig.Create();
@@ -661,49 +669,18 @@ begin
   t_ids.CaseSensitive := false;
   t_ids.Sorted := true;
   t_curconf := TStringPairs.Create();
-  t_cursec := nil;
+  t_cursec := t_croot;
   s_filtervar := CSTR_ID_STRING;
 end;
 
 destructor TProdConfig.Destroy();
 begin
+  Clear();
   t_croot.Free();
   t_names.Free();
   t_ids.Free();
   t_curconf.Free();
 end;
-
-//read configs from a file
-{function TProdConfig.LoadFromFile(const cfgfile: string; const bforce: boolean): boolean;
-var e_cf: EConfigFormat; i_idx: integer; t_fdatetime: TDateTime; b_cover: boolean; s_filepath: string;
-begin
-  s_filepath := ExpandFileName(cfgfile);
-  result := FileExists(s_filepath);
-  if result then begin
-    FileAge(s_filepath, t_fdatetime);
-    i_idx := t_cfgfiles.IndexOf(s_filepath);
-    if (i_idx >= 0) then b_cover := (t_fdatetime <> a_fstemps[i_idx])
-    else b_cover := false;
-
-    if b_cover then begin
-      if EndsText('.ini', s_filepath) then e_cf := CF_INI
-      else if EndsText('.xml', s_filepath) then e_cf := CF_XML
-      else e_cf := CF_UNKNOWN;
-
-      case e_cf of
-        CF_INI: result := ReadFromIni(s_filepath);
-        CF_XML: result := ReadFromXML(s_filepath);
-        else result := false;
-      end;
-    end;
-
-    if result then begin
-      t_cfgfiles.Add(cfgfile);
-      SetLength(a_fstemps, t_cfgfiles.Count);
-      a_fstemps[t_cfgfiles.Count - 1] := t_fdatetime;
-    end;
-  end;
-end;}
 
 //show and update all configs in a tree view
 procedure TProdConfig.UpdateTreeView(var trv: TTreeView; const bclear: boolean);
@@ -712,10 +689,25 @@ begin
   if bclear then begin
     trv.ClearSelection();
     trv.Items.Clear();
-    t_cursec := nil;
   end;
   t_croot.BuildTreeNode(trv.Items, nil);
+  GotoTreeNode(trv);
   trv.Enabled := true;
+end;
+
+procedure TProdConfig.GotoTreeNode(var trv: TTreeView);
+var i: integer;
+begin
+  if (assigned(t_cursec) and assigned(trv)) then begin
+    if (t_cursec = t_croot) then trv.ClearSelection()
+    else begin
+      for i := 0 to trv.Items.Count - 1 do
+        if (trv.Items[i].Text = t_cursec.ConfigName) then begin
+          trv.Selected := trv.Items[i];
+          break;
+        end;
+    end;
+  end;
 end;
 
 //show and update the settings of current config in a list view
@@ -757,73 +749,84 @@ begin
     CF_INI: begin
       t_lines := TStringList.Create();
       result := WriteToIni(t_lines);
-      t_lines.SaveToFile(s_fname);
+      t_lines.SaveToFile(s_file);
       t_lines.Free();
     end;
-    CF_XML: result := WriteToXml(s_fname);
+    CF_XML: result := WriteToXml(s_file);
     else result := false;
   end;
 end;
 
 //create a config as child of the given config
-function TProdConfig.CreateConfig(const confname: string; const parent: string): boolean;
-var t_parent, t_conf: TTreeSection;
+function TProdConfig.CreateConfig(const confname, parent: string): boolean;
+var t_parent, t_conf: TTreeSection; s_cname: string;
 begin
   result := false;
   t_parent := GetSection(parent);
   if assigned(t_parent) then begin
-    t_conf := AddConfig(confname, nil);
+    s_cname := CompleteName(confname, t_parent.DepthLevel() + 1);
+    t_conf := AddConfig(s_cname, nil);
     if assigned(t_conf) then begin
       t_conf.ResetParent(t_parent);
+      t_cursec := t_conf;
       result := true;
     end;
   end;
 end;
 
-//create a new config with given name as parent of the given config.
+//create a new config  with given name(confname) as parent of the given config (confref)
+//using the settings of confref with names in varnames
 //the given config and its siblings become children of this new config
 //if they has the same values of the given variable names
 function TProdConfig.PromoteConfig(const confname, confref: string; const varnames: TStrings): boolean;
 var t_conf, t_confref, t_parent, t_child: TTreeSection; i: integer; t_spairs: TStringPairs;
+    s_cname: string;
 begin
   result := false;
   if (not SameText(confname, confref)) then begin
-    t_conf := AddConfig(confname, nil);
     t_confref := GetSection(confref);
-    if (assigned(t_conf) and assigned(t_confref)) then begin
-      t_conf.UpdateConfigFrom(t_confref);
-      t_parent := t_confref.Parent;
-      t_confref.ResetParent(t_conf);
-      if assigned(t_parent) then begin
-        t_spairs := TStringPairs.Create();
-        t_spairs.CopyValuesFrom(t_confref, varnames);
-        for i := t_parent.ChildCount - 1 downto 0 do begin
-          t_child := t_parent.GetChild(i);
-          if (assigned(t_child) and (t_conf <> t_child)) then begin
-            if t_child.HasSameValues(t_spairs, varnames) then begin
-              t_child.ResetParent(t_conf);
-              t_child.CleanConfig();
-              Inc(result);
+    if assigned(t_confref) then begin
+      s_cname := CompleteName(confname,t_confref.DepthLevel());
+      t_conf := AddConfig(s_cname, nil);
+      if assigned(t_conf) then begin
+        t_cursec := t_conf;
+        t_conf.UpdateConfigFrom(t_confref);
+        t_parent := t_confref.Parent;
+        t_confref.ResetParent(t_conf);
+        if assigned(t_parent) then begin
+          t_spairs := TStringPairs.Create();
+          t_spairs.CopyValuesFrom(t_confref, varnames);
+          for i := t_parent.ChildCount - 1 downto 0 do begin
+            t_child := t_parent.GetChild(i);
+            if (assigned(t_child) and (t_conf <> t_child)) then begin
+              if t_child.HasSameValues(t_spairs, varnames) then begin
+                t_child.ResetParent(t_conf);
+                t_child.CleanConfig();
+                Inc(result);
+              end;
             end;
           end;
+          t_conf.ResetParent(t_parent);
+          t_spairs.Free();
         end;
-        t_conf.ResetParent(t_parent);
-        t_spairs.Free();
+        t_confref.CleanConfig();
       end;
-      t_confref.CleanConfig();
     end;
   end;
 end;
 
 //the settings of the given config will be upgraded with those of the source config
+//t_croot will be updated if confname is empty
 function TProdConfig.UpdateConfig(const confname, srcname: string): boolean;
-var t_src, t_dest: TTreeSection;
+var t_dest: TTreeSection;
 begin
   result := false;
   if (not SameText(confname, srcname)) then begin
     t_dest := GetSection(confname);
-    t_src := GetSection(srcname);
-    if (assigned(t_src) and assigned(t_dest)) then  result := t_dest.UpdateConfigFrom(t_src);
+    if assigned(t_dest) then begin
+      t_cursec := t_dest;
+      result := t_dest.UpdateConfigFrom(GetSection(srcname));
+    end;
   end;
 end;
 
@@ -836,13 +839,16 @@ begin
   result := false;
   if (not SameText(confname, destname)) then begin
     t_conf := GetSection(confname);
-    if bfull then t_conf.CompleteOwnConfig();
-    if destname = '' then t_confdest := t_croot
-    else t_confdest := GetSection(destname);
-    if (assigned(t_conf) and assigned(t_confdest)) then begin
-      t_conf.ResetParent(t_confdest);
-      t_conf.CleanConfig();
-      result := true;
+    if assigned(t_conf) then begin
+      t_cursec := t_conf;
+      if destname = '' then t_confdest := t_croot
+      else t_confdest := GetSection(destname);
+      if assigned(t_confdest) then begin
+        if bfull then t_conf.CompleteConfig();
+        t_conf.ResetParent(t_confdest);
+        t_conf.CleanConfig();
+        result := true;
+      end;
     end;
   end;
 end;
@@ -853,7 +859,10 @@ var t_conf: TTreeSection; i, i_idx: integer; t_conflist: TStrings; s_id: string;
 begin
   result := false;
   t_conf := GetSection(confname);
-  if assigned(t_conf) then begin
+  if (assigned(t_conf) and (t_conf <> t_croot)) then begin //root is not allowed to be removed
+    if (t_cursec = t_conf) then
+      t_cursec := NearestConfigTo(t_conf);
+      
     t_conflist := TStringList.Create();
     t_conf.TakeToRemove(t_conflist);
     for i := t_conflist.Count - 1 downto 0 do begin
@@ -873,6 +882,7 @@ end;
 //update default settings from the given config section
 procedure TProdConfig.UpdateDefault(const confref: string);
 begin
+  t_cursec := t_croot;
   t_croot.UpdateConfigFrom(GetSection(confref));
 end;
 
@@ -914,7 +924,7 @@ begin
   t_croot.Clear();
   t_names.Clear();
   t_ids.Clear();
-  t_cursec := nil;
+  t_cursec := t_croot;
   t_curconf.Clear();
 end;
 

@@ -10,7 +10,7 @@ type
                 CF_XML
                 );
   IConfigBase = interface
-    function UpdateFromFile(const fname: string; const bforce: boolean = false): boolean;
+    function UpdateFromFile(const fname: string; const bforce: boolean): boolean;
     function SaveToFile(const destfile: string; const cf: EConfigFormat): boolean;
     function GetConfig(const secname: string): TStringPairs;
     procedure Clear();
@@ -84,6 +84,7 @@ begin
   if result then begin
     FileAge(fname, t_dtime);
     if (bforce or (t_dtime <> t_fstemp) or (fname <> s_fname)) then begin
+      Clear();
       if EndsText('.ini', fname) then result := ReadFromIni(fname)
       else if EndsText('.xml', fname) then result := ReadFromXml(fname)
       else result := false;

@@ -1,4 +1,4 @@
-program DeviceManager;
+program DeviceManagerTester;
 
 uses
   Forms,

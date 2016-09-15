@@ -41,7 +41,7 @@ uses DeviceBase, RS232;
 
 procedure TfrmDeviceManager.btnResetClick(Sender: TObject);
 begin
-  t_multimeter.InitDevice();
+  t_multimeter.InitDevice(nil);
 end;
 
 procedure TfrmDeviceManager.btnMeasureClick(Sender: TObject);
@@ -85,7 +85,7 @@ begin
 
   t_multimeter := TMultimeterKeithley.Create(self);
   ITextMessengerImpl(t_multimeter).Messenger := t_messenger;
-  t_multimeter.InitDevice();
+  t_multimeter.InitDevice(nil);
 end;
 
 procedure TfrmDeviceManager.FormDestroy(Sender: TObject);

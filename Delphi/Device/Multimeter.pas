@@ -1,7 +1,7 @@
 unit Multimeter;
 
 interface
-uses DeviceBase, IniFiles, Classes, RelayControl, TextMessage;
+uses DeviceBase, IniFiles, Classes, RelayControl, TextMessage, ConfigBase;
 
 type
   ECurrentFlow = (
@@ -82,7 +82,7 @@ type
 
     property RelayControl: TRelayKeithley read t_relay implements IRelayControl;
 
-    function InitDevice(): boolean; override;
+    function InitDevice(const devconf: TConfigBase): boolean; override;
     procedure SetMeasureRange(const meas:EMeasureAction; const range: single); override;
   end;
 implementation
@@ -294,7 +294,7 @@ begin
   inherited Destroy();
 end;
 
-function TMultimeterKeithley.InitDevice(): boolean;
+function TMultimeterKeithley.InitDevice(const devconf: TConfigBase): boolean;
 begin
   result := t_curconn.Connect;
   t_relay.CurConnect := t_curconn;

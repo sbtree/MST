@@ -22,10 +22,10 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <Version>7.0</Version>
     <DCC_Define>DEBUG</DCC_Define>
-    <DCC_UnitSearchPath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_UnitSearchPath>
-    <DCC_ResourcePath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_ResourcePath>
-    <DCC_ObjPath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_ObjPath>
-    <DCC_IncludePath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_IncludePath>
+    <DCC_UnitSearchPath>$(BDS)\lib\Debug;$(BDS)\Lib\Debug\Indy10;$(BDS)\RaveReports\Lib;..\Externals; ..\General; ..\Comm; ..\Device</DCC_UnitSearchPath>
+    <DCC_ResourcePath>$(BDS)\lib\Debug;$(BDS)\Lib\Debug\Indy10;$(BDS)\RaveReports\Lib;..\Externals; ..\General; ..\Comm; ..\Device</DCC_ResourcePath>
+    <DCC_ObjPath>$(BDS)\lib\Debug;$(BDS)\Lib\Debug\Indy10;$(BDS)\RaveReports\Lib;..\Externals; ..\General; ..\Comm; ..\Device</DCC_ObjPath>
+    <DCC_IncludePath>$(BDS)\lib\Debug;$(BDS)\Lib\Debug\Indy10;$(BDS)\RaveReports\Lib;..\Externals; ..\General; ..\Comm; ..\Device</DCC_IncludePath>
     <DCC_Optimize>False</DCC_Optimize>
   </PropertyGroup>
   <ProjectExtensions>
@@ -61,6 +61,7 @@
     <None Include="ModelSupport_ProductTester\ConnBase\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\FormProdTester\default.txvpck" />
     <None Include="ModelSupport_ProductTester\GenUtils\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\Main\default.txvpck" />
     <None Include="ModelSupport_ProductTester\MtxDIS2\default.txaPackage" />

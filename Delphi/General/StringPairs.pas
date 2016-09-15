@@ -13,7 +13,7 @@ uses Classes;
 
 Type
 
-  TStringPairs = class(TInterfacedObject)
+  TStringPairs = class
   protected
     t_namevals: TStrings;
   protected
