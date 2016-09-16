@@ -70,27 +70,36 @@ object frmDeviceManager: TfrmDeviceManager
   object txtRelays: TEdit
     Left = 50
     Top = 306
-    Width = 175
+    Width = 143
     Height = 21
     TabOrder = 4
     Text = '101,102,205'
   end
   object btnClose: TButton
-    Left = 231
+    Left = 199
     Top = 304
-    Width = 58
+    Width = 42
     Height = 25
     Caption = '&Close'
     TabOrder = 5
     OnClick = btnCloseClick
   end
   object btnOpen: TButton
-    Left = 295
+    Left = 247
     Top = 304
-    Width = 58
+    Width = 42
     Height = 25
     Caption = '&Open'
     TabOrder = 6
     OnClick = btnOpenClick
+  end
+  object btnOpenAll: TButton
+    Left = 295
+    Top = 304
+    Width = 65
+    Height = 25
+    Caption = 'Open &All'
+    TabOrder = 7
+    OnClick = btnOpenAllClick
   end
 end

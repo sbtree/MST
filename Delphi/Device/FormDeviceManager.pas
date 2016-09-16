@@ -16,12 +16,14 @@ type
     btnClose: TButton;
     Label1: TLabel;
     btnOpen: TButton;
+    btnOpenAll: TButton;
     procedure btnResetClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnMeasureClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure btnOpenClick(Sender: TObject);
+    procedure btnOpenAllClick(Sender: TObject);
   private
     t_messenger : TTextMessenger;
     t_multimeter: TMultimeterKeithley;
@@ -60,13 +62,17 @@ begin
   end;
 end;
 
+procedure TfrmDeviceManager.btnOpenAllClick(Sender: TObject);
+begin
+  t_relay.OpenAllRelays();
+end;
+
 procedure TfrmDeviceManager.btnOpenClick(Sender: TObject);
 var s_relays: string;
 begin
   s_relays := trim(txtRelays.Text);
   t_relay := t_multimeter.RelayControl;
   t_relay.OpenRelays(s_relays);
-
 end;
 
 procedure TfrmDeviceManager.btnCloseClick(Sender: TObject);
