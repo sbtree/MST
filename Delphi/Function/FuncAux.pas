@@ -17,7 +17,7 @@ type
     function EvalAsInteger(const expr: string; var val: integer): boolean;
     function EvalAsBoolean(const expr: string; var val: boolean): boolean;
     function EvalAsString(const expr: string; var val: string): boolean;
-    function EvalAsHex(const expr: string; var val: string; const len: byte): boolean;
+    function EvalAsHex(const expr: string; var val: string; const len: integer): boolean;
     function GetParserErrorMsg(): string;
     property ParserErrorMsg: string read GetParserErrorMsg;
   end;
@@ -35,7 +35,7 @@ type
     function EvalAsInteger(const expr: string; var val: integer): boolean;
     function EvalAsBoolean(const expr: string; var val: boolean): boolean;
     function EvalAsString(const expr: string; var val: string): boolean;
-    function EvalAsHex(const expr: string; var val: string; const len: byte): boolean;
+    function EvalAsHex(const expr: string; var val: string; const len: integer): boolean;
     function GetParserErrorMsg(): string;
     property ParserErrorMsg: string read GetParserErrorMsg;
   end;
@@ -117,6 +117,19 @@ type
     function DoTask(): boolean; override;
   end;
 
+  EvalExprHex = class(TEvalExprBase)
+  protected
+    i_hexlen: integer;
+    s_curval: string;
+  protected
+    function Evaluate(const expr: string): boolean; override;
+  public
+    constructor Create(); override;
+
+    function LoadParameters(const pars: TStrings): boolean; override;
+    function DoTask(): boolean; override;
+  end;
+
 implementation
 uses Math, SysUtils, TextMessage, ParseClass;
 
@@ -187,7 +200,7 @@ begin
   end;
 end;
 
-function TExprParserImpl.EvalAsHex(const expr: string; var val: string; const len: byte): boolean;
+function TExprParserImpl.EvalAsHex(const expr: string; var val: string; const len: integer): boolean;
 var i_val: integer;
 begin
   result := EvalAsInteger(expr, i_val);
@@ -278,6 +291,30 @@ begin
   if result then t_msgrimpl.AddMessage(format('Successful to evaluate boolean expression: %s = %s.', [s_expr, BoolToStr(b_curval, true)]));
 end;
 
+function EvalExprHex.Evaluate(const expr: string): boolean;
+begin
+  result := t_parserimpl.EvalAsHex(expr, s_curval, byte(i_hexlen));
+  if (not result) then t_msgrimpl.AddMessage(t_parserimpl.ParserErrorMsg, ML_ERROR);
+end;
+
+constructor EvalExprHex.Create();
+begin
+  inherited Create();
+  i_hexlen := 0;
+end;
+
+function EvalExprHex.LoadParameters(const pars: TStrings): boolean;
+begin
+  result := inherited LoadParameters(pars);
+  if (result and (pars.Count > 1)) then TryStrToInt(pars[1], i_hexlen);
+end;
+
+function EvalExprHex.DoTask(): boolean;
+begin
+  result := Evaluate(s_expr);
+  if result then t_msgrimpl.AddMessage(format('Successful to evaluate expression in to a hexadecimal string: %s = ''%s''.', [s_expr, s_curval]));
+end;
+
 initialization
   Classes.RegisterClass(SubStr);
   Classes.RegisterClass(IntToStr);
@@ -290,6 +327,7 @@ initialization
   Classes.RegisterClass(EvalExprInt);
   Classes.RegisterClass(EvalExprFloat);
   Classes.RegisterClass(EvalExprBool);
+  Classes.RegisterClass(EvalExprHex);
 
 finalization
   Classes.UnregisterClass(SubStr);
@@ -303,4 +341,5 @@ finalization
   Classes.UnregisterClass(EvalExprInt);
   Classes.UnregisterClass(EvalExprFloat);
   Classes.UnregisterClass(EvalExprBool);
+  Classes.UnregisterClass(EvalExprHex);
 end.

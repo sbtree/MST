@@ -231,13 +231,16 @@ begin
   end;
 end;
 
+//remove quotation marks from a string, e.g. 'abcd'->abcd, "abcd"->abcd
+//NOTE: The functions AnsiDequotedStr and AnsiExtractQuotedStr are not applied here
+//because they have problem with such string '"abcd" "efg"', nested quotation
 class function TGenUtils.ClearQuotationMarks(const str: string): string;
-var p_char: PChar;
 begin
-  result := trim(str); p_char := PChar(str);
+  result := trim(str);
   if (length(result) >= 2) then begin
-    if (result[1] = '''') then  result := AnsiExtractQuotedStr(p_char, '''')
-    else if (result[1] = '"') then result := AnsiExtractQuotedStr(p_char, '"');
+    while ((StartsText('''', result) and EndsText('''', result)) or
+        (StartsText('"', result) and EndsText('"', result))) do
+      result := MidStr(result, 2, length(result) - 2);
   end;
 end;
 

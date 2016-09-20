@@ -46,7 +46,6 @@
     <DCCReference Include="..\Comm\CAN.pas" />
     <DCCReference Include="..\Comm\ConnBase.pas" />
     <DCCReference Include="..\Comm\MtxUSB.pas" />
-    <DCCReference Include="..\Comm\ProtocolBase.pas" />
     <DCCReference Include="..\Comm\RS232.pas" />
     <DCCReference Include="..\Comm\TekUSB.pas" />
     <DCCReference Include="..\Config\ConfigBase.pas" />

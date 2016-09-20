@@ -50,7 +50,7 @@ type
   TFunctionClass = class of TFunctionBase;
 
 implementation
-uses SysUtils;
+uses SysUtils, StrUtils;
 
 constructor TFunctionBase.Create;
 begin
@@ -87,9 +87,30 @@ begin
 end;
 
 function TFunctionBase.LoadParameter(const par: string): boolean;
+var s_expr, s_rest: string; i_counter, i_pos: integer;
 begin
   t_pars.Clear();
-  t_pars.DelimitedText := par;
+  //expression with brackets have to be treated as the first element in the parameter string
+  s_expr := ''; 
+  i_pos := Pos('(', par);
+  if (i_pos > 0) then i_counter := 1
+  else i_counter := 0;
+
+  while ((i_pos <= length(par)) and (i_counter > 0)) do begin
+    inc(i_pos);
+    if par[i_pos] = '(' then inc(i_counter)
+    else if par[i_pos] = ')' then Dec(i_counter);
+  end;
+
+  if (i_counter = 0) then begin
+    s_expr := LeftStr(par, i_pos);
+    s_rest := trim(RightStr(par, length(par) - i_pos));
+  end else s_rest := par;
+
+  t_pars.DelimitedText := s_rest;
+  if (s_expr <> '') then
+    t_pars.Insert(0, s_expr);
+
   result := LoadParameters(t_pars);
 end;
 
