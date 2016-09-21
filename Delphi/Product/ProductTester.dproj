@@ -58,9 +58,12 @@
     </DCCReference>
     <DCCReference Include="MtxDownloader.pas" />
     <DCCReference Include="ProductBase.pas" />
+    <None Include="ModelSupport_ProductTester\ConfigBase\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\ConnBase\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\DataBuffer\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\FormProdTester\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\FormProdTester\default.txvpck" />
     <None Include="ModelSupport_ProductTester\GenUtils\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\Main\default.txvpck" />
@@ -75,9 +78,12 @@
     <None Include="ModelSupport_ProductTester\NewProgressbar\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\PRODTester\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\ProductBase\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\ProductConfig\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\ProductConfig\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\ProductTester\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\ProductTester\default.txvpck" />
     <None Include="ModelSupport_ProductTester\RS232\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\StringPairs\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\TextMessage\default.txaPackage" />
   </ItemGroup>
 </Project>

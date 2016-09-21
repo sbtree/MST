@@ -34,6 +34,7 @@ type
     btnPromote: TButton;
     btnClearVarNames: TButton;
     btnDefault: TButton;
+    btnClearRef: TButton;
     procedure btnOpenIniClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -62,6 +63,7 @@ type
     procedure btnDefaultClick(Sender: TObject);
     procedure lsvConfigCustomDrawItem(Sender: TCustomListView; Item: TListItem;
       State: TCustomDrawState; var DefaultDraw: Boolean);
+    procedure btnClearRefClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_pconfig: TProdConfig;
@@ -90,6 +92,11 @@ begin
   UpdateConfig();
 end;
 
+procedure TfrmProdTester.btnClearRefClick(Sender: TObject);
+begin
+  txtRefConfig.Text := '';
+end;
+
 procedure TfrmProdTester.btnClearVarNamesClick(Sender: TObject);
 begin
   txtVarNames.Text := '';
@@ -104,7 +111,6 @@ procedure TfrmProdTester.btnDefaultClick(Sender: TObject);
 begin
   t_pconfig.UpdateDefault(trim(txtCurConfig.Text));
   t_pconfig.GotoTreeNode(trvProduct);
-  //t_pconfig.UpdateTreeView(trvProduct);
   t_pconfig.UpdateListView(lsvConfig, chkShowAll.Checked, chkSorted.Checked);
 end;
 
@@ -136,13 +142,9 @@ begin
 end;
 
 procedure TfrmProdTester.btnPromoteClick(Sender: TObject);
-var t_varnames: TStrings;
 begin
-  t_varnames := TStringList.Create();
-  ExtractStrings([';'], [' '], PChar(trim(txtVarNames.Text)), t_varnames);
-  t_pconfig.PromoteConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text), t_varnames);
+  t_pconfig.UpgradeConfigs(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
   t_pconfig.UpdateTreeView(trvProduct);
-  t_varnames.Free();
 end;
 
 procedure TfrmProdTester.btnRemoveClick(Sender: TObject);
@@ -157,26 +159,45 @@ begin
 end;
 
 procedure TfrmProdTester.btnUpdateClick(Sender: TObject);
+var s_refname: string; i_pos: integer;
 begin
-  t_pconfig.UpdateConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
+  s_refname := trim(txtRefConfig.Text);
+  i_pos := Pos(';', s_refname);
+  if (i_pos > 0) then s_refname := trim(LeftStr(s_refname, i_pos -1));
+
+  t_pconfig.UpdateConfig(trim(txtCurConfig.Text), s_refname);
   UpdateConfig();
 end;
 
 procedure TfrmProdTester.btnMoveClick(Sender: TObject);
+var s_refname: string; i_pos: integer;
 begin
-  t_pconfig.MoveConfigTo(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
+  s_refname := trim(txtRefConfig.Text);
+  i_pos := Pos(';', s_refname);
+  if (i_pos > 0) then s_refname := trim(LeftStr(s_refname, i_pos -1));
+
+  t_pconfig.MoveConfigTo(trim(txtCurConfig.Text), s_refname);
   t_pconfig.UpdateTreeView(trvProduct);;
 end;
 
 procedure TfrmProdTester.btnMoveTextClick(Sender: TObject);
+var s_cname: string;
 begin
-  txtRefConfig.Text := txtCurConfig.Text;
-  txtCurConfig.Text := '';
+  s_cname := trim(txtCurConfig.Text);
+  if ((s_cname <> '') and (not ContainsText(txtRefConfig.Text, s_cname))) then begin
+    txtRefConfig.Text := s_cname + ';' + trim(txtRefConfig.Text);
+    txtCurConfig.Text := '';
+  end;
 end;
 
 procedure TfrmProdTester.btnNewClick(Sender: TObject);
+var s_refname: string; i_pos: integer;
 begin
-  t_pconfig.CreateConfig(trim(txtCurConfig.Text), trim(txtRefConfig.Text));
+  s_refname := trim(txtRefConfig.Text);
+  i_pos := Pos(';', s_refname);
+  if (i_pos > 0) then s_refname := trim(LeftStr(s_refname, i_pos -1));
+  
+  t_pconfig.CreateConfig(trim(txtCurConfig.Text), s_refname);
   t_pconfig.UpdateTreeView(trvProduct);;
 end;
 

@@ -47,7 +47,7 @@ begin
 end;
 
 procedure TfrmDeviceManager.btnMeasureClick(Sender: TObject);
-var f_val: single;
+var f_val: double;
 begin
   case cmbMeasure.ItemIndex of
   0: t_multimeter.MeasureR(f_val);

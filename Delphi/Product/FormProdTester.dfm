@@ -1,9 +1,10 @@
 object frmProdTester: TfrmProdTester
   Left = 0
   Top = 0
+  BorderStyle = bsDialog
   Caption = 'ProductTester'
-  ClientHeight = 574
-  ClientWidth = 858
+  ClientHeight = 576
+  ClientWidth = 860
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -36,18 +37,18 @@ object frmProdTester: TfrmProdTester
     Text = '..\config\ARS21xx.INI'
   end
   object btnOpenIni: TButton
-    Left = 301
+    Left = 296
     Top = 481
-    Width = 24
+    Width = 19
     Height = 21
     Caption = '...'
     TabOrder = 2
     OnClick = btnOpenIniClick
   end
   object btnLoad: TButton
-    Left = 335
+    Left = 321
     Top = 481
-    Width = 40
+    Width = 47
     Height = 21
     Caption = '&Load'
     TabOrder = 3
@@ -74,7 +75,7 @@ object frmProdTester: TfrmProdTester
   object txtFilter: TEdit
     Left = 127
     Top = 512
-    Width = 198
+    Width = 188
     Height = 21
     Enabled = False
     TabOrder = 6
@@ -112,13 +113,12 @@ object frmProdTester: TfrmProdTester
     OnClick = chkSortedClick
   end
   object cmbFilterName: TComboBox
-    Left = 331
+    Left = 321
     Top = 512
-    Width = 90
+    Width = 100
     Height = 21
     Enabled = False
     ItemHeight = 13
-    ItemIndex = 0
     TabOrder = 9
     Text = 'ID_STRING'
     OnChange = cmbFilterNameChange
@@ -127,8 +127,12 @@ object frmProdTester: TfrmProdTester
       'TYP_CODE'
       'TYP_NAME'
       'CUSTOMER_ID'
-      'Description'
       'PS_LIST'
+      'BOOTLOADER_0001'
+      'FIRMWARE_0001'
+      'PARA_0001'
+      'TX_FILE_0001'
+      'Description'
       'ID_PDE_PRUEFPLATZ'
       'ID_PDE_PRODUKTART')
   end
@@ -169,9 +173,9 @@ object frmProdTester: TfrmProdTester
     OnClick = btnCleanAllClick
   end
   object btnSave: TButton
-    Left = 381
+    Left = 374
     Top = 481
-    Width = 40
+    Width = 47
     Height = 21
     Caption = '&Save'
     TabOrder = 14
@@ -180,37 +184,38 @@ object frmProdTester: TfrmProdTester
   object txtCurConfig: TEdit
     Left = 8
     Top = 545
-    Width = 89
+    Width = 109
     Height = 21
     TabOrder = 15
   end
   object txtRefConfig: TEdit
-    Left = 117
+    Left = 141
     Top = 545
-    Width = 100
+    Width = 260
     Height = 21
     TabOrder = 16
   end
   object btnMoveText: TButton
-    Left = 97
+    Left = 116
     Top = 545
-    Width = 20
+    Width = 24
     Height = 21
     Caption = '->'
+    Default = True
     TabOrder = 17
     OnClick = btnMoveTextClick
   end
   object btnUpdate: TButton
-    Left = 321
-    Top = 545
-    Width = 44
+    Left = 551
+    Top = 481
+    Width = 54
     Height = 21
     Caption = '&Update'
     TabOrder = 18
     OnClick = btnUpdateClick
   end
   object btnMove: TButton
-    Left = 371
+    Left = 490
     Top = 545
     Width = 50
     Height = 21
@@ -219,18 +224,18 @@ object frmProdTester: TfrmProdTester
     OnClick = btnMoveClick
   end
   object btnNew: TButton
-    Left = 223
+    Left = 440
     Top = 545
-    Width = 39
+    Width = 50
     Height = 21
     Caption = '&New'
     TabOrder = 20
     OnClick = btnNewClick
   end
   object btnRemove: TButton
-    Left = 268
+    Left = 590
     Top = 545
-    Width = 47
+    Width = 50
     Height = 21
     Caption = '&Remove'
     TabOrder = 21
@@ -239,7 +244,7 @@ object frmProdTester: TfrmProdTester
   object txtVarNames: TEdit
     Left = 440
     Top = 512
-    Width = 384
+    Width = 391
     Height = 21
     Hint = 'names of selected variables'
     ParentShowHint = False
@@ -247,11 +252,11 @@ object frmProdTester: TfrmProdTester
     TabOrder = 22
   end
   object btnPromote: TButton
-    Left = 800
+    Left = 540
     Top = 545
     Width = 50
     Height = 21
-    Caption = '&Promote'
+    Caption = 'Up&grade'
     TabOrder = 23
     OnClick = btnPromoteClick
   end
@@ -268,12 +273,24 @@ object frmProdTester: TfrmProdTester
     OnClick = btnClearVarNamesClick
   end
   object btnDefault: TButton
-    Left = 440
+    Left = 640
     Top = 545
     Width = 50
     Height = 21
     Caption = '&Default'
     TabOrder = 25
     OnClick = btnDefaultClick
+  end
+  object btnClearRef: TButton
+    Left = 401
+    Top = 546
+    Width = 20
+    Height = 20
+    Hint = 'clear the names of selected variables'
+    Caption = 'X'
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 26
+    OnClick = btnClearRefClick
   end
 end

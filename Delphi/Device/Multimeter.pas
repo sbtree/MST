@@ -27,15 +27,15 @@ type
                     );
 
   IMultimeter = interface
-    function MeasureR(var val: single): boolean;
-    function MeasureDCV(var val: single): boolean;
-    function MeasureACV(var val: single): boolean;
-    function MeasureDCI(var val: single): boolean;
-    function MeasureACI(var val: single): boolean;
-    function MeasureF(var val: single): boolean;
-    function MeasureP(var val: single): boolean;
-    function MeasureT(var val: single): boolean;
-    procedure SetMeasureRange(const meas:EMeasureAction; const range: single = 0);
+    function MeasureR(var val: double): boolean;
+    function MeasureDCV(var val: double): boolean;
+    function MeasureACV(var val: double): boolean;
+    function MeasureDCI(var val: double): boolean;
+    function MeasureACI(var val: double): boolean;
+    function MeasureF(var val: double): boolean;
+    function MeasureP(var val: double): boolean;
+    function MeasureT(var val: double): boolean;
+    procedure SetMeasureRange(const meas:EMeasureAction; const range: single = 0.0);
   end;
 
   TMultimeter = class(TDeviceBase, IMultimeter, ITextMessengerImpl)
@@ -46,7 +46,7 @@ type
   protected
     function InitFromFile(const sfile: string): boolean; virtual;
     function SwitchMeasurement(const meas: EMeasureAction): boolean; virtual;
-    function ReadData(var val: single): boolean; virtual;
+    function ReadData(var val: double): boolean; virtual;
     procedure TriggerMesssure(); virtual;
     procedure SetMessengerReim(tmessenger: TTextMessenger); virtual;
   public
@@ -57,14 +57,14 @@ type
     procedure ITextMessengerImpl.SetMessenger = SetMessengerReim;
     property ContinueMode : EContinueMode read e_cont write e_cont;
 
-    function MeasureR(var val: single): boolean; virtual;
-    function MeasureDCV(var val: single): boolean; virtual;
-    function MeasureACV(var val: single): boolean; virtual;
-    function MeasureDCI(var val: single): boolean; virtual;
-    function MeasureACI(var val: single): boolean; virtual;
-    function MeasureF(var val: single): boolean; virtual;
-    function MeasureP(var val: single): boolean; virtual;
-    function MeasureT(var val: single): boolean; virtual;
+    function MeasureR(var val: double): boolean; virtual;
+    function MeasureDCV(var val: double): boolean; virtual;
+    function MeasureACV(var val: double): boolean; virtual;
+    function MeasureDCI(var val: double): boolean; virtual;
+    function MeasureACI(var val: double): boolean; virtual;
+    function MeasureF(var val: double): boolean; virtual;
+    function MeasureP(var val: double): boolean; virtual;
+    function MeasureT(var val: double): boolean; virtual;
     procedure SetMeasureRange(const meas:EMeasureAction; const range: single); virtual;
   end;
 
@@ -73,7 +73,7 @@ type
     t_relay:  TRelayKeithley;
   protected
     function SwitchMeasurement(const meas: EMeasureAction): boolean; override;
-    function ReadData(var val: single): boolean; override;
+    function ReadData(var val: double): boolean; override;
     //procedure TriggerMesssure(); virtual;
     procedure SetMessengerReim(tmessenger: TTextMessenger); override;
   public
@@ -141,7 +141,7 @@ begin
   //t_msgrimpl.AddMessage(format('"%s.SwitchMeasurement" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
 end;
 
-function TMultimeter.ReadData(var val: single): boolean;
+function TMultimeter.ReadData(var val: double): boolean;
 begin
   result := false;
   t_msgrimpl.AddMessage(format('"%s.ReadData" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
@@ -176,56 +176,56 @@ begin
 	inherited Destroy;
 end;
 
-function TMultimeter.MeasureR(var val: single): boolean;
+function TMultimeter.MeasureR(var val: double): boolean;
 begin
   val := 0.0;
   if SwitchMeasurement(MA_RES) then result := ReadData(val)
   else result := false;
 end;
 
-function TMultimeter.MeasureDCV(var val: single): boolean;
+function TMultimeter.MeasureDCV(var val: double): boolean;
 begin
   val := 0.0;
   if SwitchMeasurement(MA_DCV) then result := ReadData(val)
   else result := false;
 end;
 
-function TMultimeter.MeasureACV(var val: single): boolean;
+function TMultimeter.MeasureACV(var val: double): boolean;
 begin
   val := 0.0;
   if SwitchMeasurement(MA_ACV) then result := ReadData(val)
   else result := false;
 end;
 
-function TMultimeter.MeasureDCI(var val: single): boolean;
+function TMultimeter.MeasureDCI(var val: double): boolean;
 begin
   val := 0.0;
   if SwitchMeasurement(MA_DCI) then result := ReadData(val)
   else result := false;
 end;
 
-function TMultimeter.MeasureACI(var val: single): boolean;
+function TMultimeter.MeasureACI(var val: double): boolean;
 begin
   val := 0.0;
   if SwitchMeasurement(MA_ACI) then result := ReadData(val)
   else result := false;
 end;
 
-function TMultimeter.MeasureF(var val: single): boolean;
+function TMultimeter.MeasureF(var val: double): boolean;
 begin
   val := 0.0;
   if SwitchMeasurement(MA_FREQ) then result := ReadData(val)
   else result := false;
 end;
 
-function TMultimeter.MeasureP(var val: single): boolean;
+function TMultimeter.MeasureP(var val: double): boolean;
 begin
   val := 0.0;
   if SwitchMeasurement(MA_PERI) then result := ReadData(val)
   else result := false;
 end;
 
-function TMultimeter.MeasureT(var val: single): boolean;
+function TMultimeter.MeasureT(var val: double): boolean;
 begin
   val := 0.0;
   if SwitchMeasurement(MA_TEMP) then result := ReadData(val)
@@ -266,7 +266,7 @@ begin
     t_msgrimpl.AddMessage(format('Failed to switch to the measurement(%s).', [C_KEITHLEY_FUNC[meas]]), ML_ERROR);
 end;
 
-function TMultimeterKeithley.ReadData(var val: single): boolean;
+function TMultimeterKeithley.ReadData(var val: double): boolean;
 var s_recv: string;
 begin
   result := t_curconn.SendStr(C_KEITHLEY_MEAS_READ + Char(13));
@@ -276,7 +276,7 @@ begin
       s_recv := trim(s_recv);
       s_recv := ReplaceStr(s_recv, '.', DecimalSeparator);
       result := TryStrToFloat(s_recv, val);
-      if result then t_msgrimpl.AddMessage(format('Successful to convert data %f.', [val]))
+      if result then t_msgrimpl.AddMessage(format('Successful to convert data %0.3f.', [val]))
       else t_msgrimpl.AddMessage(format('Failed to convert data %s', [s_recv]));
     end;
   end;

@@ -132,7 +132,7 @@ const
                     'configured',
                     'connected'
                     );
-  CINT_TIMEOUT_DEFAULT = 1000;//default timeout in milliseconds
+  CINT_TIMEOUT_DEFAULT = 2000;//default timeout in milliseconds
   CINT_INTERVAL_DEFAULT = 300;//default interval by reading in milliseconds
   CINT_RECV_INTERVAL = 50;    //milliseconds
 

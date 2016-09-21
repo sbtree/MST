@@ -45,6 +45,7 @@ type
     function UpdateConfigFrom(const conf: TTreeSection): boolean;
     function BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode): boolean;
     function DepthLevel(): integer;
+    function NamesHierarchy(): string;
     function NearestSectionTo(const child: TTreeSection): TTreeSection;
     procedure TakeToRemove(var conflist: TStrings);
     procedure Clear(); override;
@@ -101,10 +102,14 @@ type
     property FilterText: string read s_filtertxt;
 
     function SaveToFile(const destfile: string = ''; const cf: EConfigFormat = CF_INI): boolean; override;
-    function CreateConfig(const confname: string; const parent: string = ''): boolean;
-    function PromoteConfig(const confname, confref: string; const varnames: TStrings): boolean;
-    function UpdateConfig(const confname, srcname: string): boolean;
-    function MoveConfigTo(const confname, destname: string; const bfull: boolean = true): boolean;
+    function CreateConfig(const confname: string; const parent: string = ''): boolean; overload;
+    function CreateConfig(const confname: string; const parent: TTreeSection): boolean; overload;
+    function UpgradeConfigs(const confname: string; const confnames: string): integer;
+    function UpdateConfig(const confname, srcname: string): boolean; overload;
+    function UpdateConfig(const confname: string; const srcconf: TTreeSection): boolean; overload;
+    function MoveConfigTo(const confname, destname: string; const bfull: boolean = true): boolean; overload;
+    function MoveConfigTo(const confname: string; destconf: TTreeSection; const bfull: boolean = true): boolean; overload;
+    function MoveConfigsTo(const confnames, destname: string; const bfull: boolean = true): integer;
     function RemoveConfig(const confname: string): boolean;
     procedure UpdateDefault(const confref: string);
     procedure UpdateTreeView(var trv: TTreeView; const bclear: boolean = true);
@@ -341,6 +346,12 @@ function TTreeSection.DepthLevel(): integer;
 begin
   if assigned(t_parent) then result := t_parent.DepthLevel() + 1
   else result := 0;
+end;
+
+function TTreeSection.NamesHierarchy(): string;
+begin
+  if assigned(t_parent) then result := t_parent.NamesHierarchy() + ';' + s_confname
+  else result := s_confname;
 end;
 
 //return index of the given child, if it is found
@@ -759,73 +770,66 @@ end;
 
 //create a config as child of the given config
 function TProdConfig.CreateConfig(const confname, parent: string): boolean;
-var t_parent, t_conf: TTreeSection; s_cname: string;
+var t_parent: TTreeSection;
+begin
+  t_parent := GetSection(parent);
+  result := CreateConfig(confname, t_parent);
+end;
+
+function TProdConfig.CreateConfig(const confname: string; const parent: TTreeSection): boolean;
+var t_conf: TTreeSection; s_cname: string;
 begin
   result := false;
-  t_parent := GetSection(parent);
-  if assigned(t_parent) then begin
-    s_cname := CompleteName(confname, t_parent.DepthLevel() + 1);
+  if assigned(parent) then begin
+    s_cname := CompleteName(confname, parent.DepthLevel() + 1);
     t_conf := AddConfig(s_cname, nil);
     if assigned(t_conf) then begin
-      t_conf.ResetParent(t_parent);
+      t_conf.ResetParent(parent);
       t_cursec := t_conf;
       result := true;
     end;
   end;
 end;
 
-//create a new config  with given name(confname) as parent of the given config (confref)
-//using the settings of confref with names in varnames
-//the given config and its siblings become children of this new config
-//if they has the same values of the given variable names
-function TProdConfig.PromoteConfig(const confname, confref: string; const varnames: TStrings): boolean;
-var t_conf, t_confref, t_parent, t_child: TTreeSection; i: integer; t_spairs: TStringPairs;
-    s_cname: string;
+//create a new config with name confname and settings of the first config in the list confnames
+//the new config will have the same parent of the first config  in the lsit.
+//then move configs in the list into this new config.
+function TProdConfig.UpgradeConfigs(const confname: string; const confnames: string): integer;
+var t_destconf, t_refconf: TTreeSection; t_cnames: TStrings;
 begin
-  result := false;
-  if (not SameText(confname, confref)) then begin
-    t_confref := GetSection(confref);
-    if assigned(t_confref) then begin
-      s_cname := CompleteName(confname,t_confref.DepthLevel());
-      t_conf := AddConfig(s_cname, nil);
-      if assigned(t_conf) then begin
-        t_cursec := t_conf;
-        t_conf.UpdateConfigFrom(t_confref);
-        t_parent := t_confref.Parent;
-        t_confref.ResetParent(t_conf);
-        if assigned(t_parent) then begin
-          t_spairs := TStringPairs.Create();
-          t_spairs.CopyValuesFrom(t_confref, varnames);
-          for i := t_parent.ChildCount - 1 downto 0 do begin
-            t_child := t_parent.GetChild(i);
-            if (assigned(t_child) and (t_conf <> t_child)) then begin
-              if t_child.HasSameValues(t_spairs, varnames) then begin
-                t_child.ResetParent(t_conf);
-                t_child.CleanConfig();
-                Inc(result);
-              end;
-            end;
-          end;
-          t_conf.ResetParent(t_parent);
-          t_spairs.Free();
-        end;
-        t_confref.CleanConfig();
+  result := 0;
+  t_cnames := TStringList.Create();
+  ExtractStrings([';'], [' '], PChar(confnames), t_cnames);
+  if (t_cnames.Count > 0) then begin
+    t_refconf := GetSection(t_cnames[0]);
+    if assigned(t_refconf) then begin
+      if CreateConfig(confname, t_refconf.Parent) then begin
+        t_destconf := t_cursec;
+        t_destconf.UpdateConfigFrom(t_refconf);
+        result := MoveConfigsTo(confnames, t_destconf.ConfigName);
       end;
+      t_cursec := t_refconf;
     end;
   end;
+  t_cnames.Free();
 end;
 
 //the settings of the given config will be upgraded with those of the source config
 //t_croot will be updated if confname is empty
 function TProdConfig.UpdateConfig(const confname, srcname: string): boolean;
+begin
+  result := UpdateConfig(confname, GetSection(srcname));
+end;
+
+function TProdConfig.UpdateConfig(const confname: string; const srcconf: TTreeSection): boolean;
 var t_dest: TTreeSection;
 begin
   result := false;
-  if (not SameText(confname, srcname)) then begin
+  if assigned(srcconf) then begin
     t_dest := GetSection(confname);
-    if assigned(t_dest) then begin
+    if (assigned(t_dest) and (t_dest <> srcconf)) then begin
       t_cursec := t_dest;
-      result := t_dest.UpdateConfigFrom(GetSection(srcname));
+      result := t_dest.UpdateConfigFrom(srcconf);
     end;
   end;
 end;
@@ -834,24 +838,45 @@ end;
 //The settings of the old parent will be brought with if bfull is true
 //the settings are cleaned with the new parent after the change
 function TProdConfig.MoveConfigTo(const confname, destname: string; const bfull: boolean ): boolean;
-var t_conf, t_confdest: TTreeSection;
+var t_confdest: TTreeSection;
+begin
+  t_confdest := GetSection(destname);
+  result := MoveConfigTo(confname, t_confdest);
+end;
+
+function TProdConfig.MoveConfigTo(const confname: string; destconf: TTreeSection; const bfull: boolean): boolean;
+var t_conf: TTreeSection; s_hierarchy: string;
 begin
   result := false;
-  if (not SameText(confname, destname)) then begin
-    t_conf := GetSection(confname);
-    if assigned(t_conf) then begin
-      t_cursec := t_conf;
-      if destname = '' then t_confdest := t_croot
-      else t_confdest := GetSection(destname);
-      if assigned(t_confdest) then begin
+  if assigned(destconf) then begin
+    s_hierarchy := destconf.NamesHierarchy();
+    if (not ContainsText(s_hierarchy, confname)) then begin
+      t_conf := GetSection(confname);
+      if (assigned(t_conf) and (t_conf <> destconf)) then begin
+        t_cursec := t_conf;
         if bfull then t_conf.CompleteConfig();
-        t_conf.ResetParent(t_confdest);
+        t_conf.ResetParent(destconf);
         t_conf.CleanConfig();
         result := true;
       end;
     end;
   end;
 end;
+
+function TProdConfig.MoveConfigsTo(const confnames, destname: string; const bfull: boolean): integer;
+var t_cnames: TStrings; i: integer; t_confdest: TTreeSection;
+begin
+  result := 0;
+  t_confdest := GetSection(destname);
+  if assigned(t_confdest) then begin
+    t_cnames := TStringList.Create();
+    ExtractStrings([';'], [' '], PChar(confnames), t_cnames);
+    for i := 0 to t_cnames.Count - 1 do
+      if MoveConfigTo(t_cnames[i], t_confdest) then Inc(result);
+    t_cnames.Free();
+  end;
+end;
+
 
 //remvoe a config section but root is not allowed to remove
 function TProdConfig.RemoveConfig(const confname: string): boolean;

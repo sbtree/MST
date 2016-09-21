@@ -162,7 +162,7 @@ begin
     if (sender <> '' ) then msg := '[' + sender + ']' + text
     else msg := text;
     msg := '[' + CSTR_MLKEYS[level] + ']' + msg;
-    if b_tstamp then msg := '[' + DateTimeToStr(Now()) + ']: ' + msg;
+    if b_tstamp then msg := '[' + FormatDateTime('hh:nn:ss.zzz', Time()) + ']: ' + msg;
   end else result := false;
 end;
 
