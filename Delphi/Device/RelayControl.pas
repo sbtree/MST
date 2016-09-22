@@ -95,7 +95,7 @@ const
   C_PCARD_CHANNEL_MAX     = 40; //maximal channels of Pseudocard 7705
   C_PCARD_SLOT_MAX        = 5;  //maximal slots for Pseudocard 7705
 
-  procedure TRelayControl.SetConnection(const conn: TConnBase);
+procedure TRelayControl.SetConnection(const conn: TConnBase);
 begin
   t_curconn := conn;
 end;
@@ -168,9 +168,12 @@ begin
   t_cards.Clear();
   if assigned(t_curconn) then begin
     if t_curconn.SendStr(C_MULTIMETER_OPT + Char(13)) then begin
-      t_curconn.RecvStr(s_recv);
+      t_curconn.ExpectStr(s_recv, Char(13), false);
       s_recv := trim(s_recv);
-      ExtractStrings([','], [' '], PChar(s_recv), t_cards);
+      if (ExtractStrings([','], [' '], PChar(s_recv), t_cards) > 0) then
+        t_msgrimpl.AddMessage(format('%d relay cards(%s) are found.', [t_cards.Count, t_cards.DelimitedText]))
+      else
+        t_msgrimpl.AddMessage('No relay card is found.', ML_WARNING);
     end;
   end;
 end;

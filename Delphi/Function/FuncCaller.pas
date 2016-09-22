@@ -9,7 +9,7 @@
 unit FuncCaller;
 
 interface
-uses Classes, TextMessage, FuncBase, GenType, StepGroup;
+uses Classes, TextMessage, FuncBase, GenType, StepGroup, Multimeter, FuncDmm;
 
 type
   //define class of function caller, which calls script functions
@@ -17,13 +17,12 @@ type
   protected
     t_aliases:  TStrings;
     t_func:     TFunctionBase;
-    //e_exemode:  EExecMode;
     s_result:   string;
     t_msgrimpl: TTextMessengerImpl;
     t_curgroup: TStepGroup;
+    t_dmm:      TMultimeter;
   protected
     procedure InitAliases();
-    //procedure SetExecutionMode(const em: EExecMode);
     function  FindFunctionByAlias(const alias: string): TFunctionClass;
     function  FindFunctionByName(const func: string): TFunctionClass;
   public
@@ -33,6 +32,7 @@ type
     //delegate interface ITextMessengerImpl
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
     property CurStepGroup: TStepGroup read t_curgroup write t_curgroup;
+    property DevMultimeter: TMultimeter read t_dmm write t_dmm;
 
     //property  ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     property  ResultString: string read s_result write s_result;
@@ -49,20 +49,13 @@ procedure TFunctionCaller.InitAliases();
 begin
   t_aliases.Add('FsmDownloadFW=FlashOverFDT');
   t_aliases.Add('Frage_JaNein=YesNoQuery');
-  t_aliases.Add('XYZ=ExecConsoleCmd');
+  t_aliases.Add('F_Messung=MeasureF');
+  t_aliases.Add('R_Messung=MeasureR');
+  t_aliases.Add('U_Mess_AC=MeasureACV');
+  t_aliases.Add('U_Mess_DC=MeasureDCV');
+  t_aliases.Add('I_Mess_DC=MeasureDCI');
   //todo: extention
 end;
-
-{procedure TFunctionCaller.SetExecutionMode(const em: EExecMode);
-begin
-  e_exemode := em;
-  if assigned(t_msgrimpl.Messenger) then begin
-    case e_exemode of
-      EM_NORMAL, EM_SIMULATE: t_msgrimpl.Messenger.MessageThreshold := ML_ERROR;
-      EM_DIAGNOSE: t_msgrimpl.Messenger.MessageThreshold := ML_INFO;
-    end;
-  end;
-end;}
 
 function TFunctionCaller.FindFunctionByAlias(const alias: string) : TFunctionClass;
 var i_ftidx: integer;
@@ -104,7 +97,11 @@ begin
   if assigned(t_class) then begin
     result := t_class.Create();
     if assigned(result) then begin
-      if (result is TConditionControl) then IStepControlImpl(TConditionControl(result)).CurStepGroup := t_curgroup;
+      if (result is TConditionControl) then
+        IStepControlImpl(TConditionControl(result)).CurStepGroup := t_curgroup
+      else if (result is TDmmFunction) then
+        TDmmFunction(result).DevMultimeter := t_dmm;
+
       ITextMessengerImpl(result).Messenger := t_msgrimpl.Messenger;
     end;
   end else if ((not SameText(func, 'nil')) and (func <> '')) then

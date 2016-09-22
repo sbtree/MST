@@ -35,7 +35,7 @@ type
     function MeasureF(var val: double): boolean;
     function MeasureP(var val: double): boolean;
     function MeasureT(var val: double): boolean;
-    procedure SetMeasureRange(const meas:EMeasureAction; const range: single = 0.0);
+    procedure SetMeasureRange(const meas:EMeasureAction; const range: double = 0.0);
   end;
 
   TMultimeter = class(TDeviceBase, IMultimeter, ITextMessengerImpl)
@@ -48,13 +48,13 @@ type
     function SwitchMeasurement(const meas: EMeasureAction): boolean; virtual;
     function ReadData(var val: double): boolean; virtual;
     procedure TriggerMesssure(); virtual;
-    procedure SetMessengerReim(tmessenger: TTextMessenger); virtual;
+    //procedure SetMessengerReim(tmessenger: TTextMessenger); virtual;
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
-    procedure ITextMessengerImpl.SetMessenger = SetMessengerReim;
+    //procedure ITextMessengerImpl.SetMessenger = SetMessengerReim;
     property ContinueMode : EContinueMode read e_cont write e_cont;
 
     function MeasureR(var val: double): boolean; virtual;
@@ -65,7 +65,7 @@ type
     function MeasureF(var val: double): boolean; virtual;
     function MeasureP(var val: double): boolean; virtual;
     function MeasureT(var val: double): boolean; virtual;
-    procedure SetMeasureRange(const meas:EMeasureAction; const range: single); virtual;
+    procedure SetMeasureRange(const meas:EMeasureAction; const range: double); virtual;
   end;
 
   TMultimeterKeithley = class(TMultimeter, IRelayControl)
@@ -73,17 +73,19 @@ type
     t_relay:  TRelayKeithley;
   protected
     function SwitchMeasurement(const meas: EMeasureAction): boolean; override;
+    function ReadingValue(const elem: string): string;
     function ReadData(var val: double): boolean; override;
     //procedure TriggerMesssure(); virtual;
-    procedure SetMessengerReim(tmessenger: TTextMessenger); override;
+    //procedure SetMessengerReim(tmessenger: TTextMessenger); override;
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy(); override;
 
     property RelayControl: TRelayKeithley read t_relay implements IRelayControl;
 
-    function InitDevice(const devconf: TConfigBase): boolean; override;
-    procedure SetMeasureRange(const meas:EMeasureAction; const range: single); override;
+    function InitDevice(): boolean; override;
+    function ReleaseDevice(): boolean; override;
+    procedure SetMeasureRange(const meas:EMeasureAction; const range: double); override;
   end;
 implementation
 uses SysUtils, GenUtils, StrUtils, RS232;
@@ -104,6 +106,7 @@ const
   C_KEITHLEY_RANGE_SET      = ':RANG %s';       // set range of the measurement, it must be used with measurement function together
   C_KEITHLEY_RANGE_AUTO_ON  = ':RANG:AUTO ON';  // turn on automatical range
   C_KEITHLEY_RANGE_AUTO_OFF = ':RANG:AUTO OFF'; // trun off automatical range
+  C_KEITHLEY_OVERFLOW       = '+9.9E37';        // overflowing data
 
   C_KEITHLEY_FUNC: array[EMeasureAction] of string = (
                   'ANY',
@@ -115,6 +118,18 @@ const
                   'FREQ',
                   'PER',
                   'TEMP'
+                  );
+
+  C_KEITHLEY_UNITS: array[EMeasureAction] of string = (
+                  'ANY',
+                  'OHM',
+                  'VDC',
+                  'VAC',
+                  'ADC',
+                  'AAC',
+                  'HZ',
+                  'SEC',
+                  Char($13)+'C'
                   );
 
   C_KEITHLEY_RANGE: array[EMeasureAction] of single = (
@@ -152,11 +167,10 @@ begin
   //todo: if it's neccessary
 end;
 
-procedure TMultimeter.SetMessengerReim(tmessenger: TTextMessenger);
+{procedure TMultimeter.SetMessengerReim(tmessenger: TTextMessenger);
 begin
   t_msgrimpl.Messenger := tmessenger;
-  ITextMessengerImpl(t_curconn).Messenger := t_msgrimpl.Messenger;
-end;
+end; }
 
 constructor TMultimeter.Create(owner: TComponent);
 begin
@@ -164,14 +178,10 @@ begin
   e_curma := MA_ANY;
   t_msgrimpl := TTextMessengerImpl.Create();
   t_msgrimpl.OwnerName := ClassName();
-  t_curconn := TMtxRS232.Create(self); //test
-  t_curconn.Config('Port:5|baudrate:9600'); //test
-  t_curconn.Connect();
 end;
 
 destructor TMultimeter.Destroy;
 begin
-  t_curconn.Free(); //test
   t_msgrimpl.Free();
 	inherited Destroy;
 end;
@@ -232,16 +242,16 @@ begin
   else result := false;
 end;
 
-procedure TMultimeter.SetMeasureRange(const meas:EMeasureAction; const range: single);
+procedure TMultimeter.SetMeasureRange(const meas:EMeasureAction; const range: double);
 begin
   t_msgrimpl.AddMessage(format('"%s.SetMeasurementRange" must be reimplemented in its subclass.', [ClassName()]), ML_WARNING);
 end;
 
-procedure TMultimeterKeithley.SetMessengerReim(tmessenger: TTextMessenger);
+{procedure TMultimeterKeithley.SetMessengerReim(tmessenger: TTextMessenger);
 begin
   inherited SetMessengerReim(tmessenger);
   ITextMessengerImpl(t_relay).Messenger := t_msgrimpl.Messenger;
-end;
+end;}
 
 function TMultimeterKeithley.SwitchMeasurement(const meas: EMeasureAction): boolean;
 var s_sending, s_recv: string;
@@ -266,6 +276,23 @@ begin
     t_msgrimpl.AddMessage(format('Failed to switch to the measurement(%s).', [C_KEITHLEY_FUNC[meas]]), ML_ERROR);
 end;
 
+//return the value string of keithley reading element
+//NOTE: the measurement data is composed of several elements, e.g.
+//+4.69781780E+00OHM,+8179.250SECS,+46802RDNG#,000,0000LIMITS
+//this function gives back the first value string without unit
+function TMultimeterKeithley.ReadingValue(const elem: string): string;
+var i_pos: integer;
+begin
+  i_pos := Pos(',', elem);
+  if (i_pos > 0) then result := trim(LeftStr(elem, i_pos - 1))
+  else result := trim(elem);
+
+  if EndsText(C_KEITHLEY_UNITS[e_curma], result) then result := LeftStr(result, length(result) - length(C_KEITHLEY_UNITS[e_curma]));
+  //keithley multimeter sends data only with '.' as decimal separator
+  //it has to be changed into the local format
+  result := ReplaceStr(result, '.', DecimalSeparator);
+end;
+
 function TMultimeterKeithley.ReadData(var val: double): boolean;
 var s_recv: string;
 begin
@@ -273,11 +300,14 @@ begin
   if result then begin
     result := t_curconn.ExpectStr(s_recv, Char(13), false);
     if result then begin
-      s_recv := trim(s_recv);
-      s_recv := ReplaceStr(s_recv, '.', DecimalSeparator);
-      result := TryStrToFloat(s_recv, val);
-      if result then t_msgrimpl.AddMessage(format('Successful to convert data %0.3f.', [val]))
-      else t_msgrimpl.AddMessage(format('Failed to convert data %s', [s_recv]));
+      if StartsText(C_KEITHLEY_OVERFLOW, s_recv) then
+        t_msgrimpl.AddMessage(format('The measurement data(%s) is overflowed.', [C_KEITHLEY_OVERFLOW]), ML_ERROR)
+      else begin
+        s_recv := ReadingValue(s_recv); //trim(s_recv);
+        result := TryStrToFloat(s_recv, val);
+        if result then t_msgrimpl.AddMessage(format('Successful to convert data %0.3f %s.', [val, C_KEITHLEY_UNITS[e_curma]]))
+        else t_msgrimpl.AddMessage(format('Failed to convert data %s', [s_recv]));
+      end;
     end;
   end;
 end;
@@ -294,8 +324,15 @@ begin
   inherited Destroy();
 end;
 
-function TMultimeterKeithley.InitDevice(const devconf: TConfigBase): boolean;
+function TMultimeterKeithley.InitDevice(): boolean;
 begin
+  if (not assigned(t_curconn)) then begin
+    t_curconn := TMtxRS232.Create(self); //test
+    ITextMessengerImpl(t_curconn).Messenger := t_msgrimpl.Messenger;
+    t_curconn.Config('Port:5|baudrate:9600'); //test
+  end;
+
+  e_curma := MA_ANY;
   result := t_curconn.Connect;
   t_relay.CurConnect := t_curconn;
   if result then result := t_curconn.SendStr(C_KEITHLEY_CLEAR_ERROR + Char(13));
@@ -305,14 +342,22 @@ begin
   if result then result := t_curconn.SendStr(C_KEITHLEY_MEAS_ONE + Char(13));
 end;
 
-procedure TMultimeterKeithley.SetMeasureRange(const meas:EMeasureAction; const range: single);
+function TMultimeterKeithley.ReleaseDevice(): boolean;
+begin
+  if assigned(t_curconn) then FreeAndNil(t_curconn);
+  result := inherited ReleaseDevice();
+end;
+
+procedure TMultimeterKeithley.SetMeasureRange(const meas:EMeasureAction; const range: double);
 var s_range, s_sending: string;
 begin
   if (meas in [MA_RES, MA_DCV, MA_ACV, MA_DCI, MA_ACI])  then begin
-    if (range > 0)then begin //set range
+    if (range > 0.0)then begin //set range
       if range > C_KEITHLEY_RANGE[meas] then s_range := FloatToStr(C_KEITHLEY_RANGE[meas])
       else s_range := FloatToStr(range);
-      s_range := ReplaceStr(s_range, DecimalSeparator, '.');
+      //keithley multimeter accepts only '.'- decimal separator
+      //the local format has to be changed into the keithley format
+      s_range := ReplaceStr(s_range, DecimalSeparator, '.'); 
       s_sending := format(C_KEITHLEY_FUNC[meas] + C_KEITHLEY_RANGE_SET, [s_range]) + Char(13);
     end else //auto range
       s_sending := C_KEITHLEY_FUNC[meas] + C_KEITHLEY_RANGE_AUTO_ON + Char(13);

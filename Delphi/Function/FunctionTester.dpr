@@ -28,7 +28,12 @@ uses
   OObjects in '..\Externals\ExprParser\OObjects.pas',
   ParseClass in '..\Externals\ExprParser\ParseClass.pas',
   ParseExpr in '..\Externals\ExprParser\ParseExpr.pas',
-  GenUtils in '..\General\GenUtils.pas';
+  GenUtils in '..\General\GenUtils.pas',
+  DeviceBase in '..\Device\DeviceBase.pas',
+  Multimeter in '..\Device\Multimeter.pas',
+  ToolBase in '..\Tools\ToolBase.pas',
+  ConfigBase in '..\Config\ConfigBase.pas',
+  RelayControl in '..\Device\RelayControl.pas';
 
 {$R *.res}
 

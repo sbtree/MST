@@ -4,7 +4,8 @@ interface
 
 uses
   Windows, TextMessage, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, FuncCaller, GenType, ScriptReader, StringPairs, StepGroup;
+  Dialogs, StdCtrls, FuncCaller, GenType, ScriptReader, StringPairs, StepGroup,
+  Multimeter;
 
 type
   TFormFTMain = class(TForm)
@@ -27,11 +28,12 @@ type
     procedure btnGoToClick(Sender: TObject);
   private
     { Private-Deklarationen }
-    t_messenger: TTextMessenger;
-    t_sreader:  TScriptReader;
-    t_vars:     TStringPairs;
-    t_container:TStepContainer;
-    t_fcaller: TFunctionCaller;
+    t_messenger:  TTextMessenger;
+    t_sreader:    TScriptReader;
+    t_vars:       TStringPairs;
+    t_container:  TStepContainer;
+    t_fcaller:    TFunctionCaller;
+    t_multimeter: TMultimeterKeithley;
   public
     { Public-Deklarationen }
   end;
@@ -103,13 +105,19 @@ begin
   t_sreader.StepContainer := t_container;
   t_sreader.VarContainer := t_vars;
 
+  t_multimeter := TMultimeterKeithley.Create(self);
+  ITextMessengerImpl(t_multimeter).Messenger := t_messenger;
+  t_multimeter.InitDevice();
+
   t_fcaller := TFunctionCaller.Create;
   t_fcaller.CurStepGroup := t_container;
+  t_fcaller.DevMultimeter := t_multimeter;
   ITextMessengerImpl(t_fcaller).Messenger := t_messenger;
 end;
 
 procedure TFormFTMain.FormDestroy(Sender: TObject);
 begin
+  t_multimeter.Free();
   t_fcaller.Free();
   t_vars.Free();
   t_container.Free();

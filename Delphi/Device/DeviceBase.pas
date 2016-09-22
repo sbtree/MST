@@ -45,16 +45,20 @@ type
   DeviceStateSet = set of EDeviceState;}
 
   IDeviceBase = interface
-    function GetState(): EDeviceState;
-    function InitDevice(const defconf: TConfigBase): boolean;
+    function GetDevState(): EDeviceState;
+    function GetDevConfig(): TConfigBase;
+    function InitDevice(): boolean;
+    function IsDevReady(): boolean;
     function SendCommand(const cmd: string): boolean;
     function RecvAnswer(var ans: string): boolean;
     //function SendPacket(packet: array of byte): boolean;
     //function RecvPacket(packet: array of byte): boolean;
     function ReleaseDevice(): boolean;
-    function GetConnection(): TConnBase;
-    property Connection: TConnBase read GetConnection;
-    property DeviceState: EDeviceState read GetState;
+    function GetDevConnect(): TConnBase;
+    procedure SetDevConfig(const conf: TConfigBase);
+    property DevConnect: TConnBase read GetDevConnect;
+    property DevState: EDeviceState read GetDevState;
+    property DevConfig: TConfigBase read GetDevConfig write SetDevConfig;
   end;
 
   // =============================================================================
@@ -82,19 +86,23 @@ type
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
-    function GetState(): EDeviceState;
-    function InitDevice(const devconf: TConfigBase): boolean; virtual;
+    function GetDevState(): EDeviceState;
+    function GetDevConfig(): TConfigBase;
+    function InitDevice(): boolean; virtual;
+    function IsDevReady(): boolean; virtual;
     function SendCommand(const cmd: string): boolean; virtual;
     function RecvAnswer(var ans: string): boolean; virtual;
     //function SendPacket(packet: array of byte): boolean; virtual;
     //function RecvPacket(packet: array of byte): boolean; virtual;
     function ReleaseDevice(): Boolean; virtual;
-    function GetConnection(): TConnBase;
+    function GetDevConnect(): TConnBase;
+    procedure SetDevConfig(const conf: TConfigBase); virtual;
 
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
-    property DeviceState : EDeviceState read GetState;
+    property DevConnect: TConnBase read GetDevConnect;
+    property DevState: EDeviceState read GetDevState;
+    property DevConfig: TConfigBase read GetDevConfig write SetDevConfig;
     property StateText : string read GetStateText;
-    property CurConnect: TConnBase read GetConnection;
 
     //additional functions of device
     function Reset(const cmd: string): boolean; virtual;
@@ -176,6 +184,7 @@ end;
 // =============================================================================
 destructor TDeviceBase.Destroy;
 begin
+  ReleaseDevice();
   t_msgrimpl.Free();
 	inherited Destroy;
 end;
@@ -196,17 +205,28 @@ begin
   result := CSTR_DEV_STATES[e_state];
 end;
 
-function TDeviceBase.GetState(): EDeviceState;
+function TDeviceBase.GetDevState(): EDeviceState;
 begin
   result := e_state;
 end;
 
-function TDeviceBase.InitDevice(const devconf: TConfigBase): boolean;
+function TDeviceBase.GetDevConfig(): TConfigBase;
 begin
-  result := assigned(devconf);
-  t_devconf := devconf;
-  //todo:
-  e_state := DS_COMREADY;
+  result := t_devconf;
+end;
+
+function TDeviceBase.InitDevice(): boolean;
+begin
+  result := false;
+  if assigned(t_devconf) then begin
+    //todo:
+    e_state := DS_COMREADY;
+  end;
+end;
+
+function TDeviceBase.IsDevReady(): boolean;
+begin
+  result := (t_curconn.Connected and (e_state = DS_COMREADY));
 end;
 
 // =============================================================================
@@ -257,14 +277,19 @@ end;
 // =============================================================================
 function TDeviceBase.ReleaseDevice(): boolean;
 begin
-  result := t_curconn.Disconnect();
-  //todo:
-  if result then e_state := DS_CONFIGURED;
+  e_state := DS_UNKNOWN;
+  result := true;
 end;
 
-function TDeviceBase.GetConnection(): TConnBase;
+function TDeviceBase.GetDevConnect(): TConnBase;
 begin
   result := t_curconn;
+end;
+
+procedure TDeviceBase.SetDevConfig(const conf: TConfigBase);
+begin
+  t_devconf := conf;
+  InitDevice();
 end;
 
 // =============================================================================
@@ -284,7 +309,7 @@ begin
   if assigned(t_curconn) then begin
     t_curconn.Disconnect();
     result := t_curconn.Connect();
-    if result then result := InitDevice(t_devconf);
+    if result then result := InitDevice();
   end;
 end;
 

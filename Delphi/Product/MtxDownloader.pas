@@ -605,4 +605,8 @@ end;
 
 initialization
   t_comdownloader := TMtxComDownloader.Create();
+
+finalization
+  t_comdownloader.Free();
+  
 end.
