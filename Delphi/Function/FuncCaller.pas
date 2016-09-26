@@ -9,7 +9,7 @@
 unit FuncCaller;
 
 interface
-uses Classes, TextMessage, FuncBase, GenType, StepGroup, Multimeter, FuncDmm;
+uses Classes, TextMessage, FuncBase, GenType, StepData, StepGroup, Multimeter, FuncDmm;
 
 type
   //define class of function caller, which calls script functions
@@ -17,10 +17,10 @@ type
   protected
     t_aliases:  TStrings;
     t_func:     TFunctionBase;
-    s_result:   string;
     t_msgrimpl: TTextMessengerImpl;
     t_curgroup: TStepGroup;
     t_dmm:      TMultimeter;
+    t_stepres:  TStepResult;
   protected
     procedure InitAliases();
     function  FindFunctionByAlias(const alias: string): TFunctionClass;
@@ -31,11 +31,14 @@ type
 
     //delegate interface ITextMessengerImpl
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
+
+    //properties
+    property CurStepResult: TStepResult write t_stepres;
     property CurStepGroup: TStepGroup read t_curgroup write t_curgroup;
     property DevMultimeter: TMultimeter read t_dmm write t_dmm;
 
     //property  ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
-    property  ResultString: string read s_result write s_result;
+    //property  ResultString: string read s_result write s_result;
     //function FindFunction(const fnname: string): boolean;
     function  CreateFunction(const func: string): TFunctionBase; virtual;
     function  RunFunction(const func: TFunctionBase; const par: string): boolean; virtual;
@@ -74,8 +77,7 @@ end;
 constructor TFunctionCaller.Create;
 begin
   inherited Create();
-  t_msgrimpl := TTextMessengerImpl.Create();
-  t_msgrimpl.OwnerName := ClassName();
+  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 
   t_aliases := TStringList.Create();
   InitAliases();
@@ -115,7 +117,8 @@ begin
     result := func.LoadParameter(par);
     if (result) then begin
       result := func.DoTask();
-      s_result := func.ResultString;
+      if (result and assigned(t_stepres)) then
+        t_stepres.Value := func.ResultValue;
     end else t_msgrimpl.AddMessage(format('Failed to load parameter(''%s'') by calling %s.', [par, func.ClassName()]), ML_ERROR);
   end;
 end;

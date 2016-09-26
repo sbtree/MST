@@ -251,7 +251,7 @@ end;
 function EvalExprFloat.DoTask(): boolean;
 begin
   result := Evaluate(s_expr);
-  //todo: reuslt
+  v_resval:= d_curval;
   if result then t_msgrimpl.AddMessage(format('Successful to evaluate floating point expression: %s = %.5f.', [s_expr, d_curval]));
 end;
 
@@ -264,6 +264,7 @@ end;
 function EvalExprStr.DoTask(): boolean;
 begin
   result := Evaluate(s_expr);
+  v_resval:= s_curval;
   if result then t_msgrimpl.AddMessage(format('Successful to evaluate string expression: %s = ''%s''.', [s_expr, s_curval]));
 end;
 
@@ -276,6 +277,7 @@ end;
 function EvalExprInt.DoTask(): boolean;
 begin
   result := Evaluate(s_expr);
+  v_resval:= i_curval;
   if result then t_msgrimpl.AddMessage(format('Successful to evaluate integer expression: %s = %d.', [s_expr, i_curval]));
 end;
 
@@ -288,6 +290,7 @@ end;
 function EvalExprBool.DoTask(): boolean;
 begin
   result := Evaluate(s_expr);
+  v_resval:= b_curval;
   if result then t_msgrimpl.AddMessage(format('Successful to evaluate boolean expression: %s = %s.', [s_expr, BoolToStr(b_curval, true)]));
 end;
 
@@ -312,6 +315,7 @@ end;
 function EvalExprHex.DoTask(): boolean;
 begin
   result := Evaluate(s_expr);
+  v_resval:= s_curval;
   if result then t_msgrimpl.AddMessage(format('Successful to evaluate expression in to a hexadecimal string: %s = ''%s''.', [s_expr, s_curval]));
 end;
 

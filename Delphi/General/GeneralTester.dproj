@@ -40,6 +40,7 @@
     </DelphiCompile>
     <DCCReference Include="..\Externals\QExp.pas" />
     <DCCReference Include="DataBuffer.pas" />
+    <DCCReference Include="DllLoader.pas" />
     <DCCReference Include="FormGeneralTester.pas">
       <Form>frmGeneralTester</Form>
     </DCCReference>

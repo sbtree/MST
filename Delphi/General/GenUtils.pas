@@ -14,7 +14,6 @@ interface
 uses Classes;
 
 type
-
   TGenUtils = class
     //file path
     class function GetRelativeFilePath(const filePath, basePath: string ): string;

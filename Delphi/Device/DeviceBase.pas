@@ -135,7 +135,7 @@ const
   CSTR_DEV_TYPE       : string = 'TYPE';
 
 implementation
-uses Windows, SysUtils, GenUtils, RS232;
+uses Windows, SysUtils, GenUtils;
 
 const
   CSTR_DEV_STATES : array[EDeviceState] of string = (
@@ -167,8 +167,7 @@ end;
 constructor TDeviceBase.Create(owner: TComponent);
 begin
 	inherited Create(owner);
-  t_msgrimpl := TTextMessengerImpl.Create();
-  t_msgrimpl.OwnerName := ClassName();
+  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
   e_state := DS_UNKNOWN;
 end;
 

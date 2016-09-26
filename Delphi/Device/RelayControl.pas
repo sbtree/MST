@@ -103,8 +103,7 @@ end;
 constructor TRelayControl.Create();
 begin
   inherited Create();
-  t_msgrimpl := TTextMessengerImpl.Create();
-  t_msgrimpl.OwnerName := ClassName();
+  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 end;
 
 destructor TRelayControl.Destroy;

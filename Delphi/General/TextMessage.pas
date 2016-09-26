@@ -61,6 +61,8 @@ type
     t_messenger:  TTextMessenger;
     s_ownername:  string;
   public
+    constructor Create(const oname: string); overload;
+
     function GetMessenger(): TTextMessenger;
     procedure SetMessenger(tmessenger: TTextMessenger);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
@@ -164,6 +166,12 @@ begin
     msg := '[' + CSTR_MLKEYS[level] + ']' + msg;
     if b_tstamp then msg := '[' + FormatDateTime('hh:nn:ss.zzz', Time()) + ']: ' + msg;
   end else result := false;
+end;
+
+constructor TTextMessengerImpl.Create(const oname: string);
+begin
+  inherited Create();
+  s_ownername := oname;
 end;
 
 function TTextMessengerImpl.GetMessenger(): TTextMessenger;

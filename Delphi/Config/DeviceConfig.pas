@@ -4,6 +4,15 @@ interface
 uses Classes, SysUtils, ConfigBase, StringPairs;
 
 type
+  EDeviceType = (
+                DT_MULTIMETER,
+                DT_OSCILOSCOPE,
+                DT_POWERSUPPLY,
+                DT_RELAICONTROL,
+                DT_THERMOMETER,
+                DT_PCANADAPTOR
+                );
+
 
   TDeviceConfigurator = class
   protected

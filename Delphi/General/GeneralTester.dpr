@@ -8,7 +8,8 @@ uses
   TextMessage in 'TextMessage.pas',
   GenType in 'GenType.pas',
   StringPairs in 'StringPairs.pas',
-  QExp in '..\Externals\QExp.pas';
+  QExp in '..\Externals\QExp.pas',
+  DllLoader in 'DllLoader.pas';
 
 {$R *.res}
 

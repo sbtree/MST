@@ -70,6 +70,7 @@ type
 
   TMultimeterKeithley = class(TMultimeter, IRelayControl)
   protected
+    s_idn:    string;
     t_relay:  TRelayKeithley;
   protected
     function SwitchMeasurement(const meas: EMeasureAction): boolean; override;
@@ -95,6 +96,8 @@ const
   C_KEITHLEY_BEEP_OFF       = 'SYST:BEEP 0';    // Beep off
   C_KEITHLEY_CLEAR_ERROR    = '*CLS';           // alle 'Event register' und 'error queue' loeschen
   C_KEITHLEY_SELF_TEST      = '*TST?';          // Eigentest
+  C_KEITHLEY_ID_QUERY       = '*IDN?';          // string for querying identifer of the device
+  C_KEITHLEY_RESET          = '*RST';           // string for resetting the device
   C_KEITHLEY_FORMAT_ELEMENT = 'FORM:ELEM READ'; // Datenformat: element only read
   C_KEITHLEY_FORMAT_ASCII   = 'FORM:DATA ASC';  // Datenformat: ASCII
   C_KEITHLEY_MEAS_ONE       = 'INIT:CONT OFF';  // one-shot measurement mode
@@ -176,8 +179,7 @@ constructor TMultimeter.Create(owner: TComponent);
 begin
 	inherited Create(owner);
   e_curma := MA_ANY;
-  t_msgrimpl := TTextMessengerImpl.Create();
-  t_msgrimpl.OwnerName := ClassName();
+  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 end;
 
 destructor TMultimeter.Destroy;
@@ -305,7 +307,7 @@ begin
       else begin
         s_recv := ReadingValue(s_recv); //trim(s_recv);
         result := TryStrToFloat(s_recv, val);
-        if result then t_msgrimpl.AddMessage(format('Successful to convert data %0.3f %s.', [val, C_KEITHLEY_UNITS[e_curma]]))
+        if result then t_msgrimpl.AddMessage(format('Successful to convert data %0.5f %s.', [val, C_KEITHLEY_UNITS[e_curma]]))
         else t_msgrimpl.AddMessage(format('Failed to convert data %s', [s_recv]));
       end;
     end;
@@ -333,13 +335,32 @@ begin
   end;
 
   e_curma := MA_ANY;
+  s_idn := '';
   result := t_curconn.Connect;
   t_relay.CurConnect := t_curconn;
-  if result then result := t_curconn.SendStr(C_KEITHLEY_CLEAR_ERROR + Char(13));
-  if result then result := t_curconn.SendStr(C_KEITHLEY_BEEP_OFF + Char(13));
-  if result then result := t_curconn.SendStr(C_KEITHLEY_FORMAT_ELEMENT + Char(13));
-  if result then result := t_curconn.SendStr(C_KEITHLEY_FORMAT_ASCII + Char(13));
-  if result then result := t_curconn.SendStr(C_KEITHLEY_MEAS_ONE + Char(13));
+
+  if result then begin //get identifer string from the device
+    result := t_curconn.SendStr(C_KEITHLEY_ID_QUERY + Char(13));
+    if result then begin
+      result := t_curconn.ExpectStr(s_idn, Char(13), false);
+      if result then result := ContainsText(s_idn, 'KEITHLEY');
+      
+      if result then begin
+        s_idn := trim(s_idn);
+        t_curconn.SendStr(C_KEITHLEY_RESET + Char(13));
+        t_curconn.SendStr(C_KEITHLEY_CLEAR_ERROR + Char(13));
+        t_curconn.SendStr(C_KEITHLEY_BEEP_OFF + Char(13));
+        t_curconn.SendStr(C_KEITHLEY_FORMAT_ELEMENT + Char(13));
+        t_curconn.SendStr(C_KEITHLEY_FORMAT_ASCII + Char(13));
+        t_curconn.SendStr(C_KEITHLEY_MEAS_ONE + Char(13));
+      end;
+    end;
+  end;
+
+  if result then
+    t_msgrimpl.AddMessage('Successful to initialize deviec.')
+  else
+    t_msgrimpl.AddMessage('Failed to initialize deviec.', ML_ERROR);
 end;
 
 function TMultimeterKeithley.ReleaseDevice(): boolean;

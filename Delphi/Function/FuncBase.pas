@@ -18,7 +18,7 @@
 unit FuncBase;
 
 interface
-uses Classes, TextMessage, GenType, DeviceBase, ToolBase;
+uses Classes, TextMessage, GenType, DeviceBase;
 
 type
   TFunctionBase = class(TPersistent, ITextMessengerImpl)
@@ -27,7 +27,8 @@ type
     e_exemode:  EExecMode;      //execution mode, which can be changed through property ExecutionMode
     b_aborted:  boolean;        //indicates if current execution should be aborted
     t_pars:     TStrings;       //to save parameters
-    s_result:   string;         //a string to save result
+    //s_result:   string;         //a string to save result
+    v_resval:  Variant;         //value of the result
   protected
      function GetParamSeparator(): Char;
      procedure SetParamSeparator(separator: Char);
@@ -38,7 +39,8 @@ type
     destructor Destroy; override;
 
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
-    property ResultString: string read s_result write s_result;
+    property ResultValue: Variant read v_resval;
+    //property ResultString: string read s_result write s_result;
     property ExecutionMode: EExecMode read e_exemode write e_exemode;
     property Aborted: boolean read b_aborted write SetAborted;
     property ParamSeparator: Char read GetParamSeparator write SetParamSeparator; //separator of the parameters. The default value is a space
@@ -60,8 +62,7 @@ begin
   t_pars := TStringList.Create();
   t_pars.Delimiter := ' ';
   t_pars.StrictDelimiter := true;
-  t_msgrimpl := TTextMessengerImpl.Create();
-  t_msgrimpl.OwnerName := ClassName();
+  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 end;
 
 destructor TFunctionBase.Destroy;

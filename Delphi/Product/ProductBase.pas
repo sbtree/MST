@@ -3,6 +3,20 @@ unit ProductBase;
 interface
 uses Classes, ConnBase, DeviceBase, MtxDownloader;
 type
+  IMtxTestUnit = interface
+    //1. Reset
+    //2. Boot to service
+    //3. Flash (BL & FW)
+    //4. EEPROM (product type, module type, serial number)
+    //5. write service data (exam-date, serial number)
+    //6. query communication object (CO)
+    //7. ...
+  end;
+
+  TMtxTestUnit = class(TDeviceBase, IMtxTestUnit)
+
+  end;
+
   IMtxProduct = interface
     function Reset(const cmd: string): boolean;
     {function EnterService(const cmd: string; const expe: string = ''): boolean;

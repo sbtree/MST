@@ -640,8 +640,7 @@ begin
   t_tsteps := TStringList.Create();
   t_fnchecker := TFieldNameChecker.Create();
   t_fvchecker := TFieldValueChecker.Create();
-  t_msgrimpl := TTextMessengerImpl.Create();
-  t_msgrimpl.OwnerName := ClassName();
+  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 end;
 
 // =============================================================================

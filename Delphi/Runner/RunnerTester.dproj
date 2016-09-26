@@ -32,14 +32,22 @@
     <DelphiCompile Include="RunnerTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\RS232.pas" />
+    <DCCReference Include="..\Config\ConfigBase.pas" />
     <DCCReference Include="..\CoreData\StepData.pas" />
     <DCCReference Include="..\CoreData\StepGroup.pas" />
+    <DCCReference Include="..\Device\DeviceBase.pas" />
+    <DCCReference Include="..\Device\Multimeter.pas" />
+    <DCCReference Include="..\Device\RelayControl.pas" />
     <DCCReference Include="..\Externals\ExprParser\OObjects.pas" />
     <DCCReference Include="..\Externals\ExprParser\ParseClass.pas" />
     <DCCReference Include="..\Externals\ExprParser\ParseExpr.pas" />
+    <DCCReference Include="..\Externals\Serial3.pas" />
     <DCCReference Include="..\Function\FuncAux.pas" />
     <DCCReference Include="..\Function\FuncBase.pas" />
     <DCCReference Include="..\Function\FuncCaller.pas" />
+    <DCCReference Include="..\Function\FuncDmm.pas" />
     <DCCReference Include="..\Function\FuncSys.pas" />
     <DCCReference Include="..\General\GenType.pas" />
     <DCCReference Include="..\General\GenUtils.pas" />

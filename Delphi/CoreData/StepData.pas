@@ -65,12 +65,12 @@ type
     b_state:  EStepState;
     v_result: Variant;
   protected
-
+    procedure SetVariant(const varval: Variant);
   public
     constructor Create();
     destructor Destroy(); override;
 
-    property Value: Variant read v_result write v_result;
+    property Value: Variant read v_result write SetVariant;
     property State: EStepState read b_state write b_state;
 
     function GetString(var val: string): boolean;
@@ -111,7 +111,7 @@ type
   protected
     a_fields:   StepFieldArray;
     t_result:   TStepResult;
-    t_fvalues:  TStrings;     //temporary variable to save the list of a field value, which is split. See SplitFieldValues
+    t_fvalues:  TStrings;     //interanl variable to save the list of a field value, which is split. 
   protected
     procedure FreeFields();
     function  IsMinusStepNr(): boolean;
@@ -274,6 +274,11 @@ begin
     if not assigned(t_result) then t_result := TStepResult.Create();
     t_result.Assign(source);
   end else if assigned(t_result) then FreeAndNil(t_result);
+end;
+
+procedure TStepResult.SetVariant(const varval: Variant);
+begin
+  VarCopy(v_result, varval);
 end;
 
 constructor TStepResult.Create();

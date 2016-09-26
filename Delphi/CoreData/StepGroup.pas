@@ -337,8 +337,7 @@ begin
   b_freestep := false;
   t_steps := TStringList.Create();
   t_steps.Delimiter := Char(';');
-  t_msgrimpl := TTextMessengerImpl.Create();
-  t_msgrimpl.OwnerName := ClassName();
+  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 end;
 
 destructor TStepGroup.Destroy();

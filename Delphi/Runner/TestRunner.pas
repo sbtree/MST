@@ -75,9 +75,7 @@ begin
   inherited Create();
   b_jumpmstep := true;
   t_funcobjs := TObjectList.Create();
-
-  t_msgrimpl := TTextMessengerImpl.Create();
-  t_msgrimpl.OwnerName := ClassName();
+  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 
   t_curseq := TTestSequence.Create();
   t_fcaller := TFunctionCaller.Create();
@@ -215,6 +213,7 @@ begin
   else begin
     t_func := GetFunctionObj(t_curstep);
     s_fpar := t_curstep.GetFieldValue(SF_PAR);
+    t_fcaller.CurStepResult := t_curstep.StepResult;
     result := t_fcaller.RunFunction(t_func, s_fpar);
   end;
 end;

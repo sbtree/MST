@@ -4,7 +4,14 @@ interface
 uses DeviceBase, TekUsb;
 
 type
-  TTekOsci = class(TDeviceBase)
+  IOscilloscope = interface
+    //1. config
+    //2. trigger
+    //3. channel
+    //4. data
+  end;
+
+  TOsciTektronix = class(TDeviceBase, IOscilloscope)
   protected
   
   end;

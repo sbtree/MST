@@ -18,6 +18,7 @@ type
     t_dmm:  TMultimeter;
   protected
     procedure SetDevMultimeter(const dmm: TMultimeter); virtual;
+    function DoMeasurement(const meas: EMeasureAction): boolean;
   public
     constructor Create(); override;
     property DevMultimeter: TMultimeter read t_dmm write SetDevMultimeter;
@@ -72,6 +73,26 @@ begin
   t_dmm := dmm;
 end;
 
+function TDmmFunction.DoMeasurement(const meas: EMeasureAction): boolean;
+var d_val: double;
+begin
+  result := false;
+  if assigned(t_dmm) then begin
+    t_dmm.SetMeasureRange(meas, d_range);
+    case meas of
+      MA_RES: result := t_dmm.MeasureR(d_val);
+      MA_DCV: result := t_dmm.MeasureDCV(d_val);
+      MA_ACV: result := t_dmm.MeasureACV(d_val);
+      MA_DCI: result := t_dmm.MeasureDCI(d_val);
+      MA_ACI: result := t_dmm.MeasureACI(d_val);
+      MA_FREQ: result := t_dmm.MeasureF(d_val);
+      MA_PERI: result := t_dmm.MeasureP(d_val);
+      MA_TEMP: result := t_dmm.MeasureT(d_val);
+    end;
+    v_resval := d_val;
+  end;
+end;
+
 constructor TDmmFunction.Create();
 begin
   inherited Create();
@@ -87,94 +108,49 @@ begin
     if (pars.Count = 1) then begin
       s_par := ReplaceStr(pars[0], '.', DecimalSeparator);
       result := TryStrToFloat(s_par, d_range);
-      if (not result) then d_range := -1.0; //set negative value
+      if (not result) then d_range := -1.0; //set negative value for automatical range
     end;
   end;
 end;
 
 function MeasureDCV.DoTask(): boolean;
-var d_val: double;
 begin
-  result := false;
-  if assigned(t_dmm) then begin
-    t_dmm.SetMeasureRange(MA_DCV, d_range);
-    result := t_dmm.MeasureDCV(d_val);
-    //todo:
-  end;
+  result := DoMeasurement(MA_DCV);
 end;
 
 function MeasureDCI.DoTask(): boolean;
-var d_val: double;
 begin
-  result := false;
-  if assigned(t_dmm) then begin
-    t_dmm.SetMeasureRange(MA_DCI, d_range);
-    result := t_dmm.MeasureDCI(d_val);
-    //todo:
-  end;
+  result := DoMeasurement(MA_DCI);
 end;
 
 function MeasureACV.DoTask(): boolean;
-var d_val: double;
 begin
-  result := false;
-  if assigned(t_dmm) then begin
-    t_dmm.SetMeasureRange(MA_ACV, d_range);
-    result := t_dmm.MeasureACV(d_val);
-    //todo:
-  end;
+  result := DoMeasurement(MA_ACV);
 end;
 
 function MeasureACI.DoTask(): boolean;
-var d_val: double;
 begin
-  result := false;
-  if assigned(t_dmm) then begin
-    t_dmm.SetMeasureRange(MA_ACI, d_range);
-    result := t_dmm.MeasureACI(d_val);
-    //todo:
-  end;
+  result := DoMeasurement(MA_ACI);
 end;
 
 function MeasureF.DoTask(): boolean;
-var d_val: double;
 begin
-  result := false;
-  if assigned(t_dmm) then begin
-    result := t_dmm.MeasureF(d_val);
-    //todo:
-  end;
+  result := DoMeasurement(MA_FREQ);
 end;
 
 function MeasureP.DoTask(): boolean;
-var d_val: double;
 begin
-  result := false;
-  if assigned(t_dmm) then begin
-    result := t_dmm.MeasureP(d_val);
-    //todo:
-  end;
+  result := DoMeasurement(MA_PERI);
 end;
 
 function MeasureR.DoTask(): boolean;
-var d_val: double;
 begin
-  result := false;
-  if assigned(t_dmm) then begin
-    t_dmm.SetMeasureRange(MA_RES, d_range);
-    result := t_dmm.MeasureR(d_val);
-    //todo:
-  end;
+  result := DoMeasurement(MA_RES);
 end;
 
 function MeasureT.DoTask(): boolean;
-var d_val: double;
 begin
-  result := false;
-  if assigned(t_dmm) then begin
-    result := t_dmm.MeasureT(d_val);
-    //todo:
-  end;
+  result := DoMeasurement(MA_TEMP);
 end;
 
 initialization
