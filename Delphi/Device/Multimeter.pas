@@ -38,24 +38,17 @@ type
     procedure SetMeasureRange(const meas:EMeasureAction; const range: double = 0.0);
   end;
 
-  TMultimeter = class(TDeviceBase, IMultimeter, ITextMessengerImpl)
+  TMultimeter = class(TDeviceBase, IMultimeter)
   protected
-    e_cont :  EContinueMode;        //indicate if continue mode is shut on
     e_curma:  EMeasureAction;       //current setting for the measurement
-    t_msgrimpl: TTextMessengerImpl; //for delegation of interface TTextMessengerImpl         l
   protected
     function InitFromFile(const sfile: string): boolean; virtual;
     function SwitchMeasurement(const meas: EMeasureAction): boolean; virtual;
     function ReadData(var val: double): boolean; virtual;
     procedure TriggerMesssure(); virtual;
-    //procedure SetMessengerReim(tmessenger: TTextMessenger); virtual;
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
-
-    property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
-    //procedure ITextMessengerImpl.SetMessenger = SetMessengerReim;
-    property ContinueMode : EContinueMode read e_cont write e_cont;
 
     function MeasureR(var val: double): boolean; virtual;
     function MeasureDCV(var val: double): boolean; virtual;
@@ -70,6 +63,7 @@ type
 
   TMultimeterKeithley = class(TMultimeter, IRelayControl)
   protected
+    e_cont :  EContinueMode;        //indicate if continue mode is shut on
     s_idn:    string;
     t_relay:  TRelayKeithley;
   protected
@@ -77,12 +71,12 @@ type
     function ReadingValue(const elem: string): string;
     function ReadData(var val: double): boolean; override;
     //procedure TriggerMesssure(); virtual;
-    //procedure SetMessengerReim(tmessenger: TTextMessenger); override;
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy(); override;
 
     property RelayControl: TRelayKeithley read t_relay implements IRelayControl;
+    property ContinueMode : EContinueMode read e_cont write e_cont;
 
     function InitDevice(): boolean; override;
     function ReleaseDevice(): boolean; override;
@@ -170,21 +164,14 @@ begin
   //todo: if it's neccessary
 end;
 
-{procedure TMultimeter.SetMessengerReim(tmessenger: TTextMessenger);
-begin
-  t_msgrimpl.Messenger := tmessenger;
-end; }
-
 constructor TMultimeter.Create(owner: TComponent);
 begin
 	inherited Create(owner);
   e_curma := MA_ANY;
-  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 end;
 
 destructor TMultimeter.Destroy;
 begin
-  t_msgrimpl.Free();
 	inherited Destroy;
 end;
 
@@ -249,12 +236,6 @@ begin
   t_msgrimpl.AddMessage(format('"%s.SetMeasurementRange" must be reimplemented in its subclass.', [ClassName()]), ML_WARNING);
 end;
 
-{procedure TMultimeterKeithley.SetMessengerReim(tmessenger: TTextMessenger);
-begin
-  inherited SetMessengerReim(tmessenger);
-  ITextMessengerImpl(t_relay).Messenger := t_msgrimpl.Messenger;
-end;}
-
 function TMultimeterKeithley.SwitchMeasurement(const meas: EMeasureAction): boolean;
 var s_sending, s_recv: string;
 begin
@@ -262,12 +243,16 @@ begin
   if result then begin
     if (e_curma <> meas) then begin
       s_sending := format(C_KEITHLEY_SET_FUNC, [C_KEITHLEY_FUNC[meas]]) + Char(13);
-      t_curconn.SendStr(s_sending);
+      result := t_curconn.SendStr(s_sending);
     end;
-    t_curconn.SendStr(C_KEITHLEY_FUNC_ASK + Char(13));
-    if t_curconn.ExpectStr(s_recv, Char(13), false) then begin
-      s_recv := TGenUtils.ClearQuotationMarks(trim(s_recv));
-      result := SameText(s_recv, C_KEITHLEY_FUNC[meas]);
+    if result then begin
+      result := t_curconn.SendStr(C_KEITHLEY_FUNC_ASK + Char(13));
+      if result then begin
+        result := t_curconn.ExpectStr(s_recv, Char(13), false);
+        s_recv := TGenUtils.ClearQuotationMarks(trim(s_recv));
+        if result then
+          result := SameText(s_recv, C_KEITHLEY_FUNC[meas]);
+      end;
       if result then e_curma := meas
       else e_curma := MA_ANY;
     end else result := false;

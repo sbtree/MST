@@ -1,7 +1,7 @@
 unit Oscilloscope;
 
 interface
-uses DeviceBase, TekUsb;
+uses Classes, DeviceBase, TekUsb;
 
 type
   IOscilloscope = interface
@@ -11,7 +11,14 @@ type
     //4. data
   end;
 
-  TOsciTektronix = class(TDeviceBase, IOscilloscope)
+  TOscilloscope = class(TDeviceBase, IOscilloscope)
+    //1. config
+    //2. trigger
+    //3. channel
+    //4. data
+  end;
+
+  TOsciTektronix = class(TOscilloscope, IOscilloscope)
   protected
   
   end;
