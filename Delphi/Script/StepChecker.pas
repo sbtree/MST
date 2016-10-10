@@ -1,3 +1,10 @@
+// =============================================================================
+// Module name  : $RCSfile: ScriptChecker.pas,v $
+// Description  : This unit defines classes for checking fields of test steps.
+// Compiler     : Delphi 2007
+// Author       : 2016-02-03 /bsu/
+// History      :
+//==============================================================================
 unit StepChecker;
 
 interface

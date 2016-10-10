@@ -16,7 +16,7 @@ uses
   FuncAux in 'FuncAux.pas',
   RS232 in '..\Comm\RS232.pas',
   MtxUSB in '..\Comm\MtxUSB.pas',
-  CAN in '..\Comm\CAN.pas',
+  PCAN in '..\Comm\PCAN.pas',
   ConnBase in '..\Comm\ConnBase.pas',
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
   Usbspec in '..\Externals\USBIO\Usbspec.pas',

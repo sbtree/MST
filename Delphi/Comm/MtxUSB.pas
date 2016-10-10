@@ -1,3 +1,11 @@
+// =============================================================================
+// Module name  : $RCSfile: MtxUSB.pas,v $
+// description  : This unit defines a class, which implements methodes and
+//                properties for communication with Metronix USB-device.
+// Compiler     : Delphi 2007
+// Author       : 2015-09-08 /bsu/
+// History      :
+//==============================================================================
 unit MtxUSB;
 //Warning: this file is not be klu yet
 

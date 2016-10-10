@@ -1,3 +1,12 @@
+﻿//==============================================================================
+// Module name  : $RCSfile: ProductBase.pas,v $
+// Description  : This unit defines base classes for variants of Metronix products
+// Copyright    : (c) Metronix 2015
+// Reversion    : $Revision 1.0$
+// Compiler     : Delphi 2007
+// Author       : 2015-07-14 /bsu/
+// History      :
+//==============================================================================
 unit ProductBase;
 
 interface

@@ -43,9 +43,9 @@
     <DelphiCompile Include="DeviceManagerTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
-    <DCCReference Include="..\Comm\CAN.pas" />
     <DCCReference Include="..\Comm\ConnBase.pas" />
     <DCCReference Include="..\Comm\MtxUSB.pas" />
+    <DCCReference Include="..\Comm\PCAN.pas" />
     <DCCReference Include="..\Comm\RS232.pas" />
     <DCCReference Include="..\Comm\TekUSB.pas" />
     <DCCReference Include="..\Config\ConfigBase.pas" />
@@ -86,8 +86,10 @@
     <None Include="ModelSupport_DeviceManagerTester\Multimeter\default.txaPackage" />
     <None Include="ModelSupport_DeviceManagerTester\Multimeter\default.txvpck" />
     <None Include="ModelSupport_DeviceManagerTester\Oscilloscope\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\PCAN\default.txaPackage" />
     <None Include="ModelSupport_DeviceManagerTester\ProtocolBase\default.txvpck" />
     <None Include="ModelSupport_DeviceManagerTester\RelayControl\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\RS232\default.txaPackage" />
     <None Include="ModelSupport_DeviceManagerTester\RS232\default.txvpck" />
     <None Include="ModelSupport_DeviceManagerTester\TekUSB\default.txaPackage" />
     <None Include="ModelSupport_DeviceManagerTester\TextMessage\default.txaPackage" />

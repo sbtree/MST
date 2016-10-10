@@ -1,5 +1,5 @@
 // =============================================================================
-// Module name  : $RCSfile: CAN.pas,v $
+// Module name  : $RCSfile: PCAN.pas,v $
 // Description  : This unit defines classes for communication over can bus.
 //                TConnPCanUsb wraps the interface of pcan-light, but the dll
 //                file will be dynamic loaded, so that the dll file is changable
@@ -8,7 +8,7 @@
 // Author       : 2016-06-14 /bsu/
 // History      :
 
-unit CAN;
+unit PCAN;
 
 interface
 uses  Classes, ConnBase;
@@ -377,6 +377,7 @@ type
     function CanSetRcvEvent(hEvent: THandle): longword; virtual;
     function CanSetUsbDeviceNr(DevNum: LongWord): longword;
     function CanGetUsbDeviceNr(var DevNum: LongWord): longword;
+    procedure DoReadError(reval: longword; MsgBuff: TPCANMsg);
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy(); override;
@@ -783,10 +784,12 @@ end;
 function TPCanLight.BuildMessage(const canmsg: PPCANMsg): string;
 var i: integer; s_data: string;
 begin
-  s_data := '';
-  for i := 0 to canmsg^.LEN - 1 do s_data := s_data + format('%.2x', [canmsg^.DATA[i]]);
-  if (canmsg^.MSGTYPE = MSGTYPE_EXTENDED) then result := format('%.8x:%s', [canmsg^.ID, s_data])
-  else result := format('%.3x:%s', [canmsg^.ID, s_data]);
+  if (canmsg^.LEN > 0) then begin
+    s_data := '';
+    for i := 0 to canmsg^.LEN - 1 do s_data := s_data + format('%.2x', [canmsg^.DATA[i]]);
+    if (canmsg^.MSGTYPE = MSGTYPE_EXTENDED) then result := format('%.8x:%s', [canmsg^.ID, s_data])
+    else result := format('%.3x:%s', [canmsg^.ID, s_data]);
+  end else s_data := '[NOTHING]';
 end;
 
 function TPCanLight.IsValidFunction(const canfnt: EPCanFunction; var errnr: longword): boolean;
@@ -1006,28 +1009,14 @@ function TPCanLight.CanRead(var MsgBuff: TPCANMsg): longword;
 begin
   result := CAN_READ(a_pcanfnt[PCF_READ])(MsgBuff);
   if (result = CAN_ERR_OK) then Inc(lw_recvcnt)
-  else begin
-    if ((result AND (CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) then begin
-      result := CanClose();
-      TryConnect();
-      if IsConnected() then t_msgrimpl.AddMessage('Successful to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
-      else t_msgrimpl.AddMessage('Failed to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
-    end;
-  end;
+  else DoReadError(result, MsgBuff);
 end;
 
 function TPCanLight.CanReadEx(var MsgBuff: TPCANMsg; var RcvTime: TPCANTimestamp): longword;
 begin
   result := CAN_READEX(a_pcanfnt[PCF_READEX])(MsgBuff, RcvTime);
   if (result = CAN_ERR_OK) then Inc(lw_recvcnt)
-  else begin
-    if ((result AND (CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) then begin
-      result := CanClose();
-      TryConnect();
-      if IsConnected() then t_msgrimpl.AddMessage('Successful to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
-      else t_msgrimpl.AddMessage('Failed to reconnect CAN-Bus by error: ' + BuildMessage(@MsgBuff))
-    end;
-  end;
+  else DoReadError(result, MsgBuff);
 end;
 
 function TPCanLight.CanVersionInfo(lpszTextBuff: PAnsiChar): longword;
@@ -1082,6 +1071,19 @@ function TPCanLight.CanGetUsbDeviceNr(var DevNum: LongWord): longword;
 begin
   if IsValidFunction(PCF_GETUSBDEVICENR, result) then
     result := CAN_GETUSBDEVICENR(a_pcanfnt[PCF_GETUSBDEVICENR])(DevNum);
+end;
+
+procedure TPCanLight.DoReadError(reval: longword; MsgBuff: TPCANMsg);
+begin
+  if ((reval <> CAN_ERR_QRCVEMPTY) and (reval <> CAN_ERR_OK)) then begin
+    t_msgrimpl.AddMessage('Received an error message from CAN-adapter: ' + BuildMessage(@MsgBuff), ML_ERROR);
+    if ((reval AND (CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) then begin
+      CanClose();
+      TryConnect();
+      if IsConnected() then t_msgrimpl.AddMessage(format('Successful to reconnect CAN-adapter because of last error (code: %d).', [reval]))
+      else t_msgrimpl.AddMessage(format('Failed to reconnect CAN-adapter  because of last error (code: %d).', [reval]), ML_ERROR);
+    end;
+  end;
 end;
 
 constructor TPCanLight.Create(owner: TComponent);

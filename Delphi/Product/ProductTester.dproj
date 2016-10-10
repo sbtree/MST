@@ -58,6 +58,7 @@
     </DCCReference>
     <DCCReference Include="MtxDownloader.pas" />
     <DCCReference Include="ProductBase.pas" />
+    <DCCReference Include="UnitsSystem.pas" />
     <None Include="ModelSupport_ProductTester\ConfigBase\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\ConnBase\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\DataBuffer\default.txaPackage" />
@@ -85,5 +86,6 @@
     <None Include="ModelSupport_ProductTester\RS232\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\StringPairs\default.txaPackage" />
     <None Include="ModelSupport_ProductTester\TextMessage\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\UnitsSystem\default.txaPackage" />
   </ItemGroup>
 </Project>

@@ -43,9 +43,9 @@
     <DelphiCompile Include="FunctionTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
-    <DCCReference Include="..\Comm\CAN.pas" />
     <DCCReference Include="..\Comm\ConnBase.pas" />
     <DCCReference Include="..\Comm\MtxUSB.pas" />
+    <DCCReference Include="..\Comm\PCAN.pas" />
     <DCCReference Include="..\Comm\RS232.pas" />
     <DCCReference Include="..\Config\ConfigBase.pas" />
     <DCCReference Include="..\CoreData\StepData.pas" />
@@ -95,6 +95,7 @@
     <None Include="ModelSupport_FunctionTester\OObjects\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\ParseClass\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\ParseExpr\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\PCAN\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\ScriptReader\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\StepChecker\default.txaPackage" />
     <None Include="ModelSupport_FunctionTester\StepGroup\default.txvpck" />

@@ -6,7 +6,6 @@
   <ItemGroup>
     <Projects Include="Comm\CommTester.dproj" />
     <Projects Include="Device\DeviceManagerTester.dproj" />
-    <Projects Include="Device\DeviceTests.dproj" />
     <Projects Include="Function\FunctionTester.dproj" />
     <Projects Include="General\GeneralTester.dproj" />
     <Projects Include="Product\BootTester.dproj" />
@@ -86,15 +85,6 @@
   <Target Name="ProductTester:Make">
     <MSBuild Projects="Product\ProductTester.dproj" Targets="Make" />
   </Target>
-  <Target Name="DeviceTests">
-    <MSBuild Projects="Device\DeviceTests.dproj" Targets="" />
-  </Target>
-  <Target Name="DeviceTests:Clean">
-    <MSBuild Projects="Device\DeviceTests.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="DeviceTests:Make">
-    <MSBuild Projects="Device\DeviceTests.dproj" Targets="Make" />
-  </Target>
   <Target Name="BootTester">
     <MSBuild Projects="Product\BootTester.dproj" Targets="" />
   </Target>
@@ -132,13 +122,13 @@
     <MSBuild Projects="Starter\TestStarter.dproj" Targets="Make" />
   </Target>
   <Target Name="Build">
-    <CallTarget Targets="DeviceManagerTester;GeneralTester;FunctionTester;ToolTester;ScriptTester;CommTester;ProductTester;DeviceTests;BootTester;ServoTester;RunnerTester;TestStarter" />
+    <CallTarget Targets="DeviceManagerTester;GeneralTester;FunctionTester;ToolTester;ScriptTester;CommTester;ProductTester;BootTester;ServoTester;RunnerTester;TestStarter" />
   </Target>
   <Target Name="Clean">
-    <CallTarget Targets="DeviceManagerTester:Clean;GeneralTester:Clean;FunctionTester:Clean;ToolTester:Clean;ScriptTester:Clean;CommTester:Clean;ProductTester:Clean;DeviceTests:Clean;BootTester:Clean;ServoTester:Clean;RunnerTester:Clean;TestStarter:Clean" />
+    <CallTarget Targets="DeviceManagerTester:Clean;GeneralTester:Clean;FunctionTester:Clean;ToolTester:Clean;ScriptTester:Clean;CommTester:Clean;ProductTester:Clean;BootTester:Clean;ServoTester:Clean;RunnerTester:Clean;TestStarter:Clean" />
   </Target>
   <Target Name="Make">
-    <CallTarget Targets="DeviceManagerTester:Make;GeneralTester:Make;FunctionTester:Make;ToolTester:Make;ScriptTester:Make;CommTester:Make;ProductTester:Make;DeviceTests:Make;BootTester:Make;ServoTester:Make;RunnerTester:Make;TestStarter:Make" />
+    <CallTarget Targets="DeviceManagerTester:Make;GeneralTester:Make;FunctionTester:Make;ToolTester:Make;ScriptTester:Make;CommTester:Make;ProductTester:Make;BootTester:Make;ServoTester:Make;RunnerTester:Make;TestStarter:Make" />
   </Target>
   <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
 </Project>

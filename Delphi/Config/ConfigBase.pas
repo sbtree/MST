@@ -1,3 +1,11 @@
+// =============================================================================
+// Module name  : $RCSfile: ConfigBase.pas,v $
+// Description  : This unit defines base class for configurations of measurement
+//                device, product and so an.
+// Compiler     : Delphi 2007
+// Author       : 2015-12-11 /bsu/
+// History      :
+//==============================================================================
 unit ConfigBase;
 
 interface
@@ -5,7 +13,6 @@ uses Classes, StringPairs;
 
 type
   EConfigFormat = (
-                CF_UNKNOWN,
                 CF_INI,
                 CF_XML
                 );

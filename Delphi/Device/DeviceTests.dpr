@@ -26,7 +26,11 @@ uses
   RS232 in '..\Comm\RS232.pas',
   DataBuffer in '..\General\DataBuffer.pas',
   GenUtils in '..\General\GenUtils.pas',
-  DeviceBase in 'DeviceBase.pas';
+  DeviceBase in 'DeviceBase.pas',
+  TextMessage in '..\General\TextMessage.pas',
+  DeviceConfig in '..\Config\DeviceConfig.pas',
+  ConfigBase in '..\Config\ConfigBase.pas',
+  StringPairs in '..\General\StringPairs.pas';
 
 {$R *.RES}
 

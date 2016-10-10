@@ -126,7 +126,7 @@ const
                   'AAC',
                   'HZ',
                   'SEC',
-                  Char($13)+'C'
+                  '°C'
                   );
 
   C_KEITHLEY_RANGE: array[EMeasureAction] of single = (

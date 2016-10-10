@@ -12,7 +12,7 @@ uses
   RS232 in '..\Comm\RS232.pas',
   PowerSupply in 'PowerSupply.pas',
   Thermometer in 'Thermometer.pas',
-  CAN in '..\Comm\CAN.pas',
+  PCAN in '..\Comm\PCAN.pas',
   MtxUSB in '..\Comm\MtxUSB.pas',
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
   Usbspec in '..\Externals\USBIO\Usbspec.pas',

@@ -42,11 +42,15 @@
     <DelphiCompile Include="ScriptTester.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
+    <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Config\ConfigBase.pas" />
     <DCCReference Include="..\CoreData\StepData.pas" />
     <DCCReference Include="..\CoreData\StepGroup.pas" />
+    <DCCReference Include="..\Device\DeviceBase.pas" />
     <DCCReference Include="..\Function\FuncBase.pas" />
     <DCCReference Include="..\Function\FuncMat.pas" />
     <DCCReference Include="..\General\GenType.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
     <DCCReference Include="..\General\StringPairs.pas" />
     <DCCReference Include="..\General\TextMessage.pas" />
     <DCCReference Include="FormScriptTester.pas">

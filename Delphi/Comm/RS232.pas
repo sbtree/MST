@@ -1,3 +1,11 @@
+// =============================================================================
+// Module name  : $RCSfile: RS232.pas,v $
+// description  : This unit defines a class, which implements methodes and
+//                properties for general communication with RS232.
+// Compiler     : Delphi 2007
+// Author       : 2015-09-08 /bsu/
+// History      :
+//==============================================================================
 unit RS232;
 
 interface

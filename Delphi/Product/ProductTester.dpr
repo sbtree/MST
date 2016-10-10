@@ -14,7 +14,8 @@ uses
   DeviceBase in '..\Device\DeviceBase.pas',
   ProductConfig in '..\Config\ProductConfig.pas',
   ConfigBase in '..\Config\ConfigBase.pas',
-  DeviceConfig in '..\Config\DeviceConfig.pas';
+  DeviceConfig in '..\Config\DeviceConfig.pas',
+  UnitsSystem in 'UnitsSystem.pas';
 
 {$R *.res}
 

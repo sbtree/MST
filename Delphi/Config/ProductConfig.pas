@@ -1,3 +1,11 @@
+// =============================================================================
+// Module name  : $RCSfile: ProductConfig.pas,v $
+// Description  : This unit defines classes specially for configuration of 
+//                variants of metronix product.
+// Compiler     : Delphi 2007
+// Author       : 2015-12-11 /bsu/
+// History      :
+//==============================================================================
 unit ProductConfig;
 
 interface

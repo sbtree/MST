@@ -1,3 +1,11 @@
+// =============================================================================
+// Module name  : $RCSfile: DeviceConfig.pas,v $
+// Description  : This unit defines classes specially for configurations of
+//                measurement devices
+// Compiler     : Delphi 2007
+// Author       : 2015-12-11 /bsu/
+// History      :
+//==============================================================================
 unit DeviceConfig;
 
 interface

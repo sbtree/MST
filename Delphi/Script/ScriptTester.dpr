@@ -11,7 +11,11 @@ uses
   StepGroup in '..\CoreData\StepGroup.pas',
   StepChecker in 'StepChecker.pas',
   StringPairs in '..\General\StringPairs.pas',
-  StepData in '..\CoreData\StepData.pas';
+  StepData in '..\CoreData\StepData.pas',
+  DeviceBase in '..\Device\DeviceBase.pas',
+  ConnBase in '..\Comm\ConnBase.pas',
+  ConfigBase in '..\Config\ConfigBase.pas',
+  GenUtils in '..\General\GenUtils.pas';
 
 {$R *.res}
 

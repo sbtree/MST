@@ -181,22 +181,24 @@ end;
 procedure TfrmScriptTester.btnSequenceCasesClick(Sender: TObject);
 var s_casenrs: string; t_seq: TTestSequence;
 begin
-  t_seq := t_container.TestSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
+  t_seq := t_container.CreateSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
   if assigned(t_seq) then s_casenrs := t_seq.CaseGroup.CaseNumbers;
 
   if s_casenrs <> '' then t_messenger.AddMessage('Sequence Cases: ' + s_casenrs)
-  else t_messenger.AddMessage('Test Sequence: no case')
+  else t_messenger.AddMessage('Test Sequence: no case');
+  FreeAndNil(t_seq);
 end;
 
 procedure TfrmScriptTester.btnSequenceStepsClick(Sender: TObject);
 var s_stepnrs: string;t_seq: TTestSequence;
 begin
-  t_seq := t_container.TestSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
+  t_seq := t_container.CreateSequence(trim(txtInclusive.Text), trim(txtExclusive.Text));
   if assigned(t_seq) then s_stepnrs := t_seq.StepNumbers;
   FreeAndNil(t_seq);
 
   if s_stepnrs <> '' then t_messenger.AddMessage('Sequence Steps: ' + s_stepnrs)
-  else t_messenger.AddMessage('Test Sequence: no step')
+  else t_messenger.AddMessage('Test Sequence: no step');
+  FreeAndNil(t_seq);
 end;
 
 procedure TfrmScriptTester.btnVariableClick(Sender: TObject);

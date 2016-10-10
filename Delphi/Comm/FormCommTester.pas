@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ConnBase, TextMessage, CAN, ExtCtrls;
+  Dialogs, StdCtrls, ConnBase, TextMessage, PCAN, ExtCtrls;
 
 type
   TfrmCommTester = class(TForm)
@@ -33,8 +33,6 @@ type
     t_conn: TConnBase;
     t_canthread: TPCanReadThread;
     t_messenger: TTextMessenger;
-  private
-    procedure UpdateMemoText();
   public
     { Public-Deklarationen }
   end;
@@ -128,12 +126,6 @@ begin
     lblCount.Caption := format('Tx(%d); Rx(%d)', [t_pcan.CountSending, t_pcan.CountReceive]);
     //UpdateMemoText();
   end;
-end;
-
-procedure TfrmCommTester.UpdateMemoText();
-var i: integer;
-begin
-  for i := memLog.Lines.Count to t_messenger.CountLines - 1 do memLog.Lines.Append(t_messenger.LineText[i]);
 end;
 
 end.
