@@ -106,7 +106,7 @@ type
     c_timeout: cardinal;
     e_bootstate: EBootState;
     e_dlprotocol: EDownloadProtocol;
-    t_downloader: TComDownloader;
+    t_downloader: TMtxComDownloader;
   public
     { Public-Deklarationen }
   end;
@@ -178,7 +178,7 @@ end;
 
 procedure TFrmBootTester.btnDownloadClick(Sender: TObject);
 const C_DOWNLOAD_INTERVAL: cardinal = 6000;
-var s_file: string; b_ok: boolean; r_factor: single;
+var s_file: string; r_factor: single;
 begin
   r_factor := 1.0;
   if chkBaudFactor.Checked then begin
@@ -719,7 +719,7 @@ procedure TFrmBootTester.FormDestroy(Sender: TObject);
 begin
   FreeAndNil(t_ser);
   FreeAndNil(t_ctrl);
-  FreeAndNil(t_downloader);
+  t_downloader := nil;
 end;
 
 procedure TFrmBootTester.lstSendingDblClick(Sender: TObject);
