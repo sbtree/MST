@@ -37,9 +37,8 @@ var
   frmDeviceManager: TfrmDeviceManager;
 
 implementation
-
 {$R *.dfm}
-uses DeviceBase, RS232;
+uses DeviceBase, RS232, AnsiStrings;
 
 procedure TfrmDeviceManager.btnResetClick(Sender: TObject);
 begin
@@ -68,7 +67,7 @@ begin
 end;
 
 procedure TfrmDeviceManager.btnOpenClick(Sender: TObject);
-var s_relays: string;
+var s_relays: AnsiString;
 begin
   s_relays := trim(txtRelays.Text);
   t_relay := t_multimeter.RelayControl;
@@ -76,7 +75,7 @@ begin
 end;
 
 procedure TfrmDeviceManager.btnCloseClick(Sender: TObject);
-var s_relays: string;
+var s_relays: AnsiString;
 begin
   s_relays := trim(txtRelays.Text);
   t_relay := t_multimeter.RelayControl;

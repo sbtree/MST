@@ -339,9 +339,9 @@ type
     function LoadDefaultDll(const hwt: EPCanHardwareType): boolean; overload;
     function LoadDefaultDll(const shwt: string): boolean; overload;
     function GetErrorMsg(const errnr: longword): string; virtual;
-    function StrToPCanMsg(const msg: string; var canmsg: TPCANMsg): boolean; virtual;
-    function PCanMsgToStr(const canmsg: TPCANMsg; var msg: string): boolean; virtual;
-    function IsPCanMsg(const buf: PChar; const len: longword): boolean; virtual;
+    function StrToPCanMsg(const msg: AnsiString; var canmsg: TPCANMsg): boolean; virtual;
+    function PCanMsgToStr(const canmsg: TPCANMsg; var msg: AnsiString): boolean; virtual;
+    function IsPCanMsg(const buf: PAnsiChar; const len: longword): boolean; virtual;
     function BuildMessage(const canmsg: PPCANMsg): string;
     function IsValidFunction(const canfnt: EPCanFunction; var errnr: longword): boolean;
     function SetNPnP(etype: EPCanNPnPType; ioport: longword; irq: word): boolean;
@@ -351,10 +351,10 @@ type
     function SetCanVersion(const sver: string): boolean;
     function GetHardwareTypeText(): string;
     function GetBaudrateText(): string;
-    function BufferToStr(): string; override;
+    function BufferToStr(): AnsiString; override;
     function IsReadComplete(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    function SendData(const buf: PChar; len: word): boolean; override;
+    function SendData(const buf: PAnsiChar; len: word): boolean; override;
     function RecvData(): boolean; override;
     procedure TryConnect(); override;
     procedure SetMsgVersion(ecanver: EPCanVersion);
@@ -399,8 +399,8 @@ type
 
     function Config(const sconfs: TStrings): boolean; overload; override;
     function Disconnect: boolean; override;
-    function SendBuf(const buf: PChar; const len: longword): boolean; override;
-    function SendStr(const str: string): boolean; override;
+    function SendBuf(const buf: PAnsiChar; const len: longword): boolean; override;
+    function SendStr(const str: AnsiString): boolean; override;
   end;
   PPCanLight = ^TPCanLight;
 
@@ -588,7 +588,8 @@ const
   C_CANMSG_LENGTH_MAX = 8;
 
 implementation
-uses Windows, SysUtils, StrUtils, TextMessage, TypInfo, Forms, SyncObjs;
+uses AnsiStrings, Windows, SysUtils, StrUtils, TextMessage, TypInfo, Forms, SyncObjs;
+
 type
   SetPCanProperty = function(ppcan: TPCanLight; const sval: string): boolean;
   CAN_INIT_PNP = function(wBR: Word; CANMsgType: Integer): longword; stdcall;
@@ -724,22 +725,22 @@ begin
 end;
 
 //msg is a formatted string and looks like '58A:2038F612' with hexidecimal format 'can_nodenr:data'
-function TPCanLight.StrToPCanMsg(const msg: string; var canmsg: TPCANMsg): boolean;
-var s_nodenr, s_data: string; i, i_len, i_pos, i_nodenr, i_data: integer;
+function TPCanLight.StrToPCanMsg(const msg: AnsiString; var canmsg: TPCANMsg): boolean;
+var s_nodenr, s_data: AnsiString; i, i_len, i_pos, i_nodenr, i_data: integer;
 begin
   result := false;
-  i_pos := Pos(':', msg);
+  i_pos := AnsiPos(':', msg);
   i_len := Length(msg);
   if (i_pos > 0) then begin
-    s_nodenr := trim(LeftStr(msg, i_pos - 1));
+    s_nodenr := trim(AnsiLeftStr(msg, i_pos - 1));
     if TryStrToInt('$' + s_nodenr, i_nodenr) then begin
-      s_data := trim(RightStr(msg, i_len - i_pos));
+      s_data := trim(AnsiRightStr(msg, i_len - i_pos));
       i_len := length(s_data);
       if ((i_len mod 2) <> 0) then s_data := '0' + s_data; //add prefix '0' if a half byte exists in the string
       i_len := Round(i_len / 2);
       if i_len > C_CANMSG_LENGTH_MAX then i_len := C_CANMSG_LENGTH_MAX;
       for i := 0 to i_len - 1 do begin
-        result := TryStrToInt('$' + MidStr(s_data, i * 2 + 1, 2), i_data);
+        result := TryStrToInt('$' + AnsiMidStr(s_data, i * 2 + 1, 2), i_data);
         if result then canmsg.DATA[i] := byte(i_data)
         else break;
       end;
@@ -753,18 +754,18 @@ begin
   end;
 end;
 
-function TPCanLight.PCanMsgToStr(const canmsg: TPCANMsg; var msg: string): boolean;
-var i: integer; s_data: string;
+function TPCanLight.PCanMsgToStr(const canmsg: TPCANMsg; var msg: AnsiString): boolean;
+var i: integer; s_data: AnsiString;
 begin
   result := (canmsg.LEN  > 0); s_data := '';
   if result then begin
-    for i := 0 to canmsg.LEN - 1 do s_data := s_data + format('%.2x', [canmsg.DATA[i]]);
-    if (canmsg.MSGTYPE = MSGTYPE_EXTENDED) then msg := format('%.8x:%s', [canmsg.ID, s_data])
-    else msg := format('%.3x:%s', [canmsg.ID, s_data]);
+    for i := 0 to canmsg.LEN - 1 do s_data := s_data + AnsiStrings.format('%.2x', [canmsg.DATA[i]]);
+    if (canmsg.MSGTYPE = MSGTYPE_EXTENDED) then msg := AnsiStrings.format('%.8x:%s', [canmsg.ID, s_data])
+    else msg := AnsiStrings.Format('%.3x:%s', [canmsg.ID, s_data]);
   end;
 end;
 
-function TPCanLight.IsPCanMsg(const buf: PChar; const len: longword): boolean;
+function TPCanLight.IsPCanMsg(const buf: PAnsiChar; const len: longword): boolean;
 var p_pcanmsg: PPCANMsg;
 begin
   //check total size of the message
@@ -881,7 +882,7 @@ begin
   result := CSTR_PCAN_BAUDRATES[e_baud];
 end;
 
-function TPCanLight.BufferToStr(): string;
+function TPCanLight.BufferToStr(): AnsiString;
 var p_pcanmsg: PPCANMsg;
 begin
   result := '';
@@ -903,7 +904,7 @@ begin
   if result then result := (t_txwait.WaitFor(0) = wrSignaled);
 end;
 
-function TPCanLight.SendData(const buf: PChar; len: word): boolean;
+function TPCanLight.SendData(const buf: PAnsiChar; len: word): boolean;
 var lw_ret: longword; p_pcanmsg: PPCANMsg;
 begin
   result := IsPCanMsg(buf, len);
@@ -1142,8 +1143,8 @@ begin
   if (e_state = CS_CONNECTED) then e_state := CS_CONFIGURED;
 end;
 
-function TPCanLight.SendBuf(const buf: PChar; const len: longword): boolean;
-var c_tend: cardinal; s_msg: string; p_pcanmsg: PPCANMsg;
+function TPCanLight.SendBuf(const buf: PAnsiChar; const len: longword): boolean;
+var c_tend: cardinal; s_msg: AnsiString; p_pcanmsg: PPCANMsg;
 begin
   result := false;
   if IsConnected() then begin
@@ -1158,7 +1159,7 @@ begin
     t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
-function TPCanLight.SendStr(const str: string): boolean;
+function TPCanLight.SendStr(const str: AnsiString): boolean;
 var c_tend: cardinal; t_pcanmsg: TPCANMsg;
 begin
   result := false;

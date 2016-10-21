@@ -53,7 +53,6 @@ object frmDeviceManager: TfrmDeviceManager
     Top = 306
     Width = 116
     Height = 21
-    ItemHeight = 13
     ItemIndex = 1
     TabOrder = 3
     Text = 'VOLT:DC'

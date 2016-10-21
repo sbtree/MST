@@ -37,11 +37,11 @@ type
     function Config(const sconfs: TStrings): boolean; overload;
     function Connect(): boolean;
     function Disconnect: boolean;
-    function SendBuf(const buf: PChar; const len: longword): boolean;
-    function SendStr(const str: string): boolean;
-    function RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer;
-    function RecvStr(var str: string; const bwait: boolean): integer;
-    function ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
+    function SendBuf(const buf: PAnsiChar; const len: longword): boolean;
+    function SendStr(const str: AnsiString): boolean;
+    function RecvBuf(var buf: PAnsiChar; const len: longword; const bwait: boolean): integer;
+    function RecvStr(var str: AnsiString; const bwait: boolean): integer;
+    function ExpectStr(var str: AnsiString; const swait: AnsiString; const bcase: boolean): boolean;
   end;
 
   //base class of connection
@@ -55,23 +55,23 @@ type
     e_state:    EConnectState;  //connection state
     c_timeout:  cardinal;       //timeout in milli seconds
     t_msgrimpl: TTextMessengerImpl; //for transfering messages
-    ch_nullshow:Char;           //indicate a char to show null, if it is received
+    ch_nullshow:AnsiChar;           //indicate a char to show null, if it is received
     i_cntnull:  integer;        //count of received nulls
-    ba_rbuf:    array[0..C_BUFFER_SIZE_DEFAULT-1] of Char; //buffer for data received from device
+    ba_rbuf:    array[0..C_BUFFER_SIZE_DEFAULT-1] of AnsiChar; //buffer for data received from device
     w_rlen:     word;     //actual length of the received data
     t_rxwait:   TEvent;   //wait event for reading
     t_txwait:   TEvent;   //wait event for writing complete
   protected
     function GetTypeName(): string; virtual;
     function GetStateStr(): string; virtual;
-    function BufferToStr(): string; virtual;
+    function BufferToStr(): AnsiString; virtual;
     function WaitForReading(const tend: cardinal): boolean; virtual;
     function WaitForWriting(const tend: cardinal): boolean; virtual;
     function WaitForConnecting(const tend: cardinal): boolean; virtual;
     function IsConnected(): boolean; virtual;
     function IsReadComplete(): boolean; virtual; abstract;
     function IsWriteComplete(): boolean; virtual; abstract;
-    function SendData(const buf: PChar; len: word): boolean; virtual; abstract;
+    function SendData(const buf: PAnsiChar; len: word): boolean; virtual; abstract;
     function RecvData(): boolean; virtual; abstract;
     procedure TryConnect(); virtual; abstract;
     procedure ClearBuffer(); virtual;
@@ -88,23 +88,23 @@ type
     property ConnectTypeName: string read GetTypeName;
     property ConnectState: EConnectState read e_state;
     property Timeout: cardinal read c_timeout write c_timeout;
-    property ShowNullChar: Char read ch_nullshow write ch_nullshow;
+    property ShowNullChar: AnsiChar read ch_nullshow write ch_nullshow;
 
     //implementation of ICommInterf
     function Config(const sconf: string): boolean; overload; virtual;
     function Config(const sconfs: TStrings): boolean; overload; virtual; abstract;
     function Connect(): boolean; virtual;
     function Disconnect: boolean; virtual; abstract;
-    function SendBuf(const buf: PChar; const len: longword): boolean; virtual;
-    function SendStr(const str: string): boolean; virtual;
-    function RecvBuf(var buf: PChar; const len: longword; const bwait: boolean = true): integer; virtual;
-    function RecvStr(var str: string; const bwait: boolean = true): integer; virtual;
-    function ExpectStr(var str: string; const swait: string; const bcase: boolean = false): boolean; virtual;
+    function SendBuf(const buf: PAnsiChar; const len: longword): boolean; virtual;
+    function SendStr(const str: AnsiString): boolean; virtual;
+    function RecvBuf(var buf: PAnsiChar; const len: longword; const bwait: boolean = true): integer; virtual;
+    function RecvStr(var str: AnsiString; const bwait: boolean = true): integer; virtual;
+    function ExpectStr(var str: AnsiString; const swait: AnsiString; const bcase: boolean = false): boolean; virtual;
 
     //additionnal functions
-    function RecvStrTimeout(var str: string; const timeout: cardinal): integer; virtual;
-    function RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal = 3000): integer; virtual;
-    function RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean = false): boolean; virtual;
+    function RecvStrTimeout(var str: AnsiString; const timeout: cardinal): integer; virtual;
+    function RecvStrInterval(var str: AnsiString; const timeout: cardinal; const interv: cardinal = 3000): integer; virtual;
+    function RecvStrExpected(var str: AnsiString; const exstr: AnsiString; timeout: cardinal; const bcase: boolean = false): boolean; virtual;
 
     //sync methods
     procedure SetEventRx();
@@ -137,7 +137,7 @@ const
   CINT_RECV_INTERVAL = 50;    //milliseconds
 
 implementation
-uses Forms, SysUtils, StrUtils, Windows, Registry;
+uses Forms, SysUtils, StrUtils, Windows, Registry, AnsiStrings;
 
 // =============================================================================
 // Description  : a class function to get connection type using its name
@@ -222,7 +222,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.BufferToStr(): string;
+function TConnBase.BufferToStr(): AnsiString;
 var i: integer;
 begin
   result := ''; i_cntnull := 0;
@@ -232,7 +232,7 @@ begin
         inc(i_cntnull);
         ba_rbuf[i] := ch_nullshow;
       end;
-    result := PChar(@ba_rbuf);
+    result := PAnsiChar(@ba_rbuf);
   end;
 end;
 
@@ -453,7 +453,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.SendBuf(const buf: PChar; const len: longword): boolean;
+function TConnBase.SendBuf(const buf: PAnsiChar; const len: longword): boolean;
 var c_tend: cardinal;
 begin
   result := false;
@@ -478,9 +478,9 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.SendStr(const str: string): boolean;
+function TConnBase.SendStr(const str: AnsiString): boolean;
 begin
-  result := SendBuf(PChar(str), length(str));
+  result := SendBuf(PAnsiChar(str), length(str));
 end;
 
 // =============================================================================
@@ -494,7 +494,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvBuf(var buf: PChar; const len: longword; const bwait: boolean): integer;
+function TConnBase.RecvBuf(var buf: PAnsiChar; const len: longword; const bwait: boolean): integer;
 var c_tend: cardinal; i_len: integer;
 begin
   result := 0;
@@ -526,7 +526,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
+function TConnBase.RecvStr(var str: AnsiString; const bwait: boolean): integer;
 var c_tend: cardinal;
 begin
   result := 0; str := '';
@@ -546,7 +546,7 @@ begin
     t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
-function TConnBase.ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
+function TConnBase.ExpectStr(var str: AnsiString; const swait: AnsiString; const bcase: boolean): boolean;
 begin
   result := RecvStrExpected(str, swait, c_timeout, bcase);
 end;
@@ -561,8 +561,8 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvStrTimeout(var str: string; const timeout: cardinal): integer;
-var s_recv: string; tend: cardinal;
+function TConnBase.RecvStrTimeout(var str: AnsiString; const timeout: cardinal): integer;
+var s_recv: AnsiString; tend: cardinal;
 begin
   result := 0; str := '';
   tend := GetTickCount() + timeout;
@@ -595,8 +595,8 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal): integer;
-var i_time: cardinal; s_recv: string; b_break: boolean; tend: cardinal;
+function TConnBase.RecvStrInterval(var str: AnsiString; const timeout: cardinal; const interv: cardinal): integer;
+var i_time: cardinal; s_recv: AnsiString; b_break: boolean; tend: cardinal;
 begin
   result := 0; str := '';
   tend := GetTickCount() + timeout;
@@ -632,8 +632,8 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean): boolean;
-var s_recv: string; tend: cardinal;
+function TConnBase.RecvStrExpected(var str: AnsiString; const exstr: AnsiString; timeout: cardinal; const bcase: boolean): boolean;
+var s_recv: AnsiString; tend: cardinal;
 begin
   result := false; str := '';
   tend := GetTickCount() + timeout;
@@ -644,8 +644,8 @@ begin
         str := str + s_recv;
         ClearBuffer();
       end;
-      if bcase then result := ContainsStr(str, exstr)
-      else result := ContainsText(str, exstr);
+      if bcase then result := AnsiContainsStr(str, exstr)
+      else result := AnsiContainsText(str, exstr);
       Application.ProcessMessages();
     until (result or (GetTickCount() >= tend));
     if (result) then

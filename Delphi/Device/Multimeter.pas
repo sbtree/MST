@@ -64,11 +64,11 @@ type
   TMultimeterKeithley = class(TMultimeter, IRelayControl)
   protected
     e_cont :  EContinueMode;        //indicate if continue mode is shut on
-    s_idn:    string;
+    s_idn:    AnsiString;
     t_relay:  TRelayKeithley;
   protected
     function SwitchMeasurement(const meas: EMeasureAction): boolean; override;
-    function ReadingValue(const elem: string): string;
+    function ReadingValue(const elem: AnsiString): AnsiString;
     function ReadData(var val: double): boolean; override;
     //procedure TriggerMesssure(); virtual;
   public
@@ -83,7 +83,7 @@ type
     procedure SetMeasureRange(const meas:EMeasureAction; const range: double); override;
   end;
 implementation
-uses SysUtils, GenUtils, StrUtils, RS232;
+uses SysUtils, GenUtils, StrUtils, RS232, AnsiStrings;
 
 const
   // Keithley-Multimert 2700
@@ -105,7 +105,7 @@ const
   C_KEITHLEY_RANGE_AUTO_OFF = ':RANG:AUTO OFF'; // trun off automatical range
   C_KEITHLEY_OVERFLOW       = '+9.9E37';        // overflowing data
 
-  C_KEITHLEY_FUNC: array[EMeasureAction] of string = (
+  C_KEITHLEY_FUNC: array[EMeasureAction] of AnsiString = (
                   'ANY',
                   'RES',
                   'VOLT:DC',
@@ -117,7 +117,7 @@ const
                   'TEMP'
                   );
 
-  C_KEITHLEY_UNITS: array[EMeasureAction] of string = (
+  C_KEITHLEY_UNITS: array[EMeasureAction] of AnsiString = (
                   'ANY',
                   'OHM',
                   'VDC',
@@ -237,7 +237,7 @@ begin
 end;
 
 function TMultimeterKeithley.SwitchMeasurement(const meas: EMeasureAction): boolean;
-var s_sending, s_recv: string;
+var s_sending, s_recv: AnsiString;
 begin
   result := inherited SwitchMeasurement(meas);
   if result then begin
@@ -267,21 +267,21 @@ end;
 //NOTE: the measurement data is composed of several elements, e.g.
 //+4.69781780E+00OHM,+8179.250SECS,+46802RDNG#,000,0000LIMITS
 //this function gives back the first value string without unit
-function TMultimeterKeithley.ReadingValue(const elem: string): string;
+function TMultimeterKeithley.ReadingValue(const elem: AnsiString): AnsiString;
 var i_pos: integer;
 begin
-  i_pos := Pos(',', elem);
-  if (i_pos > 0) then result := trim(LeftStr(elem, i_pos - 1))
+  i_pos := AnsiPos(',', elem);
+  if (i_pos > 0) then result := trim(AnsiLeftStr(elem, i_pos - 1))
   else result := trim(elem);
 
-  if EndsText(C_KEITHLEY_UNITS[e_curma], result) then result := LeftStr(result, length(result) - length(C_KEITHLEY_UNITS[e_curma]));
+  if EndsText(C_KEITHLEY_UNITS[e_curma], result) then result := AnsiLeftStr(result, length(result) - length(C_KEITHLEY_UNITS[e_curma]));
   //keithley multimeter sends data only with '.' as decimal separator
   //it has to be changed into the local format
-  result := ReplaceStr(result, '.', DecimalSeparator);
+  result := ReplaceStr(result, '.', FormatSettings.DecimalSeparator);
 end;
 
 function TMultimeterKeithley.ReadData(var val: double): boolean;
-var s_recv: string;
+var s_recv: AnsiString;
 begin
   result := t_curconn.SendStr(C_KEITHLEY_MEAS_READ + Char(13));
   if result then begin
@@ -355,7 +355,7 @@ begin
 end;
 
 procedure TMultimeterKeithley.SetMeasureRange(const meas:EMeasureAction; const range: double);
-var s_range, s_sending: string;
+var s_range, s_sending: AnsiString;
 begin
   if (meas in [MA_RES, MA_DCV, MA_ACV, MA_DCI, MA_ACI])  then begin
     if (range > 0.0)then begin //set range
@@ -363,10 +363,10 @@ begin
       else s_range := FloatToStr(range);
       //keithley multimeter accepts only '.'- decimal separator
       //the local format has to be changed into the keithley format
-      s_range := ReplaceStr(s_range, DecimalSeparator, '.'); 
-      s_sending := format(C_KEITHLEY_FUNC[meas] + C_KEITHLEY_RANGE_SET, [s_range]) + Char(13);
+      s_range := AnsiReplaceStr(s_range, FormatSettings.DecimalSeparator, '.');
+      s_sending := AnsiStrings.Format(C_KEITHLEY_FUNC[meas] + C_KEITHLEY_RANGE_SET + AnsiChar(13), [s_range]);
     end else //auto range
-      s_sending := C_KEITHLEY_FUNC[meas] + C_KEITHLEY_RANGE_AUTO_ON + Char(13);
+      s_sending := C_KEITHLEY_FUNC[meas] + C_KEITHLEY_RANGE_AUTO_ON + AnsiChar(13);
 
     t_curconn.SendStr(s_sending);
   end;

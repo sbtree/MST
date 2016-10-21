@@ -137,13 +137,13 @@ end;
 // History      :
 // =============================================================================
 class function TGenUtils.IsHexText(const sData: string): boolean;
-const C_HEX_CHARS: set of char = ['0'..'9', 'A'..'F', 'a'..'f'];
+const C_HEX_CHARS: string = '0123456789ABCDEFabcdef';
 var i, iLen: integer;
 begin
   result := true;
   iLen := length(sData);
   for i := 1 to iLen do begin
-    if not (sData[i] in C_HEX_CHARS) then begin
+    if (Pos(sData[i],C_HEX_CHARS) < 1) then begin
       result := false;
       break;
     end;

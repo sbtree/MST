@@ -57,10 +57,10 @@ type
     lblPortProd: TLabel;
     lblBaudProd: TLabel;
     btnCloseProd: TButton;
-    pgbSendFile: tCustomProgressbar;
     chkBaudFactor: TCheckBox;
     txtBaudFactor: TEdit;
     btnTest: TButton;
+    pgbSendFile: TProgressBar;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     //procedure ComPortRxChar(Sender: TObject; Count: Integer);
@@ -86,19 +86,19 @@ type
     procedure btnTestClick(Sender: TObject);
   protected
     procedure Transmit();
-    function SendStr(const str: string; const bprint: boolean = true): boolean;
-    function RecvStr(var str:string; const bwait: boolean = true; const bprint: boolean = true): integer;
-    function RecvStrTimeout(var str:string; const tend: cardinal): integer;
-    function RecvStrInterval(var str:string; const tend: cardinal; const interv: cardinal = 3000): integer;
+    function SendStr(const str: AnsiString; const bprint: boolean = true): boolean;
+    function RecvStr(var str:AnsiString; const bwait: boolean = true; const bprint: boolean = true): integer;
+    function RecvStrTimeout(var str:AnsiString; const tend: cardinal): integer;
+    function RecvStrInterval(var str:AnsiString; const tend: cardinal; const interv: cardinal = 3000): integer;
     function RecvStrExpected(const exstr: TStringList; tend: cardinal; const bcase: boolean = false): integer;
     function WaitForReading(const tend: cardinal): boolean;
-    function SwitchOn(const cmd: string; const tend: cardinal): boolean;
-    function HasInvalidAscii(const str: string): boolean;
-    function GetBootMessageMTL(var msg: string): integer;
-    function GetSwitchOnMessage(var blmsg, fwmsg:string; const elapse: cardinal): integer;
-    function EnterService(const cmd: string): boolean;
+    function SwitchOn(const cmd: AnsiString; const tend: cardinal): boolean;
+    function HasInvalidAscii(const str: AnsiString): boolean;
+    function GetBootMessageMTL(var msg: AnsiString): integer;
+    function GetSwitchOnMessage(var blmsg, fwmsg:AnsiString; const elapse: cardinal): integer;
+    function EnterService(const cmd: AnsiString): boolean;
     function EnterServiceMode(const bs: EBootState): boolean;
-    function ExpectStr(const str: string; var sRecv: string; const msecs: cardinal): boolean;
+    function ExpectStr(const str: AnsiString; var sRecv: AnsiString; const msecs: cardinal): boolean;
 
   private
     { Private-Deklarationen }
@@ -190,8 +190,8 @@ begin
 end;
 
 procedure TFrmBootTester.Transmit();
-var s_buffer: string; i: integer; t_cmds:TStringList;
-    t_regex: TRegExpr; s_tmp: string;
+var s_buffer, s_tmp: AnsiString; i: integer; t_cmds:TStringList;
+    t_regex: TRegExpr;
 begin
   s_buffer := trim(txtSend.Text);
   s_buffer := StringReplace(s_buffer, '<CR>', Char(13),[rfReplaceAll, rfIgnoreCase]) + Char(13);
@@ -268,8 +268,8 @@ begin
   result := (t_ser.RxWaiting > 0);
 end;
 
-function TFrmBootTester.SwitchOn(const cmd: string; const tend: cardinal): boolean;
-var c_time: cardinal;  b_timeout: boolean; s_recv: string;
+function TFrmBootTester.SwitchOn(const cmd: AnsiString; const tend: cardinal): boolean;
+var c_time: cardinal;  b_timeout: boolean; s_recv: AnsiString;
 begin
   result := false;
   if t_ser.Active then begin
@@ -294,7 +294,7 @@ begin
   end;
 end;
 
-function TFrmBootTester.HasInvalidAscii(const str: string): boolean;
+function TFrmBootTester.HasInvalidAscii(const str: AnsiString): boolean;
 var i: integer;
 begin
   result := false;
@@ -306,8 +306,8 @@ begin
   end;
 end;
 
-function TFrmBootTester.GetBootMessageMTL(var msg: string): integer;
-const CSTR_TEST_CMD: string= 'abcdefg';
+function TFrmBootTester.GetBootMessageMTL(var msg: AnsiString): integer;
+const CSTR_TEST_CMD: AnsiString= 'abcdefg';
 var i_baud: integer; c_endtime: cardinal;
 begin
   result := 0;
@@ -323,7 +323,7 @@ begin
   end;
 end;
 
-function TFrmBootTester.GetSwitchOnMessage(var blmsg, fwmsg:string; const elapse: cardinal): integer;
+function TFrmBootTester.GetSwitchOnMessage(var blmsg, fwmsg:AnsiString; const elapse: cardinal): integer;
 const C_BL_FW_INTERVAL: cardinal = 6000; C_ANSWER_INTERVAL: cardinal = 100;
 var c_endtime: cardinal; b_reset: boolean;
 begin
@@ -342,8 +342,8 @@ begin
   end;
 end;
 
-function TFrmBootTester.EnterService(const cmd: string): boolean;
-var s_recv, s_temp: string; c_endtime, c_start, c_end: cardinal; t_exstrs: TStringList; i_trials: integer;
+function TFrmBootTester.EnterService(const cmd: AnsiString): boolean;
+var s_recv, s_temp: AnsiString; c_endtime, c_start, c_end: cardinal; t_exstrs: TStringList; i_trials: integer;
 begin
   result := false;
   c_start := GetTickCount();
@@ -402,7 +402,7 @@ begin
 end;
 
 function TFrmBootTester.EnterServiceMode(const bs: EBootState): boolean;
-var s_recv, s_temp: string; c_endtime, c_start, c_end: cardinal; t_exstrs: TStringList; i_trials: integer;
+var s_recv, s_temp: AnsiString; c_endtime, c_start, c_end: cardinal; t_exstrs: TStringList; i_trials: integer;
 begin
   result := false;
   t_exstrs := TStringList.Create;
@@ -540,8 +540,8 @@ begin
   FreeAndNil(t_exstrs);
 end;
 
-function TFrmBootTester.ExpectStr(const str: string; var sRecv: string; const msecs: cardinal): boolean;
-var cTimeout: cardinal; ch: char; sTemp, sIn: string;
+function TFrmBootTester.ExpectStr(const str: AnsiString; var sRecv: AnsiString; const msecs: cardinal): boolean;
+var cTimeout: cardinal; ch: char; sTemp, sIn: AnsiString;
 begin
   result := false;
   if t_ser.Active then begin
@@ -559,7 +559,7 @@ begin
 end;
 
 procedure TFrmBootTester.btnSendClick(Sender: TObject);
-var i, n: integer; s_text: String;
+var i, n: integer; s_text: AnsiString;
 begin
   if not t_ser.Active then  t_ser.Active := true;
   if t_ser.Active then
@@ -588,7 +588,7 @@ begin
 end;
 
 procedure TFrmBootTester.btnTestClick(Sender: TObject);
-var s_send, s_recv, s_tmp: string; b_app: boolean; c_time: cardinal;
+var s_send, s_recv, s_tmp: AnsiString; b_app: boolean; c_time: cardinal;
 begin
   if not t_ser.Active then  t_ser.Active := true;
   if t_ser.Active then
@@ -727,8 +727,8 @@ begin
   txtSend.Text := lstSending.Items[lstSending.ItemIndex]
 end;
 
-function TFrmBootTester.SendStr(const str: string; const bprint: boolean): boolean;
-var timeout, c_start, c_end: cardinal; s_recv: string;
+function TFrmBootTester.SendStr(const str: AnsiString; const bprint: boolean): boolean;
+var timeout, c_start, c_end: cardinal; s_recv: AnsiString;
 begin
   //result := false;
   if (t_ser.ReadString(s_recv) > 0) then self.memRecv.Lines.Add('prog:<' + s_recv);
@@ -743,7 +743,7 @@ begin
   if bprint then self.memRecv.Lines.Add(format('prog[%0.3f]:>%s', [(c_end - c_start) /1000.0, str]));
 end;
 
-function TFrmBootTester.RecvStr(var str:string; const bwait: boolean; const bprint: boolean): integer;
+function TFrmBootTester.RecvStr(var str:AnsiString; const bwait: boolean; const bprint: boolean): integer;
 var c_time, c_start, c_end: cardinal;
 begin
   str := ''; c_start := GetTickCount();
@@ -756,8 +756,8 @@ begin
   end;
 end;
 
-function TFrmBootTester.RecvStrTimeout(var str:string; const tend: cardinal): integer;
-var b_timeout: boolean; s_recv: string; i_len: integer; c_start, c_end: cardinal;
+function TFrmBootTester.RecvStrTimeout(var str:AnsiString; const tend: cardinal): integer;
+var b_timeout: boolean; s_recv: AnsiString; i_len: integer; c_start, c_end: cardinal;
 begin
   result := 0; str := '';
   c_start := GetTickCount();
@@ -776,8 +776,8 @@ begin
   end;
 end;
 
-function TFrmBootTester.RecvStrInterval(var str:string; const tend: cardinal; const interv: cardinal): integer;
-var b_break, b_timeout: boolean; s_recv: string; i_len: integer; c_endtime, c_start, c_end: cardinal;
+function TFrmBootTester.RecvStrInterval(var str:AnsiString; const tend: cardinal; const interv: cardinal): integer;
+var b_break, b_timeout: boolean; s_recv: AnsiString; i_len: integer; c_endtime, c_start, c_end: cardinal;
 begin
   result := 0; str := '';
   c_start := GetTickCount();
@@ -801,7 +801,7 @@ begin
 end;
 
 function TFrmBootTester.RecvStrExpected(const exstr: TStringList; tend: cardinal; const bcase: boolean): integer;
-var s_recv, s_input, s_temp: string; b_found: boolean; i, i_len: integer; b_timeout: boolean; //c_start, c_end: cardinal;
+var s_recv, s_input, s_temp: AnsiString; b_found: boolean; i, i_len: integer; b_timeout: boolean; //c_start, c_end: cardinal;
 begin
   result := -1;
   s_recv := '';  b_found := false;

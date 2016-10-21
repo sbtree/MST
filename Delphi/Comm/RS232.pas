@@ -47,7 +47,7 @@ type
     function IsConnected(): boolean; override;
     function IsReadComplete(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    function SendData(const buf: PChar; len: word): boolean; override;
+    function SendData(const buf: PAnsiChar; len: word): boolean; override;
     function RecvData(): boolean; override;
     procedure TryConnect(); override;
     procedure ClearBuffer(); override;
@@ -61,7 +61,7 @@ type
   PConnRS232 = ^TMtxRS232;
 
 implementation
-uses SysUtils, StrUtils, Windows, Registry, Forms, TextMessage;
+uses SysUtils, StrUtils, Windows, Registry, Forms, TextMessage, AnsiStrings;
 
 const CSTR_RS232_PROPERTIES: array[ESerialProperty] of string =
                   ('PORT', 'BAUDRATE', 'PARITY', 'DATABITS', 'STOPBITS', 'FLOWCONTROL');
@@ -333,7 +333,7 @@ begin
   result := (t_ser.TxWaiting <= 0);
 end;
 
-function TMtxRS232.SendData(const buf: PChar; len: word): boolean;
+function TMtxRS232.SendData(const buf: PAnsiChar; len: word): boolean;
 var i: integer;
 begin
   ClearBuffer(); //clear reading buffer of the serial interface
@@ -343,7 +343,7 @@ begin
 end;
 
 function TMtxRS232.RecvData(): boolean;
-var ch: char; len: word;
+var ch: AnsiChar; len: word;
 begin
   len := length(ba_rbuf);
   ZeroMemory(@ba_rbuf, len); w_rlen := 0;

@@ -157,7 +157,6 @@ object FrmBootTester: TFrmBootTester
       Top = 24
       Width = 66
       Height = 21
-      ItemHeight = 13
       ItemIndex = 0
       TabOrder = 9
       Text = '9600'
@@ -172,7 +171,6 @@ object FrmBootTester: TFrmBootTester
       Top = 23
       Width = 48
       Height = 21
-      ItemHeight = 13
       ItemIndex = 0
       TabOrder = 10
       Text = '1'
@@ -216,23 +214,6 @@ object FrmBootTester: TFrmBootTester
       Height = 13
       Caption = 'Baudrate:'
     end
-    object pgbSendFile: tCustomProgressbar
-      Left = 19
-      Top = 110
-      Width = 366
-      Height = 16
-      Ctl3D = True
-      Font.Charset = DEFAULT_CHARSET
-      Font.Color = clBlue
-      Font.Height = -12
-      Font.Name = 'MS Sans Serif'
-      Font.Style = []
-      ForeColor = clBlue
-      ParentFont = False
-      Progress = 0
-      TextAlign = taCenter
-      TextKind = tkPercent
-    end
     object txtFile: TEdit
       Left = 19
       Top = 82
@@ -242,7 +223,7 @@ object FrmBootTester: TFrmBootTester
     end
     object btnFile: TButton
       Left = 360
-      Top = 82
+      Top = 80
       Width = 25
       Height = 25
       Caption = '...'
@@ -280,7 +261,6 @@ object FrmBootTester: TFrmBootTester
       Top = 25
       Width = 48
       Height = 21
-      ItemHeight = 13
       ItemIndex = 6
       TabOrder = 5
       Text = '7'
@@ -309,7 +289,6 @@ object FrmBootTester: TFrmBootTester
       Top = 50
       Width = 66
       Height = 21
-      ItemHeight = 13
       ItemIndex = 0
       TabOrder = 7
       Text = '9600'
@@ -345,6 +324,13 @@ object FrmBootTester: TFrmBootTester
       Enabled = False
       TabOrder = 10
       Text = '0.9216'
+    end
+    object pgbSendFile: TProgressBar
+      Left = 19
+      Top = 112
+      Width = 366
+      Height = 13
+      TabOrder = 11
     end
   end
   object btnTest: TButton

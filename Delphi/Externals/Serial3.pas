@@ -75,8 +75,8 @@ type
     FFlowMode : eFlowControl ;   { Flow control mode }
     FCheckParity : Boolean ;     { Check parity flag }
     FRxEventMode : eOpModes ;    { Message trap mode }
-    FMessageStartChar : Char ;   { Message start character }
-    FMessageEndChar : Char ;     { Message end character }
+    FMessageStartChar : AnsiChar ;   { Message start character }
+    FMessageEndChar : AnsiChar ;     { Message end character }
     FMessageAppendCount : Word ; { Number of bytes to add after end character }
     FNotifyErrors : eNotifyErr ; { Error notification mode }
     FErrorCode : Integer ;       { Error code field }
@@ -141,9 +141,9 @@ type
     constructor Create (aOwner : TComponent); override;
     destructor Destroy; override;
 
-    procedure WriteChar (c : Char);
+    procedure WriteChar (c : AnsiChar);
     procedure WriteString (s : AnsiString);
-    function ReadChar (var c : Char) : Integer;
+    function ReadChar (var c : AnsiChar) : Integer;
     function ReadString (var s : AnsiString) : Integer;
     procedure ZapTxQueue;
     procedure ZapRxQueue;
@@ -169,8 +169,8 @@ type
     property RxWaiting : Integer read GetRxWaiting ;
     property TxWaiting : Integer read GetTxWaiting ;
     property RxEventMode : eOpModes read FRxEventMode write FRxEventMode default rxNormal ;
-    property MessageStartChar : Char read FMessageStartChar write FMessageStartChar default Chr(2) ;
-    property MessageEndChar : Char read FMessageEndChar write FMessageEndChar default Chr(3) ;
+    property MessageStartChar : AnsiChar read FMessageStartChar write FMessageStartChar default AnsiChar(2) ;
+    property MessageEndChar : AnsiChar read FMessageEndChar write FMessageEndChar default AnsiChar(3) ;
     property MessageAppendCount : Word read FMessageAppendCount write FMessageAppendCount default 0;
     property NotifyErrors : eNotifyErr read FNotifyErrors write FNotifyErrors default neDialog;
     property ErrorCode : Integer read FErrorCode ;
@@ -223,6 +223,7 @@ const
              (ONESTOPBIT, TWOSTOPBITS);
 
 implementation
+uses System.UITypes;
 
 {-----------------------------------------------------}
 { Registration procedures }
@@ -602,12 +603,12 @@ end;
 
 {-----------------------------------------------------}
 { Method procedures }
-procedure TSerial.WriteChar (c : char);
+procedure TSerial.WriteChar (c : AnsiChar);
 var
-  p : array[0..1] of char ;
+  p : array[0..1] of AnsiChar ;
   Res : Integer;
 begin
-  StrPCopy(p,c) ;
+  StrCopy(p,@c) ;
   if not WriteFile (FCID, p, 1, WrittenBytes, @OverlapBlock) then
   begin
     Res := WaitForSingleObject(OverlapBlock.hEvent,1000);
@@ -643,9 +644,9 @@ begin
   end;
 end;
 
-function TSerial.ReadChar (var c: Char) : Integer;
+function TSerial.ReadChar (var c: AnsiChar) : Integer;
 var
-  buf : Array[0..1] of Char ;
+  buf : Array[0..1] of AnsiChar ;
   Res : integer;
 begin
   ReadChar := 0;
@@ -692,7 +693,7 @@ end;
 
 function TSerial.ReadString (var s : AnsiString) : Integer;
 var
-  TestChar : char;
+  TestChar : AnsiChar;
   i : integer;
   iCount : integer;
 begin
@@ -756,7 +757,7 @@ procedure TEventThread.Execute;
 var
    event : DWORD ;
    cstate : DWORD ;
-   c      : Char ;
+   c      : AnsiChar ;
 begin
    with FParentInstance do
 

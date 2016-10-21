@@ -69,7 +69,7 @@ type
     function ConnectTo(const psn: integer): boolean;
     function IsReadComplete(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    function SendData(const buf: PChar; len: word): boolean; override;
+    function SendData(const buf: PAnsiChar; len: word): boolean; override;
     function RecvData(): boolean; override;
     procedure TryConnect(); override;
     procedure SafeArrayToArray(const psarr: PSafeArray; const parr: PByteArray; const size: Integer);
@@ -96,7 +96,7 @@ type
   end;
 
 implementation
-uses Forms, TextMessage, SyncObjs;
+uses Forms, TextMessage, SyncObjs, AnsiStrings;
 
 const
   CSTR_MTXUSB_ARS2000_GUID: string = '{6CC88F5A-EA80-4707-845B-D3CF7BDBCA6C}';
@@ -411,7 +411,7 @@ begin
   result := (t_txwait.WaitFor(0) = wrSignaled);
 end;
 
-function TMtxUsb.SendData(const buf: PChar; len: word): boolean;
+function TMtxUsb.SendData(const buf: PAnsiChar; len: word): boolean;
 var pa_send: PSafeArray; i: integer;
 begin
   result := false;
