@@ -4,13 +4,13 @@ interface
 uses Classes, ConnBase, TextMessage;
 type
   IRelayControl = interface
-    function CloseRelays(const relays: AnsiString): boolean;
-    function OpenRelays(const relays: AnsiString): boolean;
+    function CloseRelays(const relays: string): boolean;
+    function OpenRelays(const relays: string): boolean;
     function OpenAllRelays(): boolean;
-    function SwitchRelaysOnOff(const relays: AnsiString; const tdelay: cardinal = 50): boolean;
-    function SwitchRelaysOffOn(const relays: AnsiString; const tdelay: cardinal = 50): boolean;
-    function QueryRelays(var relnrs: AnsiString): boolean;
-    function VerifyClosedRelays(const refrelnrs: AnsiString): boolean;
+    function SwitchRelaysOnOff(const relays: string; const tdelay: cardinal = 50): boolean;
+    function SwitchRelaysOffOn(const relays: string; const tdelay: cardinal = 50): boolean;
+    function QueryRelays(var relnrs: string): boolean;
+    function VerifyClosedRelays(const refrelnrs: string): boolean;
   end;
 
   TRelayControl = class(TInterfacedObject, IRelayControl, ITextMessengerImpl)
@@ -24,13 +24,13 @@ type
     constructor Create();
     destructor Destroy; override;
 
-    function CloseRelays(const relays: AnsiString): boolean; virtual;
-    function OpenRelays(const relays: AnsiString): boolean; virtual;
+    function CloseRelays(const relays: string): boolean; virtual;
+    function OpenRelays(const relays: string): boolean; virtual;
     function OpenAllRelays(): boolean; virtual;
-    function SwitchRelaysOnOff(const relays: AnsiString; const tdelay: cardinal): boolean; virtual;
-    function SwitchRelaysOffOn(const relays: AnsiString; const tdelay: cardinal): boolean; virtual;
-    function QueryRelays(var relnrs: AnsiString): boolean; virtual;
-    function VerifyClosedRelays(const refrelnrs: AnsiString): boolean; virtual;
+    function SwitchRelaysOnOff(const relays: string; const tdelay: cardinal): boolean; virtual;
+    function SwitchRelaysOffOn(const relays: string; const tdelay: cardinal): boolean; virtual;
+    function QueryRelays(var relnrs: string): boolean; virtual;
+    function VerifyClosedRelays(const refrelnrs: string): boolean; virtual;
 
     property CurConnect: TConnBase read t_curconn write SetConnection;
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
@@ -66,25 +66,25 @@ type
     function GetCardCount(): integer;
     function GetCardName(idx: integer): string;
     function ChannelIndexSet(const chnr: string): TKeithleyChannelSet;
-    function ChannelNumbers(const chset: TKeithleyChannelSet): AnsiString;
-    function ChannelIndexToNumber(const idx: integer): AnsiString;
+    function ChannelNumbers(const chset: TKeithleyChannelSet): string;
+    function ChannelIndexToNumber(const idx: integer): string;
     function ChannelNumberToIndex(const chnr: string): integer;
   public
     constructor Create();
     destructor Destroy; override;
 
-    function CloseRelays(const relays: AnsiString): boolean; override;
-    function OpenRelays(const relays: AnsiString): boolean; override;
+    function CloseRelays(const relays: string): boolean; override;
+    function OpenRelays(const relays: string): boolean; override;
     function OpenAllRelays(): boolean; override;
-    function QueryRelays(var relnrs: AnsiString): boolean; override;
-    function VerifyClosedRelays(const refrelnrs: AnsiString): boolean; override;
+    function QueryRelays(var relnrs: string): boolean; override;
+    function VerifyClosedRelays(const refrelnrs: string): boolean; override;
 
     property CardCount: integer read GetCardCount;
     property CardName[idx: integer]: string read GetCardName;
   end;
 
 implementation
-uses SysUtils, GenUtils, AnsiStrings;
+uses SysUtils, GenUtils, StrUtils;
 
 const
   C_MULTIMETER_OPT        = '*OPT?';                //query which typ of pseudo card and how many cards are installed
@@ -112,7 +112,7 @@ begin
   inherited Destroy();
 end;
 
-function TRelayControl.CloseRelays(const relays: AnsiString): boolean;
+function TRelayControl.CloseRelays(const relays: string): boolean;
 begin
   result := false;
   if assigned(t_curconn) then begin
@@ -120,7 +120,7 @@ begin
   end;
 end;
 
-function TRelayControl.OpenRelays(const relays: AnsiString): boolean;
+function TRelayControl.OpenRelays(const relays: string): boolean;
 begin
   result := false;
   if assigned(t_curconn) then begin
@@ -133,7 +133,7 @@ begin
   result := false;
 end;
 
-function TRelayControl.SwitchRelaysOnOff(const relays: AnsiString; const tdelay: cardinal): boolean;
+function TRelayControl.SwitchRelaysOnOff(const relays: string; const tdelay: cardinal): boolean;
 begin
   result := CloseRelays(relays);
   if result then begin
@@ -142,7 +142,7 @@ begin
   end;
 end;
 
-function TRelayControl.SwitchRelaysOffOn(const relays: AnsiString; const tdelay: cardinal): boolean;
+function TRelayControl.SwitchRelaysOffOn(const relays: string; const tdelay: cardinal): boolean;
 begin
   result := OpenRelays(relays);
   if result then begin
@@ -151,24 +151,24 @@ begin
   end;
 end;
 
-function TRelayControl.QueryRelays(var relnrs: AnsiString): boolean;
+function TRelayControl.QueryRelays(var relnrs: string): boolean;
 begin
   result := false;
 end;
 
-function TRelayControl.VerifyClosedRelays(const refrelnrs: AnsiString): boolean;
+function TRelayControl.VerifyClosedRelays(const refrelnrs: string): boolean;
 begin
   result := false;
 end;
 
 procedure TRelayKeithley.UpdateCardInfo();
-var s_recv: AnsiString;
+var s_recv: string;
 begin
   t_cards.Clear();
   if assigned(t_curconn) then begin
     if t_curconn.SendStr(C_MULTIMETER_OPT + Char(13)) then begin
       t_curconn.ExpectStr(s_recv, AnsiChar(13), false);
-      s_recv := AnsiStrings.Trim(s_recv);
+      s_recv := trim(s_recv);
       if (ExtractStrings([','], [' '], PChar(s_recv), t_cards) > 0) then
         t_msgrimpl.AddMessage(format('%d relay cards(%s) are found.', [t_cards.Count, t_cards.DelimitedText]))
       else
@@ -208,8 +208,8 @@ begin
   t_chnrs.Free();
 end;
 
-function TRelayKeithley.ChannelNumbers(const chset: TKeithleyChannelSet): AnsiString;
-var i: integer; s_chnr: AnsiString;
+function TRelayKeithley.ChannelNumbers(const chset: TKeithleyChannelSet): string;
+var i: integer; s_chnr: string;
 begin
   result := '';
   for i := Low(TKeithleyChannelIndex) to High(TKeithleyChannelIndex) do begin
@@ -221,7 +221,7 @@ begin
   if EndsText(',', result) then result := LeftStr(result, length(result) - 1);
 end;
 
-function TRelayKeithley.ChannelIndexToNumber(const idx: integer): AnsiString;
+function TRelayKeithley.ChannelIndexToNumber(const idx: integer): string;
 var i_nr: integer;
 begin
   if ((idx <= Low(TKeithleyChannelIndex)) and (idx >= High(TKeithleyChannelIndex))) then begin
@@ -254,17 +254,17 @@ begin
   inherited Destroy();
 end;
 
-function TRelayKeithley.CloseRelays(const relays: AnsiString): boolean;
+function TRelayKeithley.CloseRelays(const relays: string): boolean;
 begin
   result := false;
   if assigned(t_curconn) then begin
-    result := t_curconn.SendStr(AnsiStrings.Format(C_MULTIMETER_CLOSE + AnsiChar(13), [relays]));
+    result := t_curconn.SendStr(Format(C_MULTIMETER_CLOSE + AnsiChar(13), [relays]));
     if result then result := VerifyClosedRelays(relays);
   end;
 end;
 
-function TRelayKeithley.OpenRelays(const relays: AnsiString): boolean;
-var set_relopen, set_relclose: TKeithleyChannelSet; s_relclose: AnsiString;
+function TRelayKeithley.OpenRelays(const relays: string): boolean;
+var set_relopen, set_relclose: TKeithleyChannelSet; s_relclose: string;
 begin
   result := false;
   if assigned(t_curconn) then begin
@@ -289,8 +289,8 @@ begin
   end;
 end;
 
-function TRelayKeithley.QueryRelays(var relnrs: AnsiString): boolean;
-var s_recv: AnsiString;
+function TRelayKeithley.QueryRelays(var relnrs: string): boolean;
+var s_recv: string;
 begin
   result := false;
   if assigned(t_curconn) then begin
@@ -304,8 +304,8 @@ begin
   end;
 end;
 
-function TRelayKeithley.VerifyClosedRelays(const refrelnrs: AnsiString): boolean;
-var set_refrel, set_isrel: TKeithleyChannelSet; s_isrel: AnsiString;
+function TRelayKeithley.VerifyClosedRelays(const refrelnrs: string): boolean;
+var set_refrel, set_isrel: TKeithleyChannelSet; s_isrel: string;
 begin
   result := QueryRelays(s_isrel);
   if result then begin

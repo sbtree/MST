@@ -49,8 +49,8 @@ type
     function GetDevConfig(): TConfigBase;
     function InitDevice(): boolean;
     function IsDevReady(): boolean;
-    function SendCommand(const cmd: AnsiString): boolean;
-    function RecvAnswer(var ans: AnsiString): boolean;
+    function SendCommand(const cmd: string): boolean;
+    function RecvAnswer(var ans: string): boolean;
     //function SendPacket(packet: array of byte): boolean;
     //function RecvPacket(packet: array of byte): boolean;
     function ReleaseDevice(): boolean;
@@ -90,8 +90,8 @@ type
     function GetDevConfig(): TConfigBase;
     function InitDevice(): boolean; virtual;
     function IsDevReady(): boolean; virtual;
-    function SendCommand(const cmd: AnsiString): boolean; virtual;
-    function RecvAnswer(var ans: AnsiString): boolean; virtual;
+    function SendCommand(const cmd: string): boolean; virtual;
+    function RecvAnswer(var ans: string): boolean; virtual;
     //function SendPacket(packet: array of byte): boolean; virtual;
     //function RecvPacket(packet: array of byte): boolean; virtual;
     function ReleaseDevice(): Boolean; virtual;
@@ -239,7 +239,7 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.SendCommand(const cmd: AnsiString): boolean;
+function TDeviceBase.SendCommand(const cmd: string): boolean;
 begin
   result := false;
   if assigned(t_curconn) then
@@ -256,7 +256,7 @@ end;
 // First author : 2015-08-14 /bsu/
 // History      :
 // =============================================================================
-function TDeviceBase.RecvAnswer(var ans: AnsiString): boolean;
+function TDeviceBase.RecvAnswer(var ans: string): boolean;
 begin
   result := false;
   if assigned(t_curconn) then

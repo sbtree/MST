@@ -1,0 +1,146 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{9e2144a4-d384-4b73-a967-c978c978765a}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+    <DCC_DependencyCheckOutputName>DeviceManagerTester_D2007.exe</DCC_DependencyCheckOutputName>
+    <MainSource>DeviceManagerTester_D2007.dpr</MainSource>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Version>7.0</Version>
+    <DCC_DebugInformation>False</DCC_DebugInformation>
+    <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
+    <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+    <DCC_Define>RELEASE</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals;..\Comm;..\General</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals;..\Comm;..\General</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals;..\Comm;..\General</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals;..\Comm;..\General</DCC_IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Version>7.0</Version>
+    <DCC_Define>DEBUG</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals;..\Comm;..\General;$(BDS)\Source\DUnit\src</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals;..\Comm;..\General;$(BDS)\Source\DUnit\src</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals;..\Comm;..\General;$(BDS)\Source\DUnit\src</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals;..\Comm;..\General;$(BDS)\Source\DUnit\src</DCC_IncludePath>
+    <DCC_SymbolReferenceInfo>2</DCC_SymbolReferenceInfo>
+    <DCC_Optimize>False</DCC_Optimize>
+  </PropertyGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Delphi.Personality</Borland.Personality>
+    <Borland.ProjectType />
+    <BorlandProject>
+<BorlandProject><Delphi.Personality><Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">1031</VersionInfo><VersionInfo Name="CodePage">1252</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Excluded_Packages>
+      <Excluded_Packages Name="$(BDS)\bin\dcloffice2k100.bpl">Microsoft Office 2000 Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+      <Excluded_Packages Name="$(BDS)\bin\dclofficexp100.bpl">Microsoft Office XP Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+    </Excluded_Packages><Source><Source Name="MainSource">DeviceManagerTester_D2007.dpr</Source></Source></Delphi.Personality><ModelSupport>True</ModelSupport></BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
+  <ItemGroup>
+    <DelphiCompile Include="DeviceManagerTester_D2007.dpr">
+      <MainSource>MainSource</MainSource>
+    </DelphiCompile>
+    <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\MtxUSB.pas" />
+    <DCCReference Include="..\Comm\PCAN.pas" />
+    <DCCReference Include="..\Comm\RS232.pas" />
+    <DCCReference Include="..\Comm\TekUSB.pas" />
+    <DCCReference Include="..\Config\ConfigBase.pas" />
+    <DCCReference Include="..\Config\DeviceConfig.pas" />
+    <DCCReference Include="..\Externals\Serial3.pas" />
+    <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
+    <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
+    <DCCReference Include="..\General\DataBuffer.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
+    <DCCReference Include="..\General\StringPairs.pas" />
+    <DCCReference Include="..\General\TextMessage.pas" />
+    <DCCReference Include="DeviceBase.pas" />
+    <DCCReference Include="DeviceManager.pas" />
+    <DCCReference Include="FormDeviceManager.pas">
+      <Form>frmDeviceManager</Form>
+    </DCCReference>
+    <DCCReference Include="Multimeter.pas" />
+    <DCCReference Include="Oscilloscope.pas" />
+    <DCCReference Include="PowerSupply.pas" />
+    <DCCReference Include="RelayControl.pas" />
+    <DCCReference Include="Thermometer.pas" />
+    <None Include="ModelSupport_DeviceManagerTester\ConfigBase\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\ConnBase\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\ConnBase\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\DataBuffer\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\DeviceBase\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\DeviceBase\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\DeviceManagerTester\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\DeviceManager\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\FlashRunner\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\FlashRunner\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\FormDeviceManager\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\FormDeviceManager\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\GenUtils\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\MtxUSB\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\Multimeter\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\Multimeter\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\Oscilloscope\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\PCAN\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\ProtocolBase\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\RelayControl\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\RS232\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\RS232\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester\TekUSB\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester\TextMessage\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\ConfigBase\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\ConfigBase\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\ConnBase\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\ConnBase\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\DataBuffer\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\DataBuffer\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\DeviceBase\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\DeviceBase\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\DeviceConfig\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\DeviceConfig\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\DeviceManagerTester_D2007\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\DeviceManagerTester_D2007\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\DeviceManager\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\DeviceManager\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\FormDeviceManager\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\FormDeviceManager\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\GenUtils\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\GenUtils\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\MtxUSB\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\MtxUSB\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\Multimeter\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\Multimeter\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\Oscilloscope\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\Oscilloscope\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\PCAN\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\PCAN\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\PowerSupply\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\PowerSupply\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\RelayControl\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\RelayControl\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\RS232\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\RS232\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\Serial3\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\Serial3\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\StringPairs\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\StringPairs\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\TekUSB\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\TekUSB\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\TextMessage\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\TextMessage\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\Thermometer\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\Thermometer\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\USBIOCOMLib_TLB\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\USBIOCOMLib_TLB\default.txvpck" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\USBSPEC\default.txaPackage" />
+    <None Include="ModelSupport_DeviceManagerTester_D2007\USBSPEC\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\DeviceTester\default.txvpck" />
+    <None Include="ModelSupport_DeviceManager\FormDeviceTester\default.txvpck" />
+  </ItemGroup>
+</Project>

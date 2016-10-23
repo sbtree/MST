@@ -1,0 +1,134 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{69cf2794-8d5c-4d48-8703-290c30990ddd}</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Projects Include="Comm\CommTester_D2007.dproj" />
+    <Projects Include="Device\DeviceManagerTester_D2007.dproj" />
+    <Projects Include="Function\FunctionTester_D2007.dproj" />
+    <Projects Include="General\GeneralTester_D2007.dproj" />
+    <Projects Include="Product\BootTester_D2007.dproj" />
+    <Projects Include="Product\ProductTester_D2007.dproj" />
+    <Projects Include="Runner\RunnerTester_D2007.dproj" />
+    <Projects Include="Script\ScriptTester_D2007.dproj" />
+    <Projects Include="ServoTester\ServoTester_D2007.dproj" />
+    <Projects Include="Starter\TestStarter_D2007.dproj" />
+    <Projects Include="Tools\ToolTester_D2007.dproj" />
+  </ItemGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Default.Personality</Borland.Personality>
+    <Borland.ProjectType />
+    <BorlandProject>
+<BorlandProject xmlns=""><Default.Personality></Default.Personality></BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Target Name="DeviceManagerTester_D2007">
+    <MSBuild Projects="Device\DeviceManagerTester_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="DeviceManagerTester_D2007:Clean">
+    <MSBuild Projects="Device\DeviceManagerTester_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="DeviceManagerTester_D2007:Make">
+    <MSBuild Projects="Device\DeviceManagerTester_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="GeneralTester_D2007">
+    <MSBuild Projects="General\GeneralTester_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="GeneralTester_D2007:Clean">
+    <MSBuild Projects="General\GeneralTester_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="GeneralTester_D2007:Make">
+    <MSBuild Projects="General\GeneralTester_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="FunctionTester_D2007">
+    <MSBuild Projects="Function\FunctionTester_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="FunctionTester_D2007:Clean">
+    <MSBuild Projects="Function\FunctionTester_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="FunctionTester_D2007:Make">
+    <MSBuild Projects="Function\FunctionTester_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="ToolTester_D2007">
+    <MSBuild Projects="Tools\ToolTester_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="ToolTester_D2007:Clean">
+    <MSBuild Projects="Tools\ToolTester_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="ToolTester_D2007:Make">
+    <MSBuild Projects="Tools\ToolTester_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="ScriptTester_D2007">
+    <MSBuild Projects="Script\ScriptTester_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="ScriptTester_D2007:Clean">
+    <MSBuild Projects="Script\ScriptTester_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="ScriptTester_D2007:Make">
+    <MSBuild Projects="Script\ScriptTester_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="CommTester_D2007">
+    <MSBuild Projects="Comm\CommTester_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="CommTester_D2007:Clean">
+    <MSBuild Projects="Comm\CommTester_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="CommTester_D2007:Make">
+    <MSBuild Projects="Comm\CommTester_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="ProductTester_D2007">
+    <MSBuild Projects="Product\ProductTester_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="ProductTester_D2007:Clean">
+    <MSBuild Projects="Product\ProductTester_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="ProductTester_D2007:Make">
+    <MSBuild Projects="Product\ProductTester_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="BootTester_D2007">
+    <MSBuild Projects="Product\BootTester_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="BootTester_D2007:Clean">
+    <MSBuild Projects="Product\BootTester_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="BootTester_D2007:Make">
+    <MSBuild Projects="Product\BootTester_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="ServoTester_D2007">
+    <MSBuild Projects="ServoTester\ServoTester_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="ServoTester_D2007:Clean">
+    <MSBuild Projects="ServoTester\ServoTester_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="ServoTester_D2007:Make">
+    <MSBuild Projects="ServoTester\ServoTester_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="RunnerTester_D2007">
+    <MSBuild Projects="Runner\RunnerTester_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="RunnerTester_D2007:Clean">
+    <MSBuild Projects="Runner\RunnerTester_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="RunnerTester_D2007:Make">
+    <MSBuild Projects="Runner\RunnerTester_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="TestStarter_D2007">
+    <MSBuild Projects="Starter\TestStarter_D2007.dproj" Targets="" />
+  </Target>
+  <Target Name="TestStarter_D2007:Clean">
+    <MSBuild Projects="Starter\TestStarter_D2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="TestStarter_D2007:Make">
+    <MSBuild Projects="Starter\TestStarter_D2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="Build">
+    <CallTarget Targets="DeviceManagerTester_D2007;GeneralTester_D2007;FunctionTester_D2007;ToolTester_D2007;ScriptTester_D2007;CommTester_D2007;ProductTester_D2007;BootTester_D2007;ServoTester_D2007;RunnerTester_D2007;TestStarter_D2007" />
+  </Target>
+  <Target Name="Clean">
+    <CallTarget Targets="DeviceManagerTester_D2007:Clean;GeneralTester_D2007:Clean;FunctionTester_D2007:Clean;ToolTester_D2007:Clean;ScriptTester_D2007:Clean;CommTester_D2007:Clean;ProductTester_D2007:Clean;BootTester_D2007:Clean;ServoTester_D2007:Clean;RunnerTester_D2007:Clean;TestStarter_D2007:Clean" />
+  </Target>
+  <Target Name="Make">
+    <CallTarget Targets="DeviceManagerTester_D2007:Make;GeneralTester_D2007:Make;FunctionTester_D2007:Make;ToolTester_D2007:Make;ScriptTester_D2007:Make;CommTester_D2007:Make;ProductTester_D2007:Make;BootTester_D2007:Make;ServoTester_D2007:Make;RunnerTester_D2007:Make;TestStarter_D2007:Make" />
+  </Target>
+  <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
+</Project>

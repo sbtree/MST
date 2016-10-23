@@ -339,9 +339,9 @@ type
     function LoadDefaultDll(const hwt: EPCanHardwareType): boolean; overload;
     function LoadDefaultDll(const shwt: string): boolean; overload;
     function GetErrorMsg(const errnr: longword): string; virtual;
-    function StrToPCanMsg(const msg: AnsiString; var canmsg: TPCANMsg): boolean; virtual;
-    function PCanMsgToStr(const canmsg: TPCANMsg; var msg: AnsiString): boolean; virtual;
-    function IsPCanMsg(const buf: PAnsiChar; const len: longword): boolean; virtual;
+    function StrToPCanMsg(const msg: string; var canmsg: TPCANMsg): boolean; virtual;
+    function PCanMsgToStr(const canmsg: TPCANMsg; var msg: string): boolean; virtual;
+    function IsPCanMsg(const buf: array of byte): boolean; virtual;
     function BuildMessage(const canmsg: PPCANMsg): string;
     function IsValidFunction(const canfnt: EPCanFunction; var errnr: longword): boolean;
     function SetNPnP(etype: EPCanNPnPType; ioport: longword; irq: word): boolean;
@@ -351,11 +351,11 @@ type
     function SetCanVersion(const sver: string): boolean;
     function GetHardwareTypeText(): string;
     function GetBaudrateText(): string;
-    function BufferToStr(): AnsiString; override;
+    function BufferToStr(): string; override;
     function IsReadComplete(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    function SendData(const buf: PAnsiChar; len: word): boolean; override;
-    function RecvData(): boolean; override;
+    function SendData(const buf: array of byte): boolean; override;
+    function RecvData(): integer; override;
     procedure TryConnect(); override;
     procedure SetMsgVersion(ecanver: EPCanVersion);
     procedure SetDeviceNr(devnr: longword);
@@ -399,8 +399,8 @@ type
 
     function Config(const sconfs: TStrings): boolean; overload; override;
     function Disconnect: boolean; override;
-    function SendBuf(const buf: PAnsiChar; const len: longword): boolean; override;
-    function SendStr(const str: AnsiString): boolean; override;
+    function SendBuf(const buf: array of byte): boolean; override;
+    function SendStr(const str: string): boolean; override;
   end;
   PPCanLight = ^TPCanLight;
 
@@ -588,7 +588,7 @@ const
   C_CANMSG_LENGTH_MAX = 8;
 
 implementation
-uses AnsiStrings, Windows, SysUtils, StrUtils, TextMessage, TypInfo, Forms, SyncObjs;
+uses Windows, SysUtils, StrUtils, TextMessage, TypInfo, Forms, SyncObjs;
 
 type
   SetPCanProperty = function(ppcan: TPCanLight; const sval: string): boolean;
@@ -725,8 +725,8 @@ begin
 end;
 
 //msg is a formatted string and looks like '58A:2038F612' with hexidecimal format 'can_nodenr:data'
-function TPCanLight.StrToPCanMsg(const msg: AnsiString; var canmsg: TPCANMsg): boolean;
-var s_nodenr, s_data: AnsiString; i, i_len, i_pos, i_nodenr, i_data: integer;
+function TPCanLight.StrToPCanMsg(const msg: string; var canmsg: TPCANMsg): boolean;
+var s_nodenr, s_data: string; i, i_len, i_pos, i_nodenr, i_data: integer;
 begin
   result := false;
   i_pos := AnsiPos(':', msg);
@@ -754,24 +754,24 @@ begin
   end;
 end;
 
-function TPCanLight.PCanMsgToStr(const canmsg: TPCANMsg; var msg: AnsiString): boolean;
-var i: integer; s_data: AnsiString;
+function TPCanLight.PCanMsgToStr(const canmsg: TPCANMsg; var msg: string): boolean;
+var i: integer; s_data: string;
 begin
   result := (canmsg.LEN  > 0); s_data := '';
   if result then begin
-    for i := 0 to canmsg.LEN - 1 do s_data := s_data + AnsiStrings.format('%.2x', [canmsg.DATA[i]]);
-    if (canmsg.MSGTYPE = MSGTYPE_EXTENDED) then msg := AnsiStrings.format('%.8x:%s', [canmsg.ID, s_data])
-    else msg := AnsiStrings.Format('%.3x:%s', [canmsg.ID, s_data]);
+    for i := 0 to canmsg.LEN - 1 do s_data := s_data + format('%.2x', [canmsg.DATA[i]]);
+    if (canmsg.MSGTYPE = MSGTYPE_EXTENDED) then msg := format('%.8x:%s', [canmsg.ID, s_data])
+    else msg := Format('%.3x:%s', [canmsg.ID, s_data]);
   end;
 end;
 
-function TPCanLight.IsPCanMsg(const buf: PAnsiChar; const len: longword): boolean;
+function TPCanLight.IsPCanMsg(const buf: array of byte): boolean;
 var p_pcanmsg: PPCANMsg;
 begin
   //check total size of the message
-  result := (len = sizeof(TPCANMsg));
+  result := (length(buf) = sizeof(TPCANMsg));
   if result then begin
-    p_pcanmsg := PPCANMsg(buf);
+    p_pcanmsg := PPCANMsg(@buf[0]);
     //check length of message data
     result := (p_pcanmsg.LEN <= C_CANMSG_LENGTH_MAX);
     //check message type
@@ -882,12 +882,14 @@ begin
   result := CSTR_PCAN_BAUDRATES[e_baud];
 end;
 
-function TPCanLight.BufferToStr(): AnsiString;
-var p_pcanmsg: PPCANMsg;
+function TPCanLight.BufferToStr(): string;
+var p_pcanmsg: PPCANMsg; ba_pcan: array of byte;
 begin
   result := '';
-  if IsPCanMsg(ba_rbuf, w_rlen) then begin
-    p_pcanmsg := PPCANMsg(@ba_rbuf);
+  SetLength(ba_pcan, sizeof(TPCANMsg));
+  Move(ba_rbuf, ba_pcan, sizeof(TPCANMsg));
+  if IsPCanMsg(ba_pcan) then begin
+    p_pcanmsg := PPCANMsg(@ba_pcan);
     PCanMsgToStr(p_pcanmsg^, result);
   end;
 end;
@@ -904,31 +906,30 @@ begin
   if result then result := (t_txwait.WaitFor(0) = wrSignaled);
 end;
 
-function TPCanLight.SendData(const buf: PAnsiChar; len: word): boolean;
+function TPCanLight.SendData(const buf: array of byte): boolean;
 var lw_ret: longword; p_pcanmsg: PPCANMsg;
 begin
-  result := IsPCanMsg(buf, len);
+  result := IsPCanMsg(buf);
   if result then begin
-    p_pcanmsg := PPCANMsg(buf);
+    p_pcanmsg := PPCANMsg(@buf[0]);
     lw_ret := CanWrite(p_pcanmsg^);
     result := (lw_ret = CAN_ERR_OK);
-  end else t_msgrimpl.AddMessage(format('Found invalid PCAN-message by sending data (% bytes).', [len]), ML_ERROR);
+  end else t_msgrimpl.AddMessage(format('Found invalid PCAN-message by sending data (% bytes).', [length(buf)]), ML_ERROR);
 end;
 
-function TPCanLight.RecvData(): boolean;
+function TPCanLight.RecvData(): integer;
 var lw_ret: longword; t_rbuf: TPCANMsg;
 begin
+  result := 0;
   repeat
     Application.ProcessMessages();
     lw_ret := CanRead(t_rbuf);
-    result := (lw_ret = CAN_ERR_OK);
-    if result then begin
+    if (CanRead(t_rbuf) = CAN_ERR_OK) then begin
       w_rlen := sizeof(TPCANMsg);
+      result := w_rlen;
       Move(t_rbuf, ba_rbuf, w_rlen);
     end;
   until ((lw_ret AND (CAN_ERR_QRCVEMPTY or CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0);
-  //It is possible to receive no data if the data is already received by event-function
-  result := (w_rlen > 0);
 end;
 
 procedure TPCanLight.TryConnect();
@@ -1143,23 +1144,23 @@ begin
   if (e_state = CS_CONNECTED) then e_state := CS_CONFIGURED;
 end;
 
-function TPCanLight.SendBuf(const buf: PAnsiChar; const len: longword): boolean;
-var c_tend: cardinal; s_msg: AnsiString; p_pcanmsg: PPCANMsg;
+function TPCanLight.SendBuf(const buf: array of byte): boolean;
+var c_tend: cardinal; s_msg: string; p_pcanmsg: PPCANMsg;
 begin
   result := false;
   if IsConnected() then begin
     c_tend := GetTickCount() + c_timeout;
-    result := SendData(buf, len);
+    result := SendData(buf);
     if result then result := WaitForWriting(c_tend);
-    p_pcanmsg := PPCANMsg(buf);
+    p_pcanmsg := PPCANMsg(@buf[0]);
     PCanMsgToStr(p_pcanmsg^, s_msg);
-    if result then t_msgrimpl.AddMessage(format('Successful to send data (%d bytes): %s ', [len, s_msg]))
-    else t_msgrimpl.AddMessage(format('Failed to send data (%d bytes): %s', [len, s_msg]), ML_ERROR);
+    if result then t_msgrimpl.AddMessage(format('Successful to send data (%d bytes): %s ', [length(buf), s_msg]))
+    else t_msgrimpl.AddMessage(format('Failed to send data (%d bytes): %s', [length(buf), s_msg]), ML_ERROR);
   end else
     t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
-function TPCanLight.SendStr(const str: AnsiString): boolean;
+function TPCanLight.SendStr(const str: string): boolean;
 var c_tend: cardinal; t_pcanmsg: TPCANMsg;
 begin
   result := false;

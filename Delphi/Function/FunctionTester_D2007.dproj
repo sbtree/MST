@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{277ea074-a5eb-468e-ad81-cbe3bc8e0291}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+    <DCC_DependencyCheckOutputName>FunctionTester_D2007.exe</DCC_DependencyCheckOutputName>
+    <MainSource>FunctionTester_D2007.dpr</MainSource>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Version>7.0</Version>
+    <DCC_DebugInformation>False</DCC_DebugInformation>
+    <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
+    <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+    <DCC_Define>RELEASE</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals</DCC_IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Version>7.0</Version>
+    <DCC_Define>DEBUG</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals</DCC_IncludePath>
+    <DCC_Optimize>False</DCC_Optimize>
+    <DCC_IntegerOverflowCheck>True</DCC_IntegerOverflowCheck>
+  </PropertyGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Delphi.Personality</Borland.Personality>
+    <Borland.ProjectType />
+    <BorlandProject>
+<BorlandProject><Delphi.Personality><Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">1031</VersionInfo><VersionInfo Name="CodePage">1252</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Excluded_Packages>
+      <Excluded_Packages Name="$(BDS)\bin\dcloffice2k100.bpl">Microsoft Office 2000 Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+      <Excluded_Packages Name="$(BDS)\bin\dclofficexp100.bpl">Microsoft Office XP Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+    </Excluded_Packages><Source><Source Name="MainSource">FunctionTester_D2007.dpr</Source></Source></Delphi.Personality><ModelSupport>True</ModelSupport></BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
+  <ItemGroup>
+    <DelphiCompile Include="FunctionTester_D2007.dpr">
+      <MainSource>MainSource</MainSource>
+    </DelphiCompile>
+    <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\MtxUSB.pas" />
+    <DCCReference Include="..\Comm\PCAN.pas" />
+    <DCCReference Include="..\Comm\RS232.pas" />
+    <DCCReference Include="..\Config\ConfigBase.pas" />
+    <DCCReference Include="..\CoreData\StepData.pas" />
+    <DCCReference Include="..\CoreData\StepGroup.pas" />
+    <DCCReference Include="..\Device\DeviceBase.pas" />
+    <DCCReference Include="..\Device\Multimeter.pas" />
+    <DCCReference Include="..\Device\RelayControl.pas" />
+    <DCCReference Include="..\Externals\ExprParser\OObjects.pas" />
+    <DCCReference Include="..\Externals\ExprParser\ParseClass.pas" />
+    <DCCReference Include="..\Externals\ExprParser\ParseExpr.pas" />
+    <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
+    <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
+    <DCCReference Include="..\General\GenType.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
+    <DCCReference Include="..\General\StringPairs.pas" />
+    <DCCReference Include="..\General\TextMessage.pas" />
+    <DCCReference Include="..\Script\ScriptReader.pas" />
+    <DCCReference Include="..\Script\StepChecker.pas" />
+    <DCCReference Include="..\Tools\ToolBase.pas" />
+    <DCCReference Include="FormFunctionTester.pas">
+      <Form>FormFTMain</Form>
+    </DCCReference>
+    <DCCReference Include="FuncAux.pas" />
+    <DCCReference Include="FuncBase.pas" />
+    <DCCReference Include="FuncCaller.pas" />
+    <DCCReference Include="FuncDmm.pas" />
+    <DCCReference Include="FuncDso.pas" />
+    <DCCReference Include="FuncMxp.pas" />
+    <DCCReference Include="FuncSwt.pas" />
+    <DCCReference Include="FuncSys.pas" />
+    <DCCReference Include="FuncTmm.pas" />
+    <None Include="ModelSupport_FunctionTester\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FormFunctionTester\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FuncFlashRunner\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\FuncFlashRunner\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FunctionBase\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\FunctionBase\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FunctionCaller\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\FunctionCaller\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\FunctionTester\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester\MtxUSB\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\OObjects\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\ParseClass\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\ParseExpr\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\PCAN\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\StringPairs\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\USBIOCOMLib_TLB\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester\USBSPEC\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester_D2007\ConfigBase\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\ConnBase\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester_D2007\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\DeviceBase\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FormFunctionTester\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FuncAux\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FuncBase\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FuncCaller\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FuncDmm\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FuncDso\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FuncMxp\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FuncSwt\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FuncSys\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FunctionTester\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester_D2007\FunctionTester\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FunctionTester_D2007\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\FuncTmm\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\GenType\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\GenUtils\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\MtxUSB\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\Multimeter\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\OObjects\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\ParseClass\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\ParseExpr\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\PCAN\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\RelayControl\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\RS232\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\ScriptReader\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester_D2007\ScriptReader\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\StepChecker\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester_D2007\StepChecker\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\StepData\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\StepGroup\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\StringPairs\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\TextMessage\default.txaPackage" />
+    <None Include="ModelSupport_FunctionTester_D2007\TextMessage\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\ToolBase\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\USBIOCOMLib_TLB\default.txvpck" />
+    <None Include="ModelSupport_FunctionTester_D2007\USBSPEC\default.txvpck" />
+  </ItemGroup>
+</Project>

@@ -69,8 +69,8 @@ type
     function ConnectTo(const psn: integer): boolean;
     function IsReadComplete(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    function SendData(const buf: PAnsiChar; len: word): boolean; override;
-    function RecvData(): boolean; override;
+    function SendData(const buf: array of byte): boolean; override;
+    function RecvData(): integer; override;
     procedure TryConnect(); override;
     procedure SafeArrayToArray(const psarr: PSafeArray; const parr: PByteArray; const size: Integer);
     procedure ClearDeviceInfo();
@@ -96,7 +96,7 @@ type
   end;
 
 implementation
-uses Forms, TextMessage, SyncObjs, AnsiStrings;
+uses Forms, TextMessage, SyncObjs;
 
 const
   CSTR_MTXUSB_ARS2000_GUID: string = '{6CC88F5A-EA80-4707-845B-D3CF7BDBCA6C}';
@@ -411,14 +411,14 @@ begin
   result := (t_txwait.WaitFor(0) = wrSignaled);
 end;
 
-function TMtxUsb.SendData(const buf: PAnsiChar; len: word): boolean;
+function TMtxUsb.SendData(const buf: array of byte): boolean;
 var pa_send: PSafeArray; i: integer;
 begin
   result := false;
   ClearBuffer();
-  if (len > 0) then begin
-    pa_send := SafeArrayCreateVector ( VT_UI1, 0, len );
-    for i := 0 to len - 1 do SafeArrayPutElement(pa_send, i, buf[i]);
+  if (length(buf) > 0) then begin
+    pa_send := SafeArrayCreateVector(VT_UI1, 0, length(buf));
+    for i := 0 to length(buf) - 1 do SafeArrayPutElement(pa_send, i, buf[i]);
     t_usbtx.WriteData(pa_send, 0, i_status);
     result := (i_status = USBIO_ERR_SUCCESS);
     if (not result) then
@@ -427,7 +427,7 @@ begin
   end;
 end;
 
-function TMtxUsb.RecvData(): boolean;
+function TMtxUsb.RecvData(): integer;
 var pa_recv: PSafeArray; i_size: integer;
 begin
   i_size := length(ba_rbuf);
@@ -445,7 +445,7 @@ begin
   until (i_status = integer(USBIO_ERR_NO_DATA));
   SafeArrayDestroy (pa_recv);
   //It is possible to receive no data, if this function is already automatically caleld because of event ReadComplete
-  result := (w_rlen > 0); 
+  result := w_rlen; 
 end;
 
 procedure TMtxUsb.TryConnect();

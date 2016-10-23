@@ -47,8 +47,8 @@ type
     function IsConnected(): boolean; override;
     function IsReadComplete(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    function SendData(const buf: PAnsiChar; len: word): boolean; override;
-    function RecvData(): boolean; override;
+    function SendData(const buf: array of byte): boolean; override;
+    function RecvData(): integer; override;
     procedure TryConnect(); override;
     procedure ClearBuffer(); override;
   public
@@ -61,7 +61,7 @@ type
   PConnRS232 = ^TMtxRS232;
 
 implementation
-uses SysUtils, StrUtils, Windows, Registry, Forms, TextMessage, AnsiStrings;
+uses SysUtils, StrUtils, Windows, Registry, Forms, TextMessage;
 
 const CSTR_RS232_PROPERTIES: array[ESerialProperty] of string =
                   ('PORT', 'BAUDRATE', 'PARITY', 'DATABITS', 'STOPBITS', 'FLOWCONTROL');
@@ -333,16 +333,17 @@ begin
   result := (t_ser.TxWaiting <= 0);
 end;
 
-function TMtxRS232.SendData(const buf: PAnsiChar; len: word): boolean;
-var i: integer;
+function TMtxRS232.SendData(const buf: array of byte): boolean;
+var i: integer; s_ansi: AnsiString;
 begin
   ClearBuffer(); //clear reading buffer of the serial interface
-  for i := 0 to len - 1 do t_ser.WriteChar(buf[i]);
-  result := (len > 0);
+  //for i := 0 to length(buf) - 1 do t_ser.WriteChar(AnsiChar(buf[i]));
+  t_ser.WriteString(PAnsiChar(@buf[0]));
+  result := (length(buf) > 0);
   //if result then t_txwait.SetEvent();
 end;
 
-function TMtxRS232.RecvData(): boolean;
+function TMtxRS232.RecvData(): integer;
 var ch: AnsiChar; len: word;
 begin
   len := length(ba_rbuf);
@@ -350,13 +351,13 @@ begin
   while (t_ser.RxWaiting > 0) do begin
     if t_ser.ReadChar(ch) = 1 then begin
       if (w_rlen < len) then begin
-        ba_rbuf[w_rlen] := ch;
+        ba_rbuf[w_rlen] := byte(ch);
         inc(w_rlen);
       end else break;
     end;
     Application.ProcessMessages();
   end;
-  result := (w_rlen > 0);
+  result := w_rlen;
   //if result then t_rxwait.SetEvent();
 end;
 
@@ -370,7 +371,7 @@ var c_tend: cardinal;
 begin
   c_tend := GetTickCount() + c_timeout;
   repeat
-    if RecvData() then  //read out data from read buffer
+    if (RecvData() > 0) then  //read out data from read buffer
       t_msgrimpl.AddMessage(format('Rx-Buffer (%d bytes) is cleared', [w_rlen]), ML_WARNING);
   until ((w_rlen <= 0) or (GetTickCount() >= c_tend));
   ZeroMemory(@ba_rbuf, w_rlen);

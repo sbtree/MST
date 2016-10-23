@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{8f9408a2-1730-4af9-b128-cc4c565fd8eb}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+    <DCC_DependencyCheckOutputName>CommTester_D2007.exe</DCC_DependencyCheckOutputName>
+    <MainSource>CommTester_D2007.dpr</MainSource>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Version>7.0</Version>
+    <DCC_DebugInformation>False</DCC_DebugInformation>
+    <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
+    <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+    <DCC_Define>RELEASE</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals; ..\Externals\USBIO</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals; ..\Externals\USBIO</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals; ..\Externals\USBIO</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals; ..\Externals\USBIO</DCC_IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Version>7.0</Version>
+    <DCC_Define>DEBUG</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals; ..\Externals\USBIO</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals; ..\Externals\USBIO</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals; ..\Externals\USBIO</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals; ..\Externals\USBIO</DCC_IncludePath>
+    <DCC_Optimize>False</DCC_Optimize>
+    <DCC_IntegerOverflowCheck>True</DCC_IntegerOverflowCheck>
+    <DCC_RangeChecking>True</DCC_RangeChecking>
+  </PropertyGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Delphi.Personality</Borland.Personality>
+    <Borland.ProjectType />
+    <BorlandProject>
+<BorlandProject><Delphi.Personality><Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">1031</VersionInfo><VersionInfo Name="CodePage">1252</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Excluded_Packages>
+      <Excluded_Packages Name="$(BDS)\bin\dcloffice2k100.bpl">Microsoft Office 2000 Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+      <Excluded_Packages Name="$(BDS)\bin\dclofficexp100.bpl">Microsoft Office XP Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+    </Excluded_Packages><Source><Source Name="MainSource">CommTester_D2007.dpr</Source></Source></Delphi.Personality><ModelSupport>True</ModelSupport></BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
+  <ItemGroup>
+    <DelphiCompile Include="CommTester_D2007.dpr">
+      <MainSource>MainSource</MainSource>
+    </DelphiCompile>
+    <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas" />
+    <DCCReference Include="..\Externals\USBIO\Usbspec.pas" />
+    <DCCReference Include="..\General\DataBuffer.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
+    <DCCReference Include="..\General\TextMessage.pas" />
+    <DCCReference Include="ConnBase.pas" />
+    <DCCReference Include="FormCommTester.pas">
+      <Form>frmCommTester</Form>
+    </DCCReference>
+    <DCCReference Include="MtxUSB.pas" />
+    <DCCReference Include="PCAN.pas" />
+    <DCCReference Include="RS232.pas" />
+    <DCCReference Include="TekUSB.pas" />
+    <None Include="ModelSupport_CommTester\CAN\default.txvpck" />
+    <None Include="ModelSupport_CommTester\CommTester\default.txvpck" />
+    <None Include="ModelSupport_CommTester\ConnBase\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\ConnBase\default.txvpck" />
+    <None Include="ModelSupport_CommTester\CTMain\default.txvpck" />
+    <None Include="ModelSupport_CommTester\DataBuffer\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\DataBuffer\default.txvpck" />
+    <None Include="ModelSupport_CommTester\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\default.txvpck" />
+    <None Include="ModelSupport_CommTester\FormCommTester\default.txvpck" />
+    <None Include="ModelSupport_CommTester\MtxUSB\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\ProtocolBase\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\ProtocolBase\default.txvpck" />
+    <None Include="ModelSupport_CommTester\RS232\default.txvpck" />
+    <None Include="ModelSupport_CommTester\TekUSB\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\TextMessage\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\UsbIoBuf\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\UsbIoBuf\default.txvpck" />
+    <None Include="ModelSupport_CommTester\USBIOCOMLib_TLB\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\UsbIoPipe\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\UsbIoPipe\default.txvpck" />
+    <None Include="ModelSupport_CommTester\USBIO\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USBIO\default.txvpck" />
+    <None Include="ModelSupport_CommTester\USBIO_I\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USBIO_I\default.txvpck" />
+    <None Include="ModelSupport_CommTester\usbio_i_delphi\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\usbio_i_delphi\default.txvpck" />
+    <None Include="ModelSupport_CommTester\USBSPEC\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USBSPEC\default.txvpck" />
+    <None Include="ModelSupport_CommTester\Usb\default.txaPackage" />
+    <None Include="ModelSupport_CommTester\USB\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\ConnBase\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\DataBuffer\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\FormCommTester\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\GenUtils\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\MtxUSB\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\PCAN\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\RS232\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\TekUSB\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\TextMessage\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\USBIOCOMLib_TLB\default.txvpck" />
+    <None Include="ModelSupport_CommTester_D2007\USBSPEC\default.txvpck" />
+  </ItemGroup>
+</Project>

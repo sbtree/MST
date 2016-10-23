@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{c70b62f3-f2a7-47e8-aa24-f1dabb9c66f9}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+    <DCC_DependencyCheckOutputName>ProductTester_D2007.exe</DCC_DependencyCheckOutputName>
+    <MainSource>ProductTester_D2007.dpr</MainSource>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Version>7.0</Version>
+    <DCC_DebugInformation>False</DCC_DebugInformation>
+    <DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
+    <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+    <DCC_Define>RELEASE</DCC_Define>
+    <DCC_UnitSearchPath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_UnitSearchPath>
+    <DCC_ResourcePath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_ResourcePath>
+    <DCC_ObjPath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_ObjPath>
+    <DCC_IncludePath>..\Externals; ..\General; ..\Comm; ..\Device</DCC_IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Version>7.0</Version>
+    <DCC_Define>DEBUG</DCC_Define>
+    <DCC_UnitSearchPath>$(BDS)\lib\Debug;$(BDS)\Lib\Debug\Indy10;$(BDS)\RaveReports\Lib;..\Externals; ..\General; ..\Comm; ..\Device</DCC_UnitSearchPath>
+    <DCC_ResourcePath>$(BDS)\lib\Debug;$(BDS)\Lib\Debug\Indy10;$(BDS)\RaveReports\Lib;..\Externals; ..\General; ..\Comm; ..\Device</DCC_ResourcePath>
+    <DCC_ObjPath>$(BDS)\lib\Debug;$(BDS)\Lib\Debug\Indy10;$(BDS)\RaveReports\Lib;..\Externals; ..\General; ..\Comm; ..\Device</DCC_ObjPath>
+    <DCC_IncludePath>$(BDS)\lib\Debug;$(BDS)\Lib\Debug\Indy10;$(BDS)\RaveReports\Lib;..\Externals; ..\General; ..\Comm; ..\Device</DCC_IncludePath>
+    <DCC_Optimize>False</DCC_Optimize>
+  </PropertyGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Delphi.Personality</Borland.Personality>
+    <Borland.ProjectType />
+    <BorlandProject>
+<BorlandProject><Delphi.Personality><Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">1031</VersionInfo><VersionInfo Name="CodePage">1252</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Excluded_Packages>
+      <Excluded_Packages Name="$(BDS)\bin\dcloffice2k100.bpl">Microsoft Office 2000 Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+      <Excluded_Packages Name="$(BDS)\bin\dclofficexp100.bpl">Microsoft Office XP Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+    </Excluded_Packages><Source><Source Name="MainSource">ProductTester_D2007.dpr</Source></Source></Delphi.Personality><ModelSupport>True</ModelSupport></BorlandProject></BorlandProject>
+  </ProjectExtensions>
+  <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
+  <ItemGroup>
+    <DelphiCompile Include="ProductTester_D2007.dpr">
+      <MainSource>MainSource</MainSource>
+    </DelphiCompile>
+    <DCCReference Include="..\Comm\ConnBase.pas" />
+    <DCCReference Include="..\Comm\RS232.pas" />
+    <DCCReference Include="..\Config\ConfigBase.pas" />
+    <DCCReference Include="..\Config\DeviceConfig.pas" />
+    <DCCReference Include="..\Config\ProductConfig.pas" />
+    <DCCReference Include="..\Device\DeviceBase.pas" />
+    <DCCReference Include="..\General\DataBuffer.pas" />
+    <DCCReference Include="..\General\GenUtils.pas" />
+    <DCCReference Include="..\General\NewProgressbar.pas" />
+    <DCCReference Include="..\General\StringPairs.pas" />
+    <DCCReference Include="..\General\TextMessage.pas" />
+    <DCCReference Include="FormProdTester.pas">
+      <Form>frmProdTester</Form>
+    </DCCReference>
+    <DCCReference Include="MtxDownloader.pas" />
+    <DCCReference Include="ProductBase.pas" />
+    <DCCReference Include="UnitsSystem.pas" />
+    <None Include="ModelSupport_ProductTester\ConfigBase\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\ConnBase\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\DataBuffer\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\FormProdTester\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\FormProdTester\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\GenUtils\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\Main\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\MtxDIS2\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\MtxDIS2\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\MtxDownloader\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\MtxDownloader\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\MtxProduct\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\MtxProduct\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\MtxUSB\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\MtxUSB\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\NewProgressbar\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\PRODTester\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\ProductBase\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\ProductConfig\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\ProductConfig\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\ProductTester\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\ProductTester\default.txvpck" />
+    <None Include="ModelSupport_ProductTester\RS232\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\StringPairs\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\TextMessage\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester\UnitsSystem\default.txaPackage" />
+    <None Include="ModelSupport_ProductTester_D2007\ConfigBase\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\ConnBase\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\DataBuffer\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\DeviceBase\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\DeviceConfig\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\GenUtils\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\MtxDownloader\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\NewProgressbar\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\ProductBase\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\RS232\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\TextMessage\default.txvpck" />
+    <None Include="ModelSupport_ProductTester_D2007\UnitsSystem\default.txvpck" />
+  </ItemGroup>
+</Project>

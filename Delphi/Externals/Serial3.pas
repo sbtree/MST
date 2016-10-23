@@ -223,7 +223,6 @@ const
              (ONESTOPBIT, TWOSTOPBITS);
 
 implementation
-uses System.UITypes;
 
 {-----------------------------------------------------}
 { Registration procedures }
@@ -605,11 +604,12 @@ end;
 { Method procedures }
 procedure TSerial.WriteChar (c : AnsiChar);
 var
-  p : array[0..1] of AnsiChar ;
+  //p : array[0..1] of AnsiChar ;
   Res : Integer;
 begin
-  StrCopy(p,@c) ;
-  if not WriteFile (FCID, p, 1, WrittenBytes, @OverlapBlock) then
+  //StrCopy(p,@c) ;
+  //Move(c, p, 1);
+  if not WriteFile (FCID, c, 1, WrittenBytes, @OverlapBlock) then
   begin
     Res := WaitForSingleObject(OverlapBlock.hEvent,1000);
     if  Res <> 0 then ProcessError
