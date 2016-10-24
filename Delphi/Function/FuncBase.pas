@@ -56,7 +56,7 @@ type
     b_aborted:  boolean;            //indicates if current execution should be aborted
     t_pars:     TStrings;           //to save parameters
     v_resval:   Variant;            //value of the result
-    t_fntactors:TFunctionActors;    //function actors, should be given after creating
+    t_fctactors:TFunctionActors;    //function actors, should be given after creating
   protected
      function GetParamSeparator(): Char;
      procedure SetParamSeparator(separator: Char);
@@ -73,7 +73,7 @@ type
     //property ExecutionMode: EExecMode read e_exemode write e_exemode;
     property Aborted: boolean read b_aborted write SetAborted;
     property ParamSeparator: Char read GetParamSeparator write SetParamSeparator; //separator of the parameters. The default value is a space
-    property FunctionActors: TFunctionActors read t_fntactors write SetFunctionActors;
+    property FunctionActors: TFunctionActors read t_fctactors write SetFunctionActors;
 
     function LoadParameter(const par: string): boolean; virtual;
     function LoadParameters(const pars: TStrings): boolean; virtual;
@@ -141,7 +141,7 @@ end;
 
 procedure TFunctionBase.SetFunctionActors(const fntactors: TFunctionActors);
 begin
-  t_fntactors := fntactors;
+  t_fctactors := fntactors;
 end;
 
 function TFunctionBase.LoadParameter(const par: string): boolean;

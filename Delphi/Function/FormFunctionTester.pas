@@ -42,7 +42,7 @@ var
   FormFTMain: TFormFTMain;
 
 implementation
-uses StrUtils;
+uses StrUtils, FuncBase;
 {$R *.dfm}
 
 procedure TFormFTMain.btnOpenScriptClick(Sender: TObject);
@@ -110,8 +110,8 @@ begin
   t_multimeter.InitDevice();
 
   t_fcaller := TFunctionCaller.Create;
-  t_fcaller.CurStepGroup := t_container;
-  t_fcaller.DevMultimeter := t_multimeter;
+  IFunctionActors(t_fcaller).ActorObject[FA_TSEQ] := t_container;
+  IFunctionActors(t_fcaller).ActorObject[FA_DMM] := t_multimeter;
   ITextMessengerImpl(t_fcaller).Messenger := t_messenger;
 end;
 

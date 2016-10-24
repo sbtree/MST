@@ -223,6 +223,9 @@ const
              (ONESTOPBIT, TWOSTOPBITS);
 
 implementation
+{$IF CompilerVersion >= 12.0}
+uses System.UITypes;
+{$ENDIF}
 
 {-----------------------------------------------------}
 { Registration procedures }
@@ -291,8 +294,9 @@ begin
 
    FEventThread.Terminate ; { Destroys thread automatically }
    // 2013-02-27 /gsv/: Thread wieder anstarten, damit es terminiert wird.
-   if ( FEventThread.Suspended ) then FEventThread.Resume();
-   
+   //if ( FEventThread.Suspended ) then FEventThread.Resume();
+   FEventThread.WaitFor();
+   FreeAndNil(FEventThread);
    inherited Destroy;
 end;
 
@@ -577,15 +581,14 @@ procedure TSerial.EnableEvents;
 begin
    if not SetCommMask (FCID, EV_RXCHAR or EV_TXEMPTY or EV_CTS or EV_DSR or EV_BREAK or EV_RLSD or EV_RING)
    then ProcessError;
-   if (FEventThread.Suspended) then FEventThread.Resume ;            { Resume event thread }
-
+   FEventThread.Start(); //if (FEventThread.Suspended) then FEventThread.Resume ;            { Resume event thread }
 end;
 
 
 procedure TSerial.OpenErrorDlg (err : Integer);
 begin
    { Locate message }
-   MessageDlg (SysErrorMessage(err), mtError, [mbOK], 0)
+   MessageDlg (SysErrorMessage(err), mtError, [mbOK], 0);
 end;
 
 { General error handler }
@@ -886,7 +889,7 @@ end;
 constructor TEventThread.Create(parentTSerial : TSerial);
 begin
   inherited Create(True);                  { Create the thread suspended }
-  FreeOnTerminate := True ;
+  //FreeOnTerminate := True ;
   FParentInstance := parentTSerial ;
 end;
 

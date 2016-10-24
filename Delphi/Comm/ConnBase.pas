@@ -231,7 +231,7 @@ begin
     for i := 0 to w_rlen - 1 do
       if (ba_rbuf[i] = 0) then begin
         inc(i_cntnull);
-        ba_rbuf[i] := byte(AnsiChar(ch_nullshow));
+        ba_rbuf[i] := byte(ch_nullshow);
       end;
     result := string(PAnsiChar(@ba_rbuf[0]));
   end;
@@ -658,8 +658,8 @@ begin
         str := str + s_recv;
         ClearBuffer();
       end;
-      if bcase then result := AnsiContainsStr(str, exstr)
-      else result := AnsiContainsText(str, exstr);
+      if bcase then result := ContainsStr(str, exstr)
+      else result := ContainsText(str, exstr);
       Application.ProcessMessages();
     until (result or (GetTickCount() >= tend));
     if (result) then

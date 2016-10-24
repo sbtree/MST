@@ -334,13 +334,10 @@ begin
 end;
 
 function TMtxRS232.SendData(const buf: array of byte): boolean;
-var i: integer; s_ansi: AnsiString;
 begin
   ClearBuffer(); //clear reading buffer of the serial interface
-  //for i := 0 to length(buf) - 1 do t_ser.WriteChar(AnsiChar(buf[i]));
   t_ser.WriteString(PAnsiChar(@buf[0]));
   result := (length(buf) > 0);
-  //if result then t_txwait.SetEvent();
 end;
 
 function TMtxRS232.RecvData(): integer;

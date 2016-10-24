@@ -222,7 +222,7 @@ type
   end;
 
 implementation
-uses Math,SysUtils ;
+uses Math,SysUtils, StrUtils;
 
 const
   errorPrefix='Error in math expression: ';
@@ -953,32 +953,37 @@ end;
 
 function TCustomExpressionParser.ParseString(AnExpression: string):
   TExprCollection;
+const
+  CSTR_DIGITALS: string = '0123456789';
+  CSTR_HEXALPHA: string = 'abcdef';
+  CSTR_DIGALPHA_: string = '0123456789abcdefghijklmnopqrstuvwxyz_';
+  CSTR_COMPARE: string = '<>=';
 var
   isConstant: Boolean;
   I, I1, I2, Len: Integer;
   W, S: string;
   Word: TExprWord;
-  OldDecim: Char;
+  //OldDecim: Char;
   procedure ReadConstant(AnExpr: string; isHex: Boolean);
   begin
     isConstant := True;
-    while (I2 <= Len) and ((AnExpr[I2] in ['0'..'9']) or
-      (isHex and (AnExpr[I2] in ['a'..'f']))) do
+    while (I2 <= Len) and (ContainsText(CSTR_DIGITALS, AnExpr[I2]){(AnExpr[I2] in ['0'..'9'])} or
+      (isHex and ContainsText(CSTR_HEXALPHA, AnExpr[I2]){(AnExpr[I2] in ['a'..'f'])})) do
       Inc(I2);
     if I2 <= Len then
     begin
       if AnExpr[I2] = DecimSeparator then
       begin
         Inc(I2);
-        while (I2 <= Len) and (AnExpr[I2] in ['0'..'9']) do
+        while (I2 <= Len) and ContainsText(CSTR_DIGITALS, AnExpr[I2]){(AnExpr[I2] in ['0'..'9'])} do
           Inc(I2);
       end;
       if (I2 <= Len) and (AnExpr[I2] = 'e') then
       begin
         Inc(I2);
-        if (I2 <= Len) and (AnExpr[I2] in ['+', '-']) then
+        if (I2 <= Len) and ContainsText('+-', AnExpr[I2]){(AnExpr[I2] in ['+', '-'])} then
           Inc(I2);
-        while (I2 <= Len) and (AnExpr[I2] in ['0'..'9']) do
+        while (I2 <= Len) and ContainsText(CSTR_DIGITALS, AnExpr[I2]){(AnExpr[I2] in ['0'..'9'])} do
           Inc(I2);
       end;
     end;
@@ -1002,7 +1007,7 @@ var
         if I2 = OldI2 then
         begin
           isConstant := False;
-          while (I2 <= Len) and (AnExpr[I2] in ['a'..'z', '_', '0'..'9']) do
+          while (I2 <= Len) and ContainsText(CSTR_DIGALPHA_, AnExpr[I2]){(AnExpr[I2] in ['a'..'z', '_', '0'..'9'])} do
             Inc(I2);
         end;
       end
@@ -1021,35 +1026,35 @@ var
             end;
           'a'..'z', '_':
             begin
-              while (I2 <= Len) and (AnExpr[I2] in ['a'..'z', '_', '0'..'9']) do
+              while (I2 <= Len) and ContainsText(CSTR_DIGALPHA_, AnExpr[I2]){(AnExpr[I2] in ['a'..'z', '_', '0'..'9'])} do
                 Inc(I2);
             end;
           '>', '<':
             begin
               if (I2 <= Len) then
                 Inc(I2);
-              if AnExpr[I2] in ['=', '<', '>'] then
+              if ContainsText(CSTR_COMPARE, AnExpr[I2]) {AnExpr[I2] in ['=', '<', '>']} then
                 Inc(I2);
             end;
           '=':
             begin
               if (I2 <= Len) then
                 Inc(I2);
-              if AnExpr[I2] in ['<', '>', '='] then
+              if ContainsText(CSTR_COMPARE, AnExpr[I2]) {AnExpr[I2] in ['<', '>', '=']} then
                 Inc(I2);
             end;
           '&':
             begin
               if (I2 <= Len) then
                 Inc(I2);
-              if AnExpr[I2] in ['&'] then
+              if AnExpr[I2] = '&' {AnExpr[I2] in ['&']} then
                 Inc(I2);
             end;
           '|':
             begin
               if (I2 <= Len) then
                 Inc(I2);
-              if AnExpr[I2] in ['|'] then
+              if AnExpr[I2] = '|' {AnExpr[I2] in ['|']} then
                 Inc(I2);
             end;
           ':':

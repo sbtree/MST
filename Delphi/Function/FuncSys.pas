@@ -162,13 +162,13 @@ end;
 
 procedure TConditionControl.AssignStepGroup();
 begin
-  if assigned(t_fntactors) then t_sctrlimpl.CurStepGroup := TStepGroup(t_fntactors.ActorObject[FA_TSEQ])
+  if assigned(t_fctactors) then t_sctrlimpl.CurStepGroup := TStepGroup(t_fctactors.ActorObject[FA_TSEQ])
   else t_sctrlimpl.CurStepGroup := nil;
 end;
 
 procedure TConditionControl.SetFunctionActors(const fntactors: TFunctionActors);
 begin
-  t_fntactors := fntactors;
+  t_fctactors := fntactors;
   AssignStepGroup();
 end;
 
@@ -189,7 +189,8 @@ end;
 
 function TConditionControl.BooleanCondition(const expr: string): boolean;
 begin
-  t_parserimpl.EvalAsBoolean(expr, result);
+  if (not t_parserimpl.EvalAsBoolean(expr, result)) then
+    t_msgrimpl.AddMessage(t_parserimpl.ParserErrorMsg, ML_FATAL);
 end;
 
 function TConditionControl.DoTask(): boolean;

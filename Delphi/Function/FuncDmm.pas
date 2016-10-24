@@ -76,8 +76,8 @@ end; }
 
 procedure TDmmFunction.SetFunctionActors(const fntactors: TFunctionActors);
 begin
-  t_fntactors := fntactors;
-  if assigned(t_fntactors) then t_dmm := TMultimeter(t_fntactors.ActorObject[FA_DMM])
+  t_fctactors := fntactors;
+  if assigned(t_fctactors) then t_dmm := TMultimeter(t_fctactors.ActorObject[FA_DMM])
   else t_dmm := nil;
 end;
 

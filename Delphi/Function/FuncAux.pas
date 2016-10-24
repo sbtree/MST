@@ -140,6 +140,7 @@ constructor TExprParserImpl.Create();
 begin
   inherited Create();
   t_eparser := TExpressionParser.Create();
+  t_eparser.DecimSeparator := '.';
   t_eparser.ClearExpressions();
 end;
 

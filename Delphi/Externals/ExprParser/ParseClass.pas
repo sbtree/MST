@@ -83,6 +83,8 @@ type
   TDoubleConstant = class(TExprWord)
   private
     FValue: Double;
+  protected
+    function SetLocalDeciSeparator(AValue: string): string;
   public
     function AsPointer: PDouble; override;
     constructor Create(AName: string; AValue: string);
@@ -235,7 +237,7 @@ procedure _Variable(Param: PExpressionRec);
 //procedure _StringFunc(Param: PExpressionRec);
 
 implementation
-
+uses StrUtils;
 //function _StrIn(sLookfor, sData: string): Double;
 
 //function _StrInt(a, b: string): Double;
@@ -366,6 +368,14 @@ begin
 end;
 
 { TDoubleConstant }
+function TDoubleConstant.SetLocalDeciSeparator(AValue: string): string ;
+begin
+{$IF CompilerVersion >= 12.0}
+  result := ReplaceStr(AValue, '.', FormatSettings.DecimalSeparator);
+{$ELSE}
+  result := ReplaceStr(AValue, '.', DecimalSeparator);
+{$ENDIF}
+end;
 
 function TDoubleConstant.AsPointer: PDouble;
 begin
@@ -376,7 +386,7 @@ constructor TDoubleConstant.Create(AName, AValue: string);
 begin
   inherited Create(AName, _Variable);
   if AValue <> '' then
-    FValue := StrToFloat(AValue)
+    FValue := StrToFloat(SetLocalDeciSeparator(AValue))
   else
     FValue := Nan;
 end;

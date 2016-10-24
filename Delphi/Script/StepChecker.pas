@@ -8,7 +8,7 @@
 unit StepChecker;
 
 interface
-uses Classes, FuncBase, StepData, StepGroup;
+uses Classes, StepData, StepGroup;
 
 type
 //----------------------------------------------------------------------------//
@@ -64,7 +64,7 @@ type
   end;
 
 implementation
-uses SysUtils, StrUtils, GenUtils;
+uses SysUtils, StrUtils, GenUtils, FuncCaller;
 {const
 
   CSTR_FIELD_NAMES_V02  :  FieldStringArray = (
@@ -192,14 +192,9 @@ begin
 end;
 
 function TFieldValueChecker.CheckFct(const str: string): boolean;
-var t_class : TFunctionClass;
+var t_fcaller : TFunctionCaller;
 begin
-  {if (SameText(str, 'nil') or  (str= '')) then result := true
-  else begin
-    t_class := TFunctionClass(GetClass(str));
-    result := (t_class <> nil);
-  end; }
-  result := true;
+  result := true; //t_fcaller.FindFunction(str);
 end;
 
 function TFieldValueChecker.CheckPar(const str: string): boolean;
