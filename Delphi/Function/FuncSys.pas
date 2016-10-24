@@ -45,7 +45,9 @@ type
     b_valid:    boolean;  //indicates expected value of the condition
   protected
     function ValidStepNrs(const bforward: boolean = true): boolean; virtual;
-    
+    procedure AssignStepGroup();
+    procedure SetFunctionActors(const fntactors: TFunctionActors); override;
+
   public
     constructor Create(); override;
     destructor Destroy; override;
@@ -95,7 +97,7 @@ type
   end;
 
 implementation
-uses Windows, SysUtils, StrUtils, Contnrs;
+uses Windows, SysUtils, StrUtils, Contnrs, GenUtils;
 const
   CINT_ELAPSE_REPEAT = 10000; //default time for repeating
 
@@ -146,8 +148,8 @@ function TConditionControl.ValidStepNrs(const bforward: boolean): boolean;
 var f_ssnr, f_tsnr: single; s_ssnr, s_tsnr: string;
 begin
   //Jump is allowed only to forward
-  s_ssnr := ReplaceStr(s_selfsnr, '.', DecimalSeparator);
-  s_tsnr := ReplaceStr(s_tosnr, '.', DecimalSeparator);
+  s_ssnr := TGenUtils.ReplaceDecimalSeparator(s_selfsnr); //ReplaceStr(s_selfsnr, '.', DecimalSeparator);
+  s_tsnr := TGenUtils.ReplaceDecimalSeparator(s_tosnr); //ReplaceStr(s_tosnr, '.', DecimalSeparator);
   result := (TryStrToFloat(s_ssnr, f_ssnr) and TryStrToFloat(s_tsnr, f_tsnr));
   if result then begin
     f_ssnr := abs(f_ssnr);
@@ -156,6 +158,18 @@ begin
     else result := (f_tsnr <= f_ssnr);
     if (not result) then t_msgrimpl.AddMessage(format('The target step(%s) is not allowed from current step(%s).',[s_tosnr, s_selfsnr]), ML_ERROR);
   end else t_msgrimpl.AddMessage(format('The target step(%s) or current step(%s) is invalid', [s_tosnr, s_selfsnr]), ML_ERROR);
+end;
+
+procedure TConditionControl.AssignStepGroup();
+begin
+  if assigned(t_fntactors) then t_sctrlimpl.CurStepGroup := TStepGroup(t_fntactors.ActorObject[FA_TSEQ])
+  else t_sctrlimpl.CurStepGroup := nil;
+end;
+
+procedure TConditionControl.SetFunctionActors(const fntactors: TFunctionActors);
+begin
+  t_fntactors := fntactors;
+  AssignStepGroup();
 end;
 
 constructor TConditionControl.Create();

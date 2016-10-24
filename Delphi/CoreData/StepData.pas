@@ -149,7 +149,7 @@ const
 
 
 implementation
-uses SysUtils, StrUtils, Variants;
+uses SysUtils, StrUtils, Variants, GenUtils;
 
 procedure TStepField.SetInputStr(const val: string);
 begin
@@ -200,7 +200,7 @@ function  TTestStep.IsMinusStepNr(): boolean;
 var f_stepnr: single; s_stepnr: string;
 begin
   result := false;
-  s_stepnr := ReplaceStr(GetFieldValue(SF_NR), '.', DecimalSeparator);
+  s_stepnr := TGenUtils.ReplaceDecimalSeparator(GetFieldValue(SF_NR)); //ReplaceStr(GetFieldValue(SF_NR), '.', DecimalSeparator);
   if TryStrToFloat(s_stepnr, f_stepnr) then result := (f_stepnr < 0.0);
 end;
 
@@ -323,7 +323,7 @@ var s_real: string;
 begin
   if (VarType(v_result) = varString) then begin  //if the local decimal separator is not '.'
     s_real := v_result;
-    s_real := ReplaceStr(s_real, '.', DecimalSeparator);
+    s_real := TGenUtils.ReplaceDecimalSeparator(s_real); //ReplaceStr(s_real, '.', DecimalSeparator);
     result := TryStrToFloat(s_real, val);
   end else begin
     try

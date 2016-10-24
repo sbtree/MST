@@ -28,6 +28,7 @@ type
     class function IsAsciiValid(const str: string): boolean;
     class function ClearQuotationMarks(const str: string): string;
     class function ShowStrHex(const str: string): string;
+    class function ReplaceDecimalSeparator(const str: string): string;
 
     //process, thread, windows message and so on
     class procedure Delay(const msec: Cardinal = 10);
@@ -37,6 +38,7 @@ type
 
 const
   C_DELAY_ONCE: Cardinal = 20;      //delay 20 milli seconds for communication in oneshot
+
 
 implementation
 uses Forms, SysUtils, StrUtils, Math,Windows, Registry;
@@ -249,6 +251,15 @@ begin
     byte_char := byte(str[i]);
     result := result + IntToHex(byte_char, 2);
   end;
+end;
+
+class function TGenUtils.ReplaceDecimalSeparator(const str: string): string;
+begin
+{$IF CompilerVersion >= 12.0}
+  result := ReplaceStr(str, '.', FormatSettings.DecimalSeparator);
+{$ELSE}
+  result := ReplaceStr(str, '.', DecimalSeparator);
+{$ENDIF}
 end;
 
 // =============================================================================

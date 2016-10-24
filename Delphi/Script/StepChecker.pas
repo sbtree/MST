@@ -64,7 +64,7 @@ type
   end;
 
 implementation
-uses SysUtils, StrUtils;
+uses SysUtils, StrUtils, GenUtils;
 {const
 
   CSTR_FIELD_NAMES_V02  :  FieldStringArray = (
@@ -163,7 +163,7 @@ var s_snr: string; f_stepnr: single;
 begin
   result := false;
   //replace '.' with the system decimal separator, e.g. the separator is ',' in german local setting
-  s_snr := ReplaceStr(str, '.', DecimalSeparator);
+  s_snr := TGenUtils.ReplaceDecimalSeparator(str); //ReplaceStr(str, '.', DecimalSeparator);
   if TryStrToFloat(s_snr, f_stepnr) then begin
     f_stepnr := abs(f_stepnr);
     if (f_stepnr > f_lastnr) then begin

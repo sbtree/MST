@@ -188,12 +188,12 @@ end;
 
 function TStrCollection.Compare(Key1, Key2: Pointer): Integer;
 begin
-  Compare := StrComp(Key1, Key2);
+  Compare := StrComp(PAnsiChar(Key1), PAnsiChar(Key2));
 end;
 
 procedure TStrCollection.FreeItem(Item: Pointer);
 begin
-  StrDispose(Item);
+  StrDispose(PAnsiChar(Item));
 end;
 
 end.

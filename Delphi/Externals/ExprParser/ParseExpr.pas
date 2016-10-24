@@ -684,8 +684,13 @@ end;
 
 constructor TCustomExpressionParser.Create;
 begin
+{$IF CompilerVersion >= 12.0}
+  FDecimSeparator := FormatSettings.DecimalSeparator;
+  FArgSeparator := FormatSettings.ListSeparator;
+{$ELSE}
   FDecimSeparator := SysUtils.DecimalSeparator;
   FArgSeparator := SysUtils.ListSeparator;
+{$ENDIF}
   HexChar := '$';
   WordsList := TExpressList.Create(30);
   ConstantsList := TOCollection.Create(10);
@@ -1085,8 +1090,8 @@ var
     end;
   end;
 begin
-  OldDecim := SysUtils.DecimalSeparator;
-  SysUtils.DecimalSeparator := DecimSeparator;
+//  OldDecim := SysUtils.DecimalSeparator;
+//  SysUtils.DecimalSeparator := DecimSeparator;
   Result := TExprCollection.Create(10);
   I2 := 1;
   S := Trim(LowerCase(AnExpression));
@@ -1118,7 +1123,7 @@ begin
         WordsList.Add(Word);
       end;
   until I2 > Len;
-  SysUtils.DecimalSeparator := OldDecim;
+  //SysUtils.DecimalSeparator := OldDecim;
 end;
 
 procedure TCustomExpressionParser.Check(AnExprList: TExprCollection);

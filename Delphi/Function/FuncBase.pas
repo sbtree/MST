@@ -18,21 +18,50 @@
 unit FuncBase;
 
 interface
-uses Classes, TextMessage, GenType, DeviceBase;
+uses Classes, TextMessage;
 
 type
+  //define actors, which realize the function
+  EFunctionActorType = (
+                    FA_TSEQ,  //test sequece
+                    FA_SWT,   //software tool
+                    FA_DMM,   //digital multimeter
+                    FA_DSO,   //degital storage oscilloscope
+                    FA_MXP,   //metronix product, which is the unit under the test (uut)
+                    FA_TMM    //thermometer
+                    );
+
+  IFunctionActors = interface
+    procedure SetActorObject(const efa: EFunctionActorType; const actorobj: TObject);
+    function  GetActorObject(const efa: EFunctionActorType): TObject;
+
+    property ActorObject[const efa: EFunctionActorType]: TObject read GetActorObject write SetActorObject;
+  end;
+
+  TFunctionActors = class(TInterfacedObject, IFunctionActors)
+  protected
+    ao_actors:   array[EFunctionActorType] of TObject;
+  public
+    constructor Create();
+    destructor Destroy(); override;
+
+    procedure SetActorObject(const efa: EFunctionActorType; const actorobj: TObject);
+    function  GetActorObject(const efa: EFunctionActorType): TObject;
+    property ActorObject[const efa: EFunctionActorType]: TObject read GetActorObject write SetActorObject;
+  end;
+
   TFunctionBase = class(TPersistent, ITextMessengerImpl)
   protected
     t_msgrimpl: TTextMessengerImpl; //for delegation of interface ITextMessengerImpl
-    e_exemode:  EExecMode;      //execution mode, which can be changed through property ExecutionMode
-    b_aborted:  boolean;        //indicates if current execution should be aborted
-    t_pars:     TStrings;       //to save parameters
-    //s_result:   string;         //a string to save result
-    v_resval:  Variant;         //value of the result
+    b_aborted:  boolean;            //indicates if current execution should be aborted
+    t_pars:     TStrings;           //to save parameters
+    v_resval:   Variant;            //value of the result
+    t_fntactors:TFunctionActors;    //function actors, should be given after creating
   protected
      function GetParamSeparator(): Char;
      procedure SetParamSeparator(separator: Char);
      procedure SetAborted(const aborted: boolean);
+     procedure SetFunctionActors(const fntactors: TFunctionActors); virtual;
 
   public
     constructor Create(); virtual;
@@ -41,9 +70,10 @@ type
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
     property ResultValue: Variant read v_resval;
     //property ResultString: string read s_result write s_result;
-    property ExecutionMode: EExecMode read e_exemode write e_exemode;
+    //property ExecutionMode: EExecMode read e_exemode write e_exemode;
     property Aborted: boolean read b_aborted write SetAborted;
     property ParamSeparator: Char read GetParamSeparator write SetParamSeparator; //separator of the parameters. The default value is a space
+    property FunctionActors: TFunctionActors read t_fntactors write SetFunctionActors;
 
     function LoadParameter(const par: string): boolean; virtual;
     function LoadParameters(const pars: TStrings): boolean; virtual;
@@ -54,10 +84,32 @@ type
 implementation
 uses SysUtils, StrUtils;
 
+constructor TFunctionActors.Create();
+var i: EFunctionActorType;
+begin
+  inherited Create();
+  for i := Low(EFunctionActorType) to High(EFunctionActorType) do ao_actors[i] := nil;
+end;
+
+destructor TFunctionActors.Destroy();
+begin
+  inherited Destroy();
+end;
+
+procedure TFunctionActors.SetActorObject(const efa: EFunctionActorType; const actorobj: TObject);
+begin
+  ao_actors[efa] := actorobj;
+end;
+
+function  TFunctionActors.GetActorObject(const efa: EFunctionActorType): TObject;
+begin
+  result := ao_actors[efa];
+end;
+
 constructor TFunctionBase.Create;
 begin
 	inherited Create();
-  e_exemode := EM_NORMAL;
+  //e_exemode := EM_NORMAL;
   b_aborted := false;
   t_pars := TStringList.Create();
   t_pars.Delimiter := ' ';
@@ -85,6 +137,11 @@ end;
 procedure TFunctionBase.SetAborted(const aborted: boolean);
 begin
   b_aborted := aborted;
+end;
+
+procedure TFunctionBase.SetFunctionActors(const fntactors: TFunctionActors);
+begin
+  t_fntactors := fntactors;
 end;
 
 function TFunctionBase.LoadParameter(const par: string): boolean;

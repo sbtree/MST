@@ -13,33 +13,38 @@ uses Classes, TextMessage, FuncBase, GenType, StepData, StepGroup, Multimeter, F
 
 type
   //define class of function caller, which calls script functions
-  TFunctionCaller = class(TInterfacedObject, ITextMessengerImpl)
+  TFunctionCaller = class(TInterfacedObject, ITextMessengerImpl, IFunctionActors)
+  private
+    t_curfcls:  TFunctionClass; //indicates current class instance for class of TFunctionBase ()
+    t_aliases:  TStrings;       //to save alias of the function name in the format 'alias=FunctionClass'
   protected
-    t_aliases:  TStrings;
     t_func:     TFunctionBase;
     t_msgrimpl: TTextMessengerImpl;
-    t_curgroup: TStepGroup;
-    t_dmm:      TMultimeter;
+    //t_curgroup: TStepGroup;
+    //t_dmm:      TMultimeter;
     t_stepres:  TStepResult;
+    t_fntactors:TFunctionActors;
   protected
     procedure InitAliases();
     function  FindFunctionByAlias(const alias: string): TFunctionClass;
     function  FindFunctionByName(const func: string): TFunctionClass;
+
   public
     constructor Create();
     destructor Destroy(); override;
 
     //delegate interface ITextMessengerImpl
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
+    property ActorService: TFunctionActors read t_fntactors implements IFunctionActors;
 
     //properties
     property CurStepResult: TStepResult write t_stepres;
-    property CurStepGroup: TStepGroup read t_curgroup write t_curgroup;
-    property DevMultimeter: TMultimeter read t_dmm write t_dmm;
+    //property CurStepGroup: TStepGroup read t_curgroup write t_curgroup;
+    //property DevMultimeter: TMultimeter read t_dmm write t_dmm;
 
     //property  ExecutionMode: EExecMode read e_exemode write SetExecutionMode;
     //property  ResultString: string read s_result write s_result;
-    //function FindFunction(const fnname: string): boolean;
+    function FindFunction(const fnname: string): boolean;
     function  CreateFunction(const func: string): TFunctionBase; virtual;
     function  RunFunction(const func: TFunctionBase; const par: string): boolean; virtual;
     function  CallFunction(const func, par: string): boolean;
@@ -81,28 +86,36 @@ begin
 
   t_aliases := TStringList.Create();
   InitAliases();
+
+  t_fntactors := TFunctionActors.Create();
 end;
 
 destructor TFunctionCaller.Destroy();
 begin
+  t_fntactors.Free();
   t_aliases.Free();
   t_msgrimpl.Free();
   inherited Destroy();
 end;
 
+function TFunctionCaller.FindFunction(const fnname: string): boolean;
+begin
+  t_curfcls := FindFunctionByName(fnname);
+  if (not assigned(t_curfcls)) then t_curfcls := FindFunctionByAlias(fnname);
+  result := assigned(t_curfcls);
+end;
+
 function TFunctionCaller.CreateFunction(const func: string) : TFunctionBase;
-var t_class : TFunctionClass;
 begin
   result := nil;
-  t_class := FindFunctionByName(func);
-  if (not assigned(t_class)) then t_class := FindFunctionByAlias(func);
-  if assigned(t_class) then begin
-    result := t_class.Create();
+  if FindFunction(func) then begin
+    result := t_curfcls.Create();
     if assigned(result) then begin
-      if (result is TConditionControl) then
+      result.FunctionActors := t_fntactors;
+      {if (result is TConditionControl) then
         IStepControlImpl(TConditionControl(result)).CurStepGroup := t_curgroup
       else if (result is TDmmFunction) then
-        TDmmFunction(result).DevMultimeter := t_dmm;
+        TDmmFunction(result).DevMultimeter := t_dmm;}
 
       ITextMessengerImpl(result).Messenger := t_msgrimpl.Messenger;
     end;

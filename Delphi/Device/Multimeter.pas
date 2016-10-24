@@ -277,7 +277,7 @@ begin
   if EndsText(C_KEITHLEY_UNITS[e_curma], result) then result := AnsiLeftStr(result, length(result) - length(C_KEITHLEY_UNITS[e_curma]));
   //keithley multimeter sends data only with '.' as decimal separator
   //it has to be changed into the local format
-  result := ReplaceStr(result, '.', DecimalSeparator);
+  result := TGenUtils.ReplaceDecimalSeparator(result);
 end;
 
 function TMultimeterKeithley.ReadData(var val: double): boolean;
@@ -363,7 +363,8 @@ begin
       else s_range := FloatToStr(range);
       //keithley multimeter accepts only '.'- decimal separator
       //the local format has to be changed into the keithley format
-      s_range := AnsiReplaceStr(s_range, DecimalSeparator, '.');
+      //s_range := ReplaceStr(s_range, DecimalSeparator, '.');
+      s_range := TGenUtils.ReplaceDecimalSeparator(s_range);
       s_sending := Format(C_KEITHLEY_FUNC[meas] + C_KEITHLEY_RANGE_SET + AnsiChar(13), [s_range]);
     end else //auto range
       s_sending := C_KEITHLEY_FUNC[meas] + C_KEITHLEY_RANGE_AUTO_ON + AnsiChar(13);

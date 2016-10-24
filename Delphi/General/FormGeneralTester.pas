@@ -428,7 +428,7 @@ begin
   ShowMessage(TGenUtils.ShowStrHex('ABCDE12345'));
   v := 1;
   v := '12.5';
-  if (VarType(v) = varString) then v := ReplaceStr(v, '.', DecimalSeparator);
+  if (VarType(v) = varString) then v := TGenUtils.ReplaceDecimalSeparator(v);
   r := v;
   ShowMessage(format('iInt64 = %f',[r]));
   sNames := TStringList.Create();

@@ -17,11 +17,12 @@ type
     d_range:double;
     t_dmm:  TMultimeter;
   protected
-    procedure SetDevMultimeter(const dmm: TMultimeter); virtual;
+    //procedure SetDevMultimeter(const dmm: TMultimeter); virtual;
+    procedure SetFunctionActors(const fntactors: TFunctionActors); override;
     function DoMeasurement(const meas: EMeasureAction): boolean;
   public
     constructor Create(); override;
-    property DevMultimeter: TMultimeter read t_dmm write SetDevMultimeter;
+    //property DevMultimeter: TMultimeter read t_dmm write SetDevMultimeter;
     function LoadParameters(const pars: TStrings): boolean; override;
   end;
 
@@ -66,11 +67,18 @@ type
   end;
 
 implementation
-uses SysUtils, StrUtils;
+uses SysUtils, StrUtils, GenUtils;
 
-procedure TDmmFunction.SetDevMultimeter(const dmm: TMultimeter);
+{procedure TDmmFunction.SetDevMultimeter(const dmm: TMultimeter);
 begin
   t_dmm := dmm;
+end; }
+
+procedure TDmmFunction.SetFunctionActors(const fntactors: TFunctionActors);
+begin
+  t_fntactors := fntactors;
+  if assigned(t_fntactors) then t_dmm := TMultimeter(t_fntactors.ActorObject[FA_DMM])
+  else t_dmm := nil;
 end;
 
 function TDmmFunction.DoMeasurement(const meas: EMeasureAction): boolean;
@@ -106,7 +114,7 @@ begin
   if (pars.Count <= 1) then begin
     result := true;
     if (pars.Count = 1) then begin
-      s_par := ReplaceStr(pars[0], '.', DecimalSeparator);
+      s_par := TGenUtils.ReplaceDecimalSeparator(pars[0]);// ReplaceStr(pars[0], '.', DecimalSeparator);
       result := TryStrToFloat(s_par, d_range);
       if (not result) then d_range := -1.0; //set negative value for automatical range
     end;

@@ -177,13 +177,13 @@ const
   CCHR_SLASH         = '/';
   CCHR_STAR          = '*';
   CCHR_SPACE         = ' ';
-  CCHR_TAB           = Char(9);
-  CCHR_LN            = Char(10);
-  CCHR_CR            = Char(13);
+  CCHR_TAB           = char(9);
+  CCHR_LN            = char(10);
+  CCHR_CR            = char(13);
 
-  CSET_BLANK_CHARS: set of char = [CCHR_TAB, CCHR_SPACE];
-  CSET_FIRST_CHARS: set of char = ['_', 'A'..'Z', 'a'..'z'];
-  CSET_DIGIT_CHARS: set of char = ['0'..'9'];
+  CSET_BLANK_CHARS: string = CCHR_TAB + CCHR_SPACE;
+  CSET_FIRST_CHARS: string = '_ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  CSET_DIGIT_CHARS: string = '0123456789';
 
 implementation
 uses SysUtils, StrUtils, FuncBase, GenUtils;
@@ -596,7 +596,7 @@ begin
       if (e_curstate in [PS_SQUOTATION, PS_DQUOTATION, PS_VARNAME, PS_VARVAL, PS_FIELDNAME, PS_FIELDVAL]) then
         s_curtoken := s_curtoken + curch
       else begin //[PS_IDLE, PS_STEP, PS_FIELDGROUP]
-        if (curch in CSET_FIRST_CHARS) then begin
+        if ContainsText(CSET_FIRST_CHARS, curch) then begin
           if (e_curstate = PS_IDLE) then begin
             if (b_allowvar or StartsText(s_curtoken + curch + nextch, 'HELP_')) then begin //todo: what about the help id, e.g. HELP_000100??
               s_curtoken := s_curtoken + curch;
@@ -609,7 +609,7 @@ begin
             s_curtoken := s_curtoken + curch;
             PushState(PS_FIELDNAME);
           end;
-        end else if (not (curch in CSET_BLANK_CHARS)) then begin
+        end else if (not ContainsText(CSET_BLANK_CHARS, curch)) then begin
           result := false;
           t_msgrimpl.AddMessage(format('%s (%s).', [CSTR_UNEXCEPTED, curch]), ML_ERROR);
         end;
