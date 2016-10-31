@@ -87,6 +87,19 @@
             <Form>FrmTestRunner</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="..\Core\Data\StepData.pas"/>
+        <DCCReference Include="..\Core\Data\StepGroup.pas"/>
+        <DCCReference Include="..\Core\Script\ScriptReader.pas"/>
+        <DCCReference Include="..\Core\Script\StepChecker.pas"/>
+        <DCCReference Include="..\Core\Runner\TestDebugger.pas"/>
+        <DCCReference Include="..\Core\Runner\TestRunner.pas"/>
+        <DCCReference Include="..\Core\General\DataBuffer.pas"/>
+        <DCCReference Include="..\Core\General\DllLoader.pas"/>
+        <DCCReference Include="..\Core\General\GenType.pas"/>
+        <DCCReference Include="..\Core\General\GenUtils.pas"/>
+        <DCCReference Include="..\Core\General\StringPairs.pas"/>
+        <DCCReference Include="..\Core\General\TextMessage.pas"/>
+        <DCCReference Include="..\Core\Function\FuncCaller.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -195,7 +208,7 @@
                 </DeployClass>
                 <DeployClass Name="ProjectOSXEntitlements">
                     <Platform Name="OSX32">
-                        <RemoteDir>../</RemoteDir>
+                        <RemoteDir>Contents</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
@@ -281,7 +294,6 @@
                 </DeployClass>
                 <DeployClass Name="ProjectiOSEntitlements">
                     <Platform Name="iOSDevice">
-                        <RemoteDir>../</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
