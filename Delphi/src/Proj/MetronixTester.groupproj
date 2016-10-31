@@ -1,0 +1,60 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{3DD3F8B0-3F7E-437E-908B-07828E382F18}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="ServoTestRunner.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ServoTestFront.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ServoTestPost.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="ServoTestRunner">
+        <MSBuild Projects="ServoTestRunner.dproj"/>
+    </Target>
+    <Target Name="ServoTestRunner:Clean">
+        <MSBuild Projects="ServoTestRunner.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ServoTestRunner:Make">
+        <MSBuild Projects="ServoTestRunner.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ServoTestFront">
+        <MSBuild Projects="ServoTestFront.dproj"/>
+    </Target>
+    <Target Name="ServoTestFront:Clean">
+        <MSBuild Projects="ServoTestFront.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ServoTestFront:Make">
+        <MSBuild Projects="ServoTestFront.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ServoTestPost">
+        <MSBuild Projects="ServoTestPost.dproj"/>
+    </Target>
+    <Target Name="ServoTestPost:Clean">
+        <MSBuild Projects="ServoTestPost.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ServoTestPost:Make">
+        <MSBuild Projects="ServoTestPost.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="ServoTestRunner;ServoTestFront;ServoTestPost"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="ServoTestRunner:Clean;ServoTestFront:Clean;ServoTestPost:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="ServoTestRunner:Make;ServoTestFront:Make;ServoTestPost:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

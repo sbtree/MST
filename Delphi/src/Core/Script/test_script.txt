@@ -1,0 +1,40 @@
+// =============================================================
+// externe Liste für den ARS23xx
+// aktuelle Version: $Revision: 1.71 $
+//
+// =============================================================
+Language=EN
+FileVersion=$Revision: 1.71 $
+ScriptVersion=3.0.0.0
+Include=.\TestCase100.txt;.\TestCase200.txt{}
+
+(Nr:100.000; T:'define a named test case'; //line comment  
+             r_on:#Par[=default];
+             (*
+             block comment 1)
+             *)                
+             FkT:EvaluateStr;     PAR:''MyTestCase' dir   '   ;
+             r_off:;                            
+             TOL:'[@var,20]';
+             {block comment 2
+             17.09.2014 09:25}
+             ),
+         
+(Nr:100.010; T:'call a test instruction';    R_ON:'RON:101,102;ROFF:119,120;';   FKT:cmd;          PAR:'a;b;@Par';                              M:;      TOL:(A:'OR:1234:0012'; MIN:0; MAX:10;); R_OFF:@Push;),
+(Nr:100.990; T:'end the named test case';    R_ON:;                              FKT:Nil;          PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:;),
+                                                                                                                                                                                           
+(Nr:1200.000; T:'define a unnamed test case'; R_ON:;                              FKT:Nil;          PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:;),        
+(Nr:1200.010; T:'call a test instruction';    R_ON:'RON:101,102;ROFF:119,120;';   FKT:cmd;          PAR:'a;b;c';                                 M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:@Push;),   
+(Nr:1200.990; T:'end the unnamed test case';  R_ON:;                              FKT:Nil;          PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:@Restore;),
+                                                                                                                                                                                               
+(Nr:1300.000; T:'Entry of a test routine';    R_ON:;                              FKT:Entry;        PAR:'MyTestRoutine';                         M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:;),
+(Nr:1300.010; T:'call a named test case';     R_ON:'RON:101,102; ROFF:111,122;';  FKT:CallCase;     PAR:'MyTestCase';                            M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:@Restore;),
+(Nr:1300.020; T:'Push a value into stack';    R_ON:;                              FKT:Push;         PAR:123;                                     M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:;),
+(Nr:1300.030; T:'call a unnamed test case';   R_ON:'RON:$SpecialRelay;';          FKT:CallCase;     PAR:'TestCase_ZZZ';                          M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:@Restore;),
+(Nr:1300.040; T:'call a test command';        R_ON:'RON:101,102;ROFF:111,122;';   FKT:abc;          PAR:@Pop;                                    M:'V';   TOL:(A:; MIN:; MAX:;);                  R_OFF:@Restore;),
+(Nr:1300.050; T:'pop a value from stack';     R_ON:;                              FKT:Pop;          PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:#PopVar;),
+(Nr:1300.060; T:'close relays for 5000ms';    R_ON:;                              FKT:CloseRelay;   PAR:'101,102;5000';                          M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:;),
+(Nr:1300.070; T:'push cmd result to stack';   R_ON:'RON:101,102;ROFF:111,122;';   FKT:cmd;          PAR:$INI_VAR;                                M:'mA';  TOL:(A:; MIN:; MAX:;);                  R_OFF:'@Restore;@Push';),
+(Nr:1300.080; T:'call case if true';          R_ON:'RON:201;ROFF:202;';           FKT:CallIfTrue;   PAR:"$INI_VAR='123';'MyTestCase'; ARG:a";    M:'';    TOL:(A:; MIN:; MAX:;);                  R_OFF:@Restore;),
+(Nr:1300.090; T:'call case if true';          R_ON:'RON:201;ROFF:202;';           FKT:CallIfTrue;   PAR:"@PopVar=123;'MyTestCase';ARG:b";        M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:'@Restore;@Push';),
+(Nr:1300.999; T:'End of the routine';         R_ON:;                              FKT:Nil;          PAR:;                                        M:;      TOL:(A:; MIN:; MAX:;);                  R_OFF:@Restore;),
