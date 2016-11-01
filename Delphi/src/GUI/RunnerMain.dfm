@@ -78,6 +78,7 @@ object FrmTestRunner: TFrmTestRunner
     Height = 25
     Caption = 'Save'
     TabOrder = 5
+    OnClick = btnSaveScriptClick
   end
   object memInfo: TMemo
     Left = 8
@@ -137,6 +138,7 @@ object FrmTestRunner: TFrmTestRunner
     Height = 25
     Caption = 'Clear'
     TabOrder = 12
+    OnClick = btnClearClick
   end
   object chkForce: TCheckBox
     Left = 389
@@ -273,5 +275,14 @@ object FrmTestRunner: TFrmTestRunner
     Checked = True
     State = cbChecked
     TabOrder = 19
+  end
+  object chkDiagnose: TCheckBox
+    Left = 288
+    Top = 331
+    Width = 64
+    Height = 17
+    Caption = 'Diagnose'
+    TabOrder = 20
+    OnClick = chkDiagnoseClick
   end
 end

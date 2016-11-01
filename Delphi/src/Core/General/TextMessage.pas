@@ -13,6 +13,7 @@ uses Classes;
 type
   //define message level
   EMessageLevel = (
+                    ML_EVER,    //forced information
                     ML_INFO,    //general information
                     ML_WARNING, //warning message
                     ML_ERROR,   //error message
@@ -78,11 +79,12 @@ uses SysUtils;
 
 //define constant strings for EMessageLevel
 const CSTR_MLKEYS: array[EMessageLevel] of string = (
-                   'info',
-                   'warning',
-                   'error',
-                   'fatal'
-                   );
+                    'info',
+                    'info',
+                    'warning',
+                    'error',
+                    'fatal'
+                    );
 
 constructor TTextMessenger.Create();
 begin
@@ -159,7 +161,7 @@ end;
 
 function TTextMessenger.FormatMsg(const text: string; const sender: string; const level: EMessageLevel; var msg: string): boolean;
 begin
-  if (level >= e_threshold) then begin
+  if ((level >= e_threshold) or (level = ML_EVER)) then begin
     result := true;
     if (sender <> '' ) then msg := '[' + sender + ']' + text
     else msg := text;

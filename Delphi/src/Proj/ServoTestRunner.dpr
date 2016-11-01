@@ -43,7 +43,10 @@ uses
   Oscilloscope in '..\Core\Device\Oscilloscope.pas',
   PowerSupply in '..\Core\Device\PowerSupply.pas',
   RelayControl in '..\Core\Device\RelayControl.pas',
-  Thermometer in '..\Core\Device\Thermometer.pas';
+  Thermometer in '..\Core\Device\Thermometer.pas',
+  Serial3 in '..\External\Serial3.pas',
+  USBIOCOMLib_TLB in '..\External\USBIO\USBIOCOMLib_TLB.pas',
+  Usbspec in '..\External\USBIO\Usbspec.pas';
 
 {$R *.res}
 

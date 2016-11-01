@@ -35,6 +35,7 @@ type
     t_msgrimpl: TTextMessengerImpl; //for delegation of interface TTextMessengerImpl
     b_jumpmstep:boolean; //indicate, whether to run the steps, which have minus step number, e.g. '-11.02'
   protected
+    procedure UpdateMessageThreshold();
     procedure SetMessengerReim(tmessenger: TTextMessenger);
     procedure SetExecutionMode(const em: EExecMode);
     procedure SetStepContainer(const tcon: TStepContainer);
@@ -87,6 +88,7 @@ begin
 
   t_curseq := TTestSequence.Create();
   t_fcaller := TFunctionCaller.Create();
+  IFunctionActors(t_fcaller).SetActorObject(FA_TSEQ, t_curseq);
 
   ExecutionMode := EM_NORMAL;
 end;
@@ -100,33 +102,33 @@ begin
   inherited Destroy();
 end;
 
-procedure TTestRunner.SetMessengerReim(tmessenger: TTextMessenger);
+procedure TTestRunner.UpdateMessageThreshold();
 begin
-  t_msgrimpl.Messenger := tmessenger;
   case e_exemode of
     EM_NORMAL, EM_SIMULATE: t_msgrimpl.SetMessageThreshold(ML_ERROR);
     EM_DIAGNOSE: t_msgrimpl.SetMessageThreshold(ML_INFO);
   end;
+end;
+
+procedure TTestRunner.SetMessengerReim(tmessenger: TTextMessenger);
+begin
+  t_msgrimpl.Messenger := tmessenger;
+  ITextMessengerImpl(t_curseq).Messenger := t_msgrimpl.Messenger;
   ITextMessengerImpl(t_fcaller).Messenger := t_msgrimpl.Messenger;
+  UpdateMessageThreshold();
 end;
 
 procedure TTestRunner.SetExecutionMode(const em: EExecMode);
 begin
   e_exemode := em;
-  case e_exemode of
-    EM_NORMAL, EM_SIMULATE: t_msgrimpl.SetMessageThreshold(ML_ERROR);
-    EM_DIAGNOSE: t_msgrimpl.SetMessageThreshold(ML_INFO);
-  end;
+  UpdateMessageThreshold();
 end;
 
 procedure TTestRunner.SetStepContainer(const tcon: TStepContainer);
 begin
   t_container := tcon;
   if assigned(t_container) then begin
-    ITextMessengerImpl(t_curseq).Messenger := ITextMessengerImpl(self).Messenger;
-    ITextMessengerImpl(t_fcaller).Messenger := ITextMessengerImpl(self).Messenger;
     t_container.UpdateSequence(t_curseq);
-    TFunctionActors(t_fcaller).SetActorObject(FA_TSEQ, t_curseq);
     UpdateFuncObjs();
   end;
 end;
@@ -161,8 +163,9 @@ var s_snr: string;
 begin
   result := false;
   if assigned(t_curstep) then begin
-    t_msgrimpl.AddEmptyLine();
     s_snr := t_curstep.GetFieldValue(SF_NR);
+    t_msgrimpl.AddEmptyLine();
+    t_msgrimpl.AddMessage(format('Step (%s) is starting ...', [s_snr]), ML_EVER);
     t_curseq.GotoStepIndex(t_curseq.IndexOfStep(s_snr));
     if ((not t_curstep.IsMinusStep) or (not b_jumpmstep)) then begin
       //todo: 1. initialize this step and execute statements of 'init' or 'r_on'
@@ -184,8 +187,8 @@ begin
       if result then
         result := StepFinal();
       //t_curstep.StepResult.Resulted := result;
-      if result then t_msgrimpl.AddMessage(format('The step (%s) is done successfully.', [t_curstep.GetFieldValue(SF_NR)]))
-      else t_msgrimpl.AddMessage(format('The step (%s) is not done exactly.', [t_curstep.GetFieldValue(SF_NR)]));
+      if result then t_msgrimpl.AddMessage(format('The step (%s) is done successfully.', [t_curstep.GetFieldValue(SF_NR)]), ML_EVER)
+      else t_msgrimpl.AddMessage(format('The step (%s) is not done exactly.', [t_curstep.GetFieldValue(SF_NR)]), ML_ERROR);
     end else begin
       result := true;
       t_msgrimpl.AddMessage(format('The minus step (%s) is jumped.', [t_curstep.GetFieldValue(SF_NR)]));

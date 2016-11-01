@@ -128,6 +128,9 @@
         <DCCReference Include="..\Core\Device\PowerSupply.pas"/>
         <DCCReference Include="..\Core\Device\RelayControl.pas"/>
         <DCCReference Include="..\Core\Device\Thermometer.pas"/>
+        <DCCReference Include="..\External\Serial3.pas"/>
+        <DCCReference Include="..\External\USBIO\USBIOCOMLib_TLB.pas"/>
+        <DCCReference Include="..\External\USBIO\Usbspec.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -236,7 +239,7 @@
                 </DeployClass>
                 <DeployClass Name="ProjectOSXEntitlements">
                     <Platform Name="OSX32">
-                        <RemoteDir>../</RemoteDir>
+                        <RemoteDir>Contents</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
@@ -322,7 +325,6 @@
                 </DeployClass>
                 <DeployClass Name="ProjectiOSEntitlements">
                     <Platform Name="iOSDevice">
-                        <RemoteDir>../</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>

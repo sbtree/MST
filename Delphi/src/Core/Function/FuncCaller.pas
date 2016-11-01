@@ -105,8 +105,8 @@ begin
   if FindFunction(func) then begin
     result := t_curfcls.Create();
     if assigned(result) then begin
-      result.FunctionActors := t_fctactors;
       ITextMessengerImpl(result).Messenger := t_msgrimpl.Messenger;
+      result.FunctionActors := t_fctactors;
     end;
   end else if ((not SameText(func, 'nil')) and (func <> '')) then
     t_msgrimpl.AddMessage(format('The called function ''%s'' is not found.', [func]), ML_ERROR);

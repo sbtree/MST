@@ -39,6 +39,7 @@ type
     btnRunNextCase: TButton;
     btnRunFirstCase: TButton;
     chkJump: TCheckBox;
+    chkDiagnose: TCheckBox;
     procedure btnOpenScriptClick(Sender: TObject);
     procedure btnReadScriptClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -54,6 +55,9 @@ type
     procedure btnRunPrevCaseClick(Sender: TObject);
     procedure btnRepeatCaseClick(Sender: TObject);
     procedure btnRunNextCaseClick(Sender: TObject);
+    procedure chkDiagnoseClick(Sender: TObject);
+    procedure btnSaveScriptClick(Sender: TObject);
+    procedure btnClearClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_sreader:  TScriptReader;
@@ -71,6 +75,12 @@ var
 implementation
 uses GenType;
 {$R *.dfm}
+
+procedure TFrmTestRunner.btnClearClick(Sender: TObject);
+begin
+  t_messenger.Clear(true);
+  t_sreader.Clear();
+end;
 
 procedure TFrmTestRunner.btnNextStepClick(Sender: TObject);
 begin
@@ -143,6 +153,11 @@ begin
     t_runner.RunSequence();
 end;
 
+procedure TFrmTestRunner.btnSaveScriptClick(Sender: TObject);
+begin
+  t_sreader.SaveToFile();
+end;
+
 procedure TFrmTestRunner.btnSequenceClick(Sender: TObject);
 var s_casenrs: string;
 begin
@@ -151,6 +166,12 @@ begin
 
   if s_casenrs <> '' then t_messenger.AddMessage('Sequence Cases: ' + s_casenrs)
   else t_messenger.AddMessage('Test Sequence: no case')
+end;
+
+procedure TFrmTestRunner.chkDiagnoseClick(Sender: TObject);
+begin
+  if chkDiagnose.Checked then t_runner.ExecutionMode := EM_DIAGNOSE
+  else t_runner.ExecutionMode := EM_NORMAL;
 end;
 
 procedure TFrmTestRunner.FormCreate(Sender: TObject);
@@ -170,7 +191,6 @@ begin
 
   t_runner := TTestRunner.Create();
   ITextMessengerImpl(t_runner).Messenger := t_messenger;
-  t_runner.ExecutionMode := EM_DIAGNOSE;
 end;
 
 procedure TFrmTestRunner.FormDestroy(Sender: TObject);

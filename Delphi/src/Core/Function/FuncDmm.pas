@@ -98,7 +98,8 @@ begin
       MA_TEMP: result := t_dmm.MeasureT(d_val);
     end;
     v_resval := d_val;
-  end;
+  end else
+    t_msgrimpl.AddMessage('A multimeter must be given for this function.', ML_ERROR);
 end;
 
 constructor TDmmFunction.Create();

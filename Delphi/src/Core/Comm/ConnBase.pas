@@ -10,7 +10,7 @@
 unit ConnBase;
 
 interface
-uses Classes, TextMessage, IniFiles, Serial3, SyncObjs;
+uses Classes, TextMessage, SyncObjs;
 const
   C_BUFFER_SIZE_DEFAULT = 1024;
 
@@ -59,6 +59,7 @@ type
     i_cntnull:  integer;        //count of received nulls
     ba_rbuf:    array[0..C_BUFFER_SIZE_DEFAULT-1] of byte; //buffer for data received from device
     //ba_wbuf:    array[0..C_BUFFER_SIZE_DEFAULT-1] of byte; //buffer for data sending to device
+    //b_unicode:  boolean;  //indicate if a string is sent or received as wide string
     w_rlen:     word;     //actual length of the received data
     t_rxwait:   TEvent;   //wait event for reading
     t_txwait:   TEvent;   //wait event for writing complete
@@ -90,6 +91,7 @@ type
     property ConnectState: EConnectState read e_state;
     property Timeout: cardinal read c_timeout write c_timeout;
     property ShowNullChar: AnsiChar read ch_nullshow write ch_nullshow;
+    //property UnicodeForStr: boolean read b_unicode write b_unicode;
 
     //implementation of ICommInterf
     function Config(const sconf: string): boolean; overload; virtual;
@@ -375,6 +377,7 @@ begin
   e_state := CS_UNKNOWN;
   c_timeout := CINT_TIMEOUT_DEFAULT;
   ch_nullshow := #13; //null is show as #13
+  //b_unicode := false;
   w_rlen := 0;
   t_rxwait := TEvent.Create(nil, false, false, 'TMtxConn.Rx');
   t_txwait := TEvent.Create(nil, false, false, 'TMtxConn.Tx');
