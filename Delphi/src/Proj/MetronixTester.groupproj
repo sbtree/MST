@@ -12,6 +12,9 @@
         <Projects Include="ServoTestPost.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="ServoTester.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -47,14 +50,23 @@
     <Target Name="ServoTestPost:Make">
         <MSBuild Projects="ServoTestPost.dproj" Targets="Make"/>
     </Target>
+    <Target Name="ServoTester">
+        <MSBuild Projects="ServoTester.dproj"/>
+    </Target>
+    <Target Name="ServoTester:Clean">
+        <MSBuild Projects="ServoTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ServoTester:Make">
+        <MSBuild Projects="ServoTester.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="ServoTestRunner;ServoTestFront;ServoTestPost"/>
+        <CallTarget Targets="ServoTestRunner;ServoTestFront;ServoTestPost;ServoTester"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="ServoTestRunner:Clean;ServoTestFront:Clean;ServoTestPost:Clean"/>
+        <CallTarget Targets="ServoTestRunner:Clean;ServoTestFront:Clean;ServoTestPost:Clean;ServoTester:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="ServoTestRunner:Make;ServoTestFront:Make;ServoTestPost:Make"/>
+        <CallTarget Targets="ServoTestRunner:Make;ServoTestFront:Make;ServoTestPost:Make;ServoTester:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

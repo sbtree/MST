@@ -11,6 +11,8 @@ object FrmTestRunner: TFrmTestRunner
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
   object lblInclusive: TLabel
@@ -58,6 +60,7 @@ object FrmTestRunner: TFrmTestRunner
     Height = 21
     Caption = '...'
     TabOrder = 3
+    OnClick = btnOpenScriptClick
   end
   object btnReadScript: TButton
     Left = 513
@@ -66,6 +69,7 @@ object FrmTestRunner: TFrmTestRunner
     Height = 25
     Caption = 'Read'
     TabOrder = 4
+    OnClick = btnReadScriptClick
   end
   object btnSaveScript: TButton
     Left = 569
@@ -115,6 +119,7 @@ object FrmTestRunner: TFrmTestRunner
     Height = 25
     Caption = 'Sequence'
     TabOrder = 10
+    OnClick = btnSequenceClick
   end
   object txtExclusive: TEdit
     Left = 220
@@ -156,6 +161,7 @@ object FrmTestRunner: TFrmTestRunner
     Height = 25
     Caption = 'Run'
     TabOrder = 15
+    OnClick = btnRunSequenceClick
   end
   object btnRepeatSequence: TButton
     Left = 408
@@ -164,6 +170,7 @@ object FrmTestRunner: TFrmTestRunner
     Height = 25
     Caption = 'Repeat'
     TabOrder = 16
+    OnClick = btnRepeatSequenceClick
   end
   object GroupBox1: TGroupBox
     Left = 466
@@ -179,6 +186,7 @@ object FrmTestRunner: TFrmTestRunner
       Height = 25
       Caption = 'First Step'
       TabOrder = 0
+      OnClick = btnRunFirstStepClick
     end
     object btnRepeatStep: TButton
       Left = 36
@@ -187,6 +195,7 @@ object FrmTestRunner: TFrmTestRunner
       Height = 25
       Caption = '='
       TabOrder = 1
+      OnClick = btnRepeatStepClick
     end
     object btnPreviousStep: TButton
       Left = 5
@@ -196,6 +205,7 @@ object FrmTestRunner: TFrmTestRunner
       Hint = 'run previous test step'
       Caption = '<'
       TabOrder = 2
+      OnClick = btnPreviousStepClick
     end
     object btnNextStep: TButton
       Left = 67
@@ -205,6 +215,7 @@ object FrmTestRunner: TFrmTestRunner
       Hint = 'run next test step'
       Caption = '>'
       TabOrder = 3
+      OnClick = btnNextStepClick
     end
   end
   object GroupBox2: TGroupBox
@@ -221,6 +232,7 @@ object FrmTestRunner: TFrmTestRunner
       Height = 25
       Caption = '='
       TabOrder = 0
+      OnClick = btnRepeatCaseClick
     end
     object btnRunPrevCase: TButton
       Left = 6
@@ -230,6 +242,7 @@ object FrmTestRunner: TFrmTestRunner
       Hint = 'run previous test case'
       Caption = '<'
       TabOrder = 1
+      OnClick = btnRunPrevCaseClick
     end
     object btnRunNextCase: TButton
       Left = 66
@@ -239,6 +252,7 @@ object FrmTestRunner: TFrmTestRunner
       Hint = 'run next test case'
       Caption = '>'
       TabOrder = 2
+      OnClick = btnRunNextCaseClick
     end
     object btnRunFirstCase: TButton
       Left = 6
@@ -247,6 +261,7 @@ object FrmTestRunner: TFrmTestRunner
       Height = 25
       Caption = 'First Case'
       TabOrder = 3
+      OnClick = btnRunFirstCaseClick
     end
   end
   object chkJump: TCheckBox

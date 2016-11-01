@@ -14,7 +14,7 @@ uses Classes, FuncBase, TextMessage, StepGroup, FuncAux;
 
 type
   IStepControlImpl = interface
-    function GotoStep(var stepnr: string): boolean;
+    function SetGotoStep(var stepnr: string): boolean;
     function GetStepGroup(): TStepGroup;
     procedure SetStepGroup(const group: TStepGroup);
     property CurStepGroup: TStepGroup read GetStepGroup write SetStepGroup;
@@ -27,8 +27,8 @@ type
     constructor Create();
     destructor Destroy; override;
 
-    function GotoStep(var stepnr: string): boolean;
-    function NextStep(): boolean;
+    function SetGotoStep(var stepnr: string): boolean;
+    //function NextStep(): boolean;
     function CurStepNr(): string;
     function GetStepGroup(): TStepGroup;
     procedure SetStepGroup(const group: TStepGroup);
@@ -111,21 +111,21 @@ begin
   inherited Destroy();
 end;
 
-function TStepControlImpl.GotoStep(var stepnr: string): boolean;
+function TStepControlImpl.SetGotoStep(var stepnr: string): boolean;
 var i_idx: integer;
 begin
   result := false;
   if assigned(t_group) then begin
     i_idx := t_group.IndexOfStep(stepnr);
-    result := t_group.GotoStepIndex(i_idx);
+    result := t_group.SetGotoQuery(i_idx);//.GotoStepIndex(i_idx);
   end;
 end;
 
-function TStepControlImpl.NextStep(): boolean;
+{function TStepControlImpl.NextStep(): boolean;
 begin
   result := false;
   if assigned(t_group) then result := assigned(t_group.NextStep);
-end;
+end;}
 
 function TStepControlImpl.CurStepNr(): string;
 begin
@@ -223,14 +223,14 @@ begin
   if (result and ValidStepNrs(true)) then begin
     if (BooleanCondition(s_expr) = b_valid) then begin
       t_msgrimpl.AddMessage(format('The jumping condition is fulfilled( (%s) = %s ).', [s_expr, BoolToStr(b_valid, true)]));
-      result := t_sctrlimpl.GotoStep(s_tosnr);
+      result := t_sctrlimpl.SetGotoStep(s_tosnr);
       if result then t_msgrimpl.AddMessage(format('Successful to jump from step %s to step %s', [s_selfsnr, s_tosnr]))
       else t_msgrimpl.AddMessage(format('Failed to jump from step %s to step %s', [s_selfsnr, s_tosnr]), ML_ERROR);
     end else begin
       t_msgrimpl.AddMessage(format('The jumping condition is not fulfilled( (%s) <> %s ).', [s_expr, BoolToStr(b_valid, true)]));
-      result := t_sctrlimpl.NextStep();
+      {result := t_sctrlimpl.NextStep();
       if result then t_msgrimpl.AddMessage('Successful to go to next step automatically')
-      else t_msgrimpl.AddMessage('Failed to go to next step.', ML_ERROR);
+      else t_msgrimpl.AddMessage('Failed to go to next step.', ML_ERROR);}
     end;
   end;
 end;
@@ -303,17 +303,17 @@ begin
 
     b_dorepeat := (b_dorepeat and b_cond);
     if b_dorepeat then begin
-      result := t_sctrlimpl.GotoStep(s_tosnr);
+      result := t_sctrlimpl.SetGotoStep(s_tosnr);
       if result then t_msgrimpl.AddMessage(format('Successful to go from step %s to step %s', [s_selfsnr, s_tosnr]))
       else begin
         b_reset := true; //ready for next run
         t_msgrimpl.AddMessage(format('Failed to go from step %s to step %s (repeating counter = %d)', [s_selfsnr, s_tosnr, i_counter]), ML_ERROR);
       end
-    end else begin
+    {end else begin
       b_reset := true; //ready for next run
       result := t_sctrlimpl.NextStep();
       if result then t_msgrimpl.AddMessage(format('Successful to go to next step automatically.', [i_counter]))
-      else t_msgrimpl.AddMessage(format('Failed to go to next step (repeating counter = %d).', [i_counter]), ML_ERROR);
+      else t_msgrimpl.AddMessage(format('Failed to go to next step (repeating counter = %d).', [i_counter]), ML_ERROR);}
     end;
   end;
 end;

@@ -55,6 +55,7 @@ type
   protected
     t_steps:    TStrings;       //a list of test steps (step number and object pairs)
     i_curstep:  integer;        //indicate current index of t_steps
+    i_gotoidx:  integer;        //indicate index for goto-query
     b_freestep: boolean;        //indicates if free step object by removing
     t_msgrimpl:TTextMessengerImpl;
 
@@ -79,6 +80,7 @@ type
     function MoveStepIndex(const relidx: integer): boolean;
     function GotoStepIndex(const idx: integer): boolean;
     function GotoStepNr(var stepnr: string): boolean;
+    function SetGotoQuery(const idx: integer): boolean;
 
     //properties
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
@@ -334,6 +336,7 @@ constructor TStepGroup.Create();
 begin
   inherited Create();
   i_curstep := -1;
+  i_gotoidx := -1;
   b_freestep := false;
   t_steps := TStringList.Create();
   t_steps.Delimiter := Char(';');
@@ -374,8 +377,13 @@ end;
 
 function  TStepGroup.GetNextStep(): TTestStep;
 begin
-  inc(i_curstep);
-  if (i_curstep >= t_steps.Count) then i_curstep := t_steps.Count;
+  if i_gotoidx >= 0 then begin //if goto-query is set
+    i_curstep := i_gotoidx;
+    i_gotoidx := -1;
+  end else begin               //go to next step normally
+    inc(i_curstep);
+    if (i_curstep >= t_steps.Count) then i_curstep := t_steps.Count;
+  end;
   result := GetCurStep()
 end;
 
@@ -411,6 +419,17 @@ begin
   result := GotoStepIndex(i_idx);
   if result then t_msgrimpl.AddMessage(format('Successful to go to step %s', [stepnr]))
   else t_msgrimpl.AddMessage(format('Failed to go to step %s', [stepnr]), ML_ERROR)
+end;
+
+//set index of goto-query (i_gotoidx), the execution will be done through NextStep
+//GotoStepIndex = SetGotoQuery + NextStep.
+//This function is useful for the interface IStepControlImpl
+function TStepGroup.SetGotoQuery(const idx: integer): boolean;
+begin
+  if ((idx >= 0) and (idx < t_steps.Count)) then begin
+    i_gotoidx := idx;
+    result := true;
+  end else result := false;
 end;
 
 function TStepGroup.AddStep(const step: TTestStep): boolean;

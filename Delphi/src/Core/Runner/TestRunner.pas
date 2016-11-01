@@ -123,10 +123,11 @@ procedure TTestRunner.SetStepContainer(const tcon: TStepContainer);
 begin
   t_container := tcon;
   if assigned(t_container) then begin
-    t_container.UpdateSequence(t_curseq);
-    UpdateFuncObjs();
     ITextMessengerImpl(t_curseq).Messenger := ITextMessengerImpl(self).Messenger;
     ITextMessengerImpl(t_fcaller).Messenger := ITextMessengerImpl(self).Messenger;
+    t_container.UpdateSequence(t_curseq);
+    TFunctionActors(t_fcaller).SetActorObject(FA_TSEQ, t_curseq);
+    UpdateFuncObjs();
   end;
 end;
 
@@ -253,25 +254,18 @@ begin
 end;
 
 function TTestRunner.RunGroup(tgroup: TStepGroup): boolean;
-var t_func: TFunctionBase; s_snr: string; i_cnr: integer;
+var s_snr: string; i_cnr: integer;
 begin
   result := false;
   if assigned(tgroup) then begin
-    t_curstep := tgroup.FirstStep;
     result := true;
+    t_curstep := tgroup.FirstStep;
     while (result and (tgroup.CurStepIndex < tgroup.StepCount)) do begin
-      t_func := GetFunctionObj(t_curstep);
       result := RunStep(t_curstep);
-      if (t_func is TConditionControl) then begin //if goto is done
-        s_snr := t_curseq.StepNrOf(t_curseq.CurStepIndex);
-        if tgroup.GotoStepNr(s_snr) then t_curstep := tgroup.CurrentStep
-        else begin //it's running into another test case
-          t_curstep := t_curseq.CurrentStep;
-          if TStepGroup.CalcMainNr(s_snr, i_cnr) then
-            t_curseq.CaseGroup.GotoCaseNr(IntToStr(i_cnr)); //update case index in the case group
-          break;
-        end;
-      end else t_curstep := tgroup.NextStep;
+      s_snr := t_curstep.GetFieldValue(SF_NR);
+      if TStepGroup.CalcMainNr(s_snr, i_cnr) then
+        t_curseq.CaseGroup.GotoCaseNr(IntToStr(i_cnr)); //update case index in the case group
+      t_curstep := tgroup.NextStep;
     end;
   end;
 end;
