@@ -16,42 +16,26 @@ object FrmTestRunner: TFrmTestRunner
   PixelsPerInch = 96
   TextHeight = 13
   object lblInclusive: TLabel
-    Left = 189
-    Top = 359
+    Left = 8
+    Top = 356
     Width = 25
     Height = 13
     Caption = 'Incl.:'
   end
   object lblExclusive: TLabel
-    Left = 189
-    Top = 388
+    Left = 8
+    Top = 385
     Width = 27
     Height = 13
     Caption = 'Excl.:'
-  end
-  object btnRunStepByNr: TButton
-    Left = 111
-    Top = 351
-    Width = 64
-    Height = 25
-    Caption = 'RunStep'
-    TabOrder = 0
-  end
-  object txtStepNr: TEdit
-    Left = 9
-    Top = 353
-    Width = 96
-    Height = 21
-    TabOrder = 1
-    Text = '895.68'
   end
   object txtScriptFile: TEdit
     Left = 8
     Top = 301
     Width = 344
     Height = 21
-    TabOrder = 2
-    Text = 'PST_BT_FT_PS_liste.txt'
+    TabOrder = 0
+    Text = '..\..\ini\PS_lists\test_list.txt'
   end
   object btnOpenScript: TButton
     Left = 358
@@ -59,7 +43,7 @@ object FrmTestRunner: TFrmTestRunner
     Width = 24
     Height = 21
     Caption = '...'
-    TabOrder = 3
+    TabOrder = 1
     OnClick = btnOpenScriptClick
   end
   object btnReadScript: TButton
@@ -68,7 +52,7 @@ object FrmTestRunner: TFrmTestRunner
     Width = 50
     Height = 25
     Caption = 'Read'
-    TabOrder = 4
+    TabOrder = 2
     OnClick = btnReadScriptClick
   end
   object btnSaveScript: TButton
@@ -77,7 +61,7 @@ object FrmTestRunner: TFrmTestRunner
     Width = 50
     Height = 25
     Caption = 'Save'
-    TabOrder = 5
+    TabOrder = 3
     OnClick = btnSaveScriptClick
   end
   object memInfo: TMemo
@@ -86,49 +70,33 @@ object FrmTestRunner: TFrmTestRunner
     Width = 667
     Height = 285
     ScrollBars = ssBoth
-    TabOrder = 6
-  end
-  object txtCase: TEdit
-    Left = 9
-    Top = 382
-    Width = 96
-    Height = 21
-    TabOrder = 7
-    Text = '11'
-  end
-  object btnRunCase: TButton
-    Left = 111
-    Top = 380
-    Width = 64
-    Height = 25
-    Caption = 'RunCase'
-    TabOrder = 8
+    TabOrder = 4
   end
   object txtInclusive: TEdit
-    Left = 220
-    Top = 356
+    Left = 38
+    Top = 353
     Width = 144
     Height = 21
     Hint = 'inclusive test cases'
-    TabOrder = 9
+    TabOrder = 5
     Text = 'all'
   end
   object btnSequence: TButton
-    Left = 370
-    Top = 354
+    Left = 190
+    Top = 351
     Width = 81
     Height = 25
     Caption = 'Sequence'
-    TabOrder = 10
+    TabOrder = 6
     OnClick = btnSequenceClick
   end
   object txtExclusive: TEdit
-    Left = 220
-    Top = 385
+    Left = 38
+    Top = 382
     Width = 144
     Height = 21
     Hint = 'exclusive test cases'
-    TabOrder = 11
+    TabOrder = 7
     Text = '10-80'
   end
   object btnClear: TButton
@@ -137,7 +105,7 @@ object FrmTestRunner: TFrmTestRunner
     Width = 50
     Height = 25
     Caption = 'Clear'
-    TabOrder = 12
+    TabOrder = 8
     OnClick = btnClearClick
   end
   object chkForce: TCheckBox
@@ -146,7 +114,7 @@ object FrmTestRunner: TFrmTestRunner
     Width = 45
     Height = 17
     Caption = 'Force'
-    TabOrder = 13
+    TabOrder = 9
   end
   object chkAppend: TCheckBox
     Left = 440
@@ -154,24 +122,24 @@ object FrmTestRunner: TFrmTestRunner
     Width = 54
     Height = 17
     Caption = 'Append'
-    TabOrder = 14
+    TabOrder = 10
   end
   object btnRunSequence: TButton
-    Left = 370
-    Top = 383
+    Left = 190
+    Top = 380
     Width = 32
     Height = 25
     Caption = 'Run'
-    TabOrder = 15
+    TabOrder = 11
     OnClick = btnRunSequenceClick
   end
   object btnRepeatSequence: TButton
-    Left = 408
-    Top = 383
+    Left = 228
+    Top = 380
     Width = 43
     Height = 25
     Caption = 'Repeat'
-    TabOrder = 16
+    TabOrder = 12
     OnClick = btnRepeatSequenceClick
   end
   object GroupBox1: TGroupBox
@@ -180,7 +148,7 @@ object FrmTestRunner: TFrmTestRunner
     Width = 97
     Height = 84
     Caption = 'Step Mode'
-    TabOrder = 17
+    TabOrder = 13
     object btnRunFirstStep: TButton
       Left = 5
       Top = 21
@@ -226,7 +194,7 @@ object FrmTestRunner: TFrmTestRunner
     Width = 97
     Height = 82
     Caption = 'Case Mode'
-    TabOrder = 18
+    TabOrder = 14
     object btnRepeatCase: TButton
       Left = 36
       Top = 49
@@ -267,22 +235,22 @@ object FrmTestRunner: TFrmTestRunner
     end
   end
   object chkJump: TCheckBox
-    Left = 370
-    Top = 331
+    Left = 277
+    Top = 383
     Width = 81
     Height = 17
     Caption = 'Jump Minus'
     Checked = True
     State = cbChecked
-    TabOrder = 19
+    TabOrder = 15
   end
   object chkDiagnose: TCheckBox
-    Left = 288
-    Top = 331
+    Left = 277
+    Top = 355
     Width = 64
     Height = 17
     Caption = 'Diagnose'
-    TabOrder = 20
+    TabOrder = 16
     OnClick = chkDiagnoseClick
   end
 end

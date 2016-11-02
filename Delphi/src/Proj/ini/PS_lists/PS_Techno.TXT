@@ -1,0 +1,128 @@
+//==============================================================================
+// Projekt    : Prüfplatz Lenze-LKA
+// Dateiname  : LKA_4813_PSListe.pas
+//
+// Copyright  : (c) Metronix 2005
+// Histroy    : 2012-03-05 /lzh/ PS-Liste für Lenze_931E CA_N und Profibus mit PP_ATT_UNI angepasst
+//==============================================================================
+
+VERSION=1.0.0.1.1
+RAZOR_REVISION=$Revision: 1.2 $
+
+
+   //Nr.        Titel                                                  Relais_on              Funktion            Masseinheit Parameter            Relais_off                  Toleranzen
+   //----------+------------------------------------------------------+----------------------+-------------------+-------+------------------------+---------------------------+----------------------------------------
+
+  // ======================================================================= TESTPHASE TYP EEPROM =======================================================================================
+    
+    (Nr:  10.00; T: 'Übertragung der TYP-EEPROM Datei';                               R_on: '';                           Fkt: Entry;                   M: '';       Par: 'TYP EEPROM';                 R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+                                                                                                                                                                                                                                                      
+    (Nr:  20.00; T: 'JUMP_PS_DEVICE';                                                 R_on: '';                           Fkt: jump_ps_device;          M: '';       Par: 'ARS2000_Family  PS_70';      R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                      
+    // DIS2                                                                                                                                                                                                                                           
+    (Nr:  30.00; T: 'Übertragung der TYP-EEPROM Datei(DIS-2)';                        R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  30.02; T:'   Akustische erinnern';                                          R_on: '';                           Fkt: Beep;                    M: '';       Par: '1';                          R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  30.04; T: '  Technologiemodul in den Technologieadapter stecken';           R_on: '';                           Fkt: Frage_JaNein;            M: '';       Par: '$TEXT_3002';                 R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  30.06; T: '  Öffnen des Technologie-Adapter';                               R_on: '';                           Fkt: TECHNO_CONNECT;          M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  30.08; T: '  Übertragung des TYP-EEPROMs';                                  R_on: '';                           Fkt: TX_TECHNO_FILE;          M: '';       Par: 'TX_FILE_0001';               R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  30.10; T: '  Einschreiben der Platinennummer in das TYP-EEPROM';            R_on: '';                           Fkt: TX_TECHNO_STRING;        M: 'x';      Par: '0024:"@PlatNrDez10"';        R_off: '';         Tol: ( A: '@PlatNrDez10';  Min: 0;     Max: 0   ); ),
+    (Nr:  30.99; T: 'Fertig';                                                         R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+   
+    TEXT_3002=DIS2: Einstecken des Technologiemoduls in den Technologieadapter!                                                                                                                                 
+                                                                                                                                                                                                       
+    
+    (Nr:  50.00; T:'JUMP_PS';                                                         R_on: '';                           Fkt: jump_ps;                 M: '';       Par: 'PS_90';                      R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+           
+                                                                                                                                                        
+    //ARS2000                                                                                                                                                                                                                                                                                                                                                                         
+    (Nr:  70.00; T: 'Übertragung der TYP-EEPROM Datei(ARS2000)';                      R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  70.02; T: '  Technologiemodul stecken und Servo einschalten';               R_on: '';                           Fkt: Frage_JaNein;            M: '';       Par: '$TEXT_7002';                 R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  70.04; T: '  Appl.-Version (or:02DD)';                                      R_on: '';                           Fkt: COM;                     M: '10';     Par: 'OR:02DD';                    R_off:'';          Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  70.06; T: '  FW-Version (or:02DE)';                                         R_on: '';                           Fkt: COM;                     M: '';       Par: 'OR:02DE';                    R_off:'';          Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  70.08; T: '  KM-Release (or:02DC)';                                         R_on: '';                           Fkt: COM;                     M: '';       Par: 'OR:02DC';                    R_off:'';          Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  70.10; T: '  korrekte Firmwareversion laden, falls bebötigt';               R_on: '';                           Fkt: FW_Version;              M: 'x';      Par: 'FIRMWARE_0001';              R_off:'';          Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  70.12; T: '  Übertragung des TYP-EEPROMs';                                  R_on: '';                           Fkt: TX_FILE_RS232;           M: '';       Par: 'TX_FILE_0001';               R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  70.14; T: '  Einschreiben der Platinennummer in das TYP-EEPROM';            R_on: '';                           Fkt: PlatNr_to_TYPEEPROM;     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  70.99; T: 'Fertig';                                                         R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    
+    TEXT_7002=ARS2000: Einstecken des Technologiemoduls in den Technologieschacht des Servos und Verkabelung des BUS-Anschlusses mit dem Ethernet! Dann bitte Servo einschalten!                                                                                                                                                                                             
+  
+ 
+    (Nr:  90.00; T: 'TESTPHASE TYP-EEPROM fertig ';                                   R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  90.99; T: 'Fertig';                                                         R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+ 
+ 
+ 
+ 
+ // ======================================================================= TESTPHASE BUS-EEPROM ======================================================================================= 
+    
+    (Nr:  100.00; T: 'Übertragung der BUS-EEPROM Datei';                              R_on: '';                           Fkt: Entry;                   M: '';       Par: 'BUS EEPROM und Beckhoff-Steuerung';               R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+                                                                                                                                                        
+    (Nr:  110.00; T: 'JUMP_PS_DEVICE';                                                R_on: '';                           Fkt: jump_ps_device;          M: '';       Par: 'ARS2000_Family  PS_150';     R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+   
+     
+   // DIS2-umstecken
+    (Nr:  120.00; T: 'Akustische erinnern';                                           R_on: '';                           Fkt: Beep;                    M: '';       Par: '1';                          R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  120.02; T: '  UmStecken des Technomodul u. verkabeln mit Ethernet';         R_on: '';                           Fkt: Frage_JaNein;            M: '';       Par: '$TEXT_1202';                 R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  120.99; T: 'Fertig';                                                        R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    
+    TEXT_1202=Umstecken des Technologiemoduls in den entsprechenden Servo und Verkabelung des Bus-Anschlusses mit dem Ethernet.                                                                                                             
+   
+                                                                                                                                                                                                       
+    (Nr:  150.00; T: 'Übertragung der BUS-EEPROMs Datei';                             R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  150.02; T: '  Verbindung mit Slave aufbauen (EtherCAT)';                    R_on: '';                           Fkt: ECAT_SLAVE_CONNECT;      M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  150.04; T: '  Übertragung des BUS-EEPROMs';                                 R_on: '';                           Fkt: TX_FILE_ECAT;            M: '';       Par: 'TX_FILE_0002';               R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  150.06; T: '  Auslesen des BUS-EEPROMs';                                    R_on: '';                           Fkt: RX_FILE_ECAT;            M: '';       Par: '128';                        R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  150.08; T: '  Verbindung mit Slave löschen (EtherCAT)';                     R_on: '';                           Fkt: ECAT_DISCONNECT;         M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  150.09; T: '  Geräte ausschalten und wieder einschalten';                   R_on:'';                            Fkt: SHOW_MESSAGE;            M: '';       Par: '$TEXT_1509';                 R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  150.99; T: 'Fertig';                                                        R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),      
+ 
+    (Nr:  190.00; T: 'TESTPHASE BUS-EEPROM fertig ';                                  R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  190.99; T: 'Fertig';                                                        R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+ 
+    TEXT_1509=Bitte das Gerät ausschalten und wieder einschalten!
+   
+   
+ // ======================================================================= TESTPHASE BECKHOFF-STEUERUNG =======================================================================================
+  
+    
+    (Nr:  200.00; T: 'Beckhoff-Steuerung testen';                                     R_on: '';                           Fkt: nil;                     M: '';       Par: '';                          R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+                                                                                                                                                         
+   
+    (Nr:  210.00; T: 'JUMP_PS_DEVICE';                                                R_on: '';                           Fkt: jump_ps_device;          M: '';       Par: 'DIS2_Family  PS_240';        R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    
+ (*
+    // Parametersatzdownload für ARS2000-Family                                                                                                                            
+    (Nr:  220.00; T:'Parametersatzdownload ARS2xxx';                                   R_on:'';                            Fkt:nil;                     M:'';        Par:'';                            R_off:'';          Tol: ( A:'';               Min:  0;    Max:  0  ); ),
+    (Nr:  220.02; T:'   Applikation gestartet? (%s)';                                  R_on:'';                            Fkt:COM;                     M:'8000 ms'; Par:'BOOT?';                       R_off:'';          Tol: ( A:'APPLICATION';    Min:  0;    Max:  0  ); ),
+    (Nr:  220.03; T:'   Parametersatz laden';                                          R_on:'';                            Fkt:PS_Load;                 M:'';        Par:'PARA_0001';                   R_off:'';          Tol: ( A:'';               Min:  0;    Max:  0  ); ),
+    (Nr:  220.04; T:'   Parametersatz sichern (%s)';                                   R_on:'';                            Fkt:COM;                     M:'-30';     Par:'SAVE!';                       R_off:'';          Tol: ( A:'DONE.';          Min:  0;    Max:  0  ); ),
+    (Nr:  220.99; T:'Fertig';                                                          R_on:'';                            Fkt:nil;                     M: '';       Par:'';                            R_off:'';          Tol: ( A:'';               Min:  0;    Max:  0  ); ),
+
+*)    
+    (Nr:  230.00; T: 'JUMP_PS (%s)';                                                   R_on: '';                           Fkt: jump_ps;                M: '';       Par: 'PS_250';                     R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+   
+
+  // Parametersatzdownload für DIS-2 Family                                                                                                                            
+    (Nr:  240.00; T:'Parametersatzdownload DIS2-FB ECAT';                              R_on:'';                            Fkt:nil;                     M:'';        Par:'';                            R_off:'';          Tol: ( A:'';               Min:  0;    Max:  0  ); ),
+    (Nr:  240.02; T:'   Applikation gestartet? (%s)';                                  R_on:'';                            Fkt:COM;                     M:'8000 ms'; Par:'BOOT?';                       R_off:'';          Tol: ( A:'APPLICATION';    Min:  0;    Max:  0  ); ),
+    (Nr:  240.04; T:'   Parametersatz laden';                                          R_on:'';                            Fkt:PS_Load;                 M:'';        Par:'PARA_0001';                   R_off:'';          Tol: ( A:'';               Min:  0;    Max:  0  ); ),
+    (Nr:  240.06; T:'   Parametersatz sichern (%s)';                                   R_on:'';                            Fkt:COM;                     M:'-30';     Par:'SAVE!';                       R_off:'';          Tol: ( A:'DONE';           Min:  0;    Max:  0  ); ),
+    (Nr:  240.99; T:'Fertig';                                                          R_on:'';                            Fkt:nil;                     M: '';       Par:'';                            R_off:'';          Tol: ( A:'';               Min:  0;    Max:  0  ); ),
+
+
+    (Nr:  250.00; T: 'Test mit der Beckhoff-Steuerung';                                R_on:'';                            Fkt: nil;                    M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  250.02; T: 'Akustische erinnern';                                            R_on: '';                           Fkt: Beep;                   M: '';       Par: '1';                          R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  250.04; T: '  Verbindung der Gesamtbaugruppe mit der Beckhoff-Steuerung';    R_on:'';                            Fkt: Frage_JaNein;           M: '';       Par: '$TEXT_2504';                 R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  250.06; T: '  Starten TwinCAT-Oberfläche u. Laden der Konfigurationsdatei';  R_on:'';                            Fkt: Batch;                  M: '';       Par: 'Batch_0001';                 R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+    (Nr:  250.99; T: 'Fertig';                                                         R_on:'';                            Fkt: nil;                    M: '';       Par: '';                           R_off: '';         Tol: ( A: '';              Min: 0;     Max: 0   ); ),
+   
+    TEXT_2504=Verbinden der gesamte Baugruppe mit der Beckhoff-Steuerung und das richtige Projekt in die Beckhoff-Steuerung aufladen!   
+   
+    
+   
+    (Nr: 900.00; T: 'TESTENDE';                                                       R_on: '';                           Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';  Min: 0;     Max: 0   ); )
+    (Nr: 900.99; T: 'Fertig';                                                         R_on:'';                            Fkt: nil;                     M: '';       Par: '';                           R_off: '';         Tol: ( A: '';  Min: 0;     Max: 0   ); ),
+
+   

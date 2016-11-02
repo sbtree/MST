@@ -1,0 +1,217 @@
+// ###############################################################################################################################
+// 	Prüfschrittauflistung für DIS24-8_XXX
+// ###############################################################################################################################
+// =============================================================
+// externe Liste für den DIS24-8_Garvens Prüfplatz
+// Actual version: $Revision: 1.9 $
+//
+// =============================================================
+VERSION=2.1.0.1.1
+RAZOR_REVISION=$Revision: 1.9 $
+  
+   //Nr.        Titel                                                           Relais_on           Funktion               Masseinheit Parameter                        Relais_off                       Toleranzen
+   //----------+----------------------------------------------------------------+-------------------+----------------------+-----------+--------------------------------+--------------------------------+-------------------------------+------------+----------------
+
+
+ // 1. [DIS48-6] Selbsttest Spannungsversorgung Prüfplatz
+
+    (Nr:  1.00; T:'Prüfplatz-Selbsttest';                                       R_on: '213';        Fkt: OsziKonfig;       M:'';        Par: '1';                         R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+     //  5V_int_Messung muss noch implementiert werden
+    (Nr:  1.01; T:'   Test DMM_Bus(KN) auf spannungslosen Zustand [K125]';      R_on: '';           Fkt: U_Mess_DC;        M:'V';       Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: -0.2;  Max:  0.2  ); ),
+    (Nr:  1.02; T:'   Mess. Prüfplatz-Versorgung 24V_int [K240]';               R_on: '240';        Fkt: U_Mess_DC;        M:'V';       Par: '';                          R_off: '240';                    Tol: ( A:'';                    Min: 23.0;  Max: 26.0  ); ),
+    (Nr:  1.03; T:'   Test DMM_Bus(GR) auf spannungslosen Zustand [K125]';      R_on: '125';        Fkt: U_Mess_DC;        M:'V';       Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: -0.2;  Max:  0.2  ); ),
+    (Nr:  1.04; T:'   Mess. 24V-PP_Versorgung  [K217]';                         R_on: '125,217';    Fkt: U_Mess_DC;        M:'V';       Par: '';                          R_off: '125,217';                Tol: ( A:'';                    Min: 46.0;  Max: 52.0  ); ),
+    (Nr:  1.05; T:'   Test DMM_Bus(KN) auf spannungslosen Zustand';             R_on: '';           Fkt: U_Mess_DC;        M:'V';       Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: -0.1;  Max:  0.1  ); ),
+    (Nr:  1.06; T:'   Mess. Versorgung 5V_PP_int [K228]';                       R_on: '228';        Fkt: U_Mess_DC;        M:'V';       Par: '';                          R_off: '228';                    Tol: ( A:'';                    Min: 4.75;  Max:  5.25 ); ),
+     //Kann an der Stelle nicht gemessen werden, weil der Prüfling noch nicht versorgt wird
+//  (Nr:  1.07; T:'   Test DMM_Bus(KN) auf spannungslosen Zustand';             R_on: '';           Fkt: U_Mess_DC;        M:'V';       Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: -0.2;  Max:  0.2  ); ),
+//  (Nr:  1.08; T:'   Messung Ref.Spannung=9V für AIN-Test  (K135,215)';        R_on: '135,215';    Fkt: U_Mess_DC;        M:'V';       Par: '';                          R_off: '';                       Tol: ( A:'';                    Min:  8.2;  Max:  9.2  ); ),
+//  (Nr:  1.10; T:'  [Ja/Nein Abfrage]';                                        R_on: '';           Fkt: Frage_JaNein;     M: 'x';      Par: 'Weiter [Ja/Nein Abfrage]';  R_off: '135,215';                Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr:  1.99; T:'  Fertig';                                                   R_on: '';           Fkt: nil;              M: '';       Par: '';                          R_off: '125,135,215,217,228,240';Tol: ( A: '';                   Min:  0;    Max:  0    ); ),
+
+
+// Geprüft (CKL-2011-01-24)
+
+
+
+
+
+//  Versorgung Zuschalten mit K115, K130, K133]
+
+    (Nr: 10.00; T:'Stromaufnahme 24V CT-Versorgung [K213]';                     R_on: '213';        Fkt: LabelFkt;         M: '';       Par: 'NIO-Loop:1';                R_off: '102,125,133,140';        Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+ // (Nr: 10.01; T:'   WARTEN (%s)';                                             R_on: '';           Fkt: Wait;             M: '';       Par: '2000';                      R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0   ); ),
+ // (Nr: 10.02; T:'   Wartezeit zum Testen [Ja/Nein Abfrage]';                  R_on: '';           Fkt: Frage_JaNein;     M: 'x';      Par: 'Test Weiterlaufen ?';       R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0   ); ),
+    (Nr: 10.03; T:'   Test DMM_Bus(GR) auf spannungslosen Zustand [K125]';      R_on: '125';        Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: -0.2;  Max:  0.2  ); ),
+    (Nr: 10.04; T:'   24V Ein - Warten(%s)ms;[47R in der Reihe;[K102,108,115]'; R_on: '102,108,115';Fkt: Wait;             M: '';       Par: '500';                       R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 10.06; T:'   Mess. 48V ohne Last;[K140]';                              R_on: '140';        Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: 46;    Max: 52    ); ),
+    (Nr: 10.08; T:'   Mess. 48V mit Last; [K133,K140]';                         R_on: '133,140';    Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '133';                    Tol: ( A:'';                    Min:  0;    Max: 52    ); ),
+//  (Nr: 10.09; T:'   Mess. 48V ohne Last;[K140]';                              R_on: '';           Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: 46;    Max: 52    ); ),
+    (Nr: 10.10; T:'   Berechnung der Stromaufnahme';                            R_on: '';           Fkt: I_Berechnung;     M: 'mA';     Par: '10';                        R_off: '';                       Tol: ( A:'';                    Min: 20;    Max:260    ); ),
+    // Messung der Entladung des Prüfling implementieren
+    (Nr: 10.99; T:'  Fertig';                                                   R_on: '';           Fkt: LabelFkt;         M: '';       Par: 'NIO-Loop:0';                R_off: '102,125,133,140';        Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+
+    //  Eingeschaltet bleiben K108,K115,213
+    //  Stromaufnahme ohne FW  < 200mA
+
+
+
+(*
+
+//Übernommen von DIS2-230
+
+// 50. [DIS48-6] Download-Bootloader(JTAG)   - (Keine Antwort bei Prüfling ohne SW)             
+
+    (Nr:  50.00; T:'   JTAG-Download ';                                          R_on: '108,115,213';Fkt: nil;              M: '';       Par: '';                          R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: -50.01; T:'   24V CT-Versorgung einschalten   (K108,K115,K133,213)';    R_on: '133';        Fkt: Wait;             M: '';       Par: '2000';                      R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr:  50.02; T:'   FW-Status abfragen - TestApplikation';                    R_on: '';           Fkt: TestApplikation_Batch; M: 'x'; Par: 'BATCH_0003 BOOTLOADER_0001 FIRMWARE_0001 TIMEOUT_120000';   R_off: '';     Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr:  50.03; T:'   Bootloader-Version abfragen (%s)';                        R_on: '';           Fkt: COM;              M: '5000 ms';Par: 'OR:0019';                   R_off: '';                       Tol: ( A:'0019:????????';       Min:  0;    Max:  0    ); ),
+    (Nr:  50.06; T:'   Bootloader-Version checken und aktualisieren';            R_on: '';           Fkt: BL_Version;       M: 'x';      Par: 'BATCH_0002 BOOTLOADER_0001';R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr:  50.07; T:'   Bootloader-Version abfragen (%s)';                        R_on: '';           Fkt: COM;              M: '5000 ms';Par: 'OR:0019';                   R_off: '';                       Tol: ( A:'0019:????????';       Min:  0;    Max:  0    ); ),
+    (Nr:  50.08; T:'   Bootloader-Version checken';                              R_on: '';           Fkt: BL_Version;       M: 'x';      Par: 'CHECK BOOTLOADER_0001';     R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr:  50.99; T:'   Fertig';                                                  R_on: '';           Fkt: nil;              M: '';       Par: '';                          R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),                                                                                                                                                                                                                                                           
+ 
+*)
+(* 
+                                                                                                                                                                                                                                                               
+ // 60. [DIS48-6] Abfrage der FW-Version und FW-Download -  (Keine Antwort bei Prüfling ohne SW)                                                                                                                                                                    
+                                                                                                                                                                                                                                                                 
+    (Nr:  60.00; T:'   Firmware-Download';                                       R_on: '108,115,213';Fkt: nil;              M: '';       Par: '';                          R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: -60.01; T:'   24V CT-Versorgung einschalten   (K108,K115,K133,213)';    R_on: '133';        Fkt: Wait;             M: '';       Par: '2000';                      R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr:  60.02; T:'   FW-KA abfragen (%s)';                                     R_on: '';           Fkt: COM;              M: '8000 ms';Par: 'OR:0018';                   R_off: '';                       Tol: ( A:'0018:????????';       Min:  0;    Max:  0    ); ),
+    (Nr:  60.03; T:'   FW-Version abfragen (%s)';                                R_on: '';           Fkt: COM;              M: '';       Par: 'OR:0026';                   R_off: '';                       Tol: ( A:'0026:????????';       Min:  0;    Max:  0    ); ),
+    (Nr:  60.04; T:'   FW-KM abfragen (%s)';                                     R_on: '';           Fkt: COM;              M: '';       Par: 'OR:0017';                   R_off: '';                       Tol: ( A:'0017:????????';       Min:  0;    Max:  0    ); ),
+    (Nr:  60.05; T:'   Version checken und aktualisieren';                       R_on: '';           Fkt: FW_Version;       M: 'x';      Par: 'FIRMWARE_0001';             R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr:  60.06; T:'   Reset ausführen - RESET!';                                R_on: '';           Fkt: COM;              M: '';       Par: 'RESET!';                    R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),  
+    (Nr:  60.11; T:'   Delay';                                                   R_on: '';           Fkt: Wait;             M: '';       Par: '1000';                      R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr:  60.12; T:'   FW-KA abfragen (%s)';                                     R_on: '';           Fkt: COM;              M: '8000 ms';Par: 'OR:0018';                   R_off: '';                       Tol: ( A:'0018:????????';       Min:  0;    Max:  0    ); ),
+    (Nr:  60.13; T:'   FW-Version abfragen (%s)';                                R_on: '';           Fkt: COM;              M: '';       Par: 'OR:0026';                   R_off: '';                       Tol: ( A:'0026:????????';       Min:  0;    Max:  0    ); ),
+    (Nr:  60.14; T:'   FW-KM abfragen (%s)';                                     R_on: '';           Fkt: COM;              M: '';       Par: 'OR:0017';                   R_off: '';                       Tol: ( A:'0017:????????';       Min:  0;    Max:  0    ); ),
+    (Nr:  60.15; T:'   Version checken und aktualisieren';                       R_on: '';           Fkt: FW_Version;       M: 'x';      Par: 'CHECK FIRMWARE_0001';       R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr:  60.99; T:'   Fertig';                                                  R_on: '';           Fkt: nil;              M: '';       Par: '';                          R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+
+*)
+
+
+
+ // 75.[DIS48-6] Parametersatz Laden
+
+    (Nr: 75.00; T:'TEST-PARAMETERSATZ laden ';                                  R_on: '108,115,213';Fkt: Wait;             M: '';       Par: '2000';                      R_off: '133';                    Tol: ( A:'';                    Min:   0;   Max:  0    ); ),
+    (Nr: 75.01; T:'   Versorgung einschalten(K1008,K115,K133)-Bootabfrage (%s)';R_on: '133';        Fkt: COM;              M: '5000ms'; Par: 'BOOT?';                     R_off: '';                       Tol: ( A:'APPLICATION';         Min:   0;   Max:  0    ); ),
+    (Nr: 75.02; T:'   Default Parameter laden (%s)';                            R_on: '';           Fkt: COM;              M: '';       Par: 'INIT!';                     R_off: '';                       Tol: ( A:'';                    Min:   0;   Max:  0    ); ),
+    (Nr: 75.03; T:'   Bootabfrage (%s) ';                                       R_on: '133';        Fkt: COM;              M: '5000ms'; Par: 'BOOT?';                     R_off: '';                       Tol: ( A:'APPLICATION';         Min:   0;   Max:  0    ); ),
+    (Nr: 75.04; T:'   Test-Parametersatz Laden ';                               R_on: '';           Fkt: PS_Load;          M: '';       Par: 'PARA_0001';                 R_off: '';                       Tol: ( A:'';                    Min:   0;   Max:  0    ); ),
+    (Nr: 75.05; T:'   Save ausführen (%s)';                                     R_on: '';           Fkt: COM;              M: '-30';    Par: 'SAVE!';                     R_off: '';                       Tol: ( A:'DONE';                Min:   0;   Max:  0    ); ),
+    (Nr: 75.06; T:'   Bootabfrage (%s)';                                        R_on: '';           Fkt: COM;              M: '5000ms'; Par: 'BOOT?';                     R_off: '';                       Tol: ( A:'APPLICATION';         Min:   0;   Max:  0    ); ),
+    (Nr: 75.07; T:'   Fehler abfragen (%s)';                                    R_on: '';           Fkt: COM;              M: '';       Par: 'OR:0070';                   R_off: '';                       Tol: ( A:'0070:????????';       Min:   0;   Max:  0    ); ),
+    (Nr: 75.08; T:'   Fehler abfragen (%s)';                                    R_on: '';           Fkt: COM;              M: '';       Par: 'OR:0071';                   R_off: '';                       Tol: ( A:'0071:????????';       Min:   0;   Max:  0    ); ),
+ // Weil Uzk noch nicht zugeschaltet ist, kann die Bereitschaft nicht abgefragt werden
+ // (Nr: 75.09; T:'  Bereitschaft abfragen (%s)';                               R_on: '';           Fkt: COM;              M: '';       Par: 'RIP:054';                   R_off: '';                       Tol: ( A:'????:CIP:0054:2000';  Min:   0;   Max:  0    ); ),
+    (Nr: 75.99; T:' Fertig';                                                    R_on: '';           Fkt: nil;              M: '';       Par: '';                          R_off:'';                        Tol: ( A:'';                    Min:   0;   Max:  0    ); ),
+
+    //  Eingeschaltet bleibt K108,K115,133,233
+
+// Geprüft (CKL-2011-01-24)
+
+
+
+
+
+
+(*
+ // 350. [DIS2-230] Test-Bremschopper - Achtung! der BrCh-Test muss noch angepasst werden (zur Zeit steht kein Prüfling mit BrCh zur Verfügung - CKL 09-10-2008)
+
+    (Nr: 350.00; T:'Test Funktion Bremschopper ';                               R_on: '213';        Fkt: Wait;             M: '';       Par: '1000';                      R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 350.01; T:'  Zeitüberwachung starten [T_Start]';                       R_on: '';           Fkt: Timer_Start;      M: '';       Par: '30000';                     R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 350.02; T:'  CT einschalten (K101,102)- Bootabfrage (%s) ';            R_on: '101,130';    Fkt: COM;              M: '10';     Par: 'BOOT?';                     R_off: '';                       Tol: ( A:'APPLICATION';         Min:  0;    Max:  0    ); ),
+ // (Nr: 350.03; T:'  [Ja/Nein Abfrage]';                                       R_on: '';           Fkt: Frage_JaNein;     M: 'x';      Par: 'Achtung! Uzk bis 350V';     R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 350.04; T:'  Vorbereitungsphase für 230VAC-Versorg. (K117, K130)';     R_on: '117,130';    Fkt: Wait;             M: '';       Par: '1000';                      R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 350.05; T:'  230VAC-Versorg. Einschalten (K115)';                      R_on: '115';        Fkt: Wait;             M: '';       Par: '500';                       R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+ // (Nr: 350.06; T:'  Fehler quittieren (%s)';                                  R_on: '';           Fkt: COM;              M: '';       Par: 'OW:0061:00000040';          R_off: '';                       Tol: ( A:'OK!';                 Min:  0;    Max:  0    ); ),
+ // (Nr: 350.07; T:'  Bereitschaft abfragen (%s)';                              R_on: '';           Fkt: COM;              M: '10';     Par: 'RIP:054';                   R_off: '';                       Tol: ( A:'????:CIP:0054:2000';  Min:  0;    Max:  0    ); ),
+    (Nr: 350.08; T:'  Messbus DMM_Gross ohne Spannung? (K125)';                 R_on: '125';        Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: -0.5;  Max:  0.5  ); ),
+    (Nr: 350.09; T:'  Messwert ZK-Spannung DMM (K220)';                         R_on: '220';        Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: 42;   Max: 52   ); ),
+    (Nr: 350.10; T:'  Testmodus einschalten (%s)';                              R_on: '';           Fkt: COM;              M: '20';     Par: 'SIP:012:0001!';             R_off: '';                       Tol: ( A:'????:CIP:0012:0001';  Min:  0;    Max:  0    ); ),
+    (Nr: 350.15; T:'  Bremschopper einschalten (%s)';                           R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:011:0004!';             R_off: '';                       Tol: ( A:'????:CIP:0011:0004';  Min:  0;    Max:  0    ); ),
+    (Nr: 350.16; T:'  Warten (%s)';                                             R_on: '';           Fkt: Wait;             M: '';       Par: '1000';                      R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 350.17; T:'  Uzk.-Messung beim aktiven Bremschopper (K220)';           R_on: '220';        Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '115';                    Tol: ( A:'';                    Min:  42;   Max: 52   ); ),
+    (Nr: 350.18; T:'  Bremschopper (und Testmodus) aus  (%s)';                  R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:012:0000!';             R_off: '117';{R-230VÜberbrückung}Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 350.19; T:'  ZK-Aufladen - 1s warten';                                 R_on: '115';        Fkt: Wait;             M: '';       Par: '1000';                      R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 350.20; T:'  Uzk.-Messung bei "Bremschopper Aus" (K220)';              R_on: '220';        Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '220,125';                Tol: ( A:'';                    Min:  42;  Max: 52   ); ),
+//  (Nr: 350.21; T:'  Fehler quittieren (%s)';                                  R_on: '';           Fkt: COM;              M: '';       Par: 'OW:0061:00000040';          R_off: '';                       Tol: ( A:'OK!';                 Min:  0;    Max:  0    ); ),
+//  (Nr: 350.22; T:'  Bereitschaft abfragen (%s)';                              R_on: '';           Fkt: COM;              M: '10';     Par: 'RIP:054';                   R_off: '';                       Tol: ( A:'????:CIP:0054:2000';  Min:  0;    Max:  0    ); ),
+//  (Nr: 350.99; T:' Fertig';                                                   R_on: '';           Fkt: nil;              M: '';       Par: '';                          R_off: '101,115,130,220,125';    Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 350.99; T:' Fertig';                                                   R_on: '';           Fkt: Timer_Stop;       M: '';       Par: '';                          R_off: '101,102,115,117,125,130,220';Tol: ( A:'';                Min:  0;    Max:  0    ); ),
+//  (Nr: 350.99; T:' Fertig';                                                   R_on: '';           Fkt: nil;              M: '';       Par: '';                          R_off: '101,102,115,117,125,130,220';Tol: ( A:'';                Min:  0;    Max:  0    ); ),
+
+*)
+
+
+// Baustelle in der Bearbeitung 2014-04-10
+// 350. [DIS2-24-48] Test-Bremschopper - Achtung! der BrCh-Test muss noch angepasst werden (zur Zeit steht kein Prüfling mit BrCh zur Verfügung - CKL 09-10-2008)
+
+    (Nr: 350.00; T:'Test Funktion Bremschopper ';                                R_on: '';           Fkt: LabelFkt;         M: '';       Par: 'NIO-Loop:0';                R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr:-350.01; T:'   Versorgung einschalten (%s)';                             R_on: '';           Fkt: nil;              M: '';       Par: '';                          R_off: '101,102,108,125,133,140';    Tol: ( A:'';                    Min:  0;    Max:  0   ); ),
+    (Nr: 350.02; T:'   WARTEN (%s)';                                             R_on: '101,108,115,213';Fkt: Wait;             M: '';       Par: '2000';                      R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0   ); ),
+    (Nr: 350.12; T:'   Wartezeit zum Testen [Ja/Nein Abfrage]';                  R_on: '';           Fkt: Frage_JaNein;     M: 'x';      Par: 'Test Weiterlaufen ?';       R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0   ); ),
+ // (Nr: 350.13; T:'   Test DMM_Bus(GR) auf spannungslosen Zustand [K125]';      R_on: '125';        Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: -0.2;  Max:  0.2  ); ),
+ // (Nr: 350.14; T:'   24V Ein - Warten(%s)ms;[47R in der Reihe;[K102,108,115]'; R_on: '102,108,115';Fkt: Wait;             M: '';       Par: '500';                       R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+ // (Nr: 350.16; T:'   Mess. 48V ohne Last;[K140]';                              R_on: '140';        Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: 46;    Max: 52    ); ),
+    (Nr: 350.18; T:'   Mess. 48V mit Last; [K133,K140]';                         R_on: '133,140';    Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '133';                    Tol: ( A:'';                    Min:  0;    Max: 52    ); ),
+ 
+ // (Nr: 350.31; T:'  Testmodus einschalten (%s)';                              R_on: '';           Fkt: COM;              M: '20';     Par: 'SIP:012:0001!';             R_off: '';                       Tol: ( A:'????:CIP:0012:0001';  Min:  0;    Max:  0    ); ),
+ // (Nr: 350.32; T:'  Bremschopper einschalten (%s)';                           R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:011:0004!';             R_off: '';                       Tol: ( A:'????:CIP:0011:0004';  Min:  0;    Max:  0    ); ),
+    (Nr: 350.33; T:'  Warten (%s)';                                             R_on: '';           Fkt: Wait;             M: '';       Par: '1000';                      R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 350.34; T:'  Mess. 48V mit Last; [K133,K140]';                         R_on: '133,140';    Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '133';                    Tol: ( A:'';                    Min:  0;    Max: 52    ); ),
+ 
+	
+	
+	//  (Nr: 350.41; T:'   Mess. 48V ohne Last;[K140]';                              R_on: '';           Fkt: U_Mess_DC;        M: 'V';      Par: '';                          R_off: '';                       Tol: ( A:'';                    Min: 46;    Max: 52    ); ),
+//    (Nr: 350.42; T:'   Berechnung der Stromaufnahme';                            R_on: '';           Fkt: I_Berechnung;     M: 'mA';     Par: '10';                        R_off: '';                       Tol: ( A:'';                    Min: 20;    Max:260    ); ),
+    // Messung der Entladung des Prüfling implementieren
+    (Nr: 350.99; T:'  Fertig';                                                   R_on: '';           Fkt: LabelFkt;         M: '';       Par: 'NIO-Loop:0';                R_off: '102,125,133,140';        Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+
+
+
+
+
+ // 415.[DIS24-8] DEFAULT PARAMETER laden
+     // Anzahl der PS - 7
+    (Nr: 415.00; T:'Auslieferungzustand (DEFAULT PARAMETER) ';                  R_on: '108,115,213';Fkt: nil;              M: '';       Par: '';                          R_off: '133';                    Tol: ( A:'';                    Min:   0;   Max:  0    ); ),
+    (Nr: 415.01; T:'  Versorgung einschalten(K101,102,133,213)-Bootabfrage(%s)';R_on: '133';        Fkt: COM;              M: '5000ms'; Par: 'BOOT?';                     R_off: '';                       Tol: ( A:'APPLICATION';         Min:   0;   Max:  0    ); ),
+    (Nr: 415.02; T:'  Default Parameter laden (%s)';                            R_on: '';           Fkt: COM;              M: '';       Par: 'INIT!';                     R_off: '';                       Tol: ( A:'';                    Min:   0;   Max:  0    ); ),
+    (Nr: 415.03; T:'  Bootabfrage (%s) ';                                       R_on: '133';        Fkt: COM;              M: '8000ms'; Par: 'BOOT?';                     R_off: '';                       Tol: ( A:'APPLICATION';         Min:   0;   Max:  0    ); ),
+//  (Nr: 415.04; T:'  Parametersatz Laden ';                                    R_on: '';           Fkt: PS_Load;          M: '';       Par: 'PARA_0002';                         R_off: '';                       Tol: ( A:'';                    Min:   0;   Max:  0    ); ),
+//  (Nr: 415.05; T:'  Save ausführen (%s)';                                     R_on: '';           Fkt: COM;              M: '-30';    Par: 'SAVE!';                     R_off: '';                       Tol: ( A:'DONE';                Min:   0;   Max:  0    ); ),
+//  (Nr: 415.06; T:'  Bootabfrage (%s)';                                        R_on: '';           Fkt: COM;              M: '8000ms'; Par: 'BOOT?';                     R_off: '';                       Tol: ( A:'APPLICATION';         Min:   0;   Max:  0    ); ),
+    (Nr: 415.07; T:'  Fehler abfragen (%s)';                                    R_on: '';           Fkt: COM;              M: '';       Par: 'OR:0070';                   R_off: '';                       Tol: ( A:'0070:????????';       Min:   0;   Max:  0    ); ),
+    (Nr: 415.08; T:'  Fehler abfragen (%s)';                                    R_on: '';           Fkt: COM;              M: '';       Par: 'OR:0071';                   R_off: '';                       Tol: ( A:'0071:????????';       Min:   0;   Max:  0    ); ),
+ // Weil Uzk noch nicht zugeschaltet ist, kann die Bereitschaft nicht abgefragt werden
+ // (Nr: 415.09; T:'  Bereitschaft abfragen (%s)';                              R_on: '';           Fkt: COM;              M: '';       Par: 'RIP:054';                   R_off: '';                       Tol: ( A:'????:CIP:0054:2000';  Min:   0;   Max:  0    ); ),
+    (Nr: 415.99; T:' Fertig';                                                   R_on: '';           Fkt: nil;              M: '';       Par: '';                          R_off:'';                        Tol: ( A:'';                    Min:   0;   Max:  0    ); ),
+
+
+(*
+    
+ // 420.  [DIS2-230] Servicedaten laden  (Platinnennummer - JJKWBENNNN = JJ Jahr(zweistellig); KW- Kalenderwoche (zweistellig); BN-Bestückernummer (zweistellig); Fortlaufender Nummer (vierstellig)
+
+    (Nr: 420.00; T:'Servicedaten laden ';                                       R_on: '108,115,213';Fkt: nil;              M: '';       Par: '';                          R_off: '';                       Tol: ( A:'';                    Min:0;      Max:  0    ); ),
+    (Nr:-420.01; T:'  Versorgung einschalten (K108,K115,K133,213)-Bootabfrage(%s)'; R_on: '133';    Fkt: COM;              M: '10';     Par: 'BOOT?';                     R_off: '';                       Tol: ( A:'APPLICATION';         Min:0;      Max:  0    ); ),
+    (Nr: 420.02; T:'  Platinencode auslesen (%s)';                              R_on: '';           Fkt: COM;              M: '5';      Par: 'BN?';                       R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+//  (Nr: 420.03; T:'  Seriennummer auslesen (%s)';                              R_on: '';           Fkt: COM;              M: '5';      Par: 'SN?';                       R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 420.04; T:'  Testmodus ein (%s)';                                      R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:012:0001!';             R_off: '';                       Tol: ( A:'????:CIP:0012:0001';  Min:0;      Max:  0    ); ),
+    (Nr: 420.05; T:'  SerienNummer  (%s)';                                      R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:3F1F:@SerNr!';          R_off: '';                       Tol: ( A:'????:CIP:3F1F:@SerNr';Min:0;      Max:  0    ); ),
+ // Zeile 710.06 auskomentiert dei DIS2 -  CKL 26.08.05 -  Die Adresse 3F20 wird für Resolverkennung (bei DIS2) benutzt
+ // (Nr: 420.07; T:'  FW-Variante   [%s]';                                      R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:3F20:@FWVariante!';     R_off: '';                       Tol: ( A:'????:CIP:3F20:@FWVariante';      Min: 0; Max: 0 ); ),
+    (Nr: 420.08; T:'  HW_Vers_Haupt [%s]';                                      R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:3F08:@HWVersionHaupt!'; R_off: '';                       Tol: ( A:'????:CIP:3F08:@HWVersionHaupt';  Min: 0; Max: 0 ); ),
+    (Nr: 420.09; T:'  HW_Vers_Sub   [%s]';                                      R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:3F09:@HWVersionSub!';   R_off: '';                       Tol: ( A:'????:CIP:3F09:@HWVersionSub';    Min: 0; Max: 0 ); ),
+    (Nr: 420.10; T:'  Year und KW   [%s]';                                      R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:3F0F:@PlatinenNr1!';    R_off: '';                       Tol: ( A:'????:CIP:3F0F:@PlatinenNr1';     Min: 0; Max: 0 ); ),
+    (Nr: 420.20; T:'  Fremdfertiger [%s]';                                      R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:3F10:@PlatinenNr2!';    R_off: '';                       Tol: ( A:'????:CIP:3F10:@PlatinenNr2';     Min: 0; Max: 0 ); ),
+    (Nr: 420.21; T:'  lfd. Nummer   [%s]';                                      R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:3F11:@PlatinenNr3!';    R_off: '';                       Tol: ( A:'????:CIP:3F11:@PlatinenNr3';     Min: 0; Max: 0 ); ),
+    (Nr: 420.22; T:'  Prüfdatum     [%s]';                                      R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:3F12:@Datum!';          R_off: '';                       Tol: ( A:'????:CIP:3F12:@Datum';           Min: 0; Max: 0 ); ),
+    (Nr: 420.23; T:'  aktuellen Platinencode auslesen (%s)';                    R_on: '';           Fkt: COM;              M: '5';      Par: 'BN?';                       R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+//  (Nr: 420.24; T:'  aktuellen Seriennummer auslesen (%s)';                    R_on: '';           Fkt: COM;              M: '5';      Par: 'SN?';                       R_off: '';                       Tol: ( A:'';                    Min:  0;    Max:  0    ); ),
+    (Nr: 420.25; T:'  Testmodus aus (%s)';                                      R_on: '';           Fkt: COM;              M: '';       Par: 'SIP:012:0000!';             R_off: '203';                    Tol: ( A:'????:CIP:0012:0000';             Min: 0; Max: 0 ); ),
+*)
+
+     (Nr: 999.00; T: 'TESTENDE';                                                 R_on: '';            Fkt: nil;             M: '';  Par: '';                               R_off: '';                       Tol: ( A:'';                    Min: 0;     Max:  0     ); )
+  

@@ -28,7 +28,8 @@ type
                     FA_DMM,   //digital multimeter
                     FA_DSO,   //degital storage oscilloscope
                     FA_MXP,   //metronix product, which is the unit under the test (uut)
-                    FA_TMM    //thermometer
+                    FA_TMM,   //thermometer
+                    FA_FSP    //flash programmer
                     );
 
   IFunctionActors = interface
@@ -47,6 +48,7 @@ type
 
     procedure SetActorObject(const efa: EFunctionActorType; const actorobj: TObject);
     function  GetActorObject(const efa: EFunctionActorType): TObject;
+
     property ActorObject[const efa: EFunctionActorType]: TObject read GetActorObject write SetActorObject;
   end;
 
@@ -70,7 +72,6 @@ type
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
     property ResultValue: Variant read v_resval;
     //property ResultString: string read s_result write s_result;
-    //property ExecutionMode: EExecMode read e_exemode write e_exemode;
     property Aborted: boolean read b_aborted write SetAborted;
     property ParamSeparator: Char read GetParamSeparator write SetParamSeparator; //separator of the parameters. The default value is a space
     property FunctionActors: TFunctionActors read t_fctactors write SetFunctionActors;

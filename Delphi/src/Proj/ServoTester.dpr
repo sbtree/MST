@@ -10,7 +10,6 @@ uses
   FuncCaller in '..\Core\Function\FuncCaller.pas',
   FuncDmm in '..\Core\Function\FuncDmm.pas',
   FuncDso in '..\Core\Function\FuncDso.pas',
-  FuncFR in '..\Core\Function\FuncFR.pas',
   FuncMat in '..\Core\Function\FuncMat.pas',
   FuncMxp in '..\Core\Function\FuncMxp.pas',
   FuncSwt in '..\Core\Function\FuncSwt.pas',
@@ -35,18 +34,24 @@ uses
   ConfigBase in '..\Core\Config\ConfigBase.pas',
   DeviceConfig in '..\Core\Config\DeviceConfig.pas',
   ProductConfig in '..\Core\Config\ProductConfig.pas',
-  MtxARS2000 in '..\Core\Product\MtxARS2000.pas',
-  MtxDIS2 in '..\Core\Product\MtxDIS2.pas',
-  MtxDownloader in '..\Core\Product\MtxDownloader.pas',
-  MtxProduct in '..\Core\Product\MtxProduct.pas',
   ProductBase in '..\Core\Product\ProductBase.pas',
   TestDebugger in '..\Core\Runner\TestDebugger.pas',
   TestRunner in '..\Core\Runner\TestRunner.pas',
   ScriptReader in '..\Core\Script\ScriptReader.pas',
   StepChecker in '..\Core\Script\StepChecker.pas',
-  ConsoleIO in '..\Core\Tool\ConsoleIO.pas',
   FlashTool in '..\Core\Tool\FlashTool.pas',
-  ToolBase in '..\Core\Tool\ToolBase.pas';
+  ToolBase in '..\Core\Tool\ToolBase.pas',
+  FormExpr in '..\External\ExprParser\FormExpr.pas',
+  OObjects in '..\External\ExprParser\OObjects.pas',
+  ParseClass in '..\External\ExprParser\ParseClass.pas',
+  ParseExpr in '..\External\ExprParser\ParseExpr.pas',
+  DeviceBase in '..\Core\Device\DeviceBase.pas',
+  DeviceManager in '..\Core\Device\DeviceManager.pas',
+  Multimeter in '..\Core\Device\Multimeter.pas',
+  Oscilloscope in '..\Core\Device\Oscilloscope.pas',
+  PowerSupply in '..\Core\Device\PowerSupply.pas',
+  RelayControl in '..\Core\Device\RelayControl.pas',
+  Thermometer in '..\Core\Device\Thermometer.pas';
 
 {$R *.RES}
 

@@ -9,7 +9,7 @@
 unit RS232;
 
 interface
-uses  Classes, Serial3, ConnBase;
+uses  Classes, ConnBase, Serial3;
 const
   C_RS232_BUFFER_SIZE = C_BUFFER_SIZE_DEFAULT;
 

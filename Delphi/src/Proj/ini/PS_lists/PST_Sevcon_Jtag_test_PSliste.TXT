@@ -1,0 +1,56 @@
+   
+
+
+// ###############################################################################################################################
+// 	Prüfschrittauflistung fürPST
+// ###############################################################################################################################
+// =============================================================
+// externe Liste für den PST Prüfplatz
+// /aha/ckl/ 2012-02-01: Kurzschlusstest überarbeitet (kontrollierte Phasen)
+//
+//
+// =============================================================
+   VERSION=2.0.100012.2.3
+   RAZOR_REVISION=$Revision: 1.2 $
+   
+(*
+     Nr.       Titel                                       Relais_on                             Funktion           Mass-   Parameter                  Relais_off                          Toleranzen
+                                                                                                                    einheit
+    ----------+-------------------------------------------+-------------------------------------+------------------+-------+--------------------------+-----------------------------------+--------------------------------------------------- 
+*)
+      
+      
+                                                                                                                  
+//JTAG_download                                                                                                                                                                                                                                                                                   
+  //Sevcon_Variante                                                                                                                                                                           
+    (Nr:  76.00; T:'Firmware Download über JTAG [X401]';                   R_on:'';                              Fkt:LabelFkt;          M: '';    Par:'NIO-Loop:0';                    R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr: -76.02; T:'Versorgung +30V_int einschalten';                      R_on:'107,@SonderRel_01,129,111,131'; Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr:  76.06; T:'Prüfung, ob FW-Vorhanden ggf. download';               R_on:'132';                           Fkt:TestApplikation_Batch_B;M: '';Par:'BATCH_0001 BOOTLOADER_0001 FIRMWARE_0001 TIMEOUT_120000';R_off:''; Tol: ( A:'';                       Min: 0;    Max:  0   ); ), 
+    (Nr:  76.12; T:'BL-Version ermittelten -ev. aktualisierung';           R_on: '';                             Fkt:BL_Version_Batch_PST; M: 'x';Par:'BATCH_0001 BOOTLOADER_0001 FIRMWARE_0001 TIMEOUT_120000'; R_off:''; Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr:  76.20; T:'Abfrage FW-Nummer PST';                                R_on:'';                              Fkt:COM_A;             M: '';    Par:'VERSION?';                      R_off:'';                           Tol: ( A:'????:VERSION:????';      Min: 0;    Max:  0   ); ),
+    (Nr:  76.22; T:'FW-Status abfragen -ev. aktualisierung';               R_on: '';                             Fkt:FW_Version_Batch_PST; M: 'x';Par:'BATCH_0001 BOOTLOADER_0001 FIRMWARE_0001 TIMEOUT_120000';  R_off:'';Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr:  76.24; T:'Delay(%s)';                                            R_on: '';                             Fkt:Wait;              M: '';    Par:'500';                           R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr:  76.28; T:'Check BL-Status';                                      R_on: '';                             Fkt:BL_Version_Batch_PST; M: 'x';Par:'CHECK BOOTLOADER_0001';         R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr:  76.29; T:'Abfrage FW-Nummer PST';                                R_on:'';                              Fkt:COM_A;             M: '';    Par:'VERSION?';                      R_off:'';                           Tol: ( A:'????:VERSION:????';      Min: 0;    Max:  0   ); ),
+    (Nr:  76.30; T:'Check FW-Status';                                      R_on: '';                             Fkt:FW_Version_Batch_PST; M: 'x';Par:'CHECK FIRMWARE_0001';           R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr:  76.34; T:'Setzen Kennung "Funktionstest NOK" (1F12:FFFF)';       R_on:'';                              Fkt:COM_A;             M: '';    Par:'SIP:1F12:FFFF!';                R_off:'';                           Tol: ( A:'????:CIP:????:????';       Min: 0;    Max:  0   ); ),
+    (Nr:  76.99; T:'Fertig';                                               R_on:'';                              Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+                                                                                                                                                                                       
+  
+    (Nr: 800.00; T:'JUMP_PS(%s)';                                          R_on:'';                              Fkt:jump_ps;           M: '';    Par:'PS_990';                        R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+                                                                                                                                                                                                                          
+
+    //Speziellepruefschritt: Pretest: ob Sevcon Standard-Variante ist   
+    (Nr: 850.00; T:'Pretest execute for Standard-BT-Variante';             R_on:'';                               Fkt:nil;               M:'';     Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),                                                                                                                                                                             
+    (Nr: 850.02; T:'Versorgung +30V_int einschalten';                      R_on:'107,@SonderRel_01,129,111,131';  Fkt:wait;              M:'';     Par:'2000';                          R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr: 850.04; T:'Test Variante Standard- 0V bei Standard';              R_on:'128,136';                        Fkt:U_Mess_DC;         M:'V';    Par:'';                              R_off:'136';                        Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
+    //Test X901.9 auf 30V (Spannungsmessung)                                                                     
+    //Test X901.1 auf 30V (Spannungsmessung)                                                                     
+    (Nr: 850.06; T:'Test DMM-Messbus ohne Spannung';                       R_on:'';                               Fkt:U_Mess_DC;         M:'V';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
+    (Nr: 850.08; T:'Spannungsmessung X901.1 (Ser_out/BR+) ';               R_on:'128,135';                        Fkt:U_Mess_DC;         M:'V';    Par:'';                              R_off:'135';                        Tol: ( A:'';                       Min: -15;  Max:  3   ); ),
+    (Nr: 850.10; T:'RS232-PST und RS232-PC kontaktieren ';                 R_on:'132';                            Fkt:nil;               M:'';     Par:'';                              R_off:'';                           Tol: ( A:'';                       Min:  0;   Max:  0   ); ),
+    (Nr: 850.99; T:'Fertig';                                               R_on:'';                               Fkt:nil;               M:'';     Par:'';                              R_off:'132';                        Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+     
+                                                                                                       
+    //----------------------------------------------------------------------------------- 999. TESTENDE------------------------------------------------------------------------------------------------------------------------------------------------                  
+    (Nr: 990.00; T:'TESTENDE';                                             R_on: '';                             Fkt: nil;              M: '';    Par: '';                             R_off: '';                          Tol: ( A:'';                       Min: 0;   Max:  0   ); ),

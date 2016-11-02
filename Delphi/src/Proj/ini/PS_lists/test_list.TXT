@@ -1,0 +1,51 @@
+    VERSION=2.0.100012.2.3
+   RAZOR_REVISION=$Revision: 1.1 $
+(*   
+     Nr.       Titel                                       Relais_on                             Funktion           Mass-   Parameter                  Relais_off                          Toleranzen
+                                                                                                                    einheit
+    ----------+-------------------------------------------+-------------------------------------+------------------+-------+--------------------------+-----------------------------------+--------------------------------------------------- 
+*)
+
+// Test PST Supply                                                                                                                                                                   
+    (Nr:  11.00; T:"Test PST supply & Test variant";                       
+R_on:'';                              
+Fkt:nil;             M: '';    Par:'Standard-Test';                 R_off:'';                           Tol: ( A:'';                       Min: 0;   Max:  0   ); ),
+    (Nr:  11.01; T:'voltage measurement ext. supply +30V_in [118,128]';    R_on:'118,128';                       Fkt:EvalExprHex;         M: 'V';   Par:'($1234+1234) 8';                              R_off:'118';                        Tol: ( A:'';                       Min: 28;  Max:  33  ); ),
+    (Nr:  11.02; T:'Test DMM-measuring bus without supply';                R_on:'';                              Fkt:JumpIfTrue;         M: 'V';   Par:'3>3 PS_11.05';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
+    // switch channel 107 to 1K resistor at +12V-out in order to avoid IREF error
+    (Nr:  11.04; T:'supply +30V_int switch on';                            R_on:'107,@SonderRel_01,129,111,131'; Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;   Max:  0   ); ),
+    (Nr:  11.05; T:'Test DMM-measuringbus without supply';                 R_on:'';                              Fkt:NIL;         M: 'V';   Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
+    (Nr:  11.08; T:'voltage measurement +30V_int [108,128]';               R_on:'108,128';                       Fkt:RepeatIfTrue;         M: 'V';   Par:'3>2 PS_11.04 REPEAT_2 TIMEOUT_100';                              R_off:'108';                        Tol: ( A:'';                       Min: 28;  Max:  33  ); ),
+    (Nr:  11.21; T:'Test DMM-measuringbus without supply';                 R_on:'';                              Fkt:SubStr;         M: 'V';   Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
+    (Nr:  11.99; T:'Finished';                                             R_on:'';                              Fkt:nil;               M: '';    Par:'';                              R_off:'128';                        Tol: ( A:'';                       Min: 0;   Max:  0   ); ),
+
+ 
+{ // 12V_supply voltage
+    (Nr:  21.00; T:'Test voltage +12V on TP XY15';                         R_on:'';                              Fkt:LabelFkt;          M: '';    Par:'NIO-Loop:1';                    R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr: -21.02; T:'Supply +30V_int turn on';                              R_on:'107,@SonderRel_01,129,111,131'; Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr:  21.05; T:'Test DMM-measuringbus without supply voltage';         R_on:'';                              Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
+    (Nr:  21.06; T:'Measurement +12V [102,128]';                           R_on:'102,128';                       Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'102,128';                    Tol: ( A:'';                       Min: 10.8; Max:  13.3); ),
+    (Nr:  21.99; T:'Finished';                                             R_on:'';                              Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+}                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                   
+// 5V_Supplysspannung                                                                                                                                                                                                                           
+(*    (Nr:  31.00; T:'Test voltage +5V on X902.5';                           R_on:'';                              Fkt:LabelFkt;          M: '';    Par:'NIO-Loop:1';                    R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr: -31.02; T:'Supply +30V_int turn on';                              R_on:'107,@SonderRel_01,129,111,131'; Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr:  31.05; T:'Test DMM-measuringbus without supply voltage';         R_on:'';                              Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
+    (Nr:  31.06; T:'Measurement +5V [103,128]';                            R_on:'103,128';                       Fkt:U_Mess_DC;         M: 'V';   Par:'';                              R_off:'103,128';                    Tol: ( A:'';                       Min: 4.75; Max:  5.5 ); ),
+    (Nr:  31.99; T:'Finished';                                             R_on:'';                              Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+*)                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                              
+// 3.3V_supply voltage
+    (Nr:  41.00; T:'Test voltage +3.3V on X401.2';                         R_on:'';                              Fkt:JumpIfTrue;          M: '';    Par:'('abc' = 'ABC') PS_990.00';                    R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr: -41.02; T:'Supply +30V_int turn on';                              R_on:'107,@SonderRel_01,129,111,131'; Fkt:SubStr;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+    (Nr:  41.05; T:'Test DMM-measuringbus without supply';                 R_on:'';                              Fkt:SubStr;         M: 'V';   Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: -0.2; Max:  0.2 ); ),
+    // /PME/ enhance tolerance to 3,2 ... 3,4 V (+-3%).              
+    (Nr:  41.06; T:'Measurement +3.3V [104,128]';                          R_on:'104,128';                       Fkt:nil;         M: 'V';   Par:'';                              R_off:'104,128';                    Tol: ( A:'';                       Min: 3.2;  Max:  3.4 ); ),
+    (Nr:  41.99; T:'Finished';                                             R_on:'';                              Fkt:nil;               M: '';    Par:'';                              R_off:'';                           Tol: ( A:'';                       Min: 0;    Max:  0   ); ),
+                                                                                                                                                                                                                                                                  
+    //----------------------------------------------------------------------------------- 999. END OF TEST------------------------------------------------------------------------------------------------------------------------------------------------                  
+    (Nr: 990.00; T:'END OF TEST';                                          R_on: '';                   Fkt: nil;              M: '';    Par: '';                             R_off: '';                          Tol: ( A:'';                       Min: 0;   Max:  0   ); ),
+

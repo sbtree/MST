@@ -1,7 +1,7 @@
 unit MtxProduct;
 
 interface
-uses Classes, IniFiles, ConnBase, ProtocolBase, DeviceBase;
+uses Classes, IniFiles, ConnBase, DeviceBase;
 type
   EStartMode = (
                 PS_ORIGIN,    //started with original BL/FW of manufacturer

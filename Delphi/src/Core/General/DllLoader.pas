@@ -5,16 +5,15 @@ uses Windows, Classes, TextMessage;
 type
   IDLLLoader = interface
     function LoadDLL(const dllfile: string): boolean;
-    function InitFunctions(const funcnames: TStrings): boolean;
+    function InitFunctions(const funcnames: TStrings; var pfuncs: array of Pointer): boolean;
     procedure SetSearchPath(const spath: string);
     procedure UnloadDLL();
   end;
 
-  TDLLLoader = class(TInterfacedObject, ITextMessengerImpl, IDLLLoader)
+  TDLLLoader = class(TInterfacedObject, IDLLLoader, ITextMessengerImpl)
   protected
     h_dll:      THandle;
     s_dllfile:  string;
-    a_pfunc:    array of Pointer;
     t_msgrimpl: TTextMessengerImpl;
   public
     constructor Create();
@@ -23,7 +22,7 @@ type
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
 
     function LoadDLL(const dllfile: string): boolean;
-    function InitFunctions(const funcnames: TStrings): boolean;
+    function InitFunctions(const funcnames: TStrings; var pfuncs: array of Pointer): boolean;
     procedure SetSearchPath(const spath: string);
     procedure UnloadDLL();
   end;
@@ -50,7 +49,7 @@ begin
   if result then s_dllfile := dllfile;
 end;
 
-function TDLLLoader.InitFunctions(const funcnames: TStrings): boolean;
+function TDLLLoader.InitFunctions(const funcnames: TStrings; var pfuncs: array of Pointer): boolean;
 begin
   result := false;
   //todo:

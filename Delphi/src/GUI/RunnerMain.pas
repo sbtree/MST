@@ -11,15 +11,11 @@ type
   TFrmTestRunner = class(TForm)
     lblInclusive: TLabel;
     lblExclusive: TLabel;
-    btnRunStepByNr: TButton;
-    txtStepNr: TEdit;
     txtScriptFile: TEdit;
     btnOpenScript: TButton;
     btnReadScript: TButton;
     btnSaveScript: TButton;
     memInfo: TMemo;
-    txtCase: TEdit;
-    btnRunCase: TButton;
     txtInclusive: TEdit;
     btnSequence: TButton;
     txtExclusive: TEdit;

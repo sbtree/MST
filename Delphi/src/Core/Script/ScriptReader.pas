@@ -767,7 +767,7 @@ begin
         i_cases := 0;
       end;
       if (t_tsteps.Count > 0) then begin
-        t_msgrimpl.AddMessage(format('%d variable(s) and %d step(s) in %d case(s) are now loaded.', [i_vars, i_steps, i_cases]), ML_INFO);
+        t_msgrimpl.AddMessage(format('%d variable(s) and %d step(s) in %d case(s) are now loaded.', [i_vars, i_steps, i_cases]), ML_EVER);
         if ((i_cases - 1) > CINT_CASE_INDEX_MAX) then t_msgrimpl.AddMessage(format('The count (%d) of test cases is over the limit (%d).', [i_cases, CINT_CASE_INDEX_MAX + 1]), ML_WARNING);
       end else t_msgrimpl.AddMessage('No valid line is loaded from the test script.', ML_WARNING);
     end;

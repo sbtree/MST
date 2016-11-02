@@ -11,7 +11,7 @@
 unit PCAN;
 
 interface
-uses  Classes, ConnBase;
+uses  Classes, ConnBase, DllLoader;
 
 type
 //======================start of definitions from pcan-light====================
@@ -316,12 +316,13 @@ type
                   HW_PCI		        = 10
                   );
   TPCanReadThread = class;
-  TPCanLight = class(TConnBase)
+  TPCanLight = class(TConnBase{, IDllLoader})
   class function FindHardwareType(const shwt: string; var ehwt: EPCanHardwareType): boolean; virtual;
   protected
     e_hwt:    EPCanHardwareType;  //indicate hardware type of the can adapter, see EPCanHardwareType
     e_baud:   EPCanBaudrate;      //indicate baudrate of can bus, see EPCanBaudrate
     e_canver: EPCanVersion;       //indicate version of can bus, see EPCanVersion
+    //t_dllldr: TDllLoader;         //delegate the interface of IDllLoader
     h_dll:    THandle;
     h_rcveve: THandle;
     s_dllfile:string;
@@ -381,6 +382,8 @@ type
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy(); override;
+
+    //property DllService: TDllLoader read t_dllldr implements IDllLoader;
 
     //properties of pcan light
     property HardwareType: EPCanHardwareType read e_hwt write e_hwt;

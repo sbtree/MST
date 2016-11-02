@@ -10,7 +10,7 @@ unit MtxUSB;
 //Warning: this file is not be klu yet
 
 interface
-uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX, ConnBase;
+uses Classes, SysUtils, StrUtils, Windows, ActiveX, ConnBase, USBIOCOMLib_TLB, USBSPEC;
 const
   C_USB_BUFFER_SIZE = 1024;
   

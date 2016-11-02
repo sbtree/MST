@@ -90,7 +90,6 @@
         <DCCReference Include="..\Core\Function\FuncCaller.pas"/>
         <DCCReference Include="..\Core\Function\FuncDmm.pas"/>
         <DCCReference Include="..\Core\Function\FuncDso.pas"/>
-        <DCCReference Include="..\Core\Function\FuncFR.pas"/>
         <DCCReference Include="..\Core\Function\FuncMat.pas"/>
         <DCCReference Include="..\Core\Function\FuncMxp.pas"/>
         <DCCReference Include="..\Core\Function\FuncSwt.pas"/>
@@ -115,18 +114,24 @@
         <DCCReference Include="..\Core\Config\ConfigBase.pas"/>
         <DCCReference Include="..\Core\Config\DeviceConfig.pas"/>
         <DCCReference Include="..\Core\Config\ProductConfig.pas"/>
-        <DCCReference Include="..\Core\Product\MtxARS2000.pas"/>
-        <DCCReference Include="..\Core\Product\MtxDIS2.pas"/>
-        <DCCReference Include="..\Core\Product\MtxDownloader.pas"/>
-        <DCCReference Include="..\Core\Product\MtxProduct.pas"/>
         <DCCReference Include="..\Core\Product\ProductBase.pas"/>
         <DCCReference Include="..\Core\Runner\TestDebugger.pas"/>
         <DCCReference Include="..\Core\Runner\TestRunner.pas"/>
         <DCCReference Include="..\Core\Script\ScriptReader.pas"/>
         <DCCReference Include="..\Core\Script\StepChecker.pas"/>
-        <DCCReference Include="..\Core\Tool\ConsoleIO.pas"/>
         <DCCReference Include="..\Core\Tool\FlashTool.pas"/>
         <DCCReference Include="..\Core\Tool\ToolBase.pas"/>
+        <DCCReference Include="..\External\ExprParser\FormExpr.pas"/>
+        <DCCReference Include="..\External\ExprParser\OObjects.pas"/>
+        <DCCReference Include="..\External\ExprParser\ParseClass.pas"/>
+        <DCCReference Include="..\External\ExprParser\ParseExpr.pas"/>
+        <DCCReference Include="..\Core\Device\DeviceBase.pas"/>
+        <DCCReference Include="..\Core\Device\DeviceManager.pas"/>
+        <DCCReference Include="..\Core\Device\Multimeter.pas"/>
+        <DCCReference Include="..\Core\Device\Oscilloscope.pas"/>
+        <DCCReference Include="..\Core\Device\PowerSupply.pas"/>
+        <DCCReference Include="..\Core\Device\RelayControl.pas"/>
+        <DCCReference Include="..\Core\Device\Thermometer.pas"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
