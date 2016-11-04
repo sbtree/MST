@@ -51,7 +51,21 @@ uses
   Oscilloscope in '..\Core\Device\Oscilloscope.pas',
   PowerSupply in '..\Core\Device\PowerSupply.pas',
   RelayControl in '..\Core\Device\RelayControl.pas',
-  Thermometer in '..\Core\Device\Thermometer.pas';
+  Thermometer in '..\Core\Device\Thermometer.pas',
+  MtxTypes in '..\External\MTX\MtxTypes.pas',
+  MtxUtils in '..\External\MTX\MtxUtils.pas',
+  u_mtx_db in '..\External\MTX\u_mtx_db.pas',
+  Datenbank in '..\External\PDE\Datenbank.pas',
+  RegExpr in '..\External\RegExpr.pas',
+  u_login in '..\External\PDE\u_login.pas' {fo_login},
+  MtxGUIWrapper in '..\External\MTX\MtxGUIWrapper.pas',
+  PngBitBtn in '..\External\Png\PngBitBtn.pas',
+  PngButtonFunctions in '..\External\Png\PngButtonFunctions.pas',
+  PngCheckListBox in '..\External\Png\PngCheckListBox.pas',
+  PngFunctions in '..\External\Png\PngFunctions.pas',
+  PngImageList in '..\External\Png\PngImageList.pas',
+  PngSpeedButton in '..\External\Png\PngSpeedButton.pas',
+  PDEInterface in '..\Core\DBInterf\PDEInterface.pas';
 
 {$R *.RES}
 

@@ -70,7 +70,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <VerInfo_Debug>true</VerInfo_Debug>
-        <VerInfo_Locale>1031</VerInfo_Locale>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -132,6 +131,23 @@
         <DCCReference Include="..\Core\Device\PowerSupply.pas"/>
         <DCCReference Include="..\Core\Device\RelayControl.pas"/>
         <DCCReference Include="..\Core\Device\Thermometer.pas"/>
+        <DCCReference Include="..\External\MTX\MtxTypes.pas"/>
+        <DCCReference Include="..\External\MTX\MtxUtils.pas"/>
+        <DCCReference Include="..\External\MTX\u_mtx_db.pas"/>
+        <DCCReference Include="..\External\PDE\Datenbank.pas"/>
+        <DCCReference Include="..\External\RegExpr.pas"/>
+        <DCCReference Include="..\External\PDE\u_login.pas">
+            <Form>fo_login</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="..\External\MTX\MtxGUIWrapper.pas"/>
+        <DCCReference Include="..\External\Png\PngBitBtn.pas"/>
+        <DCCReference Include="..\External\Png\PngButtonFunctions.pas"/>
+        <DCCReference Include="..\External\Png\PngCheckListBox.pas"/>
+        <DCCReference Include="..\External\Png\PngFunctions.pas"/>
+        <DCCReference Include="..\External\Png\PngImageList.pas"/>
+        <DCCReference Include="..\External\Png\PngSpeedButton.pas"/>
+        <DCCReference Include="..\Core\DBInterf\PDEInterface.pas"/>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
