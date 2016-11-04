@@ -5,7 +5,7 @@ interface
 uses Winapi.Windows, System.SysUtils, System.Classes, Vcl.Graphics, Vcl.Forms,
   Vcl.Controls, Vcl.Menus, Vcl.StdCtrls, Vcl.Dialogs, Vcl.Buttons, Winapi.Messages,
   Vcl.ExtCtrls, Vcl.ComCtrls, Vcl.StdActns, Vcl.ActnList, Vcl.ToolWin,
-  Vcl.ImgList, System.Actions;
+  Vcl.ImgList, System.Actions, u_login;
 
 type
   TMainForm = class(TForm)
@@ -65,8 +65,10 @@ type
     procedure FileOpen1Execute(Sender: TObject);
     procedure HelpAbout1Execute(Sender: TObject);
     procedure FileExit1Execute(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private-Deklarationen }
+    t_login:  Tfo_login;
     procedure CreateMDIChild(const Name: string);
   public
     { Public-Deklarationen }
@@ -79,7 +81,7 @@ implementation
 
 {$R *.dfm}
 
-uses TesterChild, TesterAbout;//CHILDWIN, About;
+uses TesterChild, TesterAbout;
 
 procedure TMainForm.CreateMDIChild(const Name: string);
 var
@@ -100,6 +102,14 @@ procedure TMainForm.FileOpen1Execute(Sender: TObject);
 begin
   if OpenDialog.Execute then
     CreateMDIChild(OpenDialog.FileName);
+end;
+
+procedure TMainForm.FormCreate(Sender: TObject);
+begin
+  t_login := Tfo_login.Create(self);
+  if (t_login.ShowModal() = mrOK) then ShowMessage('OK');
+  t_login.Close();
+
 end;
 
 procedure TMainForm.HelpAbout1Execute(Sender: TObject);

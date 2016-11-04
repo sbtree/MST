@@ -1,9 +1,11 @@
 object fo_login: Tfo_login
   Left = 0
   Top = 0
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsDialog
   Caption = 'Login f'#252'r PDE Datenbank'
-  ClientHeight = 208
-  ClientWidth = 439
+  ClientHeight = 218
+  ClientWidth = 449
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,14 +16,14 @@ object fo_login: Tfo_login
   Position = poMainFormCenter
   PixelsPerInch = 96
   TextHeight = 16
-  object Label1: TLabel
+  object lblUser: TLabel
     Left = 32
     Top = 48
     Width = 40
     Height = 16
     Caption = 'Name:'
   end
-  object Label2: TLabel
+  object lblPassword: TLabel
     Left = 32
     Top = 80
     Width = 66
@@ -56,7 +58,7 @@ object fo_login: Tfo_login
     TabOrder = 2
     OnClick = but_OKClick
   end
-  object BitBtn2: TBitBtn
+  object but_Cancel: TBitBtn
     Left = 248
     Top = 128
     Width = 169

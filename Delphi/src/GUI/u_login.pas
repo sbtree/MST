@@ -22,12 +22,12 @@ uses
 
 type
   Tfo_login = class(TForm)
-    Label1: TLabel;
-    Label2: TLabel;
+    lblUser: TLabel;
+    lblPassword: TLabel;
     ed_user: TEdit;
     ed_password: TEdit;
     but_OK: TBitBtn;
-    BitBtn2: TBitBtn;
+    but_Cancel: TBitBtn;
     procedure but_OKClick(Sender: TObject);
     procedure ed_Change(Sender: TObject);
   private

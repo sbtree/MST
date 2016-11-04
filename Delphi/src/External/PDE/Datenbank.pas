@@ -437,7 +437,7 @@ implementation
 // IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 // IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 uses
-  Dialogs, SysUtils, Controls, u_login, SqlTimSt, math, regexpr;
+  Dialogs, SysUtils, Controls, {u_login,} SqlTimSt, math, regexpr;
 
 const
   C_ERRCODE_OLD_LEN           = 2;             // Spaltenbreite Konfig.Dauertest.Fehlercode

@@ -1,5 +1,7 @@
 program ServoTester;
 
+
+
 uses
   Forms,
   TesterMain in '..\GUI\TesterMain.pas' {MainForm},
@@ -57,7 +59,6 @@ uses
   u_mtx_db in '..\External\MTX\u_mtx_db.pas',
   Datenbank in '..\External\PDE\Datenbank.pas',
   RegExpr in '..\External\RegExpr.pas',
-  u_login in '..\External\PDE\u_login.pas' {fo_login},
   MtxGUIWrapper in '..\External\MTX\MtxGUIWrapper.pas',
   PngBitBtn in '..\External\Png\PngBitBtn.pas',
   PngButtonFunctions in '..\External\Png\PngButtonFunctions.pas',
@@ -65,7 +66,8 @@ uses
   PngFunctions in '..\External\Png\PngFunctions.pas',
   PngImageList in '..\External\Png\PngImageList.pas',
   PngSpeedButton in '..\External\Png\PngSpeedButton.pas',
-  PDEInterface in '..\Core\DBInterf\PDEInterface.pas';
+  PDEInterface in '..\Core\DBInterf\PDEInterface.pas',
+  u_login in '..\GUI\u_login.pas' {fo_login};
 
 {$R *.RES}
 
