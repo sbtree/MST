@@ -1,134 +1,156 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <ProjectGuid>{69cf2794-8d5c-4d48-8703-290c30990ddd}</ProjectGuid>
-  </PropertyGroup>
-  <ItemGroup />
-  <ItemGroup>
-    <Projects Include="Comm\CommTester.dproj" />
-    <Projects Include="Device\DeviceManagerTester.dproj" />
-    <Projects Include="Function\FunctionTester.dproj" />
-    <Projects Include="General\GeneralTester.dproj" />
-    <Projects Include="Product\BootTester.dproj" />
-    <Projects Include="Product\ProductTester.dproj" />
-    <Projects Include="Runner\RunnerTester.dproj" />
-    <Projects Include="Script\ScriptTester.dproj" />
-    <Projects Include="ServoTester\ServoTester.dproj" />
-    <Projects Include="Starter\TestStarter.dproj" />
-    <Projects Include="Tools\ToolTester.dproj" />
-  </ItemGroup>
-  <ProjectExtensions>
-    <Borland.Personality>Default.Personality</Borland.Personality>
-    <Borland.ProjectType />
-    <BorlandProject>
-<BorlandProject xmlns=""><Default.Personality></Default.Personality></BorlandProject></BorlandProject>
-  </ProjectExtensions>
-  <Target Name="DeviceManagerTester">
-    <MSBuild Projects="Device\DeviceManagerTester.dproj" Targets="" />
-  </Target>
-  <Target Name="DeviceManagerTester:Clean">
-    <MSBuild Projects="Device\DeviceManagerTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="DeviceManagerTester:Make">
-    <MSBuild Projects="Device\DeviceManagerTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="GeneralTester">
-    <MSBuild Projects="General\GeneralTester.dproj" Targets="" />
-  </Target>
-  <Target Name="GeneralTester:Clean">
-    <MSBuild Projects="General\GeneralTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="GeneralTester:Make">
-    <MSBuild Projects="General\GeneralTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="FunctionTester">
-    <MSBuild Projects="Function\FunctionTester.dproj" Targets="" />
-  </Target>
-  <Target Name="FunctionTester:Clean">
-    <MSBuild Projects="Function\FunctionTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="FunctionTester:Make">
-    <MSBuild Projects="Function\FunctionTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="ToolTester">
-    <MSBuild Projects="Tools\ToolTester.dproj" Targets="" />
-  </Target>
-  <Target Name="ToolTester:Clean">
-    <MSBuild Projects="Tools\ToolTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="ToolTester:Make">
-    <MSBuild Projects="Tools\ToolTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="ScriptTester">
-    <MSBuild Projects="Script\ScriptTester.dproj" Targets="" />
-  </Target>
-  <Target Name="ScriptTester:Clean">
-    <MSBuild Projects="Script\ScriptTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="ScriptTester:Make">
-    <MSBuild Projects="Script\ScriptTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="CommTester">
-    <MSBuild Projects="Comm\CommTester.dproj" Targets="" />
-  </Target>
-  <Target Name="CommTester:Clean">
-    <MSBuild Projects="Comm\CommTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="CommTester:Make">
-    <MSBuild Projects="Comm\CommTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="ProductTester">
-    <MSBuild Projects="Product\ProductTester.dproj" Targets="" />
-  </Target>
-  <Target Name="ProductTester:Clean">
-    <MSBuild Projects="Product\ProductTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="ProductTester:Make">
-    <MSBuild Projects="Product\ProductTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="BootTester">
-    <MSBuild Projects="Product\BootTester.dproj" Targets="" />
-  </Target>
-  <Target Name="BootTester:Clean">
-    <MSBuild Projects="Product\BootTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="BootTester:Make">
-    <MSBuild Projects="Product\BootTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="ServoTester">
-    <MSBuild Projects="ServoTester\ServoTester.dproj" Targets="" />
-  </Target>
-  <Target Name="ServoTester:Clean">
-    <MSBuild Projects="ServoTester\ServoTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="ServoTester:Make">
-    <MSBuild Projects="ServoTester\ServoTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="RunnerTester">
-    <MSBuild Projects="Runner\RunnerTester.dproj" Targets="" />
-  </Target>
-  <Target Name="RunnerTester:Clean">
-    <MSBuild Projects="Runner\RunnerTester.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="RunnerTester:Make">
-    <MSBuild Projects="Runner\RunnerTester.dproj" Targets="Make" />
-  </Target>
-  <Target Name="TestStarter">
-    <MSBuild Projects="Starter\TestStarter.dproj" Targets="" />
-  </Target>
-  <Target Name="TestStarter:Clean">
-    <MSBuild Projects="Starter\TestStarter.dproj" Targets="Clean" />
-  </Target>
-  <Target Name="TestStarter:Make">
-    <MSBuild Projects="Starter\TestStarter.dproj" Targets="Make" />
-  </Target>
-  <Target Name="Build">
-    <CallTarget Targets="DeviceManagerTester;GeneralTester;FunctionTester;ToolTester;ScriptTester;CommTester;ProductTester;BootTester;ServoTester;RunnerTester;TestStarter" />
-  </Target>
-  <Target Name="Clean">
-    <CallTarget Targets="DeviceManagerTester:Clean;GeneralTester:Clean;FunctionTester:Clean;ToolTester:Clean;ScriptTester:Clean;CommTester:Clean;ProductTester:Clean;BootTester:Clean;ServoTester:Clean;RunnerTester:Clean;TestStarter:Clean" />
-  </Target>
-  <Target Name="Make">
-    <CallTarget Targets="DeviceManagerTester:Make;GeneralTester:Make;FunctionTester:Make;ToolTester:Make;ScriptTester:Make;CommTester:Make;ProductTester:Make;BootTester:Make;ServoTester:Make;RunnerTester:Make;TestStarter:Make" />
-  </Target>
-  <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
+    <PropertyGroup>
+        <ProjectGuid>{69cf2794-8d5c-4d48-8703-290c30990ddd}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="Device\DeviceManagerTester.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="General\GeneralTester.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Function\FunctionTester.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Tools\ToolTester.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Script\ScriptTester.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Comm\CommTester.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Product\ProductTester.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Product\BootTester.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ServoTester\ServoTester.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Runner\RunnerTester.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Starter\TestStarter.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="DeviceManagerTester">
+        <MSBuild Projects="Device\DeviceManagerTester.dproj"/>
+    </Target>
+    <Target Name="DeviceManagerTester:Clean">
+        <MSBuild Projects="Device\DeviceManagerTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DeviceManagerTester:Make">
+        <MSBuild Projects="Device\DeviceManagerTester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="GeneralTester">
+        <MSBuild Projects="General\GeneralTester.dproj"/>
+    </Target>
+    <Target Name="GeneralTester:Clean">
+        <MSBuild Projects="General\GeneralTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="GeneralTester:Make">
+        <MSBuild Projects="General\GeneralTester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="FunctionTester">
+        <MSBuild Projects="Function\FunctionTester.dproj"/>
+    </Target>
+    <Target Name="FunctionTester:Clean">
+        <MSBuild Projects="Function\FunctionTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="FunctionTester:Make">
+        <MSBuild Projects="Function\FunctionTester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ToolTester">
+        <MSBuild Projects="Tools\ToolTester.dproj"/>
+    </Target>
+    <Target Name="ToolTester:Clean">
+        <MSBuild Projects="Tools\ToolTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ToolTester:Make">
+        <MSBuild Projects="Tools\ToolTester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ScriptTester">
+        <MSBuild Projects="Script\ScriptTester.dproj"/>
+    </Target>
+    <Target Name="ScriptTester:Clean">
+        <MSBuild Projects="Script\ScriptTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ScriptTester:Make">
+        <MSBuild Projects="Script\ScriptTester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="CommTester">
+        <MSBuild Projects="Comm\CommTester.dproj"/>
+    </Target>
+    <Target Name="CommTester:Clean">
+        <MSBuild Projects="Comm\CommTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="CommTester:Make">
+        <MSBuild Projects="Comm\CommTester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ProductTester">
+        <MSBuild Projects="Product\ProductTester.dproj"/>
+    </Target>
+    <Target Name="ProductTester:Clean">
+        <MSBuild Projects="Product\ProductTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ProductTester:Make">
+        <MSBuild Projects="Product\ProductTester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="BootTester">
+        <MSBuild Projects="Product\BootTester.dproj"/>
+    </Target>
+    <Target Name="BootTester:Clean">
+        <MSBuild Projects="Product\BootTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="BootTester:Make">
+        <MSBuild Projects="Product\BootTester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ServoTester">
+        <MSBuild Projects="ServoTester\ServoTester.dproj"/>
+    </Target>
+    <Target Name="ServoTester:Clean">
+        <MSBuild Projects="ServoTester\ServoTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ServoTester:Make">
+        <MSBuild Projects="ServoTester\ServoTester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="RunnerTester">
+        <MSBuild Projects="Runner\RunnerTester.dproj"/>
+    </Target>
+    <Target Name="RunnerTester:Clean">
+        <MSBuild Projects="Runner\RunnerTester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="RunnerTester:Make">
+        <MSBuild Projects="Runner\RunnerTester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="TestStarter">
+        <MSBuild Projects="Starter\TestStarter.dproj"/>
+    </Target>
+    <Target Name="TestStarter:Clean">
+        <MSBuild Projects="Starter\TestStarter.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TestStarter:Make">
+        <MSBuild Projects="Starter\TestStarter.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="DeviceManagerTester;GeneralTester;FunctionTester;ToolTester;ScriptTester;CommTester;ProductTester;BootTester;ServoTester;RunnerTester;TestStarter"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="DeviceManagerTester:Clean;GeneralTester:Clean;FunctionTester:Clean;ToolTester:Clean;ScriptTester:Clean;CommTester:Clean;ProductTester:Clean;BootTester:Clean;ServoTester:Clean;RunnerTester:Clean;TestStarter:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="DeviceManagerTester:Make;GeneralTester:Make;FunctionTester:Make;ToolTester:Make;ScriptTester:Make;CommTester:Make;ProductTester:Make;BootTester:Make;ServoTester:Make;RunnerTester:Make;TestStarter:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
