@@ -87,7 +87,7 @@ begin
   if chkCR.Checked then s_sending := s_sending + Char(#13);
   if chkLF.Checked then s_sending := s_sending + Char(#10);
 
-  t_conn.SendStr(s_sending);
+  if assigned(t_conn) then t_conn.SendStr(s_sending);
 end;
 
 procedure TfrmCommTester.btnUSBClick(Sender: TObject);

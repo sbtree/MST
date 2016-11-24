@@ -11,7 +11,7 @@
 unit PCAN;
 
 interface
-uses  Classes, ConnBase;
+uses  Classes, ConnBase, DllLoader;
 
 type
 //======================start of definitions from pcan-light====================
@@ -315,33 +315,32 @@ type
                   HW_ISA_SJA        = 9,
                   HW_PCI		        = 10
                   );
+
   TPCanReadThread = class;
-  TPCanLight = class(TConnBase)
-  class function FindHardwareType(const shwt: string; var ehwt: EPCanHardwareType): boolean; virtual;
+
+  TPCanLight = class(TConnBase, IDllLoader)
+  class function FindHardwareType(const shwt: string; var ehwt: EPCanHardwareType): boolean;
   protected
-    e_hwt:    EPCanHardwareType;  //indicate hardware type of the can adapter, see EPCanHardwareType
-    e_baud:   EPCanBaudrate;      //indicate baudrate of can bus, see EPCanBaudrate
-    e_canver: EPCanVersion;       //indicate version of can bus, see EPCanVersion
-    h_dll:    THandle;
-    h_rcveve: THandle;
-    s_dllfile:string;
+    e_hwt:      EPCanHardwareType;  //indicate hardware type of the can adapter, see EPCanHardwareType
+    e_baud:     EPCanBaudrate;      //indicate baudrate of can bus, see EPCanBaudrate
+    e_canver:   EPCanVersion;       //indicate version of can bus, see EPCanVersion
+    h_rcveve:   THandle;
     lw_sendcnt, lw_recvcnt: longword;
     lw_devnr:   longword;
     e_subtype:  EPCanNPnPType;
     lw_ioport:  longword;
     w_irq:      word;
-    t_thread:  TPCanReadThread;
-    a_pcanfnt: array[EPCanFunction] of Pointer;
+    t_thread:   TPCanReadThread;
+    a_pcanfnt:  array[EPCanFunction] of Pointer;
+    t_dllldr:   TDllLoader;
   protected
     function SetDllFile(const sdll: string): boolean; virtual;
-    function LoadDll(const sdll: string): boolean;
-    function UnloadDll(): boolean;
     function LoadDefaultDll(const hwt: EPCanHardwareType): boolean; overload;
     function LoadDefaultDll(const shwt: string): boolean; overload;
     function GetErrorMsg(const errnr: longword): string; virtual;
     function StrToPCanMsg(const msg: string; var canmsg: TPCANMsg): boolean; virtual;
     function PCanMsgToStr(const canmsg: TPCANMsg; var msg: string): boolean; virtual;
-    function IsPCanMsg(const buf: array of byte): boolean; virtual;
+    function IsPCanMsg(const buf): boolean; virtual;
     function BuildMessage(const canmsg: PPCANMsg): string;
     function IsValidFunction(const canfnt: EPCanFunction; var errnr: longword): boolean;
     function SetNPnP(etype: EPCanNPnPType; ioport: longword; irq: word): boolean;
@@ -356,6 +355,7 @@ type
     function IsWriteComplete(): boolean; override;
     function SendData(const buf: array of byte): boolean; override;
     function RecvData(): integer; override;
+    procedure ClearFunctions();
     procedure TryConnect(); override;
     procedure SetMsgVersion(ecanver: EPCanVersion);
     procedure SetDeviceNr(devnr: longword);
@@ -382,10 +382,11 @@ type
     constructor Create(owner: TComponent); override;
     destructor Destroy(); override;
 
+    property DLLService: TDllLoader read t_dllldr implements IDllLoader;
+
     //properties of pcan light
     property HardwareType: EPCanHardwareType read e_hwt write e_hwt;
     property HardwareTypeText: string read GetHardwareTypeText;
-    property DllFile: string read s_dllfile;
     property Baudrate: EPCanBaudrate read e_baud write e_baud;
     property BaudrateText: string read GetBaudrateText;
     property MsgVersion: EPCanVersion read e_canver write SetMsgVersion;
@@ -398,7 +399,7 @@ type
     property CountReceive: cardinal read lw_recvcnt;
 
     function Config(const sconfs: TStrings): boolean; overload; override;
-    function Disconnect: boolean; override;
+    function Disconnect(): boolean; override;
     function SendBuf(const buf: array of byte): boolean; override;
     function SendStr(const str: string): boolean; override;
   end;
@@ -625,66 +626,44 @@ var i: EPCanFunction;
 begin
   result := false;
   if e_hwt <> PCH_NONE then begin
-    try
-      UnloadDll();
-      h_dll := LoadLibrary(PChar(sdll));
-      result := (h_dll <> 0);
-      if result then begin
-        case e_hwt of
-        // ISA 1 Channel, PCI 1 Channel, PCC 1 Channel, USB 1st Channel, DONGLE PRO, DONGLE
-        PCH_ISA1CH, PCH_PCI1CH, PCH_PCC1CH,	PCH_USB1CH,	PCH_DNP, PCH_DNG:
-        begin
-          for i := Low(EPCanFunction) to High(EPCanFunction) do
-            a_pcanfnt[i] := GetProcAddress(h_dll, PChar(CSTR_PCAN1CH_NAMES[i]));
-        end;
-        //ISA 2 Channels, PCI 2 Channels, PCC 2 Channels, USB 2nd Channel
-        PCH_ISA2CH, PCH_PCI2CH, PCH_PCC2CH, PCH_USB2CH:
-        begin
-          for i := Low(EPCanFunction) to High(EPCanFunction) do
-            a_pcanfnt[i] := GetProcAddress(h_dll, PChar(CSTR_PCAN2CH_NAMES[i]));
-        end;
-        else
-        end;
-        //check if the primary functions are found
-        result := assigned(a_pcanfnt[PCF_INIT]) and
-                  assigned(a_pcanfnt[PCF_WRITE]) and
-                  assigned(a_pcanfnt[PCF_READ]) and
-                  assigned(a_pcanfnt[PCF_READEX]);
-        if result then s_dllfile := sdll
-        else begin
-          UnloadDll();
-          t_msgrimpl.AddMessage(format('No expected function is found in the dll "%s"', [sdll]), ML_ERROR);
-        end;
-      end else t_msgrimpl.AddMessage(format('Failed to load dll: %s', [sdll]), ML_ERROR);
-    except
-      UnloadDll();
-      result := false;
-    end;
+    ClearFunctions();
+    result := t_dllldr.LoadDLL(sdll);
+    if result then begin
+      case e_hwt of
+      // ISA 1 Channel, PCI 1 Channel, PCC 1 Channel, USB 1st Channel, DONGLE PRO, DONGLE
+      PCH_ISA1CH, PCH_PCI1CH, PCH_PCC1CH,	PCH_USB1CH,	PCH_DNP, PCH_DNG:
+      begin
+        for i := Low(EPCanFunction) to High(EPCanFunction) do
+          a_pcanfnt[i] := t_dllldr.GetFunction(CSTR_PCAN1CH_NAMES[i]);
+      end;
+      //ISA 2 Channels, PCI 2 Channels, PCC 2 Channels, USB 2nd Channel
+      PCH_ISA2CH, PCH_PCI2CH, PCH_PCC2CH, PCH_USB2CH:
+      begin
+        for i := Low(EPCanFunction) to High(EPCanFunction) do
+          a_pcanfnt[i] := t_dllldr.GetFunction(CSTR_PCAN2CH_NAMES[i]);
+      end;
+      else
+      end; //case e_hwt
+
+      //check if the primary functions are found
+      result := assigned(a_pcanfnt[PCF_INIT]) and
+                assigned(a_pcanfnt[PCF_WRITE]) and
+                assigned(a_pcanfnt[PCF_READ]) and
+                assigned(a_pcanfnt[PCF_READEX]) and
+                assigned(a_pcanfnt[PCF_CLOSE]);
+
+      if not result then begin
+        t_dllldr.UnloadDll();
+        t_msgrimpl.AddMessage(format('No expected function is found in the dll "%s"', [sdll]), ML_ERROR);
+      end;
+    end else t_msgrimpl.AddMessage(format('Failed to load dll: %s', [sdll]), ML_ERROR);
   end else t_msgrimpl.AddMessage(GetErrorMsg(ERR_HARDWARE_TYPE), ML_ERROR);
-end;
-
-function TPCanLight.LoadDll(const sdll: string): boolean;
-begin
-  result := SetDllFile(sdll);
-end;
-
-function TPCanLight.UnloadDll(): boolean;
-var i: EPCanFunction;
-begin
-  if (h_dll <> 0) then begin
-    Disconnect();
-    if FreeLibrary(h_dll) then begin
-      s_dllfile := '';
-      h_dll := 0;
-      for i := Low(EPCanFunction) to High(EPCanFunction) do a_pcanfnt[i] := nil;
-    end;
-  end;
-  result := true;
 end;
 
 function TPCanLight.LoadDefaultDll(const hwt: EPCanHardwareType): boolean;
 begin
-  result := LoadDll(CSTR_PCAN_DLLFILES[hwt]);
+  result := SetDllFile(CSTR_PCAN_DLLFILES[hwt]);
+  e_hwt := hwt;
 end;
 
 function TPCanLight.LoadDefaultDll(const shwt: string): boolean;
@@ -718,7 +697,7 @@ begin
   CAN_ERR_ILLPARAMVAL:  result := 'Invalid parameter value';
   CAN_ERR_UNKNOWN:      result := 'Unknown error';
   ERR_HARDWARE_TYPE:    result := 'The type of hardware is unknown';
-  ERR_PCAN_FNT:         result := 'Function ''%s'' is not found in the dll' + '"' + s_dllfile + '"';
+  ERR_PCAN_FNT:         result := 'Function ''%s'' is not found in the dll' + '"' + t_dllldr.CurDllName + '"';
   ERR_NO_DLL:           result := 'No dll is loaded';
   else                  result := format('Error number (%d) is unknown', [errnr]);
   end;
@@ -765,13 +744,13 @@ begin
   end;
 end;
 
-function TPCanLight.IsPCanMsg(const buf: array of byte): boolean;
+function TPCanLight.IsPCanMsg(const buf): boolean;
 var p_pcanmsg: PPCANMsg;
 begin
   //check total size of the message
-  result := (length(buf) = sizeof(TPCANMsg));
+  result := true; //(length(buf) = sizeof(TPCANMsg));
   if result then begin
-    p_pcanmsg := PPCANMsg(@buf[0]);
+    p_pcanmsg := PPCANMsg(@buf);
     //check length of message data
     result := (p_pcanmsg.LEN <= C_CANMSG_LENGTH_MAX);
     //check message type
@@ -796,14 +775,10 @@ end;
 function TPCanLight.IsValidFunction(const canfnt: EPCanFunction; var errnr: longword): boolean;
 var s_errmsg: string;
 begin
-  result := ((h_dll <> 0) and (e_hwt <> PCH_NONE) and assigned(a_pcanfnt[canfnt]));
+  result := assigned(a_pcanfnt[canfnt]);
   errnr := CAN_ERR_OK;
   if (not result) then begin
-    if (h_dll = 0) then begin
-      errnr := ERR_NO_DLL;
-      s_errmsg := GetErrorMsg(ERR_NO_DLL)
-    end else begin
-      case e_hwt of
+    case e_hwt of
       PCH_ISA1CH, PCH_PCI1CH, PCH_PCC1CH,	PCH_USB1CH,	PCH_DNP, PCH_DNG: begin
         errnr := ERR_PCAN_FNT;
         s_errmsg := format(GetErrorMsg(errnr), [CSTR_PCAN1CH_NAMES[canfnt]]);
@@ -814,7 +789,6 @@ begin
       end else begin
         errnr := ERR_HARDWARE_TYPE;
         s_errmsg := GetErrorMsg(errnr);
-      end;
       end;
     end;
     t_msgrimpl.AddMessage(s_errmsg, ML_ERROR);
@@ -887,9 +861,9 @@ var p_pcanmsg: PPCANMsg; ba_pcan: array of byte;
 begin
   result := '';
   SetLength(ba_pcan, sizeof(TPCANMsg));
-  Move(ba_rbuf, ba_pcan, sizeof(TPCANMsg));
-  if IsPCanMsg(ba_pcan) then begin
-    p_pcanmsg := PPCANMsg(@ba_pcan);
+  //Move(ba_rbuf, ba_pcan, sizeof(TPCANMsg));
+  if IsPCanMsg(ba_rbuf) then begin
+    p_pcanmsg := PPCANMsg(@ba_rbuf[0]);
     PCanMsgToStr(p_pcanmsg^, result);
   end;
 end;
@@ -920,16 +894,21 @@ end;
 function TPCanLight.RecvData(): integer;
 var lw_ret: longword; t_rbuf: TPCANMsg;
 begin
-  result := 0;
   repeat
     Application.ProcessMessages();
     lw_ret := CanRead(t_rbuf);
-    if (CanRead(t_rbuf) = CAN_ERR_OK) then begin
+    if (lw_ret = CAN_ERR_OK) then begin
       w_rlen := sizeof(TPCANMsg);
-      result := w_rlen;
       Move(t_rbuf, ba_rbuf, w_rlen);
     end;
   until ((lw_ret AND (CAN_ERR_QRCVEMPTY or CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0);
+  result := w_rlen;
+end;
+
+procedure TPCanLight.ClearFunctions();
+var i: EPCanFunction;
+begin
+  for i := Low(EPCanFunction) to High(EPCanFunction) do a_pcanfnt[i] := nil;
 end;
 
 procedure TPCanLight.TryConnect();
@@ -1089,24 +1068,23 @@ begin
 end;
 
 constructor TPCanLight.Create(owner: TComponent);
-var i: EPCanFunction;
 begin
   inherited Create(owner);
   e_type := CT_CAN;
   e_hwt := PCH_NONE;
   e_baud := PCB_1M;
-  h_dll := 0;
-  s_dllfile := '';
   e_canver := PCV_STD;
   lw_sendcnt := 0;
   lw_recvcnt := 0;
-  for i := Low(EPCanFunction) to High(EPCanFunction) do a_pcanfnt[i] := nil;
+  t_dllldr := TDllLoader.Create();
   SetNPnP(HW_ISA, 0, 0);
+  ClearFunctions();
 end;
 
 destructor TPCanLight.Destroy();
 begin
-  UnloadDll();
+  Disconnect();
+  t_dllldr.Free();
   inherited Destroy();
 end;
 
@@ -1180,7 +1158,10 @@ end;
 
 procedure TPCanReadThread.ReadCanMessage();
 begin
-  if assigned(t_pcan) then t_pcan.RecvData();
+  if assigned(t_pcan) then begin
+    t_pcan.ClearBuffer();
+    t_pcan.RecvData();
+  end;
 end;
 
 procedure TPCanReadThread.Execute;

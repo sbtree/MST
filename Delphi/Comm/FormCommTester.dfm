@@ -96,12 +96,11 @@ object frmCommTester: TfrmCommTester
     Top = 269
     Width = 121
     Height = 21
-    ItemIndex = 0
     TabOrder = 7
     Text = 'OR:1:0008'
     Items.Strings = (
       'OR:1:0008'
-      '60A:40800020')
+      '664:40842000')
   end
   object chkCr: TCheckBox
     Left = 495

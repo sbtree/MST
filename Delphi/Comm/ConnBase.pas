@@ -391,7 +391,6 @@ end;
 destructor TConnBase.Destroy;
 begin
   t_msgrimpl.Free();
-  //FreeAndNil(t_messenger);
   FreeAndNil(t_rxwait);
   FreeAndNil(t_txwait);
   inherited Destroy();
@@ -543,10 +542,9 @@ begin
   c_tend := GetTickCount() + c_timeout;
   if Connected then begin
     if bwait then  WaitForReading(c_tend);
-    w_rlen := RecvData();
+    result := RecvData();
     if (w_rlen > 0) then begin
       str := BufferToStr();
-      result := length(str);
       ClearBuffer();
     end;
     if (result > 0) then

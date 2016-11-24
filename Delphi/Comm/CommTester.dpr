@@ -12,7 +12,8 @@ uses
   MtxUSB in 'MtxUSB.pas',
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
   Usbspec in '..\Externals\USBIO\Usbspec.pas',
-  TekUSB in 'TekUSB.pas';
+  TekUSB in 'TekUSB.pas',
+  DllLoader in '..\General\DllLoader.pas';
 
 {$R *.res}
 
