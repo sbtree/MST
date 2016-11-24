@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, DataBuffer, StdCtrls, ExtCtrls, ComCtrls, GenUtils, QExp;
+  Dialogs, DataBuffer, StdCtrls, ExtCtrls, ComCtrls, GenUtils;//, QExp;
 
 type
   TfrmGeneralTester = class(TForm)
@@ -30,7 +30,7 @@ implementation
 uses StringPairs, Math, StrUtils;
 
 
-procedure TestCase_CNExp;
+(*procedure TestCase_CNExp;
 var
   AVar:TQVar;
   AExpr:TQExprParser;
@@ -389,7 +389,7 @@ AExpr.Calc;
 assert(AExpr.Value.AsInteger=108);
 AExpr.Free;
 //TestCase_CNExp;
-end;
+end;  *)
 
 procedure TfrmGeneralTester.btnCreateTreeClick(Sender: TObject);
 var
@@ -421,9 +421,71 @@ begin
 end;
 
 procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
-var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TStringPairs;
-    sNames, sValues, tComPorts: TStrings; v: variant; iInt64: int64; r: double;
+var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TStringPairs; ch: char;
+    sNames, sValues, tComPorts: TStrings; v: variant; iInt64: int64; r: double; bok: boolean;
+    s_temp: string;
 begin
+  chbuffer := TCharBuffer.Create();
+  bok := chbuffer.IsEmpty();
+  bok := chbuffer.IsFull();
+  n := chbuffer.CountUsed;
+  n := chbuffer.CountFree;
+  if chbuffer.Resize(5) then begin
+    bok := chbuffer.IsEmpty();
+    bok := chbuffer.IsFull();
+    n := chbuffer.CountUsed;
+    n := chbuffer.CountFree;
+
+    bok := chbuffer.WriteElement('A');
+    bok := chbuffer.WriteElement('B');
+    bok := chbuffer.WriteElement('C');
+    bok := chbuffer.IsEmpty();
+    bok := chbuffer.IsFull();
+    n := chbuffer.CountUsed;
+    n := chbuffer.CountFree;
+
+    bok := chbuffer.ReadElement(ch);
+    bok := chbuffer.ReadElement(ch);
+    bok := chbuffer.IsEmpty();
+    bok := chbuffer.IsFull();
+    n := chbuffer.CountUsed;
+    n := chbuffer.CountFree;
+
+    bok := chbuffer.ReadElement(ch);
+    bok := chbuffer.IsEmpty();
+    bok := chbuffer.IsFull();
+    n := chbuffer.CountUsed;
+    n := chbuffer.CountFree;
+
+    bok := chbuffer.ReadElement(ch);
+    bok := chbuffer.IsEmpty();
+    bok := chbuffer.IsFull();
+    n := chbuffer.CountUsed;
+    n := chbuffer.CountFree;
+
+    bok := chbuffer.WriteElement('D');
+    bok := chbuffer.WriteElement('E');
+    bok := chbuffer.WriteElement('F');
+    bok := chbuffer.IsEmpty();
+    bok := chbuffer.IsFull();
+    n := chbuffer.CountUsed;
+    n := chbuffer.CountFree;
+
+    bok := chbuffer.WriteElement('G');
+    bok := chbuffer.WriteElement('H');
+    bok := chbuffer.IsEmpty();
+    bok := chbuffer.IsFull();
+    n := chbuffer.CountUsed;
+    n := chbuffer.CountFree;
+
+    bok := chbuffer.WriteElement('I');
+    bok := chbuffer.IsEmpty();
+    bok := chbuffer.IsFull();
+    n := chbuffer.CountUsed;
+    n := chbuffer.CountFree;
+
+    s_temp := chbuffer.ReadStr();
+  end;
   //QExp_TestCase();
   ShowMessage(TGenUtils.ShowStrHex('ABCDE12345'));
   v := 1;

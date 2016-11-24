@@ -11,7 +11,7 @@
 unit PCAN;
 
 interface
-uses  Classes, ConnBase, DllLoader;
+uses  Classes, ConnBase, DllLoader, DataBuffer;
 
 type
 //======================start of definitions from pcan-light====================
@@ -317,6 +317,8 @@ type
                   );
 
   TPCanReadThread = class;
+
+  TPCanMsgBuffer = TRingBuffer<TPCANMsg>;
 
   TPCanLight = class(TConnBase, IDllLoader)
   class function FindHardwareType(const shwt: string; var ehwt: EPCanHardwareType): boolean;
