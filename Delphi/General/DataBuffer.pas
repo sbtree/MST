@@ -31,7 +31,7 @@ type
     destructor Destroy(); override;
 
     function Resize(const n: Integer): Boolean; virtual;
-    function Clear: Boolean; virtual;
+    procedure Clear(); virtual;
     function IsEmpty: Boolean;
     function IsFull: Boolean;
     function ReadElement(var elem: T): boolean;
@@ -115,11 +115,10 @@ begin
   end else result := false;
 end;
 
-function TRingBuffer<T>.Clear: Boolean;
+procedure TRingBuffer<T>.Clear();
 begin
   p_read := p_write;
   b_overlap := false;
-  result := true;
 end;
 
 function TRingBuffer<T>.IsEmpty: Boolean;
@@ -178,7 +177,9 @@ function TByteBuffer.ReadAnsiStr(): AnsiString;
 var byte_cur: byte;
 begin
   result := '';
-  while (ReadElement(byte_cur)) do result := result + AnsiChar(byte_cur);
+  while (ReadElement(byte_cur)) do
+    if byte_cur <> 0 then
+      result := result + AnsiChar(byte_cur);
 end;
 
 function TByteBuffer.WriteAnsiStr(const str: AnsiString): integer;

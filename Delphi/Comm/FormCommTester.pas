@@ -31,6 +31,7 @@ type
   private
     { Private-Deklarationen }
     t_conn: TConnBase;
+    t_conn2: TConnBase;
     t_canthread: TPCanReadThread;
     t_messenger: TTextMessenger;
   public
@@ -49,13 +50,20 @@ procedure TfrmCommTester.btnCanClick(Sender: TObject);
 var s_conf: string;
 begin
   if assigned(t_conn) then FreeAndNil(t_conn);
-
   t_conn := TPCanLight.Create(self);
   ITextMessengerImpl(t_conn).Messenger := t_messenger;
   t_conn.Timeout := 10000;
   s_conf := trim(cmbConf.Text); //'HWT:USB1CH|PCANDLL:PCAN_USB.dll|baudrate:1M|CANVER:EXT';
   t_conn.Config(s_conf);
   t_conn.Connect();
+
+  {if assigned(t_conn2) then FreeAndNil(t_conn2);
+  t_conn2 := TPCanLight.Create(self);
+  ITextMessengerImpl(t_conn2).Messenger := t_messenger;
+  t_conn2.Timeout := 10000;
+  s_conf := 'HWT:USB2CH|PCANDLL:PCAN_2USB.dll|baudrate:1M|CANVER:STD';
+  t_conn2.Config(s_conf);
+  t_conn2.Connect();}
 end;
 
 procedure TfrmCommTester.btnRecvClick(Sender: TObject);

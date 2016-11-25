@@ -22,7 +22,8 @@ type
     //string and array
     class function StrToCharArray(const sData: string; var aData: array of char): integer;
     class function StrFromCharArray(const aData: array of char): string;
-    class function IsHexText(const sData: string): boolean;
+    class function IsHexText(const sData: string): boolean; overload;
+    class function IsHexText(const sData: AnsiString): boolean; overload;
     class function HexTextToCharArray(const sData: string; var aData: array of char): integer;
     class function HexTextFromCharArray(const aData: array of char; const len: integer = -1): string;
     class function IsAsciiValid(const str: string): boolean;
@@ -145,10 +146,20 @@ begin
   result := true;
   iLen := length(sData);
   for i := 1 to iLen do begin
-    if (Pos(sData[i],C_HEX_CHARS) < 1) then begin
-      result := false;
-      break;
-    end;
+    result := (Pos(sData[i],C_HEX_CHARS) > 0);
+    if not result then break;
+  end;
+end;
+
+class function TGenUtils.IsHexText(const sData: AnsiString): boolean;
+const C_HEXDIGI_SET: set of AnsiChar = ['0'..'9', 'A'..'F', 'a'..'f'];
+var i, iLen: integer;
+begin
+  result := true;
+  iLen := length(sData);
+  for i := 1 to iLen do begin
+    result := (sData[i] in C_HEXDIGI_SET);
+    if not result then break;
   end;
 end;
 

@@ -10,7 +10,7 @@
 unit ConnBase;
 
 interface
-uses Classes, TextMessage, IniFiles, Serial3, SyncObjs;
+uses Classes, TextMessage, IniFiles, Serial3, SyncObjs, SysUtils;
 const
   C_BUFFER_SIZE_DEFAULT = 1024;
 
@@ -37,9 +37,9 @@ type
     function Config(const sconfs: TStrings): boolean; overload;
     function Connect(): boolean;
     function Disconnect: boolean;
-    function SendBuf(const buf: array of byte): boolean;
+    function SendBuf(const pbuf: PByteArray; const wlen: word): boolean;
     function SendStr(const str: string): boolean;
-    function RecvBuf(var buf: array of byte; const bwait: boolean): integer;
+    function RecvBuf(const pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
     function RecvStr(var str: string; const bwait: boolean): integer;
     function ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
   end;
@@ -50,18 +50,13 @@ type
   class function GetConnectTypeName(const etype: EConnectType): string;
   class function GetConnectState(const estate: EConnectState): string;
   protected
-    e_type:     EConnectType;   //connection type
-    t_connobj:  TObject;        //actural instance for communication, e.g. TSerial
-    e_state:    EConnectState;  //connection state
-    c_timeout:  cardinal;       //timeout in milli seconds
+    e_type:     EConnectType;       //connection type
+    t_connobj:  TObject;            //actural instance for communication, e.g. TSerial
+    e_state:    EConnectState;      //connection state
+    c_timeout:  cardinal;           //timeout in milli seconds
     t_msgrimpl: TTextMessengerImpl; //for transfering messages
-    ch_nullshow:AnsiChar;           //indicate a char to show null, if it is received
-    i_cntnull:  integer;        //count of received nulls
-    ba_rbuf:    array[0..C_BUFFER_SIZE_DEFAULT-1] of byte; //buffer for data received from device
-    //ba_wbuf:    array[0..C_BUFFER_SIZE_DEFAULT-1] of byte; //buffer for data sending to device
-    w_rlen:     word;     //actual length of the received data
-    t_rxwait:   TEvent;   //wait event for reading
-    t_txwait:   TEvent;   //wait event for writing complete
+    t_rxwait:   TEvent;             //wait event for reading
+    t_txwait:   TEvent;             //wait event for writing complete
   protected
     function GetTypeName(): string; virtual;
     function GetStateStr(): string; virtual;
@@ -72,7 +67,7 @@ type
     function IsConnected(): boolean; virtual;
     function IsReadComplete(): boolean; virtual; abstract;
     function IsWriteComplete(): boolean; virtual; abstract;
-    function SendData(const buf: array of byte): boolean; virtual; abstract;
+    function SendData(const pbuf: PByteArray; const wlen: word): boolean; virtual; abstract;
     function RecvData(): integer; virtual; abstract;
     procedure TryConnect(); virtual; abstract;
     procedure ClearBuffer(); virtual;
@@ -89,16 +84,15 @@ type
     property ConnectTypeName: string read GetTypeName;
     property ConnectState: EConnectState read e_state;
     property Timeout: cardinal read c_timeout write c_timeout;
-    property ShowNullChar: AnsiChar read ch_nullshow write ch_nullshow;
 
     //implementation of ICommInterf
     function Config(const sconf: string): boolean; overload; virtual;
     function Config(const sconfs: TStrings): boolean; overload; virtual; abstract;
     function Connect(): boolean; virtual;
     function Disconnect: boolean; virtual; abstract;
-    function SendBuf(const buf: array of byte): boolean; virtual;
+    function SendBuf(const pbuf: PByteArray; const wlen: word): boolean; virtual;
     function SendStr(const str: string): boolean; virtual;
-    function RecvBuf(var buf: array of byte; const bwait: boolean = true): integer; virtual;
+    function RecvBuf(const pbuf: PByteArray; var wlen: word; const bwait: boolean = true): boolean; virtual;
     function RecvStr(var str: string; const bwait: boolean = true): integer; virtual;
     function ExpectStr(var str: string; const swait: string; const bcase: boolean = false): boolean; virtual;
 
@@ -138,7 +132,7 @@ const
   CINT_RECV_INTERVAL = 50;    //milliseconds
 
 implementation
-uses Forms, SysUtils, StrUtils, Windows, Registry;
+uses Forms, StrUtils, Windows, Registry;
 
 // =============================================================================
 // Description  : a class function to get connection type using its name
@@ -226,7 +220,8 @@ end;
 function TConnBase.BufferToStr(): string;
 var i: integer;
 begin
-  result := ''; i_cntnull := 0;
+  result := '';
+  {i_cntnull := 0;
   if (w_rlen > 0) then begin
     for i := 0 to w_rlen - 1 do
       if (ba_rbuf[i] = 0) then begin
@@ -234,7 +229,7 @@ begin
         ba_rbuf[i] := byte(ch_nullshow);
       end;
     result := string(PAnsiChar(@ba_rbuf[0]));
-  end;
+  end;}
 end;
 
 // =============================================================================
@@ -247,19 +242,19 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.WaitForReading(const tend: cardinal): boolean;
-var s_lastmsg: string; c_tcur, c_tstart, c_count: cardinal; b_wait, b_read: boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_read: boolean;
 begin
-  c_tstart := GetTickCount(); c_tcur := c_tstart; c_count := c_tstart;
+  c_tcur := GetTickCount(); c_count := c_tcur;
   b_read := IsReadComplete(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
   b_wait := ((not b_read) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for reading: %ds';
-    t_msgrimpl.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+    t_msgrimpl.AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing in gui
-        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
         c_count := c_tcur;
       end;
       b_read := IsReadComplete();
@@ -279,19 +274,19 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.WaitForWriting(const tend: cardinal): boolean;
-var s_lastmsg: string; c_tcur, c_tstart, c_count: cardinal; b_wait, b_write: boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_write: boolean;
 begin
-  c_tstart := GetTickCount(); c_tcur := c_tstart; c_count := c_tstart;
+  c_tcur := GetTickCount(); c_count := c_tcur;
   b_write := IsWriteComplete(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
   b_wait := ((not b_write) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for completing write: %ds';
-    t_msgrimpl.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+    t_msgrimpl.AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
         c_count := c_tcur;
       end;
       b_write := IsWriteComplete();
@@ -312,19 +307,19 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.WaitForConnecting(const tend: cardinal): boolean;
-var s_lastmsg: string; c_tcur, c_tstart, c_count: cardinal; b_wait: boolean;
+var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait: boolean;
 begin
-  c_tstart := GetTickCount(); c_tcur := c_tstart; c_count := c_tstart;
+  c_tcur := GetTickCount(); c_count := c_tcur;
   b_wait := ((not IsConnected()) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for connecting: %ds';
-    t_msgrimpl.AddMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+    t_msgrimpl.AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
     repeat
       Application.ProcessMessages();
       TryConnect();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((c_tcur - c_tstart) / 1000)]));
+        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
         c_count := c_tcur;
       end;
       b_wait := ((not IsConnected()) and (c_tcur < tend));
@@ -356,8 +351,8 @@ end;
 // =============================================================================
 procedure TConnBase.ClearBuffer();
 begin
-  ZeroMemory(@ba_rbuf, w_rlen);
-  w_rlen := 0;
+  {ZeroMemory(@ba_rbuf, w_rlen);
+  w_rlen := 0;}
 end;
 
 // =============================================================================
@@ -374,8 +369,6 @@ begin
   t_connobj := nil;
   e_state := CS_UNKNOWN;
   c_timeout := CINT_TIMEOUT_DEFAULT;
-  ch_nullshow := #13; //null is show as #13
-  w_rlen := 0;
   t_rxwait := TEvent.Create(nil, false, false, 'TMtxConn.Rx');
   t_txwait := TEvent.Create(nil, false, false, 'TMtxConn.Tx');
   t_msgrimpl := TTextMessengerImpl.Create(ClassName());
@@ -453,18 +446,19 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.SendBuf(const buf: array of byte): boolean;
+function TConnBase.SendBuf(const pbuf: PByteArray; const wlen: word): boolean;
 var c_tend: cardinal;
 begin
   result := false;
   if Connected then begin
+    ClearBuffer();
     c_tend := GetTickCount() + c_timeout;
-    result := SendData(buf);
+    result := SendData(pbuf, wlen);
     if result then result := WaitForWriting(c_tend);
     if result then
-      t_msgrimpl.AddMessage(format('Successful to send data (%d bytes): %s', [length(buf), PAnsiChar(@buf)]))
+      t_msgrimpl.AddMessage(format('Successful to send data (%d bytes): %s', [wlen, PAnsiChar(pbuf)]))
     else
-      t_msgrimpl.AddMessage(format('Failed to send data (%d bytes): %s', [length(buf), PAnsiChar(@buf)]), ML_ERROR)
+      t_msgrimpl.AddMessage(format('Failed to send data (%d bytes): %s', [wlen, PAnsiChar(pbuf)]), ML_ERROR)
   end else
     t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
@@ -479,12 +473,14 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.SendStr(const str: string): boolean;
-var i, i_len: integer; ba_str: array of byte;
+var i_len: integer; ba_str: array of byte; s_ansi: AnsiString;
 begin
-  i_len := Length(str) ;//* SizeOf(Char);
-  SetLength(ba_str, i_len);
-  for i := 0 to i_len - 1 do ba_str[i] := byte(str[i + 1]); //convert to ansi string saved in an array of byte
-  result := SendBuf(ba_str);
+  s_ansi := AnsiString(str);
+  i_len := Length(s_ansi) ;//* SizeOf(Char);
+  //SetLength(ba_str, i_len);
+  //Move(s_ansi[1], ba_str[0], i_len);
+  //for i := 0 to i_len - 1 do ba_str[i] := byte(str[i + 1]); //convert to ansi string saved in an array of byte
+  result := SendBuf(@s_ansi[1], i_len);
 end;
 
 // =============================================================================
@@ -498,11 +494,11 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvBuf(var buf: array of byte; const bwait: boolean): integer;
+function TConnBase.RecvBuf(const pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
 var c_tend: cardinal; i_len, i_offset: integer;
 begin
-  result := 0;
-  if Connected then begin
+  result := false;
+{  if Connected then begin
     c_tend := GetTickCount() + c_timeout;
     if bwait then WaitForReading(c_tend);
     w_rlen := RecvData();
@@ -522,7 +518,7 @@ begin
     else
       t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
   end else
-    t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
+    t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);}
 end;
 
 // =============================================================================
@@ -543,13 +539,10 @@ begin
   if Connected then begin
     if bwait then  WaitForReading(c_tend);
     result := RecvData();
-    if (w_rlen > 0) then begin
+    if (result > 0) then begin
       str := BufferToStr();
-      ClearBuffer();
-    end;
-    if (result > 0) then
-      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
-    else
+      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]));
+    end else
       t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
   end else
     t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
@@ -577,8 +570,8 @@ begin
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
-      w_rlen := RecvData();
-      if (w_rlen > 0) then begin
+      result := RecvData();
+      if (result > 0) then begin
         s_recv := BufferToStr();
         str := str + s_recv;
         ClearBuffer();
@@ -612,8 +605,8 @@ begin
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
-      w_rlen := RecvData();
-      if (w_rlen > 0) then begin
+      result := RecvData();
+      if (result > 0) then begin
         s_recv := BufferToStr();
         str := str + s_recv;
         ClearBuffer();
@@ -650,8 +643,7 @@ begin
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
-      w_rlen := RecvData();
-      if (w_rlen > 0) then begin
+      if (RecvData() > 0) then begin
         s_recv := BufferToStr();
         str := str + s_recv;
         ClearBuffer();

@@ -10,7 +10,8 @@ unit MtxUSB;
 //Warning: this file is not be klu yet
 
 interface
-uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX, ConnBase;
+uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX,
+    ConnBase, DataBuffer;
 const
   C_USB_BUFFER_SIZE = 1024;
   
@@ -46,6 +47,7 @@ type
     t_usbio:    TUSBIOInterface3; //intance for general setting of usb (EP0)
     t_usbrx:    TUSBIOInterface3; //endpoint for reading from usb-device (Pipe In)
     t_usbtx:    TUSBIOInterface3; //endpoint for writing to usb-device  (Pipe Out)
+    t_buffer:   TByteBuffer;
     i_status:   integer;
     w_vid:      word;             //vendor id of usb device
     w_pid:      word;             //product id of usb device
@@ -69,7 +71,7 @@ type
     function ConnectTo(const psn: integer): boolean;
     function IsReadComplete(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    function SendData(const buf: array of byte): boolean; override;
+    function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
     function RecvData(): integer; override;
     procedure TryConnect(); override;
     procedure SafeArrayToArray(const psarr: PSafeArray; const parr: PByteArray; const size: Integer);
@@ -307,7 +309,7 @@ begin
 
   //5. start reading and writing worker-thread
   if result then begin
-    ZeroMemory(@ba_rbuf, length(ba_rbuf));
+    t_buffer.Clear();
     t_usbrx.StartReading(C_USB_RX_BUFFER_SIZE, C_USB_CNT_RX_BUFFERS, C_USB_MAX_RX_ERRORS, i_status);
     result := (i_status = USBIO_ERR_SUCCESS);
     //result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
@@ -411,14 +413,14 @@ begin
   result := (t_txwait.WaitFor(0) = wrSignaled);
 end;
 
-function TMtxUsb.SendData(const buf: array of byte): boolean;
+function TMtxUsb.SendData(const pbuf: PByteArray; const wlen: word): boolean;
 var pa_send: PSafeArray; i: integer;
 begin
   result := false;
   ClearBuffer();
-  if (length(buf) > 0) then begin
-    pa_send := SafeArrayCreateVector(VT_UI1, 0, length(buf));
-    for i := 0 to length(buf) - 1 do SafeArrayPutElement(pa_send, i, buf[i]);
+  if (wlen > 0) then begin
+    pa_send := SafeArrayCreateVector(VT_UI1, 0, wlen);
+    for i := 0 to wlen - 1 do SafeArrayPutElement(pa_send, i, pbuf[i]);
     t_usbtx.WriteData(pa_send, 0, i_status);
     result := (i_status = USBIO_ERR_SUCCESS);
     if (not result) then
@@ -428,24 +430,30 @@ begin
 end;
 
 function TMtxUsb.RecvData(): integer;
-var pa_recv: PSafeArray; i_size: integer;
+var pa_recv: PSafeArray; i, i_size, i_len: integer;
+    ba_rbuf: array[0..C_USB_RX_BUFFER_SIZE - 1] of byte;
 begin
-  i_size := length(ba_rbuf);
   pa_recv := SafeArrayCreateVector ( VT_UI1, 0, C_USB_RX_BUFFER_SIZE );
   i_status := USBIO_ERR_SUCCESS;
-  repeat  
+  i_len := 0; result := 0;
+  repeat
+    i_size := t_buffer.CountFree;
     t_usbrx.ReadData(pa_recv, i_size, i_status);
     if (i_status = USBIO_ERR_SUCCESS) then begin
-      SafeArrayToArray(pa_recv, PByteArray(@(ba_rbuf[w_rlen])), i_size);
-      w_rlen := w_rlen + i_size;
+      SafeArrayToArray(pa_recv, PByteArray(@(ba_rbuf[i_len])), i_size); //bsu: todo, index of ba_rbuf overflow??
+      i_len := i_len + i_size;
     end else if (i_status <> integer(USBIO_ERR_NO_DATA)) then begin
       t_usbrx.ResetPipe(i_status);
       break;
     end;
   until (i_status = integer(USBIO_ERR_NO_DATA));
   SafeArrayDestroy (pa_recv);
+  if t_buffer.CountFree > i_len then begin
+    for i := 0 to i_len - 1 do
+      if t_buffer.WriteElement(ba_rbuf[i_len + i]) then inc(result)
+      else break;
+  end else t_msgrimpl.AddMessage(format('The buffer is full (buffer size = %d).', [t_buffer.BufferSize]), ML_WARNING);;
   //It is possible to receive no data, if this function is already automatically caleld because of event ReadComplete
-  result := w_rlen; 
 end;
 
 procedure TMtxUsb.TryConnect();
@@ -537,6 +545,10 @@ begin
   t_usbrx.Connect();
   t_usbtx.Connect();
   UpdateDeviceIds(t_deviceids);
+
+  //create buffer
+  t_buffer := TByteBuffer.Create();
+  t_buffer.Resize(C_USB_BUFFER_SIZE);
 end;
 
 destructor TMtxUsb.Destroy;
@@ -552,6 +564,7 @@ begin
   FreeAndNil(t_deviceids);
   FreeAndNil(t_usbio);
   t_connobj := nil;
+  t_buffer.Free();
 	inherited Destroy;
 end;
 

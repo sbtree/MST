@@ -421,70 +421,74 @@ begin
 end;
 
 procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
-var chbuffer: TCharBuffer;  t: cardinal; n:integer; tPairs: TStringPairs; ch: char;
+var t: cardinal; n:integer; tPairs: TStringPairs;
     sNames, sValues, tComPorts: TStrings; v: variant; iInt64: int64; r: double; bok: boolean;
-    s_temp: string;
+    s_temp: string; s_ansi: AnsiString;
+    mybuffer: TByteBuffer; //TCharBuffer;
+    elem: byte;//char;
 begin
-  chbuffer := TCharBuffer.Create();
-  bok := chbuffer.IsEmpty();
-  bok := chbuffer.IsFull();
-  n := chbuffer.CountUsed;
-  n := chbuffer.CountFree;
-  if chbuffer.Resize(5) then begin
-    bok := chbuffer.IsEmpty();
-    bok := chbuffer.IsFull();
-    n := chbuffer.CountUsed;
-    n := chbuffer.CountFree;
+  mybuffer := TByteBuffer.Create();//TCharBuffer.Create();
+  bok := mybuffer.IsEmpty();
+  bok := mybuffer.IsFull();
+  n := mybuffer.CountUsed;
+  n := mybuffer.CountFree;
+  if mybuffer.Resize(5) then begin
+    bok := mybuffer.IsEmpty();
+    bok := mybuffer.IsFull();
+    n := mybuffer.CountUsed;
+    n := mybuffer.CountFree;
 
-    bok := chbuffer.WriteElement('A');
-    bok := chbuffer.WriteElement('B');
-    bok := chbuffer.WriteElement('C');
-    bok := chbuffer.IsEmpty();
-    bok := chbuffer.IsFull();
-    n := chbuffer.CountUsed;
-    n := chbuffer.CountFree;
+    bok := mybuffer.WriteElement($30);//('A');
+    bok := mybuffer.WriteElement($31);//('B');
+    bok := mybuffer.WriteElement($32);//('C');
+    bok := mybuffer.IsEmpty();
+    bok := mybuffer.IsFull();
+    n := mybuffer.CountUsed;
+    n := mybuffer.CountFree;
 
-    bok := chbuffer.ReadElement(ch);
-    bok := chbuffer.ReadElement(ch);
-    bok := chbuffer.IsEmpty();
-    bok := chbuffer.IsFull();
-    n := chbuffer.CountUsed;
-    n := chbuffer.CountFree;
+    bok := mybuffer.ReadElement(elem);
+    bok := mybuffer.ReadElement(elem);
+    bok := mybuffer.IsEmpty();
+    bok := mybuffer.IsFull();
+    n := mybuffer.CountUsed;
+    n := mybuffer.CountFree;
 
-    bok := chbuffer.ReadElement(ch);
-    bok := chbuffer.IsEmpty();
-    bok := chbuffer.IsFull();
-    n := chbuffer.CountUsed;
-    n := chbuffer.CountFree;
+    bok := mybuffer.ReadElement(elem);
+    bok := mybuffer.IsEmpty();
+    bok := mybuffer.IsFull();
+    n := mybuffer.CountUsed;
+    n := mybuffer.CountFree;
 
-    bok := chbuffer.ReadElement(ch);
-    bok := chbuffer.IsEmpty();
-    bok := chbuffer.IsFull();
-    n := chbuffer.CountUsed;
-    n := chbuffer.CountFree;
+    bok := mybuffer.ReadElement(elem);
+    bok := mybuffer.IsEmpty();
+    bok := mybuffer.IsFull();
+    n := mybuffer.CountUsed;
+    n := mybuffer.CountFree;
 
-    bok := chbuffer.WriteElement('D');
-    bok := chbuffer.WriteElement('E');
-    bok := chbuffer.WriteElement('F');
-    bok := chbuffer.IsEmpty();
-    bok := chbuffer.IsFull();
-    n := chbuffer.CountUsed;
-    n := chbuffer.CountFree;
+    bok := mybuffer.WriteElement($33);//('D');
+    bok := mybuffer.WriteElement($34);//('E');
+    bok := mybuffer.WriteElement($35);//('F');
+    bok := mybuffer.IsEmpty();
+    bok := mybuffer.IsFull();
+    n := mybuffer.CountUsed;
+    n := mybuffer.CountFree;
 
-    bok := chbuffer.WriteElement('G');
-    bok := chbuffer.WriteElement('H');
-    bok := chbuffer.IsEmpty();
-    bok := chbuffer.IsFull();
-    n := chbuffer.CountUsed;
-    n := chbuffer.CountFree;
+    bok := mybuffer.WriteElement($36);//('G');
+    bok := mybuffer.WriteElement($37);//('H');
+    bok := mybuffer.IsEmpty();
+    bok := mybuffer.IsFull();
+    n := mybuffer.CountUsed;
+    n := mybuffer.CountFree;
 
-    bok := chbuffer.WriteElement('I');
-    bok := chbuffer.IsEmpty();
-    bok := chbuffer.IsFull();
-    n := chbuffer.CountUsed;
-    n := chbuffer.CountFree;
+    bok := mybuffer.WriteElement($38);//('I');
+    bok := mybuffer.IsEmpty();
+    bok := mybuffer.IsFull();
+    n := mybuffer.CountUsed;
+    n := mybuffer.CountFree;
 
-    s_temp := chbuffer.ReadStr();
+    s_ansi := mybuffer.ReadHex();
+    n := mybuffer.WriteHex('zt414243444546');
+    s_ansi := mybuffer.ReadAnsiStr();
   end;
   //QExp_TestCase();
   ShowMessage(TGenUtils.ShowStrHex('ABCDE12345'));
@@ -548,33 +552,33 @@ begin
   //          [imgTest.ClientRect.Left, imgTest.ClientRect.Top, imgTest.ClientRect.Right, imgTest.ClientRect.Bottom]));
   //imgTest.Picture.Bitmap.Canvas.StretchDraw (imgTest.ClientRect, imgTest.Picture.Bitmap);
 
-  chbuffer := TCharBuffer.Create();
-  chbuffer.Resize(10);
+  mybuffer := TCharBuffer.Create();
+  mybuffer.Resize(10);
   t:=GetTickCount;
-  n:=chbuffer.WriteHex('19084091483758913478faf214f');
-  //chbuffer.Resize(14);
+  n:=mybuffer.WriteHex('19084091483758913478faf214f');
+  //mybuffer.Resize(14);
   t:=GetTickCount - t;
-  ShowMessage(format('n=%d, t=%d, CountUsed=%d, CountFree=%d', [n,t,chbuffer.CountUsed(), chbuffer.CountFree()]));
-  ShowMessage(format('1.ReadHex=%s',[chbuffer.ReadHex()]));
-  ShowMessage(format('2.ReadHex=%s',[chbuffer.ReadHex()]));
-  ShowMessage(format('n=%d, t=%d, CountUsed=%d, CountFree=%d', [n,t,chbuffer.CountUsed(), chbuffer.CountFree()]));
-  ShowMessage(format('HistoryHex=%s', [chbuffer.HistoryHex()]));
+  ShowMessage(format('n=%d, t=%d, CountUsed=%d, CountFree=%d', [n,t,mybuffer.CountUsed(), mybuffer.CountFree()]));
+  ShowMessage(format('1.ReadHex=%s',[mybuffer.ReadHex()]));
+  ShowMessage(format('2.ReadHex=%s',[mybuffer.ReadHex()]));
+  ShowMessage(format('n=%d, t=%d, CountUsed=%d, CountFree=%d', [n,t,mybuffer.CountUsed(), mybuffer.CountFree()]));
+  ShowMessage(format('HistoryHex=%s', [mybuffer.HistoryHex()]));
   t:=GetTickCount;
-  n:=chbuffer.WriteStr('987654321');
+  n:=mybuffer.WriteStr('987654321');
   t:=GetTickCount - t;
-  ShowMessage(format('n=%d, t=%d, CountUsed=%d, CountFree=%d', [n,t,chbuffer.CountUsed(), chbuffer.CountFree()]));
-  ShowMessage(format('1.ReadStr=%s',[chbuffer.ReadStr()]));
-  ShowMessage(format('2.ReadStr=%s',[chbuffer.ReadStr()]));
-  ShowMessage(format('n=%d, t=%d, CountUsed=%d, CountFree=%d', [n,t,chbuffer.CountUsed(), chbuffer.CountFree()]));
-  ShowMessage(format('HistoryStr=%s', [chbuffer.HistoryStr()]));
+  ShowMessage(format('n=%d, t=%d, CountUsed=%d, CountFree=%d', [n,t,mybuffer.CountUsed(), mybuffer.CountFree()]));
+  ShowMessage(format('1.ReadStr=%s',[mybuffer.ReadStr()]));
+  ShowMessage(format('2.ReadStr=%s',[mybuffer.ReadStr()]));
+  ShowMessage(format('n=%d, t=%d, CountUsed=%d, CountFree=%d', [n,t,mybuffer.CountUsed(), mybuffer.CountFree()]));
+  ShowMessage(format('HistoryStr=%s', [mybuffer.HistoryStr()]));
 
 
-  for n := $30 to $39 do chbuffer.WriteChar(char(n));
-  ShowMessage(format('ReadStr=%s',[chbuffer.ReadStr()]));
-  ShowMessage(format('HistoryStr=%s',[chbuffer.HistoryStr()]));
-  ShowMessage(format('HistoryHex=%s',[chbuffer.HistoryHex()]));
+  for n := $30 to $39 do mybuffer.WriteChar(char(n));
+  ShowMessage(format('ReadStr=%s',[mybuffer.ReadStr()]));
+  ShowMessage(format('HistoryStr=%s',[mybuffer.HistoryStr()]));
+  ShowMessage(format('HistoryHex=%s',[mybuffer.HistoryHex()]));
 
-  FreeAndNil(chbuffer); }
+  FreeAndNil(mybuffer); }
   FreeAndNil(tPairs);
   FreeAndNil(sValues);
   FreeAndNil(sNames);
