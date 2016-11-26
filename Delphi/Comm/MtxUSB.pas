@@ -69,11 +69,11 @@ type
     function SetDevicePid(const sval: string): boolean;
     function SetProductSN(const sval: string): boolean;
     function ConnectTo(const psn: integer): boolean;
-    function IsReadComplete(): boolean; override;
+    function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
     function RecvData(): integer; override;
-    procedure TryConnect(); override;
+    function TryConnect(): boolean; override;
     procedure SafeArrayToArray(const psarr: PSafeArray; const parr: PByteArray; const size: Integer);
     procedure ClearDeviceInfo();
     procedure UpdateDeviceIds(var idlist: TStrings);
@@ -401,7 +401,7 @@ begin
   result := IsConnected();
 end;
 
-function TMtxUsb.IsReadComplete(): boolean;
+function TMtxUsb.IsReadReady(): boolean;
 begin
   Application.ProcessMessages();
   result := (t_rxwait.WaitFor(0) = wrSignaled);
@@ -456,10 +456,11 @@ begin
   //It is possible to receive no data, if this function is already automatically caleld because of event ReadComplete
 end;
 
-procedure TMtxUsb.TryConnect();
+function TMtxUsb.TryConnect(): boolean;
 begin
   if (not Init(i_psn)) then
     Uninit();
+  result := IsConnected();
 end;
 
 procedure TMtxUsb.ClearDeviceInfo();
@@ -529,7 +530,7 @@ begin
   i_actpsn := -1;   //initialize acture serial number with -1, which means that no serial number is not yet found.
   //create and set instances of usbiointerface for EP0, pipe in and out
   t_usbio := TUSBIOInterface3.Create(self);
-  t_connobj := t_usbio;
+  //t_connobj := t_usbio;
   t_usbio.OnPnPAddNotification := OnAddDevice;
   t_usbio.OnPnPRemoveNotification := OnRemoveDevice;
   t_usbio.EnablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
@@ -563,7 +564,7 @@ begin
   t_usbio.DisablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
   FreeAndNil(t_deviceids);
   FreeAndNil(t_usbio);
-  t_connobj := nil;
+  //t_connobj := nil;
   t_buffer.Free();
 	inherited Destroy;
 end;

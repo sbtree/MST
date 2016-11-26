@@ -295,7 +295,7 @@ begin
    FEventThread.Terminate ; { Destroys thread automatically }
    // 2013-02-27 /gsv/: Thread wieder anstarten, damit es terminiert wird.
    //if ( FEventThread.Suspended ) then FEventThread.Resume();
-   FEventThread.WaitFor();
+   //FEventThread.WaitFor();
    FreeAndNil(FEventThread);
    inherited Destroy;
 end;
@@ -581,7 +581,7 @@ procedure TSerial.EnableEvents;
 begin
    if not SetCommMask (FCID, EV_RXCHAR or EV_TXEMPTY or EV_CTS or EV_DSR or EV_BREAK or EV_RLSD or EV_RING)
    then ProcessError;
-   FEventThread.Start(); //if (FEventThread.Suspended) then FEventThread.Resume ;            { Resume event thread }
+   if (not FEventThread.Started) then FEventThread.Start(); //if (FEventThread.Suspended) then FEventThread.Resume ;            { Resume event thread }
 end;
 
 

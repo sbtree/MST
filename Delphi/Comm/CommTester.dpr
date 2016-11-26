@@ -13,7 +13,8 @@ uses
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
   Usbspec in '..\Externals\USBIO\Usbspec.pas',
   TekUSB in 'TekUSB.pas',
-  DllLoader in '..\General\DllLoader.pas';
+  DllLoader in '..\General\DllLoader.pas',
+  Serial3 in '..\Externals\Serial3.pas';
 
 {$R *.res}
 

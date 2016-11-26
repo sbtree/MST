@@ -354,14 +354,14 @@ type
     function SetCanVersion(const sver: string): boolean;
     function GetHardwareTypeText(): string;
     function GetBaudrateText(): string;
-    function BufferToStr(): string; override;
-    function IsReadComplete(): boolean; override;
+    function ReadBufferToStr(): string; override;
+    function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
     function RecvData(): integer; override;
     function GetAdapterInfo(): string;
     procedure ClearFunctions();
-    procedure TryConnect(); override;
+    function TryConnect(): boolean; override;
     procedure SetMsgVersion(ecanver: EPCanVersion);
     procedure SetDeviceNr(devnr: longword);
 
@@ -852,7 +852,7 @@ begin
   result := CSTR_PCAN_BAUDRATES[e_baud];
 end;
 
-function TPCanLight.BufferToStr(): string;
+function TPCanLight.ReadBufferToStr(): string;
 var t_pcanmsg: TPCANMsg;
 begin
   result := '';
@@ -860,7 +860,7 @@ begin
     PCanMsgToStr(t_pcanmsg, result);
 end;
 
-function TPCanLight.IsReadComplete(): boolean;
+function TPCanLight.IsReadReady(): boolean;
 begin
   if (h_rcveve = 0) then result := false
   else result := (t_rxwait.WaitFor(0) = wrSignaled);
@@ -910,7 +910,7 @@ begin
   for i := Low(EPCanFunction) to High(EPCanFunction) do a_pcanfnt[i] := nil;
 end;
 
-procedure TPCanLight.TryConnect();
+function TPCanLight.TryConnect(): boolean;
 var b_ok: boolean; lw_ret: longword;
 begin
   b_ok := CanInit();
@@ -933,6 +933,7 @@ begin
     end;
     if not assigned(t_thread) then t_thread := TPCanReadThread.Create(self);
   end;
+  result := IsConnected();
 end;
 
 procedure TPCanLight.SetMsgVersion(ecanver: EPCanVersion);

@@ -51,7 +51,6 @@ type
   class function GetConnectState(const estate: EConnectState): string;
   protected
     e_type:     EConnectType;       //connection type
-    t_connobj:  TObject;            //actural instance for communication, e.g. TSerial
     e_state:    EConnectState;      //connection state
     c_timeout:  cardinal;           //timeout in milli seconds
     t_msgrimpl: TTextMessengerImpl; //for transfering messages
@@ -60,16 +59,16 @@ type
   protected
     function GetTypeName(): string; virtual;
     function GetStateStr(): string; virtual;
-    function BufferToStr(): string; virtual;
+    function ReadBufferToStr(): string; virtual;
     function WaitForReading(const tend: cardinal): boolean; virtual;
     function WaitForWriting(const tend: cardinal): boolean; virtual;
     function WaitForConnecting(const tend: cardinal): boolean; virtual;
     function IsConnected(): boolean; virtual;
-    function IsReadComplete(): boolean; virtual; abstract;
+    function IsReadReady(): boolean; virtual; abstract;
     function IsWriteComplete(): boolean; virtual; abstract;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; virtual; abstract;
     function RecvData(): integer; virtual; abstract;
-    procedure TryConnect(); virtual; abstract;
+    function TryConnect(): boolean; virtual; abstract;
     procedure ClearBuffer(); virtual;
   public
     //constructor and destructor
@@ -217,7 +216,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.BufferToStr(): string;
+function TConnBase.ReadBufferToStr(): string;
 var i: integer;
 begin
   result := '';
@@ -245,7 +244,7 @@ function TConnBase.WaitForReading(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_read: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
-  b_read := IsReadComplete(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
+  b_read := IsReadReady(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
   b_wait := ((not b_read) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for reading: %ds';
@@ -257,7 +256,7 @@ begin
         t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
         c_count := c_tcur;
       end;
-      b_read := IsReadComplete();
+      b_read := IsReadReady();
       b_wait := ((not b_read) and (c_tcur < tend));
     until (not b_wait);
   end;
@@ -310,7 +309,7 @@ function TConnBase.WaitForConnecting(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
-  b_wait := ((not IsConnected()) and (c_tcur < tend));
+  b_wait := ((not TryConnect()) and (c_tcur < tend));
   if b_wait then begin
     s_lastmsg := 'Waiting for connecting: %ds';
     t_msgrimpl.AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
@@ -366,7 +365,7 @@ constructor TConnBase.Create(owner: TComponent);
 begin
   inherited Create(owner);
   e_type := CT_UNKNOWN;
-  t_connobj := nil;
+  //t_connobj := nil;
   e_state := CS_UNKNOWN;
   c_timeout := CINT_TIMEOUT_DEFAULT;
   t_rxwait := TEvent.Create(nil, false, false, 'TMtxConn.Rx');
@@ -473,7 +472,7 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.SendStr(const str: string): boolean;
-var i_len: integer; ba_str: array of byte; s_ansi: AnsiString;
+var i_len: integer;s_ansi: AnsiString;
 begin
   s_ansi := AnsiString(str);
   i_len := Length(s_ansi) ;//* SizeOf(Char);
@@ -540,7 +539,7 @@ begin
     if bwait then  WaitForReading(c_tend);
     result := RecvData();
     if (result > 0) then begin
-      str := BufferToStr();
+      str := ReadBufferToStr();
       t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]));
     end else
       t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
@@ -572,7 +571,7 @@ begin
     repeat
       result := RecvData();
       if (result > 0) then begin
-        s_recv := BufferToStr();
+        s_recv := ReadBufferToStr();
         str := str + s_recv;
         ClearBuffer();
       end;
@@ -607,7 +606,7 @@ begin
     repeat
       result := RecvData();
       if (result > 0) then begin
-        s_recv := BufferToStr();
+        s_recv := ReadBufferToStr();
         str := str + s_recv;
         ClearBuffer();
       end;
@@ -644,7 +643,7 @@ begin
   if Connected then begin
     repeat
       if (RecvData() > 0) then begin
-        s_recv := BufferToStr();
+        s_recv := ReadBufferToStr();
         str := str + s_recv;
         ClearBuffer();
       end;

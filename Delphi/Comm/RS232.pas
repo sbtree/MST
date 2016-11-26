@@ -45,13 +45,12 @@ type
     function SetDatabits(const sval: string): boolean;
     function SetStopbits(const sval: string): boolean;
     function SetFlowControl(const sval: string): boolean;
-    function BufferToStr(): string; override;
-    function IsConnected(): boolean; override;
-    function IsReadComplete(): boolean; override;
+    function ReadBufferToStr(): string; override;
+    function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
     function RecvData(): integer; override;
-    procedure TryConnect(); override;
+    function TryConnect(): boolean; override;
     procedure ClearBuffer(); override;
   public
     constructor Create(owner: TComponent); override;
@@ -319,27 +318,12 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TMtxRS232.BufferToStr(): string;
+function TMtxRS232.ReadBufferToStr(): string;
 begin
   result := string(t_buffer.ReadAnsiStr());
 end;
 
-// =============================================================================
-// Class        : TConnRS232
-// Function     : IsConnected
-//                request if the object of TSerial is actived
-// Parameter    : --
-// Return       : value of s_ser.active (true or false)
-// Exceptions   : --
-// First author : 2015-09-11 /bsu/
-// History      :
-// =============================================================================
-function TMtxRS232.IsConnected(): boolean;
-begin
-  result := t_ser.Active;
-end;
-
-function TMtxRS232.IsReadComplete(): boolean;
+function TMtxRS232.IsReadReady(): boolean;
 begin
   result := (t_ser.RxWaiting > 0);
 end;
@@ -374,9 +358,11 @@ begin
   //if result then t_rxwait.SetEvent();
 end;
 
-procedure TMtxRS232.TryConnect();
+function TMtxRS232.TryConnect(): boolean;
 begin
   t_ser.Active := true;
+  if t_ser.Active then e_state := CS_CONNECTED;
+  result := IsConnected();
 end;
 
 procedure TMtxRS232.ClearBuffer();
@@ -406,7 +392,7 @@ begin
   inherited Create(owner);
   e_type := CT_RS232;
   t_ser := TSerial.Create(self);
-  t_connobj := t_ser;
+  //t_connobj := t_ser;
 
   //default settings
   t_ser.CheckParity := false;
@@ -431,7 +417,7 @@ destructor TMtxRS232.Destroy;
 begin
   t_buffer.Free();
   t_ser.Free();
-  t_connobj := nil;
+  //t_connobj := nil;
   inherited Destroy();
 end;
 
