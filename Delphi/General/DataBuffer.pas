@@ -30,7 +30,7 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    function Resize(const n: Integer): Boolean; virtual;
+    function Resize(const n: Word): Boolean; virtual;
     procedure Clear(); virtual;
     function IsEmpty: Boolean;
     function IsFull: Boolean;
@@ -107,9 +107,9 @@ begin
   inherited Destroy();
 end;
 
-function TRingBuffer<T>.Resize(const n: Integer): Boolean;
+function TRingBuffer<T>.Resize(const n: Word): Boolean;
 begin
-  if (n >= 0) then begin
+  if IsEmpty() and (p_write = 0) then begin //allow to resize only if the buffer is not used
     SetLength(t_buffer, n);
     result := true;
   end else result := false;

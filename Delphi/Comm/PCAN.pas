@@ -1081,7 +1081,7 @@ begin
   lw_sendcnt := 0;
   lw_recvcnt := 0;
   t_buffer := TPCanMsgBuffer.Create();
-  t_buffer.Resize(64);
+  t_buffer.Resize(C_PCAN_BUFFER_SIZE);
   t_dllldr := TDllLoader.Create();
   SetNPnP(HW_ISA, 0, 0);
   ClearFunctions();
