@@ -345,7 +345,7 @@ type
     function GetErrorMsg(const errnr: longword): string; virtual;
     function StrToPCanMsg(const msg: string; var canmsg: TPCANMsg): boolean; virtual;
     function PCanMsgToStr(const canmsg: TPCANMsg; var msg: string): boolean; virtual;
-    function IsPCanMsg(const buf): boolean; virtual;
+    function IsPCanMsg(const buf: PByteArray): boolean; virtual;
     function IsValidFunction(const canfnt: EPCanFunction; var errnr: longword): boolean;
     function SetNPnP(etype: EPCanNPnPType; ioport: longword; irq: word): boolean;
     function SetProperty(const eprop: EPCanProperty; const sval: string): boolean;
@@ -354,14 +354,16 @@ type
     function SetCanVersion(const sver: string): boolean;
     function GetHardwareTypeText(): string;
     function GetBaudrateText(): string;
-    function ReadBufferToStr(): string; override;
+    function ShowRecvData(): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
     function RecvData(): integer; override;
     function GetAdapterInfo(): string;
-    procedure ClearFunctions();
     function TryConnect(): boolean; override;
+    function TryDisconnect(): boolean; override;
+    procedure ClearBuffer(); override;
+    procedure ClearFunctions();
     procedure SetMsgVersion(ecanver: EPCanVersion);
     procedure SetDeviceNr(devnr: longword);
 
@@ -405,8 +407,7 @@ type
     property AdapterInfo: string read GetAdapterInfo;
 
     function Config(const sconfs: TStrings): boolean; overload; override;
-    function Disconnect(): boolean; override;
-    function SendBuf(const pbuf: PByteArray; const wlen: word): boolean; override;
+    //function SendBuf(const pbuf: PByteArray; const wlen: word): boolean; override;
     function SendStr(const str: string): boolean; override;
   end;
   PPCanLight = ^TPCanLight;
@@ -751,13 +752,12 @@ begin
   end;
 end;
 
-function TPCanLight.IsPCanMsg(const buf): boolean;
+function TPCanLight.IsPCanMsg(const buf: PByteArray): boolean;
 var p_pcanmsg: PPCANMsg;
 begin
-  //check total size of the message
-  result := true; //(length(buf) = sizeof(TPCANMsg));
+  result := assigned(buf);
   if result then begin
-    p_pcanmsg := PPCANMsg(@buf);
+    p_pcanmsg := PPCANMsg(buf);
     //check length of message data
     result := (p_pcanmsg.LEN <= C_CANMSG_LENGTH_MAX);
     //check message type
@@ -852,12 +852,16 @@ begin
   result := CSTR_PCAN_BAUDRATES[e_baud];
 end;
 
-function TPCanLight.ReadBufferToStr(): string;
-var t_pcanmsg: TPCANMsg;
+function TPCanLight.ShowRecvData(): string;
+var t_pcanmsg: TPCANMsg; s_pcanmsg: string;
 begin
   result := '';
-  if t_buffer.ReadElement(t_pcanmsg) then
-    PCanMsgToStr(t_pcanmsg, result);
+  if t_buffer.ReadElement(t_pcanmsg) then PCanMsgToStr(t_pcanmsg, result);
+  while (not t_buffer.IsEmpty()) do
+    if t_buffer.ReadElement(t_pcanmsg) then begin
+      PCanMsgToStr(t_pcanmsg, s_pcanmsg);
+      result := result + Char(13) + Char(10) + s_pcanmsg;
+    end;
 end;
 
 function TPCanLight.IsReadReady(): boolean;
@@ -904,12 +908,6 @@ begin
   result := string(AnsiString(PAnsiChar(@ac_verinfo[0]))) + format(' channel:%s id:%x', [GetEnumName(TypeInfo(EPCanHardwareType), Ord(e_hwt)), lw_devnr]);
 end;
 
-procedure TPCanLight.ClearFunctions();
-var i: EPCanFunction;
-begin
-  for i := Low(EPCanFunction) to High(EPCanFunction) do a_pcanfnt[i] := nil;
-end;
-
 function TPCanLight.TryConnect(): boolean;
 var b_ok: boolean; lw_ret: longword;
 begin
@@ -934,6 +932,43 @@ begin
     if not assigned(t_thread) then t_thread := TPCanReadThread.Create(self);
   end;
   result := IsConnected();
+end;
+
+function TPCanLight.TryDisconnect(): boolean;
+var lw_ret: longword;
+begin
+  lw_ret := CanClose();
+  result := (lw_ret = CAN_ERR_OK);
+  lw_devnr := 0;
+  if assigned(t_thread) then begin
+    t_thread.Terminate;
+    t_thread.WaitFor();
+    FreeAndNil(t_thread);
+  end;
+  if (h_rcveve <> 0) then begin
+      CloseHandle(h_rcveve);
+      CanSetRcvEvent(0);
+      h_rcveve := 0;
+  end;
+end;
+
+procedure TPCanLight.ClearBuffer();
+var c_tend: cardinal; i_len: integer;
+begin
+  c_tend := GetTickCount() + c_timeout;
+  repeat i_len := RecvData();
+  until ((i_len <= 0) or (GetTickCount() >= c_tend));
+  i_len := t_buffer.CountUsed ;
+  if (i_len > 0) then begin
+    t_msgrimpl.AddMessage(format('Rx-Buffer (%d pcan-Messages) is cleared', [i_len]), ML_WARNING);
+    t_buffer.Clear();
+  end;
+end;
+
+procedure TPCanLight.ClearFunctions();
+var i: EPCanFunction;
+begin
+  for i := Low(EPCanFunction) to High(EPCanFunction) do a_pcanfnt[i] := nil;
 end;
 
 procedure TPCanLight.SetMsgVersion(ecanver: EPCanVersion);
@@ -1110,26 +1145,7 @@ begin
   end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for configuration.', [GetStateStr()]), ML_WARNING);
 end;
 
-function TPCanLight.Disconnect: boolean;
-var lw_ret: longword;
-begin
-  lw_ret := CanClose();
-  result := (lw_ret = CAN_ERR_OK);
-  lw_devnr := 0;
-  if assigned(t_thread) then begin
-    t_thread.Terminate;
-    t_thread.WaitFor();
-    FreeAndNil(t_thread);
-  end;
-  if (h_rcveve <> 0) then begin
-      CloseHandle(h_rcveve);
-      CanSetRcvEvent(0);
-      h_rcveve := 0;
-  end;
-  if (e_state = CS_CONNECTED) then e_state := CS_CONFIGURED;
-end;
-
-function TPCanLight.SendBuf(const pbuf: PByteArray; const wlen: word): boolean;
+{function TPCanLight.SendBuf(const pbuf: PByteArray; const wlen: word): boolean;
 var c_tend: cardinal; s_msg: string; p_pcanmsg: PPCANMsg;
 begin
   result := false;
@@ -1143,7 +1159,7 @@ begin
     else t_msgrimpl.AddMessage(format('Failed to send data (%d bytes): %s', [wlen, s_msg]), ML_ERROR);
   end else
     t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
-end;
+end; }
 
 function TPCanLight.SendStr(const str: string): boolean;
 var c_tend: cardinal; t_pcanmsg: TPCANMsg;

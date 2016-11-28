@@ -39,7 +39,7 @@ type
     function Disconnect: boolean;
     function SendBuf(const pbuf: PByteArray; const wlen: word): boolean;
     function SendStr(const str: string): boolean;
-    function RecvBuf(const pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
+    function RecvBuf(var pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
     function RecvStr(var str: string; const bwait: boolean): integer;
     function ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
   end;
@@ -59,17 +59,19 @@ type
   protected
     function GetTypeName(): string; virtual;
     function GetStateStr(): string; virtual;
-    function ReadBufferToStr(): string; virtual;
+    function ShowRecvData(): string; virtual; abstract;
     function WaitForReading(const tend: cardinal): boolean; virtual;
     function WaitForWriting(const tend: cardinal): boolean; virtual;
     function WaitForConnecting(const tend: cardinal): boolean; virtual;
     function IsConnected(): boolean; virtual;
     function IsReadReady(): boolean; virtual; abstract;
     function IsWriteComplete(): boolean; virtual; abstract;
+    function SendStrInternal(const txstr: string): boolean; virtual;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; virtual; abstract;
     function RecvData(): integer; virtual; abstract;
     function TryConnect(): boolean; virtual; abstract;
-    procedure ClearBuffer(); virtual;
+    function TryDisconnect(): boolean; virtual; abstract;
+    procedure ClearBuffer(); virtual; abstract;
   public
     //constructor and destructor
     constructor Create(owner: TComponent); override;
@@ -88,10 +90,10 @@ type
     function Config(const sconf: string): boolean; overload; virtual;
     function Config(const sconfs: TStrings): boolean; overload; virtual; abstract;
     function Connect(): boolean; virtual;
-    function Disconnect: boolean; virtual; abstract;
+    function Disconnect(): boolean; virtual;
     function SendBuf(const pbuf: PByteArray; const wlen: word): boolean; virtual;
     function SendStr(const str: string): boolean; virtual;
-    function RecvBuf(const pbuf: PByteArray; var wlen: word; const bwait: boolean = true): boolean; virtual;
+    function RecvBuf(var pbuf: PByteArray; var wlen: word; const bwait: boolean = true): boolean; virtual;
     function RecvStr(var str: string; const bwait: boolean = true): integer; virtual;
     function ExpectStr(var str: string; const swait: string; const bcase: boolean = false): boolean; virtual;
 
@@ -208,30 +210,6 @@ begin
 end;
 
 // =============================================================================
-// Description  : build current data in the buffer into a string
-//                Note: The property ShowNullChar is applied for null
-// Parameter    : --
-// Return       : string, the built string
-// Exceptions   : --
-// First author : 2016-07-15 /bsu/
-// History      :
-// =============================================================================
-function TConnBase.ReadBufferToStr(): string;
-var i: integer;
-begin
-  result := '';
-  {i_cntnull := 0;
-  if (w_rlen > 0) then begin
-    for i := 0 to w_rlen - 1 do
-      if (ba_rbuf[i] = 0) then begin
-        inc(i_cntnull);
-        ba_rbuf[i] := byte(ch_nullshow);
-      end;
-    result := string(PAnsiChar(@ba_rbuf[0]));
-  end;}
-end;
-
-// =============================================================================
 // Description  : wait until the first data arrives.
 // Parameter    : tend, end time (current time + timeout)
 // Return       : true, if the data arrives
@@ -341,17 +319,12 @@ begin
   result := (e_state = CS_CONNECTED);
 end;
 
-// =============================================================================
-// Description  : clear the buffer
-// Parameter    : --
-// Exceptions   : --
-// First author : 2016-07-15 /bsu/
-// History      :
-// =============================================================================
-procedure TConnBase.ClearBuffer();
+function TConnBase.SendStrInternal(const txstr: string): boolean;
+var w_len: word;s_ansi: AnsiString;
 begin
-  {ZeroMemory(@ba_rbuf, w_rlen);
-  w_rlen := 0;}
+  s_ansi := AnsiString(txstr);
+  w_len := Length(s_ansi) ;
+  result := SendData(@s_ansi[1], w_len);
 end;
 
 // =============================================================================
@@ -409,8 +382,8 @@ begin
 end;
 
 // =============================================================================
-// Description  : establisch connection 
-//                Note: This function will try to establish the connections 
+// Description  : establisch connection
+//                Note: This function will try to establish the connections
 //                more times till timeout if the connection is not establisched
 //                by the first one time
 // Parameter    : --
@@ -433,6 +406,28 @@ begin
       t_msgrimpl.AddMessage(format('Failed to make a connection(%s)', [GetTypeName()]), ML_ERROR);
   end else
     t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
+end;
+
+// =============================================================================
+// Description  : disconnect from the device and release the resource
+// Parameter    : --
+// Return       : true, if the device is disconnected
+//                false, otherwise
+// Exceptions   : --
+// First author : 2016-11-28 /bsu/
+// History      :
+// =============================================================================
+function TConnBase.Disconnect(): boolean;
+begin
+  if Connected then begin
+    result := TryDisconnect();
+    if result then begin
+      if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then e_state := CS_CONFIGURED;
+      t_msgrimpl.AddMessage(format('Successful to disconnect from the device (type=%s).', [GetTypeName()]));
+    end else
+      t_msgrimpl.AddMessage(format('Failed to disconnect from the device (type=%s).', [GetTypeName()]), ML_ERROR);
+  end else
+    result := true;
 end;
 
 // =============================================================================
@@ -472,14 +467,21 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.SendStr(const str: string): boolean;
-var i_len: integer;s_ansi: AnsiString;
+var w_len: word; c_tend: cardinal;
 begin
-  s_ansi := AnsiString(str);
-  i_len := Length(s_ansi) ;//* SizeOf(Char);
-  //SetLength(ba_str, i_len);
-  //Move(s_ansi[1], ba_str[0], i_len);
-  //for i := 0 to i_len - 1 do ba_str[i] := byte(str[i + 1]); //convert to ansi string saved in an array of byte
-  result := SendBuf(@s_ansi[1], i_len);
+  result := false;
+  if Connected then begin
+    ClearBuffer();
+    c_tend := GetTickCount() + c_timeout;
+    w_len := length(str);
+    result := SendStrInternal(str);
+    if result then result := WaitForWriting(c_tend);
+    if result then
+      t_msgrimpl.AddMessage(format('Successful to send string (length=%d) %s', [w_len, str]))
+    else
+      t_msgrimpl.AddMessage(format('Failed to send string (length=%d): %s', [w_len, str]), ML_ERROR)
+  end else
+    t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -493,31 +495,22 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvBuf(const pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
-var c_tend: cardinal; i_len, i_offset: integer;
+function TConnBase.RecvBuf(var pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
+var c_tend: cardinal; i_len, i_offset: integer; s_data: string;
 begin
   result := false;
-{  if Connected then begin
+  if Connected then begin
     c_tend := GetTickCount() + c_timeout;
     if bwait then WaitForReading(c_tend);
-    w_rlen := RecvData();
-    if w_rlen > 0 then begin
-      i_len := result;
-      i_offset := 0;
-      if (w_rlen > length(buf)) then begin
-        i_len := length(buf);
-        i_offset := w_rlen - length(buf);
-      end;
-      Move(ba_rbuf[i_offset], buf, i_len);
-      result := w_rlen;
-      ClearBuffer();
-    end;
-    if (result > 0) then
-      t_msgrimpl.AddMessage(format('Successful to receieve data (%d bytes): %s', [result, PString(@buf)]))
-    else
+    wlen := RecvData();
+    result := (wlen > 0);
+    if (result) then begin
+      s_data := ShowRecvData();
+      t_msgrimpl.AddMessage(format('Successful to receieve data (%d bytes): %s', [wlen, s_data]))
+    end else
       t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
   end else
-    t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);}
+    t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -539,7 +532,7 @@ begin
     if bwait then  WaitForReading(c_tend);
     result := RecvData();
     if (result > 0) then begin
-      str := ReadBufferToStr();
+      str := ShowRecvData();
       t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]));
     end else
       t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
@@ -571,7 +564,7 @@ begin
     repeat
       result := RecvData();
       if (result > 0) then begin
-        s_recv := ReadBufferToStr();
+        s_recv := ShowRecvData();
         str := str + s_recv;
         ClearBuffer();
       end;
@@ -606,7 +599,7 @@ begin
     repeat
       result := RecvData();
       if (result > 0) then begin
-        s_recv := ReadBufferToStr();
+        s_recv := ShowRecvData();
         str := str + s_recv;
         ClearBuffer();
       end;
@@ -643,7 +636,7 @@ begin
   if Connected then begin
     repeat
       if (RecvData() > 0) then begin
-        s_recv := ReadBufferToStr();
+        s_recv := ShowRecvData();
         str := str + s_recv;
         ClearBuffer();
       end;

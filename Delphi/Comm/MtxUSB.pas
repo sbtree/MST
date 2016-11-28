@@ -69,11 +69,14 @@ type
     function SetDevicePid(const sval: string): boolean;
     function SetProductSN(const sval: string): boolean;
     function ConnectTo(const psn: integer): boolean;
+    function ShowRecvData(): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
     function RecvData(): integer; override;
     function TryConnect(): boolean; override;
+    function TryDisconnect: boolean; override;
+    procedure ClearBuffer(); override;
     procedure SafeArrayToArray(const psarr: PSafeArray; const parr: PByteArray; const size: Integer);
     procedure ClearDeviceInfo();
     procedure UpdateDeviceIds(var idlist: TStrings);
@@ -94,7 +97,6 @@ type
     function FindDevice(const psn: integer = -1; const tout: integer = -1): boolean;
     function Config(const sconfs: TStrings): boolean; override;
     function Connect(): boolean; override;
-    function Disconnect: boolean; override;
   end;
 
 implementation
@@ -401,6 +403,20 @@ begin
   result := IsConnected();
 end;
 
+// =============================================================================
+// Description  : build current data in the buffer into a string
+//                Note: The property ShowNullChar is applied for null
+// Parameter    : --
+// Return       : string, the built string
+// Exceptions   : --
+// First author : 2016-11-25 /bsu/
+// History      :
+// =============================================================================
+function TMtxUsb.ShowRecvData(): string;
+begin
+  result := string(t_buffer.ReadAnsiStr());
+end;
+
 function TMtxUsb.IsReadReady(): boolean;
 begin
   Application.ProcessMessages();
@@ -461,6 +477,24 @@ begin
   if (not Init(i_psn)) then
     Uninit();
   result := IsConnected();
+end;
+
+function TMtxUsb.TryDisconnect: boolean;
+begin
+  result := Uninit();
+end;
+
+procedure TMtxUsb.ClearBuffer();
+var c_tend: cardinal; i_len: integer;
+begin
+  c_tend := GetTickCount() + c_timeout;
+  repeat i_len := RecvData();
+  until ((i_len <= 0) or (GetTickCount() >= c_tend));
+  i_len := t_buffer.CountUsed ;
+  if (i_len > 0) then begin
+    t_msgrimpl.AddMessage(format('Rx-Buffer (%d bytes) is cleared', [i_len]), ML_WARNING);
+    t_buffer.Clear();
+  end;
 end;
 
 procedure TMtxUsb.ClearDeviceInfo();
@@ -628,12 +662,6 @@ begin
       t_msgrimpl.AddMessage(format('Successful to make a connection(%s) to device(sn=%d).', [GetTypeName(), ProductSN]));
     end else t_msgrimpl.AddMessage(format('Failed to make a connection(%s) to device(sn=%d)', [GetTypeName(), ProductSN]), ML_ERROR);
   end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
-end;
-
-function TMtxUsb.Disconnect: boolean;
-begin
-  result := Uninit();
-  t_msgrimpl.AddMessage('The device is disconnected.');
 end;
 
 end.

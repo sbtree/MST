@@ -45,19 +45,19 @@ type
     function SetDatabits(const sval: string): boolean;
     function SetStopbits(const sval: string): boolean;
     function SetFlowControl(const sval: string): boolean;
-    function ReadBufferToStr(): string; override;
+    function ShowRecvData(): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
     function RecvData(): integer; override;
     function TryConnect(): boolean; override;
+    function TryDisconnect(): boolean; override;
     procedure ClearBuffer(); override;
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
 
     function Config(const sconfs: TStrings): boolean; override;
-    function Disconnect: boolean; override;
   end;
   PConnRS232 = ^TMtxRS232;
 
@@ -318,7 +318,7 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TMtxRS232.ReadBufferToStr(): string;
+function TMtxRS232.ShowRecvData(): string;
 begin
   result := string(t_buffer.ReadAnsiStr());
 end;
@@ -338,7 +338,6 @@ var s_ansi: AnsiString;
 begin
   ClearBuffer(); //clear reading buffer of the serial interface
   SetString(s_ansi, PAnsiChar(pbuf), wlen);
-  //s_ansi := PAnsiChar(pbuf);
   t_ser.WriteString(s_ansi);
   result := (wlen > 0);
 end;
@@ -363,6 +362,23 @@ begin
   t_ser.Active := true;
   if t_ser.Active then e_state := CS_CONNECTED;
   result := IsConnected();
+end;
+
+// =============================================================================
+// Class        : TConnRS232
+// Function     : TryDisconnect
+//                deactive t_ser
+// Parameter    : --
+// Return       : true, if t_ser is deactivated
+//                false, otherwise
+// Exceptions   : --
+// First author : 2015-09-11 /bsu/
+// History      :
+// =============================================================================
+function TMtxRS232.TryDisconnect(): boolean;
+begin
+  t_ser.Active := false;
+  result := (not t_ser.Active);
 end;
 
 procedure TMtxRS232.ClearBuffer();
@@ -448,27 +464,6 @@ begin
     if result then e_state := CS_CONFIGURED
     else t_msgrimpl.AddMessage(format('Failed to configurate the configuration (%s).', [GetTypeName()]), ML_ERROR);
   end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for configuration.', [GetStateStr()]), ML_WARNING);
-end;
-
-// =============================================================================
-// Class        : TConnRS232
-// Function     : Disconnect
-//                deactive t_ser
-// Parameter    : --
-// Return       : true, if t_ser is deactivated
-//                false, otherwise
-// Exceptions   : --
-// First author : 2015-09-11 /bsu/
-// History      :
-// =============================================================================
-function TMtxRS232.Disconnect: boolean;
-begin
-  result := false;
-  if Connected then begin
-    t_ser.Active := false;
-    result := (not t_ser.Active);
-    if result then e_state := CS_CONFIGURED;
-  end;
 end;
 
 end.
