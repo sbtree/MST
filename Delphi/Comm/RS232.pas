@@ -45,7 +45,7 @@ type
     function SetDatabits(const sval: string): boolean;
     function SetStopbits(const sval: string): boolean;
     function SetFlowControl(const sval: string): boolean;
-    function ShowRecvData(): string; override;
+    function ShowRecvData(const bhex: Boolean = false): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
@@ -318,9 +318,12 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TMtxRS232.ShowRecvData(): string;
+function TMtxRS232.ShowRecvData(const bhex: Boolean): string;
 begin
-  result := string(t_buffer.ReadAnsiStr());
+  if (bhex) then
+    result := string(t_buffer.ReadHex())
+  else
+    result := string(t_buffer.ReadAnsiStr());
 end;
 
 function TMtxRS232.IsReadReady(): boolean;
@@ -336,7 +339,6 @@ end;
 function TMtxRS232.SendData(const pbuf: PByteArray; const wlen: word): boolean;
 var s_ansi: AnsiString;
 begin
-  ClearBuffer(); //clear reading buffer of the serial interface
   SetString(s_ansi, PAnsiChar(pbuf), wlen);
   t_ser.WriteString(s_ansi);
   result := (wlen > 0);
@@ -345,16 +347,12 @@ end;
 function TMtxRS232.RecvData(): integer;
 var ch: AnsiChar;
 begin
-  result := 0;
-  t_buffer.Clear();
   while ((t_ser.RxWaiting > 0) and (not t_buffer.IsFull())) do begin
-    if t_ser.ReadChar(ch) = 1 then begin
+    if t_ser.ReadChar(ch) = 1 then
       t_buffer.WriteElement(byte(ch));
-      inc(result);
-    end;
     Application.ProcessMessages();
   end;
-  //if result then t_rxwait.SetEvent();
+  result := t_buffer.CountUsed;
 end;
 
 function TMtxRS232.TryConnect(): boolean;

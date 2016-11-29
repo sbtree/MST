@@ -47,6 +47,7 @@ type
     function ReadHex(): string;
     function WriteHex(const str: string): integer;
     function ReadAnsiStr(): AnsiString;
+    function WriteBytes(const pbytes: PByteArray; const wlen: word): integer;
     function WriteAnsiStr(const str: AnsiString): integer;
   end;
 
@@ -182,15 +183,19 @@ begin
       result := result + AnsiChar(byte_cur);
 end;
 
-function TByteBuffer.WriteAnsiStr(const str: AnsiString): integer;
-var i,iLen: integer;
+function TByteBuffer.WriteBytes(const pbytes: PByteArray; const wlen: word): integer;
+var i: integer;
 begin
   result := 0;
-  iLen := length(str);
-  for i := 1 to iLen do begin
-    if (WriteElement(byte(str[i]))) then inc(result)
+  for i := 0 to wLen - 1 do begin
+    if (WriteElement(pbytes^[i])) then inc(result)
     else break;
   end;
+end;
+
+function TByteBuffer.WriteAnsiStr(const str: AnsiString): integer;
+begin
+  result := WriteBytes(@str[1], length(str));
 end;
 
 function TCharBuffer.ReadStr(): string;

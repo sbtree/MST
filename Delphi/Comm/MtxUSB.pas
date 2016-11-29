@@ -69,7 +69,7 @@ type
     function SetDevicePid(const sval: string): boolean;
     function SetProductSN(const sval: string): boolean;
     function ConnectTo(const psn: integer): boolean;
-    function ShowRecvData(): string; override;
+    function ShowRecvData(const bhex: Boolean): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
@@ -96,7 +96,7 @@ type
 
     function FindDevice(const psn: integer = -1; const tout: integer = -1): boolean;
     function Config(const sconfs: TStrings): boolean; override;
-    function Connect(): boolean; override;
+    //function Connect(): boolean; override;
   end;
 
 implementation
@@ -282,8 +282,8 @@ begin
   //2. set configuration
   if result then begin
     t_usbio.SetConfiguration(0, i_status);
-    result := (i_status = USBIO_ERR_SUCCESS);
-    //result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_ALREADY_CONFIGURED)));
+    //result := (i_status = USBIO_ERR_SUCCESS);
+    result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_ALREADY_CONFIGURED)));
   end;
 
   //3. open and bind endpoint for reading from usb-device
@@ -412,9 +412,12 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TMtxUsb.ShowRecvData(): string;
+function TMtxUsb.ShowRecvData(const bhex: Boolean): string;
 begin
-  result := string(t_buffer.ReadAnsiStr());
+  if bhex then
+    result := string(t_buffer.ReadHex())
+  else
+    result := string(t_buffer.ReadAnsiStr());
 end;
 
 function TMtxUsb.IsReadReady(): boolean;
@@ -433,7 +436,6 @@ function TMtxUsb.SendData(const pbuf: PByteArray; const wlen: word): boolean;
 var pa_send: PSafeArray; i: integer;
 begin
   result := false;
-  ClearBuffer();
   if (wlen > 0) then begin
     pa_send := SafeArrayCreateVector(VT_UI1, 0, wlen);
     for i := 0 to wlen - 1 do SafeArrayPutElement(pa_send, i, pbuf[i]);
@@ -446,30 +448,31 @@ begin
 end;
 
 function TMtxUsb.RecvData(): integer;
-var pa_recv: PSafeArray; i, i_size, i_len: integer;
+var pa_recv: PSafeArray; i, i_size: integer; w_len: word;
     ba_rbuf: array[0..C_USB_RX_BUFFER_SIZE - 1] of byte;
 begin
-  pa_recv := SafeArrayCreateVector ( VT_UI1, 0, C_USB_RX_BUFFER_SIZE );
+  pa_recv := SafeArrayCreateVector(VT_UI1, 0, C_USB_RX_BUFFER_SIZE);
   i_status := USBIO_ERR_SUCCESS;
-  i_len := 0; result := 0;
+  w_len := 0;
+  ZeroMemory(@ba_rbuf[0], C_USB_RX_BUFFER_SIZE);
   repeat
     i_size := t_buffer.CountFree;
     t_usbrx.ReadData(pa_recv, i_size, i_status);
     if (i_status = USBIO_ERR_SUCCESS) then begin
-      SafeArrayToArray(pa_recv, PByteArray(@(ba_rbuf[i_len])), i_size); //bsu: todo, index of ba_rbuf overflow??
-      i_len := i_len + i_size;
+      SafeArrayToArray(pa_recv, PByteArray(@(ba_rbuf[w_len])), i_size); //bsu: todo, index of ba_rbuf overflow??
+      w_len := w_len + i_size;
     end else if (i_status <> integer(USBIO_ERR_NO_DATA)) then begin
       t_usbrx.ResetPipe(i_status);
       break;
     end;
   until (i_status = integer(USBIO_ERR_NO_DATA));
   SafeArrayDestroy (pa_recv);
-  if t_buffer.CountFree > i_len then begin
-    for i := 0 to i_len - 1 do
-      if t_buffer.WriteElement(ba_rbuf[i_len + i]) then inc(result)
-      else break;
-  end else t_msgrimpl.AddMessage(format('The buffer is full (buffer size = %d).', [t_buffer.BufferSize]), ML_WARNING);;
-  //It is possible to receive no data, if this function is already automatically caleld because of event ReadComplete
+  if t_buffer.CountFree > w_len then
+    t_buffer.WriteBytes(@ba_rbuf[0], w_len)
+  else
+    t_msgrimpl.AddMessage(format('The buffer is full (buffer size = %d).', [t_buffer.BufferSize]), ML_WARNING);
+
+  result := t_buffer.CountUsed;
 end;
 
 function TMtxUsb.TryConnect(): boolean;
@@ -485,11 +488,8 @@ begin
 end;
 
 procedure TMtxUsb.ClearBuffer();
-var c_tend: cardinal; i_len: integer;
+var i_len: integer;
 begin
-  c_tend := GetTickCount() + c_timeout;
-  repeat i_len := RecvData();
-  until ((i_len <= 0) or (GetTickCount() >= c_tend));
   i_len := t_buffer.CountUsed ;
   if (i_len > 0) then begin
     t_msgrimpl.AddMessage(format('Rx-Buffer (%d bytes) is cleared', [i_len]), ML_WARNING);
@@ -525,7 +525,6 @@ end;
 procedure TMtxUsb.OnReadComplete(sender: TObject; var obj: OleVariant);
 begin
   t_rxwait.SetEvent();
-  ClearBuffer();
   RecvData();
 end;
 
@@ -564,13 +563,13 @@ begin
   i_actpsn := -1;   //initialize acture serial number with -1, which means that no serial number is not yet found.
   //create and set instances of usbiointerface for EP0, pipe in and out
   t_usbio := TUSBIOInterface3.Create(self);
-  //t_connobj := t_usbio;
   t_usbio.OnPnPAddNotification := OnAddDevice;
   t_usbio.OnPnPRemoveNotification := OnRemoveDevice;
   t_usbio.EnablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
   t_usbrx := TUSBIOInterface3.Create(self);
   t_usbrx.OnReadComplete := OnReadComplete;
   t_usbtx := TUSBIOInterface3.Create(self);
+  t_usbtx.OnReadComplete := OnReadComplete;
   t_usbtx.OnWriteComplete := OnWriteComplete;
   t_usbtx.OnWriteStatusAvailable := OnWriteStatusAvailable;
   //clear device info
@@ -651,7 +650,7 @@ begin
   end else t_msgrimpl.AddMessage(format('The current state is not suitable to config (state=%d).', [Ord(e_state)]), ML_ERROR);
 end;
 
-function TMtxUsb.Connect(): boolean;
+{function TMtxUsb.Connect(): boolean;
 begin
   result := false;
   if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then begin
@@ -662,6 +661,6 @@ begin
       t_msgrimpl.AddMessage(format('Successful to make a connection(%s) to device(sn=%d).', [GetTypeName(), ProductSN]));
     end else t_msgrimpl.AddMessage(format('Failed to make a connection(%s) to device(sn=%d)', [GetTypeName(), ProductSN]), ML_ERROR);
   end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
-end;
+end; }
 
 end.

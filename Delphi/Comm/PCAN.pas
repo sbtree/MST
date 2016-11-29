@@ -354,7 +354,7 @@ type
     function SetCanVersion(const sver: string): boolean;
     function GetHardwareTypeText(): string;
     function GetBaudrateText(): string;
-    function ShowRecvData(): string; override;
+    function ShowRecvData(const bhex: Boolean): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
@@ -852,7 +852,7 @@ begin
   result := CSTR_PCAN_BAUDRATES[e_baud];
 end;
 
-function TPCanLight.ShowRecvData(): string;
+function TPCanLight.ShowRecvData(const bhex: Boolean): string;
 var t_pcanmsg: TPCANMsg; s_pcanmsg: string;
 begin
   result := '';
@@ -884,7 +884,8 @@ begin
     p_pcanmsg := PPCANMsg(pbuf);
     lw_ret := CanWrite(p_pcanmsg^);
     result := (lw_ret = CAN_ERR_OK);
-  end else t_msgrimpl.AddMessage(format('Found invalid PCAN-message by sending data (% bytes).', [wlen]), ML_ERROR);
+  end else
+    t_msgrimpl.AddMessage(format('Found invalid PCAN-message by sending data (% bytes).', [wlen]), ML_ERROR);
 end;
 
 function TPCanLight.RecvData(): integer;

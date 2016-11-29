@@ -69,8 +69,10 @@ end;
 procedure TfrmCommTester.btnRecvClick(Sender: TObject);
 var s_recv: string;
 begin
-  t_conn.RecvStr(s_recv);
-  //t_conn.RecvStrTimeout(s_recv, 10000);
+  if t_conn.Connected then begin
+    t_conn.RecvStr(s_recv);
+    //t_conn.RecvStrTimeout(s_recv, 10000);
+  end;
 end;
 
 procedure TfrmCommTester.btnRS232Click(Sender: TObject);
@@ -87,7 +89,7 @@ begin
 end;
 
 procedure TfrmCommTester.btnSendClick(Sender: TObject);
-var s_sending: string;
+var s_sending: string; s_ansi: AnsiString;
 begin
   //format of CAN-Message: '60A:40800020';
   //format of OROW: 'OR:0008' or 'OR:1:0008'
@@ -95,7 +97,11 @@ begin
   if chkCR.Checked then s_sending := s_sending + Char(#13);
   if chkLF.Checked then s_sending := s_sending + Char(#10);
 
-  if assigned(t_conn) then t_conn.SendStr(s_sending);
+  //if assigned(t_conn) then t_conn.SendStr(s_sending);
+  if assigned(t_conn) then begin
+    s_ansi := AnsiString(s_sending);
+    t_conn.SendPacket(PByteArray(@s_ansi[1]), length(s_ansi));
+  end;
 end;
 
 procedure TfrmCommTester.btnUSBClick(Sender: TObject);
