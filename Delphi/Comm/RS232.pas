@@ -45,7 +45,8 @@ type
     function SetDatabits(const sval: string): boolean;
     function SetStopbits(const sval: string): boolean;
     function SetFlowControl(const sval: string): boolean;
-    function ShowRecvData(const bhex: Boolean = false): string; override;
+    function StrToSendData(const str: string): boolean; override;
+    function RecvDataToStr(const bhex: boolean = true): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
@@ -310,6 +311,19 @@ begin
 end;
 
 // =============================================================================
+// Description  : converts a string into a internal data for sending
+// Parameter    : --
+// Return       : true, if the string is converted successfully. Otherwise false
+// Exceptions   : --
+// First author : 2016-11-25 /bsu/
+// History      :
+// =============================================================================
+function TMtxRS232.StrToSendData(const str: string): boolean;
+begin
+  s_ansisend := AnsiString(str);
+end;
+
+// =============================================================================
 // Description  : build current data in the buffer into a string
 //                Note: The property ShowNullChar is applied for null
 // Parameter    : --
@@ -318,7 +332,7 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TMtxRS232.ShowRecvData(const bhex: Boolean): string;
+function TMtxRS232.RecvDataToStr(const bhex: boolean): string;
 begin
   if (bhex) then
     result := string(t_buffer.ReadHex())

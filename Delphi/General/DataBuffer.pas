@@ -47,6 +47,7 @@ type
     function ReadHex(): string;
     function WriteHex(const str: string): integer;
     function ReadAnsiStr(): AnsiString;
+    function ReadBytes(var pbuf: PByteArray; var wlen: word): boolean;
     function WriteBytes(const pbytes: PByteArray; const wlen: word): integer;
     function WriteAnsiStr(const str: AnsiString): integer;
   end;
@@ -181,6 +182,18 @@ begin
   while (ReadElement(byte_cur)) do
     if byte_cur <> 0 then
       result := result + AnsiChar(byte_cur);
+end;
+
+function TByteBuffer.ReadBytes(var pbuf: PByteArray; var wlen: word): boolean;
+var byte_cur: byte; w_buflen: word;
+begin
+  w_buflen := wlen; wlen := 0;
+  while ((wlen < w_buflen) and ReadElement(byte_cur)) do
+    if byte_cur <> 0 then begin
+      pbuf^[wlen] := byte_cur;
+      inc(wlen);
+    end;
+  result := (wlen > 0);
 end;
 
 function TByteBuffer.WriteBytes(const pbytes: PByteArray; const wlen: word): integer;

@@ -334,6 +334,7 @@ type
     e_subtype:  EPCanNPnPType;
     lw_ioport:  longword;
     w_irq:      word;
+    t_sendmsg:  TPCANMsg;
     t_buffer:   TPCanMsgBuffer;
     a_pcanfnt:  array[EPCanFunction] of Pointer;
     t_dllldr:   TDllLoader;
@@ -354,7 +355,8 @@ type
     function SetCanVersion(const sver: string): boolean;
     function GetHardwareTypeText(): string;
     function GetBaudrateText(): string;
-    function ShowRecvData(const bhex: Boolean): string; override;
+    function StrToSendData(const str: string): boolean; override;
+    function RecvDataToStr(const bhex: boolean = true): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
@@ -852,7 +854,20 @@ begin
   result := CSTR_PCAN_BAUDRATES[e_baud];
 end;
 
-function TPCanLight.ShowRecvData(const bhex: Boolean): string;
+// =============================================================================
+// Description  : converts a string into a internal data for sending
+// Parameter    : --
+// Return       : true, if the string is converted successfully. Otherwise false
+// Exceptions   : --
+// First author : 2016-11-25 /bsu/
+// History      :
+// =============================================================================
+function TPCanLight.StrToSendData(const str: string): boolean;
+begin
+  result := StrToPCanMsg(str, t_sendmsg);
+end;
+
+function TPCanLight.RecvDataToStr(const bhex: boolean): string;
 var t_pcanmsg: TPCANMsg; s_pcanmsg: string;
 begin
   result := '';
