@@ -23,7 +23,7 @@ type
                   CT_ETHERNET,//ethernet
                   CT_JTAG,    //jtag
                   CT_CAN,     //can-bus
-                  CT_PROFIL   //profil-bus
+                  CT_PROFI    //profi-bus
                   );
   //enumeration of connection states
   EConnectState = ( CS_UNKNOWN,   //unknown state
@@ -54,15 +54,13 @@ type
     e_state:    EConnectState;      //connection state
     c_timeout:  cardinal;           //timeout in milli seconds
     t_msgrimpl: TTextMessengerImpl; //for transfering messages
-    s_ansisend: AnsiString;         //
-    s_ansirecv: AnsiString;         //
     t_rxwait:   TEvent;             //wait event for reading
     t_txwait:   TEvent;             //wait event for writing complete
   protected
     function GetTypeName(): string; virtual;
     function GetStateStr(): string; virtual;
-    function StrToSendData(const str: string): boolean; virtual; abstract;
-    function RecvDataToStr(const bhex: boolean = true): string; virtual; abstract;
+    function StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean; virtual; abstract;
+    function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; virtual; abstract;
     function WaitForReading(const tend: cardinal): boolean; virtual;
     function WaitForWriting(const tend: cardinal): boolean; virtual;
     function WaitForConnecting(const tend: cardinal): boolean; virtual;
@@ -70,9 +68,8 @@ type
     function IsReadReady(): boolean; virtual; abstract;
     function IsWriteComplete(): boolean; virtual; abstract;
     function SendStrInternal(const txstr: string): boolean; virtual;
-    //function RecvPacketInternal(var pbuf: PByteArray; var wlen: word): boolean; virtual; abstract;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; virtual; abstract;
-    function RecvData(): integer; virtual; abstract;
+    function RecvData(var pbytes: PByteArray; var wlen: Word): integer; virtual; abstract;
     function TryConnect(): boolean; virtual; abstract;
     function TryDisconnect(): boolean; virtual; abstract;
     procedure ClearBuffer(); virtual; abstract;
@@ -124,7 +121,7 @@ const
                     'ETHERNET',
                     'JTAG',
                     'CAN',
-                    'PROFIL'
+                    'PROFI'
                     );
   //define connection state
   CSTR_CONN_STATES: array[EConnectState] of string = (
@@ -515,10 +512,9 @@ begin
   if Connected then begin
     c_tend := GetTickCount() + c_timeout;
     if bwait then WaitForReading(c_tend);
-    //result := RecvPacketInternal(pbuf, wlen);
-    result := (RecvData() > 0);
+    result := (RecvData(pbuf, wlen) > 0);
     if (result) then begin
-      s_data := RecvDataToStr();
+      s_data := PacketToStr(pbuf, wlen, true);
       t_msgrimpl.AddMessage(format('Successful to receieve data (%d bytes): %s', [wlen, s_data]))
     end else
       t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
@@ -537,15 +533,15 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
-var c_tend: cardinal;
+var c_tend: cardinal; pa_bytes: PByteArray; w_len: word;
 begin
-  result := 0; str := '';
+  result := 0; str := ''; w_len := 0;
   c_tend := GetTickCount() + c_timeout;
   if Connected then begin
     if bwait then  WaitForReading(c_tend);
-    result := RecvData();
+    result := RecvData(pa_bytes, w_len);
     if (result > 0) then begin
-      str := RecvDataToStr(false);
+      str := PacketToStr(pa_bytes, w_len, false);
       t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]));
     end else
       t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
@@ -569,15 +565,15 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.RecvStrTimeout(var str: string; const timeout: cardinal): integer;
-var s_recv: string; tend: cardinal;
+var s_recv: string; tend: cardinal; pa_bytes: PByteArray; w_len: Word;
 begin
-  result := 0; str := '';
+  result := 0; str := ''; w_len := 0;
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
-      result := RecvData();
+      result := RecvData(pa_bytes, w_len);
       if (result > 0) then begin
-        s_recv := RecvDataToStr(false);
+        s_recv := PacketToStr(pa_bytes, w_len, false);
         str := str + s_recv;
       end;
       Application.ProcessMessages();
@@ -603,15 +599,15 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal): integer;
-var i_time: cardinal; s_recv: string; b_break: boolean; tend: cardinal;
+var i_time: cardinal; s_recv: string; b_break: boolean; tend: cardinal; pa_bytes: PByteArray; w_len: word;
 begin
-  result := 0; str := '';
+  result := 0; str := ''; w_len := 0;
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
-      result := RecvData();
+      result := RecvData(pa_bytes, w_len);
       if (result > 0) then begin
-        s_recv := RecvDataToStr(false);
+        s_recv := PacketToStr(pa_bytes, w_len, false);
         str := str + s_recv;
       end;
       i_time := GetTickCount() + interv;
@@ -640,14 +636,14 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean): boolean;
-var s_recv: string; tend: cardinal;
+var s_recv: string; tend: cardinal;  pa_bytes: PByteArray; w_len: word;
 begin
-  result := false; str := '';
+  result := false; str := ''; w_len := 0;
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
-      if (RecvData() > 0) then begin
-        s_recv := RecvDataToStr(false);
+      if (RecvData(pa_bytes, w_len) > 0) then begin
+        s_recv := PacketToStr(pa_bytes, w_len, false);
         str := str + s_recv;
       end;
       if bcase then result := ContainsStr(str, exstr)

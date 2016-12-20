@@ -47,6 +47,7 @@ type
     t_usbio:    TUSBIOInterface3; //intance for general setting of usb (EP0)
     t_usbrx:    TUSBIOInterface3; //endpoint for reading from usb-device (Pipe In)
     t_usbtx:    TUSBIOInterface3; //endpoint for writing to usb-device  (Pipe Out)
+    s_ansisend: AnsiString;       //store the sending string in ansi-format
     t_buffer:   TByteBuffer;
     i_status:   integer;
     w_vid:      word;             //vendor id of usb device
@@ -69,12 +70,13 @@ type
     function SetDevicePid(const sval: string): boolean;
     function SetProductSN(const sval: string): boolean;
     function ConnectTo(const psn: integer): boolean;
-    function StrToSendData(const str: string): boolean; override;
-    function RecvDataToStr(const bhex: boolean = true): string; override;
+    function StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean; override;
+    function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
-    function RecvData(): integer; override;
+    function RecvData(var pbytes: PByteArray; var wlen: Word): integer; override;
+    function RecvToBuffer(): integer;
     function TryConnect(): boolean; override;
     function TryDisconnect: boolean; override;
     procedure ClearBuffer(); override;
@@ -412,9 +414,12 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TMtxUsb.StrToSendData(const str: string): boolean;
+function TMtxUsb.StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean;
 begin
   s_ansisend := AnsiString(str);
+  pbytes := PByteArray(s_ansisend[1]);
+  wlen := length(s_ansisend);
+  result := (wlen > 0);
 end;
 
 // =============================================================================
@@ -426,7 +431,7 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TMtxUsb.RecvDataToStr(const bhex: boolean): string;
+function TMtxUsb.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;
 begin
   if bhex then
     result := string(t_buffer.ReadHex())
@@ -461,32 +466,37 @@ begin
   end;
 end;
 
-function TMtxUsb.RecvData(): integer;
-var pa_recv: PSafeArray; i, i_size: integer; w_len: word;
+function TMtxUsb.RecvData(var pbytes: PByteArray; var wlen: Word): integer;
+begin
+  RecvToBuffer();
+  if t_buffer.ReadBytes(pbytes, wlen) then result := wlen
+  else result := 0;
+end;
+
+function TMtxUsb.RecvToBuffer(): integer;
+var pa_recv: PSafeArray; i_size: integer;
     ba_rbuf: array[0..C_USB_RX_BUFFER_SIZE - 1] of byte;
 begin
   pa_recv := SafeArrayCreateVector(VT_UI1, 0, C_USB_RX_BUFFER_SIZE);
   i_status := USBIO_ERR_SUCCESS;
-  w_len := 0;
+  result := 0;
   ZeroMemory(@ba_rbuf[0], C_USB_RX_BUFFER_SIZE);
   repeat
     i_size := t_buffer.CountFree;
     t_usbrx.ReadData(pa_recv, i_size, i_status);
     if (i_status = USBIO_ERR_SUCCESS) then begin
-      SafeArrayToArray(pa_recv, PByteArray(@(ba_rbuf[w_len])), i_size); //bsu: todo, index of ba_rbuf overflow??
-      w_len := w_len + i_size;
+      SafeArrayToArray(pa_recv, PByteArray(@(ba_rbuf[result])), i_size); //bsu: todo, index of ba_rbuf overflow??
+      result := result + i_size;
     end else if (i_status <> integer(USBIO_ERR_NO_DATA)) then begin
       t_usbrx.ResetPipe(i_status);
       break;
     end;
   until (i_status = integer(USBIO_ERR_NO_DATA));
   SafeArrayDestroy (pa_recv);
-  if t_buffer.CountFree > w_len then
-    t_buffer.WriteBytes(@ba_rbuf[0], w_len)
+  if t_buffer.CountFree > result then
+    t_buffer.WriteBytes(@ba_rbuf[0], result)
   else
     t_msgrimpl.AddMessage(format('The buffer is full (buffer size = %d).', [t_buffer.BufferSize]), ML_WARNING);
-
-  result := t_buffer.CountUsed;
 end;
 
 function TMtxUsb.TryConnect(): boolean;
@@ -539,7 +549,7 @@ end;
 procedure TMtxUsb.OnReadComplete(sender: TObject; var obj: OleVariant);
 begin
   t_rxwait.SetEvent();
-  RecvData();
+  RecvToBuffer();
 end;
 
 procedure TMtxUsb.OnWriteComplete(sender: TObject; var obj: OleVariant);

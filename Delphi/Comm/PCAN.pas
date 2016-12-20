@@ -355,12 +355,13 @@ type
     function SetCanVersion(const sver: string): boolean;
     function GetHardwareTypeText(): string;
     function GetBaudrateText(): string;
-    function StrToSendData(const str: string): boolean; override;
-    function RecvDataToStr(const bhex: boolean = true): string; override;
+    function StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean; override;
+    function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
-    function RecvData(): integer; override;
+    function RecvData(var pbytes: PByteArray; var wlen: Word): integer; override;
+    function RecvToBuffer(): integer;
     function GetAdapterInfo(): string;
     function TryConnect(): boolean; override;
     function TryDisconnect(): boolean; override;
@@ -862,12 +863,12 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TPCanLight.StrToSendData(const str: string): boolean;
+function TPCanLight.StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean;
 begin
   result := StrToPCanMsg(str, t_sendmsg);
 end;
 
-function TPCanLight.RecvDataToStr(const bhex: boolean): string;
+function TPCanLight.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;
 var t_pcanmsg: TPCANMsg; s_pcanmsg: string;
 begin
   result := '';
@@ -903,20 +904,30 @@ begin
     t_msgrimpl.AddMessage(format('Found invalid PCAN-message by sending data (% bytes).', [wlen]), ML_ERROR);
 end;
 
-function TPCanLight.RecvData(): integer;
+function TPCanLight.RecvData(var pbytes: PByteArray; var wlen: Word): integer;
+var t_pcanmsg: TPCANMsg;
+begin
+  RecvToBuffer();
+  if t_buffer.ReadElement(t_pcanmsg) then result := wlen
+  else result := 0;
+end;
+
+function TPCanLight.RecvToBuffer(): integer;
 var lw_ret: longword; t_pcanmsg: TPCANMsg;
 begin
   lw_ret := CAN_ERR_QRCVEMPTY;
+  result := 0;
   repeat
     Application.ProcessMessages();
     if not t_buffer.IsFull() then begin
       lw_ret := CanRead(t_pcanmsg);
-      if (lw_ret = CAN_ERR_OK) then
+      if (lw_ret = CAN_ERR_OK) then begin
         t_buffer.WriteElement(t_pcanmsg);
+        inc(result);
+      end;
     end else
       t_msgrimpl.AddMessage(format('The buffer of PCAN-Message is full (buffer size = %d).', [t_buffer.BufferSize]), ML_WARNING);
   until (((lw_ret AND (CAN_ERR_QRCVEMPTY or CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) or t_buffer.IsFull);
-  result := t_buffer.CountUsed;
 end;
 
 function TPCanLight.GetAdapterInfo(): string;
@@ -972,7 +983,7 @@ procedure TPCanLight.ClearBuffer();
 var c_tend: cardinal; i_len: integer;
 begin
   c_tend := GetTickCount() + c_timeout;
-  repeat i_len := RecvData();
+  repeat i_len := RecvToBuffer();
   until ((i_len <= 0) or (GetTickCount() >= c_tend));
   i_len := t_buffer.CountUsed ;
   if (i_len > 0) then begin
@@ -1199,7 +1210,7 @@ procedure TPCanReadThread.ReadCanMessage();
 begin
   if assigned(t_pcan) then begin
     t_pcan.ClearBuffer();
-    t_pcan.RecvData();
+    t_pcan.RecvToBuffer();
   end;
 end;
 

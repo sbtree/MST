@@ -35,6 +35,7 @@ type
   class function SetStopBitsByStr(pser: PSerial; const sval: string): boolean;
   class function SetFlowControlByStr(pser: PSerial; const sval: string): boolean;
   protected
+    s_ansisend: AnsiString; //store the sending string in ansi-format
     t_buffer: TByteBuffer;
     t_ser :   TSerial;
   protected
@@ -45,12 +46,13 @@ type
     function SetDatabits(const sval: string): boolean;
     function SetStopbits(const sval: string): boolean;
     function SetFlowControl(const sval: string): boolean;
-    function StrToSendData(const str: string): boolean; override;
-    function RecvDataToStr(const bhex: boolean = true): string; override;
+    function StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean; override;
+    function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
-    function RecvData(): integer; override;
+    function RecvData(var pbytes: PByteArray; var wlen: Word): integer; override;
+    function RecvToBuffer(): integer;
     function TryConnect(): boolean; override;
     function TryDisconnect(): boolean; override;
     procedure ClearBuffer(); override;
@@ -318,9 +320,12 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TMtxRS232.StrToSendData(const str: string): boolean;
+function TMtxRS232.StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean;
 begin
   s_ansisend := AnsiString(str);
+  pbytes := PByteArray(s_ansisend[1]);
+  wlen := length(s_ansisend);
+  result := (wlen > 0);
 end;
 
 // =============================================================================
@@ -332,7 +337,7 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TMtxRS232.RecvDataToStr(const bhex: boolean): string;
+function TMtxRS232.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;
 begin
   if (bhex) then
     result := string(t_buffer.ReadHex())
@@ -358,15 +363,24 @@ begin
   result := (wlen > 0);
 end;
 
-function TMtxRS232.RecvData(): integer;
+function TMtxRS232.RecvData(var pbytes: PByteArray; var wlen: Word): integer;
+begin
+  RecvToBuffer();
+  if t_buffer.ReadBytes(pbytes, wlen) then result := wlen
+  else result := 0;
+end;
+
+function TMtxRS232.RecvToBuffer(): integer;
 var ch: AnsiChar;
 begin
+  result := 0;
   while ((t_ser.RxWaiting > 0) and (not t_buffer.IsFull())) do begin
-    if t_ser.ReadChar(ch) = 1 then
+    if t_ser.ReadChar(ch) = 1 then begin
       t_buffer.WriteElement(byte(ch));
+      inc(result);
+    end;
     Application.ProcessMessages();
   end;
-  result := t_buffer.CountUsed;
 end;
 
 function TMtxRS232.TryConnect(): boolean;
@@ -397,7 +411,7 @@ procedure TMtxRS232.ClearBuffer();
 var c_tend: cardinal; i_len: integer;
 begin
   c_tend := GetTickCount() + c_timeout;
-  repeat i_len := RecvData();
+  repeat i_len := RecvToBuffer();
   until ((i_len <= 0) or (GetTickCount() >= c_tend));
   i_len := t_buffer.CountUsed ;
   if (i_len > 0) then begin
