@@ -48,6 +48,7 @@ type
     t_usbrx:    TUSBIOInterface3; //endpoint for reading from usb-device (Pipe In)
     t_usbtx:    TUSBIOInterface3; //endpoint for writing to usb-device  (Pipe Out)
     s_ansisend: AnsiString;       //store the sending string in ansi-format
+    s_ansirecv: AnsiString;       //store the received string in ansi-format
     t_buffer:   TByteBuffer;
     i_status:   integer;
     w_vid:      word;             //vendor id of usb device
@@ -468,9 +469,10 @@ end;
 
 function TMtxUsb.RecvData(var pbytes: PByteArray; var wlen: Word): integer;
 begin
-  RecvToBuffer();
-  if t_buffer.ReadBytes(pbytes, wlen) then result := wlen
-  else result := 0;
+  result := RecvToBuffer();
+  s_ansirecv := t_buffer.ReadAnsiStr();
+  pbytes := PByteArray(@s_ansirecv[1]);
+  wlen := length(s_ansirecv);
 end;
 
 function TMtxUsb.RecvToBuffer(): integer;

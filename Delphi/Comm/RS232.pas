@@ -36,6 +36,7 @@ type
   class function SetFlowControlByStr(pser: PSerial; const sval: string): boolean;
   protected
     s_ansisend: AnsiString; //store the sending string in ansi-format
+    s_ansirecv: AnsiString; //store the received string in ansi-format
     t_buffer: TByteBuffer;
     t_ser :   TSerial;
   protected
@@ -342,7 +343,7 @@ begin
   if (bhex) then
     result := string(t_buffer.ReadHex())
   else
-    result := string(t_buffer.ReadAnsiStr());
+    result := string(AnsiString(pbytes));
 end;
 
 function TMtxRS232.IsReadReady(): boolean;
@@ -365,9 +366,10 @@ end;
 
 function TMtxRS232.RecvData(var pbytes: PByteArray; var wlen: Word): integer;
 begin
-  RecvToBuffer();
-  if t_buffer.ReadBytes(pbytes, wlen) then result := wlen
-  else result := 0;
+  result := RecvToBuffer();
+  s_ansirecv := t_buffer.ReadAnsiStr();
+  pbytes := PByteArray(@s_ansirecv[1]);
+  wlen := length(s_ansirecv);
 end;
 
 function TMtxRS232.RecvToBuffer(): integer;
