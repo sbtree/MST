@@ -35,8 +35,6 @@ type
   class function SetStopBitsByStr(pser: PSerial; const sval: string): boolean;
   class function SetFlowControlByStr(pser: PSerial; const sval: string): boolean;
   protected
-    s_ansisend: AnsiString; //store the sending string in ansi-format
-    s_ansirecv: AnsiString; //store the received string in ansi-format
     t_buffer: TByteBuffer;
     t_ser :   TSerial;
   protected

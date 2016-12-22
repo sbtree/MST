@@ -53,26 +53,36 @@ type
     e_type:     EConnectType;       //connection type
     e_state:    EConnectState;      //connection state
     c_timeout:  cardinal;           //timeout in milli seconds
+    p_wbuffer:  pointer;
+    p_rbuffer:  pointer;
+    s_ansisend: AnsiString;         //store the sending string in ansi-format
+    s_ansirecv: AnsiString;         //store the received string in ansi-format
     t_msgrimpl: TTextMessengerImpl; //for transfering messages
     t_rxwait:   TEvent;             //wait event for reading
     t_txwait:   TEvent;             //wait event for writing complete
+  private
+    function InitBuffer(): boolean; virtual; abstract;
   protected
     function GetTypeName(): string; virtual;
     function GetStateStr(): string; virtual;
-    function StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean; virtual; abstract;
     function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; virtual; abstract;
-    function WaitForReading(const tend: cardinal): boolean; virtual;
-    function WaitForWriting(const tend: cardinal): boolean; virtual;
+
+    function WaitForReceiving(const tend: cardinal): boolean; virtual;
+    function WaitForSending(const tend: cardinal): boolean; virtual;
     function WaitForConnecting(const tend: cardinal): boolean; virtual;
     function IsConnected(): boolean; virtual;
     function IsReadReady(): boolean; virtual; abstract;
     function IsWriteComplete(): boolean; virtual; abstract;
-    function SendStrInternal(const txstr: string): boolean; virtual;
-    function SendData(const pbuf: PByteArray; const wlen: word): boolean; virtual; abstract;
-    function RecvData(var pbytes: PByteArray; var wlen: Word): integer; virtual; abstract;
     function TryConnect(): boolean; virtual; abstract;
     function TryDisconnect(): boolean; virtual; abstract;
-    procedure ClearBuffer(); virtual; abstract;
+
+    function WriteStrToBuffer(const txstr: string): boolean; virtual;
+    function WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean; virtual;
+    function SendFromBuffer(): boolean; virtual; abstract;
+    function ReadStrFromBuffer(): string; virtual;
+    function ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer; virtual;
+    function RecvToBuffer(): integer; virtual; abstract;
+    function ClearBuffer(): integer; virtual; abstract;
   public
     //constructor and destructor
     constructor Create(owner: TComponent); override;
@@ -219,7 +229,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.WaitForReading(const tend: cardinal): boolean;
+function TConnBase.WaitForReceiving(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_read: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
@@ -251,7 +261,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.WaitForWriting(const tend: cardinal): boolean;
+function TConnBase.WaitForSending(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_write: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
@@ -351,6 +361,7 @@ begin
   e_type := CT_UNKNOWN;
   e_state := CS_UNKNOWN;
   c_timeout := CINT_TIMEOUT_DEFAULT;
+  InitBuffer();
   t_rxwait := TEvent.Create(nil, false, false, 'TMtxConn.Rx');
   t_txwait := TEvent.Create(nil, false, false, 'TMtxConn.Tx');
   t_msgrimpl := TTextMessengerImpl.Create(ClassName());
@@ -451,18 +462,23 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.SendPacket(const pbuf: PByteArray; const wlen: word): boolean;
-var c_tend: cardinal;
+var c_tend: cardinal; s_packet: string;
 begin
   result := false;
   if Connected then begin
     ClearBuffer();
     c_tend := GetTickCount() + c_timeout;
-    result := SendData(pbuf, wlen);
-    if result then result := WaitForWriting(c_tend);
-    if result then
-      t_msgrimpl.AddMessage(format('Successful to send data (%d bytes): %s', [wlen, PAnsiChar(pbuf)]))
-    else
-      t_msgrimpl.AddMessage(format('Failed to send data (%d bytes): %s', [wlen, PAnsiChar(pbuf)]), ML_ERROR)
+    s_packet := PacketToStr(pbuf, wlen, true);
+    result := WritePacketToBuffer(pbuf, wlen);
+    if result then begin
+      result := SendFromBuffer();
+      if result then result := WaitForSending(c_tend);
+      if result then
+        t_msgrimpl.AddMessage(format('Successful to send packet: data=%s (%d bytes)', [s_packet, wlen]))
+      else
+        t_msgrimpl.AddMessage(format('Failed to send packet: data=%s (%d bytes)', [s_packet, wlen]), ML_ERROR)
+    end else
+      t_msgrimpl.AddMessage(format('Failed to write packet into sending buffer: data=%s (%d bytes)', [s_packet, wlen]), ML_ERROR)
   end else
     t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
@@ -484,12 +500,16 @@ begin
     ClearBuffer();
     c_tend := GetTickCount() + c_timeout;
     w_len := length(str);
-    result := SendStrInternal(str);
-    if result then result := WaitForWriting(c_tend);
-    if result then
-      t_msgrimpl.AddMessage(format('Successful to send string (length=%d) %s', [w_len, str]))
-    else
-      t_msgrimpl.AddMessage(format('Failed to send string (length=%d): %s', [w_len, str]), ML_ERROR)
+    result := WriteStrToBuffer(str);
+    if result then begin
+      result := SendFromBuffer();
+      if result then result := WaitForSending(c_tend);
+      if result then
+        t_msgrimpl.AddMessage(format('Successful to send string: string=%s; length=%d', [str, w_len]))
+      else
+        t_msgrimpl.AddMessage(format('Failed to send string into sending buffer: string=%s; length=%d', [str, w_len]), ML_ERROR);
+    end else
+      t_msgrimpl.AddMessage(format('Failed to write string into sending buffer: string=%s; length=%d', [str, w_len]), ML_ERROR);
   end else
     t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
@@ -506,18 +526,22 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.RecvPacket(var pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
-var c_tend: cardinal; i_len, i_offset: integer; s_data: string;
+var c_tend: cardinal; s_packet: string;
 begin
   result := false;
   if Connected then begin
     c_tend := GetTickCount() + c_timeout;
-    if bwait then WaitForReading(c_tend);
-    result := (RecvData(pbuf, wlen) > 0);
-    if (result) then begin
-      s_data := PacketToStr(pbuf, wlen, true);
-      t_msgrimpl.AddMessage(format('Successful to receieve data (%d bytes): %s', [wlen, s_data]))
+    if bwait then WaitForReceiving(c_tend);
+    result := (RecvToBuffer() > 0);
+    if result then begin
+      result := ReadPacketFromBuffer(pbuf, wlen);
+      if result then begin
+        s_packet := PacketToStr(pbuf, wlen, true);
+        t_msgrimpl.AddMessage(format('Successful to get packet from receieving buffer: data=%s (%d bytes)', [s_packet, wlen]))
+      end else
+        t_msgrimpl.AddMessage('Failed to get packet from receieving buffer', ML_ERROR);
     end else
-      t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
+      t_msgrimpl.AddMessage('No packet is received', ML_ERROR);
   end else
     t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
@@ -533,18 +557,21 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
-var c_tend: cardinal; pa_bytes: PByteArray; w_len: word;
+var c_tend: cardinal;
 begin
-  result := 0; str := ''; w_len := 0;
-  c_tend := GetTickCount() + c_timeout;
+  result := 0;
   if Connected then begin
-    if bwait then  WaitForReading(c_tend);
-    result := RecvData(pa_bytes, w_len);
+    c_tend := GetTickCount() + c_timeout;
+    if bwait then WaitForReceiving(c_tend);
+    result := RecvToBuffer();
     if (result > 0) then begin
-      str := PacketToStr(pa_bytes, w_len, false);
-      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]));
+      str := ReadStrFromBuffer();
+      if (str <> '') then
+        t_msgrimpl.AddMessage(format('Successful to get string from receieving buffer: data=%s', [str]))
+      else
+        t_msgrimpl.AddMessage('Failed to get string from receieving buffer', ML_ERROR);
     end else
-      t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
+      t_msgrimpl.AddMessage('No string is received', ML_ERROR);
   end else
     t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
@@ -565,22 +592,19 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.RecvStrTimeout(var str: string; const timeout: cardinal): integer;
-var s_recv: string; tend: cardinal; pa_bytes: PByteArray; w_len: Word;
+var tend: cardinal;
 begin
-  result := 0; str := ''; w_len := 0;
+  result := 0; str := '';
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
-      result := RecvData(pa_bytes, w_len);
-      if (result > 0) then begin
-        s_recv := PacketToStr(pa_bytes, w_len, false);
-        str := str + s_recv;
-      end;
+      result := RecvToBuffer();
+      if (result > 0) then str := str + ReadStrFromBuffer();
       Application.ProcessMessages();
     until (GetTickCount() >= tend);
     result := length(str);
     if (result > 0) then
-      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+      t_msgrimpl.AddMessage(format('Successful to receieve string: %s (length=%d)', [str, result]))
     else
       t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
   end else
@@ -599,25 +623,22 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal): integer;
-var i_time: cardinal; s_recv: string; b_break: boolean; tend: cardinal; pa_bytes: PByteArray; w_len: word;
+var c_time: cardinal; b_break: boolean; tend: cardinal;
 begin
-  result := 0; str := ''; w_len := 0;
+  result := 0; str := '';
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
-      result := RecvData(pa_bytes, w_len);
-      if (result > 0) then begin
-        s_recv := PacketToStr(pa_bytes, w_len, false);
-        str := str + s_recv;
-      end;
-      i_time := GetTickCount() + interv;
-      if (i_time > tend) then i_time := tend;
+      result := RecvToBuffer();
+      if (result > 0) then str := str + ReadStrFromBuffer();
+      c_time := GetTickCount() + interv;
+      if (c_time > tend) then c_time := tend;
       Application.ProcessMessages();
-      b_break := (not WaitForReading(i_time));
+      b_break := (not WaitForReceiving(c_time));
     until (b_break or (GetTickCount() >= tend));
     result := length(str);
     if (result > 0) then
-      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [result, str]))
+      t_msgrimpl.AddMessage(format('Successful to receieve string: %s (length=%d)', [str, result]))
     else
       t_msgrimpl.AddMessage('Nothing is receieved.', ML_WARNING);
   end else
@@ -642,16 +663,15 @@ begin
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
-      if (RecvData(pa_bytes, w_len) > 0) then begin
-        s_recv := PacketToStr(pa_bytes, w_len, false);
-        str := str + s_recv;
-      end;
+      w_len := RecvToBuffer();
+      if (w_len > 0) then str := str + ReadStrFromBuffer();
       if bcase then result := ContainsStr(str, exstr)
       else result := ContainsText(str, exstr);
       Application.ProcessMessages();
     until (result or (GetTickCount() >= tend));
+    w_len := length(str);
     if (result) then
-      t_msgrimpl.AddMessage(format('Successful to receieve string (length=%d): %s', [length(str), str]))
+      t_msgrimpl.AddMessage(format('Successful to receieve string: %s (length=%d)', [str, w_len]))
     else
       t_msgrimpl.AddMessage('The expected string is not receieved.', ML_WARNING);
   end else

@@ -1197,7 +1197,7 @@ begin
     result := StrToPCanMsg(str, t_pcanmsg);
     if result then begin
       result := (CanWrite(t_pcanmsg) = CAN_ERR_OK);
-      if result then result := WaitForWriting(c_tend);
+      if result then result := WaitForSending(c_tend);
       if result then t_msgrimpl.AddMessage(format('Successful to send string: %s (data length: %d bytes)', [str, t_pcanmsg.LEN]))
       else t_msgrimpl.AddMessage(format('Failed to send string: %s', [str]), ML_ERROR)
     end else

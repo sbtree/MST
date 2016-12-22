@@ -47,8 +47,6 @@ type
     t_usbio:    TUSBIOInterface3; //intance for general setting of usb (EP0)
     t_usbrx:    TUSBIOInterface3; //endpoint for reading from usb-device (Pipe In)
     t_usbtx:    TUSBIOInterface3; //endpoint for writing to usb-device  (Pipe Out)
-    s_ansisend: AnsiString;       //store the sending string in ansi-format
-    s_ansirecv: AnsiString;       //store the received string in ansi-format
     t_buffer:   TByteBuffer;
     i_status:   integer;
     w_vid:      word;             //vendor id of usb device
