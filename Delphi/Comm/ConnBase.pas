@@ -331,7 +331,7 @@ begin
   result := (e_state = CS_CONNECTED);
 end;
 
-function TConnBase.SendStrInternal(const txstr: string): boolean;
+{function TConnBase.SendStrInternal(const txstr: string): boolean;
 var w_len: word;s_ansi: AnsiString;
 begin
   s_ansi := AnsiString(txstr);
@@ -339,7 +339,7 @@ begin
   result := SendData(@s_ansi[1], w_len);
 end;
 
-{function TConnBase.RecvPacketInternal(var pbuf: PByteArray; var wlen: word): boolean;
+function TConnBase.RecvPacketInternal(var pbuf: PByteArray; var wlen: word): boolean;
 begin
   result := (RecvData() > 0);
   if result then begin
@@ -534,7 +534,7 @@ begin
     if bwait then WaitForReceiving(c_tend);
     result := (RecvToBuffer() > 0);
     if result then begin
-      result := ReadPacketFromBuffer(pbuf, wlen);
+      result := (ReadPacketFromBuffer(pbuf, wlen) > 0);
       if result then begin
         s_packet := PacketToStr(pbuf, wlen, true);
         t_msgrimpl.AddMessage(format('Successful to get packet from receieving buffer: data=%s (%d bytes)', [s_packet, wlen]))
@@ -657,9 +657,9 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean): boolean;
-var s_recv: string; tend: cardinal;  pa_bytes: PByteArray; w_len: word;
+var tend: cardinal; w_len: word;
 begin
-  result := false; str := ''; w_len := 0;
+  result := false; str := '';
   tend := GetTickCount() + timeout;
   if Connected then begin
     repeat
