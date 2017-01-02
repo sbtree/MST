@@ -321,7 +321,7 @@ type
   TPCanMsgBuffer = class(TRingBuffer<TPCANMsg>)
   end;
 
-  TPCanLight = class(TConnBase, IDllLoader)
+  TPCanLight = class(TCommBase, IDllLoader)
   class function FindHardwareType(const shwt: string; var ehwt: EPCanHardwareType): boolean;
   protected
     e_hwt:      EPCanHardwareType;  //indicate hardware type of the can adapter, see EPCanHardwareType
@@ -355,7 +355,6 @@ type
     function SetCanVersion(const sver: string): boolean;
     function GetHardwareTypeText(): string;
     function GetBaudrateText(): string;
-    function StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean; override;
     function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
@@ -853,19 +852,6 @@ end;
 function TPCanLight.GetBaudrateText(): string;
 begin
   result := CSTR_PCAN_BAUDRATES[e_baud];
-end;
-
-// =============================================================================
-// Description  : converts a string into a internal data for sending
-// Parameter    : --
-// Return       : true, if the string is converted successfully. Otherwise false
-// Exceptions   : --
-// First author : 2016-11-25 /bsu/
-// History      :
-// =============================================================================
-function TPCanLight.StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean;
-begin
-  result := StrToPCanMsg(str, t_sendmsg);
 end;
 
 function TPCanLight.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;

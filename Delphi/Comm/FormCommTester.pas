@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ConnBase, TextMessage, PCAN, ExtCtrls;
+  Dialogs, StdCtrls, ConnBase, TextMessage, {PCAN,} ExtCtrls;
 
 type
   TfrmCommTester = class(TForm)
@@ -30,9 +30,9 @@ type
     procedure btnRecvClick(Sender: TObject);
   private
     { Private-Deklarationen }
-    t_conn: TConnBase;
-    t_conn2: TConnBase;
-    t_canthread: TPCanReadThread;
+    t_conn: TCommBase;
+    //t_conn2: TCommBase;
+    //t_canthread: TPCanReadThread;
     t_messenger: TTextMessenger;
   public
     { Public-Deklarationen }
@@ -47,9 +47,9 @@ implementation
 uses RS232, MtxUSB;
 
 procedure TfrmCommTester.btnCanClick(Sender: TObject);
-var s_conf: string;
+//var s_conf: string;
 begin
-  if assigned(t_conn) then FreeAndNil(t_conn);
+  {if assigned(t_conn) then FreeAndNil(t_conn);
   t_conn := TPCanLight.Create(self);
   ITextMessengerImpl(t_conn).Messenger := t_messenger;
   t_conn.Timeout := 10000;
@@ -57,7 +57,7 @@ begin
   t_conn.Config(s_conf);
   t_conn.Connect();
 
-  {if assigned(t_conn2) then FreeAndNil(t_conn2);
+  if assigned(t_conn2) then FreeAndNil(t_conn2);
   t_conn2 := TPCanLight.Create(self);
   ITextMessengerImpl(t_conn2).Messenger := t_messenger;
   t_conn2.Timeout := 10000;
@@ -89,7 +89,7 @@ begin
 end;
 
 procedure TfrmCommTester.btnSendClick(Sender: TObject);
-var s_sending: string; s_ansi: AnsiString;
+var s_sending: string; //s_ansi: AnsiString;
 begin
   //format of CAN-Message: '60A:40800020';
   //format of OROW: 'OR:0008' or 'OR:1:0008'
@@ -97,11 +97,11 @@ begin
   if chkCR.Checked then s_sending := s_sending + Char(#13);
   if chkLF.Checked then s_sending := s_sending + Char(#10);
 
-  //if assigned(t_conn) then t_conn.SendStr(s_sending);
-  if assigned(t_conn) then begin
+  if assigned(t_conn) then t_conn.SendStr(s_sending);
+  {if assigned(t_conn) then begin
     s_ansi := AnsiString(s_sending);
     t_conn.SendPacket(PByteArray(@s_ansi[1]), length(s_ansi));
-  end;
+  end;}
 end;
 
 procedure TfrmCommTester.btnUSBClick(Sender: TObject);
@@ -128,18 +128,18 @@ end;
 procedure TfrmCommTester.FormDestroy(Sender: TObject);
 begin
   if assigned(t_conn) then FreeAndNil(t_conn);
-  if assigned(t_canthread) then FreeAndNil(t_canthread);
+  //if assigned(t_canthread) then FreeAndNil(t_canthread);
   FreeAndNil(t_messenger);
 end;
 
 procedure TfrmCommTester.tmrUpdateTimer(Sender: TObject);
-var t_pcan: TPCanLight;
+//var t_pcan: TPCanLight;
 begin
-  t_pcan := TPCanLight(t_conn);
+  {t_pcan := TPCanLight(t_conn);
   if assigned(t_pcan) then begin
     lblCount.Caption := format('Tx(%d); Rx(%d)', [t_pcan.CountSending, t_pcan.CountReceive]);
     //UpdateMemoText();
-  end;
+  end;}
 end;
 
 end.

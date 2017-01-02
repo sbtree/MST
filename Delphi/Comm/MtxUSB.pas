@@ -14,7 +14,7 @@ uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX,
     ConnBase, DataBuffer;
 const
   C_USB_BUFFER_SIZE = 1024;
-  
+
 type
   EMtxUsbProperty = ( MUP_VID, //id of vendor
                       MUP_PID, //product id
@@ -42,12 +42,13 @@ type
     Configuration     : string;
   end;
 
-  TMtxUsb=class(TConnBase)
+  TMtxUsb=class(TCommBase)
   protected
     t_usbio:    TUSBIOInterface3; //intance for general setting of usb (EP0)
     t_usbrx:    TUSBIOInterface3; //endpoint for reading from usb-device (Pipe In)
     t_usbtx:    TUSBIOInterface3; //endpoint for writing to usb-device  (Pipe Out)
-    t_buffer:   TByteBuffer;
+    t_wbuffer:  TByteBuffer;      //buffer for sending data
+    t_rbuffer:  TByteBuffer;      //buffer for receiving data
     i_status:   integer;
     w_vid:      word;             //vendor id of usb device
     w_pid:      word;             //product id of usb device
@@ -63,22 +64,28 @@ type
     function GetDeviceConfig(): boolean;
     function GetProductSN(): integer;
     function Init(const psn: integer): boolean;
-    function Uninit(): boolean;
+    function Deinit(): boolean;
     function SetProperty(const eprop: EMtxUsbProperty; const sval: string): boolean;
     function SetDeviceVid(const sval: string): boolean;
     function SetDevicePid(const sval: string): boolean;
     function SetProductSN(const sval: string): boolean;
     function ConnectTo(const psn: integer): boolean;
-    function StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean; override;
     function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
-    function RecvData(var pbytes: PByteArray; var wlen: Word): integer; override;
-    function RecvToBuffer(): integer;
     function TryConnect(): boolean; override;
     function TryDisconnect: boolean; override;
-    procedure ClearBuffer(); override;
+
+    function InitBuffer(): boolean; override;
+    function WriteStrToBuffer(const txstr: string): boolean; override;
+    function WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean; override;
+    function SendFromBuffer(): boolean; override;
+    function ReadStrFromBuffer(): string; override;
+    function ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer; override;
+    function RecvToBuffer(): integer; override;
+    function ClearBuffer(): integer; override;
+    procedure DeinitBuffer(); override;
+
     procedure SafeArrayToArray(const psarr: PSafeArray; const parr: PByteArray; const size: Integer);
     procedure ClearDeviceInfo();
     procedure UpdateDeviceIds(var idlist: TStrings);
@@ -98,7 +105,6 @@ type
 
     function FindDevice(const psn: integer = -1; const tout: integer = -1): boolean;
     function Config(const sconfs: TStrings): boolean; override;
-    //function Connect(): boolean; override;
   end;
 
 implementation
@@ -313,12 +319,13 @@ begin
 
   //5. start reading and writing worker-thread
   if result then begin
-    t_buffer.Clear();
+    t_rbuffer.Clear();
+    t_usbrx.ResetPipe(i_status);
     t_usbrx.StartReading(C_USB_RX_BUFFER_SIZE, C_USB_CNT_RX_BUFFERS, C_USB_MAX_RX_ERRORS, i_status);
     result := (i_status = USBIO_ERR_SUCCESS);
     //result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
     if result then begin
-      t_usbrx.ResetPipe(i_status);
+      t_usbtx.ResetPipe(i_status);
       t_usbtx.StartWriting( C_USB_TX_BUFFER_SIZE, C_USB_CNT_TX_BUFFERS, C_USB_MAX_TX_ERRORS, 0, i_status);
       result := (i_status = USBIO_ERR_SUCCESS);
       //result := ((i_status = USBIO_ERR_SUCCESS) or (i_status = integer(USBIO_ERR_THREAD_IS_RUNNING)));
@@ -330,7 +337,7 @@ begin
   if (result and (e_state in [CS_CONFIGURED, CS_CONNECTED])) then e_state := CS_CONNECTED;
 end;
 
-function TMtxUsb.Uninit(): boolean;
+function TMtxUsb.Deinit(): boolean;
 begin
   //5. stop reading and writing worker-thread
   t_usbtx.StopWriting();
@@ -406,22 +413,6 @@ begin
 end;
 
 // =============================================================================
-// Description  : converts a string into a internal data for sending
-// Parameter    : --
-// Return       : true, if the string is converted successfully. Otherwise false
-// Exceptions   : --
-// First author : 2016-11-25 /bsu/
-// History      :
-// =============================================================================
-function TMtxUsb.StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean;
-begin
-  s_ansisend := AnsiString(str);
-  pbytes := PByteArray(s_ansisend[1]);
-  wlen := length(s_ansisend);
-  result := (wlen > 0);
-end;
-
-// =============================================================================
 // Description  : build current data in the buffer into a string
 //                Note: The property ShowNullChar is applied for null
 // Parameter    : --
@@ -433,9 +424,9 @@ end;
 function TMtxUsb.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;
 begin
   if bhex then
-    result := string(t_buffer.ReadHex())
+    result := string(t_rbuffer.ReadHex())
   else
-    result := string(t_buffer.ReadAnsiStr());
+    result := string(t_rbuffer.ReadAnsiStr());
 end;
 
 function TMtxUsb.IsReadReady(): boolean;
@@ -450,13 +441,47 @@ begin
   result := (t_txwait.WaitFor(0) = wrSignaled);
 end;
 
-function TMtxUsb.SendData(const pbuf: PByteArray; const wlen: word): boolean;
-var pa_send: PSafeArray; i: integer;
+function TMtxUsb.TryConnect(): boolean;
+begin
+  if (not Init(i_psn)) then Deinit();
+  result := IsConnected();
+end;
+
+function TMtxUsb.TryDisconnect: boolean;
+begin
+  result := Deinit();
+end;
+
+function TMtxUsb.InitBuffer(): boolean;
+begin
+  if not assigned(t_wbuffer) then t_wbuffer := TByteBuffer.Create();
+  if not assigned(t_rbuffer) then t_rbuffer := TByteBuffer.Create();
+  result := ( t_wbuffer.Resize(C_BUFFER_SIZE_WRITE) and
+              t_rbuffer.Resize(C_BUFFER_SIZE_READ)  );
+end;
+
+function TMtxUsb.WriteStrToBuffer(const txstr: string): boolean;
+var s_ansi: AnsiString;
+begin
+  s_ansi := AnsiString(txstr);
+  result := (t_wbuffer.WriteAnsiStr(s_ansi) > 0);
+end;
+
+function TMtxUsb.WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean;
+begin
+  result := (t_wbuffer.WriteBytes(pbytes, wlen) > 0);
+end;
+
+function TMtxUsb.SendFromBuffer(): boolean;
+var pa_send: PSafeArray; i, i_len: integer; cur_byte: byte;
 begin
   result := false;
-  if (wlen > 0) then begin
-    pa_send := SafeArrayCreateVector(VT_UI1, 0, wlen);
-    for i := 0 to wlen - 1 do SafeArrayPutElement(pa_send, i, pbuf[i]);
+  i_len := t_wbuffer.CountUsed;
+  if (i_len > 0) then begin
+    pa_send := SafeArrayCreateVector(VT_UI1, 0, C_BUFFER_SIZE_WRITE);
+    for i := 0 to i_len - 1 do
+      if (t_wbuffer.ReadElement(cur_byte)) then SafeArrayPutElement(pa_send, i, cur_byte);
+
     t_usbtx.WriteData(pa_send, 0, i_status);
     result := (i_status = USBIO_ERR_SUCCESS);
     if (not result) then
@@ -465,12 +490,17 @@ begin
   end;
 end;
 
-function TMtxUsb.RecvData(var pbytes: PByteArray; var wlen: Word): integer;
+function TMtxUsb.ReadStrFromBuffer(): string;
 begin
-  result := RecvToBuffer();
-  s_ansirecv := t_buffer.ReadAnsiStr();
-  pbytes := PByteArray(@s_ansirecv[1]);
-  wlen := length(s_ansirecv);
+  RecvToBuffer();
+  result := string(t_rbuffer.ReadAnsiStr());
+end;
+
+function TMtxUsb.ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer;
+begin
+  RecvToBuffer();
+  t_rbuffer.ReadBytes(pbytes, wlen);
+  result := wlen;
 end;
 
 function TMtxUsb.RecvToBuffer(): integer;
@@ -482,7 +512,7 @@ begin
   result := 0;
   ZeroMemory(@ba_rbuf[0], C_USB_RX_BUFFER_SIZE);
   repeat
-    i_size := t_buffer.CountFree;
+    i_size := t_rbuffer.CountFree;
     t_usbrx.ReadData(pa_recv, i_size, i_status);
     if (i_status = USBIO_ERR_SUCCESS) then begin
       SafeArrayToArray(pa_recv, PByteArray(@(ba_rbuf[result])), i_size); //bsu: todo, index of ba_rbuf overflow??
@@ -493,32 +523,29 @@ begin
     end;
   until (i_status = integer(USBIO_ERR_NO_DATA));
   SafeArrayDestroy (pa_recv);
-  if t_buffer.CountFree > result then
-    t_buffer.WriteBytes(@ba_rbuf[0], result)
+  if t_rbuffer.CountFree > result then
+    t_rbuffer.WriteBytes(@ba_rbuf[0], result)
   else
-    t_msgrimpl.AddMessage(format('The buffer is full (buffer size = %d).', [t_buffer.BufferSize]), ML_WARNING);
+    t_msgrimpl.AddMessage(format('The buffer is full (buffer size = %d).', [t_rbuffer.BufferSize]), ML_WARNING);
+  result := t_rbuffer.CountUsed;
 end;
 
-function TMtxUsb.TryConnect(): boolean;
+function TMtxUsb.ClearBuffer(): integer;
+var s_ansi: AnsiString;
 begin
-  if (not Init(i_psn)) then
-    Uninit();
-  result := IsConnected();
-end;
-
-function TMtxUsb.TryDisconnect: boolean;
-begin
-  result := Uninit();
-end;
-
-procedure TMtxUsb.ClearBuffer();
-var i_len: integer;
-begin
-  i_len := t_buffer.CountUsed ;
-  if (i_len > 0) then begin
-    t_msgrimpl.AddMessage(format('Rx-Buffer (%d bytes) is cleared', [i_len]), ML_WARNING);
-    t_buffer.Clear();
+  RecvToBuffer();
+  result := t_rbuffer.CountUsed ;
+  if (result > 0) then begin
+    s_ansi := t_rbuffer.ReadAnsiStr();
+    if length(s_ansi) > 32 then s_ansi := LeftStr(s_ansi, 16) + ' ... ' + RightStr(s_ansi, 16);
+    t_msgrimpl.AddMessage(format('Rx-Buffer is cleared: %s (%d bytes)', [s_ansi, result]), ML_WARNING);
   end;
+end;
+
+procedure TMtxUsb.DeinitBuffer();
+begin
+  if assigned(t_wbuffer) then FreeAndNil(t_wbuffer);
+  if assigned(t_rbuffer) then FreeAndNil(t_rbuffer);
 end;
 
 procedure TMtxUsb.ClearDeviceInfo();
@@ -603,10 +630,6 @@ begin
   t_usbrx.Connect();
   t_usbtx.Connect();
   UpdateDeviceIds(t_deviceids);
-
-  //create buffer
-  t_buffer := TByteBuffer.Create();
-  t_buffer.Resize(C_USB_BUFFER_SIZE);
 end;
 
 destructor TMtxUsb.Destroy;
@@ -621,8 +644,6 @@ begin
   t_usbio.DisablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
   FreeAndNil(t_deviceids);
   FreeAndNil(t_usbio);
-  //t_connobj := nil;
-  t_buffer.Free();
 	inherited Destroy;
 end;
 
@@ -673,18 +694,5 @@ begin
     else t_msgrimpl.AddMessage(format('Failed to configurate the configuration (%s).', [GetTypeName()]), ML_ERROR);
   end else t_msgrimpl.AddMessage(format('The current state is not suitable to config (state=%d).', [Ord(e_state)]), ML_ERROR);
 end;
-
-{function TMtxUsb.Connect(): boolean;
-begin
-  result := false;
-  if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then begin
-    ConnectTo(i_psn);
-    result := WaitForConnecting(GetTickCount() + c_timeout);
-    if result then begin
-      e_state := CS_CONNECTED;
-      t_msgrimpl.AddMessage(format('Successful to make a connection(%s) to device(sn=%d).', [GetTypeName(), ProductSN]));
-    end else t_msgrimpl.AddMessage(format('Failed to make a connection(%s) to device(sn=%d)', [GetTypeName(), ProductSN]), ML_ERROR);
-  end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for making a connection.', [GetStateStr()]), ML_WARNING);
-end; }
 
 end.

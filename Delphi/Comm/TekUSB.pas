@@ -13,7 +13,7 @@ interface
 uses ConnBase;
 
 type
-  TTekUsb = class(TConnBase)
+  TTekUsb = class(TCommBase)
   
   end;
 

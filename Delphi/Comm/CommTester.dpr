@@ -8,13 +8,11 @@ uses
   GenUtils in '..\General\GenUtils.pas',
   TextMessage in '..\General\TextMessage.pas',
   ConnBase in 'ConnBase.pas',
-  PCAN in 'PCAN.pas',
-  MtxUSB in 'MtxUSB.pas',
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
   Usbspec in '..\Externals\USBIO\Usbspec.pas',
-  TekUSB in 'TekUSB.pas',
   DllLoader in '..\General\DllLoader.pas',
-  Serial3 in '..\Externals\Serial3.pas';
+  Serial3 in '..\Externals\Serial3.pas',
+  MtxUSB in 'MtxUSB.pas';
 
 {$R *.res}
 

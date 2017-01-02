@@ -10,9 +10,6 @@ unit RS232;
 
 interface
 uses  Classes, SysUtils, Serial3, ConnBase, DataBuffer;
-const
-  C_RS232_BUFFER_SIZE = C_BUFFER_SIZE_DEFAULT;
-
 type
   //enumeration of properties for serial port
   ESerialProperty = (
@@ -26,7 +23,7 @@ type
   PSerial = ^TSerial;
 
   //sub class of TConnBase for communication over serial port
-  TMtxRS232 = class(TConnBase)
+  TMtxRS232 = class(TCommBase)
   class function EnumSerialPort(var sports: TStringList): integer;
   class function SetPortByStr(pser: PSerial; const sval: string): boolean;
   class function SetBaudrateByStr(pser: PSerial; const sval: string): boolean;
@@ -34,9 +31,11 @@ type
   class function SetDataBitsByStr(pser: PSerial; const sval: string): boolean;
   class function SetStopBitsByStr(pser: PSerial; const sval: string): boolean;
   class function SetFlowControlByStr(pser: PSerial; const sval: string): boolean;
+  private
   protected
-    t_buffer: TByteBuffer;
-    t_ser :   TSerial;
+    t_wbuffer:  TByteBuffer;      //buffer for sending data
+    t_rbuffer:  TByteBuffer;      //buffer for receiving data
+    t_ser :     TSerial;
   protected
     function SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
     function SetPort(const sval: string): boolean;
@@ -45,16 +44,23 @@ type
     function SetDatabits(const sval: string): boolean;
     function SetStopbits(const sval: string): boolean;
     function SetFlowControl(const sval: string): boolean;
-    function StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean; override;
     function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
-    function RecvData(var pbytes: PByteArray; var wlen: Word): integer; override;
-    function RecvToBuffer(): integer;
+    //function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
+    //function RecvData(var pbytes: PByteArray; var wlen: Word): integer; override;
     function TryConnect(): boolean; override;
     function TryDisconnect(): boolean; override;
-    procedure ClearBuffer(); override;
+
+    function InitBuffer(): boolean; override;
+    function WriteStrToBuffer(const txstr: string): boolean; override;
+    function WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean; override;
+    function SendFromBuffer(): boolean; override;
+    function ReadStrFromBuffer(): string; override;
+    function ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer; override;
+    function RecvToBuffer(): integer; override;
+    function ClearBuffer(): integer; override;
+    procedure DeinitBuffer(); override;
   public
     constructor Create(owner: TComponent); override;
     destructor Destroy; override;
@@ -312,22 +318,6 @@ begin
 end;
 
 // =============================================================================
-// Description  : converts a string into a internal data for sending
-// Parameter    : --
-// Return       : true, if the string is converted successfully. Otherwise false
-// Exceptions   : --
-// First author : 2016-11-25 /bsu/
-// History      :
-// =============================================================================
-function TMtxRS232.StrToPacket(const str: string; var pbytes: PByteArray; var wlen: Word): boolean;
-begin
-  s_ansisend := AnsiString(str);
-  pbytes := PByteArray(s_ansisend[1]);
-  wlen := length(s_ansisend);
-  result := (wlen > 0);
-end;
-
-// =============================================================================
 // Description  : build current data in the buffer into a string
 //                Note: The property ShowNullChar is applied for null
 // Parameter    : --
@@ -339,7 +329,7 @@ end;
 function TMtxRS232.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;
 begin
   if (bhex) then
-    result := string(t_buffer.ReadHex())
+    result := string(t_rbuffer.ReadHex())
   else
     result := string(AnsiString(pbytes));
 end;
@@ -354,7 +344,7 @@ begin
   result := (t_ser.TxWaiting <= 0);
 end;
 
-function TMtxRS232.SendData(const pbuf: PByteArray; const wlen: word): boolean;
+{function TMtxRS232.SendData(const pbuf: PByteArray; const wlen: word): boolean;
 var s_ansi: AnsiString;
 begin
   SetString(s_ansi, PAnsiChar(pbuf), wlen);
@@ -365,23 +355,10 @@ end;
 function TMtxRS232.RecvData(var pbytes: PByteArray; var wlen: Word): integer;
 begin
   result := RecvToBuffer();
-  s_ansirecv := t_buffer.ReadAnsiStr();
+  s_ansirecv := t_rbuffer.ReadAnsiStr();
   pbytes := PByteArray(@s_ansirecv[1]);
   wlen := length(s_ansirecv);
-end;
-
-function TMtxRS232.RecvToBuffer(): integer;
-var ch: AnsiChar;
-begin
-  result := 0;
-  while ((t_ser.RxWaiting > 0) and (not t_buffer.IsFull())) do begin
-    if t_ser.ReadChar(ch) = 1 then begin
-      t_buffer.WriteElement(byte(ch));
-      inc(result);
-    end;
-    Application.ProcessMessages();
-  end;
-end;
+end;}
 
 function TMtxRS232.TryConnect(): boolean;
 begin
@@ -407,17 +384,76 @@ begin
   result := (not t_ser.Active);
 end;
 
-procedure TMtxRS232.ClearBuffer();
-var c_tend: cardinal; i_len: integer;
+function TMtxRS232.InitBuffer(): boolean;
 begin
-  c_tend := GetTickCount() + c_timeout;
-  repeat i_len := RecvToBuffer();
-  until ((i_len <= 0) or (GetTickCount() >= c_tend));
-  i_len := t_buffer.CountUsed ;
-  if (i_len > 0) then begin
-    t_msgrimpl.AddMessage(format('Rx-Buffer (%d bytes) is cleared', [i_len]), ML_WARNING);
-    t_buffer.Clear();
+  if not assigned(t_wbuffer) then t_wbuffer := TByteBuffer.Create();
+  if not assigned(t_rbuffer) then t_rbuffer := TByteBuffer.Create();
+  result := ( t_wbuffer.Resize(C_BUFFER_SIZE_WRITE) and
+              t_rbuffer.Resize(C_BUFFER_SIZE_READ)  );
+end;
+
+function TMtxRS232.WriteStrToBuffer(const txstr: string): boolean;
+var s_ansi: AnsiString;
+begin
+  s_ansi := AnsiString(txstr);
+  result := (t_wbuffer.WriteAnsiStr(s_ansi) > 0);
+end;
+
+function TMtxRS232.WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean;
+begin
+  result := (t_wbuffer.WriteBytes(pbytes, wlen) > 0);
+end;
+
+function TMtxRS232.SendFromBuffer(): boolean;
+var s_ansi: AnsiString;
+begin
+  s_ansi := t_wbuffer.ReadAnsiStr();
+  t_ser.WriteString(s_ansi);
+  result := (length(s_ansi) > 0);
+end;
+
+function TMtxRS232.ReadStrFromBuffer(): string;
+begin
+  RecvToBuffer();
+  result := string(t_rbuffer.ReadAnsiStr());
+end;
+
+function TMtxRS232.ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer;
+begin
+  RecvToBuffer();
+  t_rbuffer.ReadBytes(pbytes, wlen);
+  result := wlen;
+end;
+
+function TMtxRS232.RecvToBuffer(): integer;
+var ch: AnsiChar;
+begin
+  result := 0;
+  while ((t_ser.RxWaiting > 0) and (not t_rbuffer.IsFull())) do begin
+    if t_ser.ReadChar(ch) = 1 then begin
+      t_rbuffer.WriteElement(byte(ch));
+      inc(result);
+    end;
+    Application.ProcessMessages();
   end;
+end;
+
+function TMtxRS232.ClearBuffer(): integer;
+var s_ansi: AnsiString;
+begin
+  RecvToBuffer();
+  result := t_rbuffer.CountUsed ;
+  if (result > 0) then begin
+    s_ansi := t_rbuffer.ReadAnsiStr();
+    if length(s_ansi) > 32 then s_ansi := LeftStr(s_ansi, 16) + ' ... ' + RightStr(s_ansi, 16);
+    t_msgrimpl.AddMessage(format('Rx-Buffer is cleared: %s (%d bytes)', [s_ansi, result]), ML_WARNING);
+  end;
+end;
+
+procedure TMtxRS232.DeinitBuffer();
+begin
+  if assigned(t_wbuffer) then t_wbuffer.Free();
+  if assigned(t_rbuffer) then t_rbuffer.Free();
 end;
 
 // =============================================================================
@@ -440,10 +476,6 @@ begin
   t_ser.CheckParity := false;
   t_ser.DataBits := d8Bit;
   t_ser.NotifyErrors := neNone;
-
-  //create buffer
-  t_buffer := TByteBuffer.Create();
-  t_buffer.Resize(C_RS232_BUFFER_SIZE);
 end;
 
 // =============================================================================
@@ -457,9 +489,7 @@ end;
 // =============================================================================
 destructor TMtxRS232.Destroy;
 begin
-  t_buffer.Free();
   t_ser.Free();
-  //t_connobj := nil;
   inherited Destroy();
 end;
 

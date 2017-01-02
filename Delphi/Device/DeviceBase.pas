@@ -54,9 +54,9 @@ type
     //function SendPacket(packet: array of byte): boolean;
     //function RecvPacket(packet: array of byte): boolean;
     function ReleaseDevice(): boolean;
-    function GetDevConnect(): TConnBase;
+    function GetDevConnect(): TCommBase;
     procedure SetDevConfig(const conf: TConfigBase);
-    property DevConnect: TConnBase read GetDevConnect;
+    property DevConnect: TCommBase read GetDevConnect;
     property DevState: EDeviceState read GetDevState;
     property DevConfig: TConfigBase read GetDevConfig write SetDevConfig;
   end;
@@ -73,7 +73,7 @@ type
   TDeviceBase=class(TComponent, IDeviceBase, ITextMessengerImpl)
   protected
     e_state:    EDeviceState; //device state
-    t_curconn:  TConnBase;    //current connection
+    t_curconn:  TCommBase;    //current connection
     t_devconf:  TConfigBase;  //config of device, reference to the object, which is given by calling InitDevice
     t_msgrimpl: TTextMessengerImpl;
   private
@@ -95,11 +95,11 @@ type
     //function SendPacket(packet: array of byte): boolean; virtual;
     //function RecvPacket(packet: array of byte): boolean; virtual;
     function ReleaseDevice(): Boolean; virtual;
-    function GetDevConnect(): TConnBase;
+    function GetDevConnect(): TCommBase;
     procedure SetDevConfig(const conf: TConfigBase); virtual;
 
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
-    property DevConnect: TConnBase read GetDevConnect;
+    property DevConnect: TCommBase read GetDevConnect;
     property DevState: EDeviceState read GetDevState;
     property DevConfig: TConfigBase read GetDevConfig write SetDevConfig;
     property StateText : string read GetStateText;
@@ -280,7 +280,7 @@ begin
   result := true;
 end;
 
-function TDeviceBase.GetDevConnect(): TConnBase;
+function TDeviceBase.GetDevConnect(): TCommBase;
 begin
   result := t_curconn;
 end;

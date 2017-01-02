@@ -10,9 +10,10 @@
 unit ConnBase;
 
 interface
-uses Classes, TextMessage, IniFiles, Serial3, SyncObjs, SysUtils;
+uses Classes, TextMessage, IniFiles, Serial3, SyncObjs, SysUtils, DataBuffer;
 const
-  C_BUFFER_SIZE_DEFAULT = 1024;
+  C_BUFFER_SIZE_WRITE = 512;
+  C_BUFFER_SIZE_READ = 2048;
 
 type
   //enumeration for all connection type
@@ -32,7 +33,7 @@ type
                    );
 
   //definition of a interface for communication
-  IConnInterf = interface
+  ICommInterf = interface
     function Config(const sconf: string): boolean; overload;
     function Config(const sconfs: TStrings): boolean; overload;
     function Connect(): boolean;
@@ -45,7 +46,7 @@ type
   end;
 
   //base class of connection
-  TConnBase = class(TComponent, IConnInterf, ITextMessengerImpl)
+  TCommBase = class(TComponent, ICommInterf, ITextMessengerImpl)
   class function GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
   class function GetConnectTypeName(const etype: EConnectType): string;
   class function GetConnectState(const estate: EConnectState): string;
@@ -53,15 +54,9 @@ type
     e_type:     EConnectType;       //connection type
     e_state:    EConnectState;      //connection state
     c_timeout:  cardinal;           //timeout in milli seconds
-    p_wbuffer:  pointer;
-    p_rbuffer:  pointer;
-    s_ansisend: AnsiString;         //store the sending string in ansi-format
-    s_ansirecv: AnsiString;         //store the received string in ansi-format
     t_msgrimpl: TTextMessengerImpl; //for transfering messages
     t_rxwait:   TEvent;             //wait event for reading
     t_txwait:   TEvent;             //wait event for writing complete
-  private
-    function InitBuffer(): boolean; virtual; abstract;
   protected
     function GetTypeName(): string; virtual;
     function GetStateStr(): string; virtual;
@@ -76,13 +71,15 @@ type
     function TryConnect(): boolean; virtual; abstract;
     function TryDisconnect(): boolean; virtual; abstract;
 
-    function WriteStrToBuffer(const txstr: string): boolean; virtual;
-    function WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean; virtual;
+    function InitBuffer(): boolean; virtual; abstract;
+    function WriteStrToBuffer(const txstr: string): boolean; virtual; abstract;
+    function WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean; virtual; abstract;
     function SendFromBuffer(): boolean; virtual; abstract;
-    function ReadStrFromBuffer(): string; virtual;
-    function ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer; virtual;
+    function ReadStrFromBuffer(): string; virtual; abstract;
+    function ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer; virtual; abstract;
     function RecvToBuffer(): integer; virtual; abstract;
     function ClearBuffer(): integer; virtual; abstract;
+    procedure DeinitBuffer(); virtual; abstract;
   public
     //constructor and destructor
     constructor Create(owner: TComponent); override;
@@ -119,7 +116,7 @@ type
     procedure SetEventTx();
     procedure ResetEventTx();
   end;
-  PConnBase = ^TConnBase;
+  PConnBase = ^TCommBase;
 
 const
   //define names of connection types
@@ -157,7 +154,7 @@ uses Forms, StrUtils, Windows, Registry;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-class function TConnBase.GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
+class function TCommBase.GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
 var i_idx: integer;
 begin
   i_idx := IndexText(conkey, CSTR_CONN_KEYS);
@@ -175,7 +172,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-class function TConnBase.GetConnectTypeName(const etype: EConnectType): string;
+class function TCommBase.GetConnectTypeName(const etype: EConnectType): string;
 begin
   result := CSTR_CONN_KEYS[etype];
 end;
@@ -189,7 +186,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-class function TConnBase.GetConnectState(const estate: EConnectState): string;
+class function TCommBase.GetConnectState(const estate: EConnectState): string;
 begin
   result := CSTR_CONN_STATES[estate];
 end;
@@ -202,9 +199,9 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function  TConnBase.GetTypeName(): string;
+function  TCommBase.GetTypeName(): string;
 begin
-  result := TConnBase.GetConnectTypeName(e_type);
+  result := TCommBase.GetConnectTypeName(e_type);
 end;
 
 // =============================================================================
@@ -215,9 +212,9 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.GetStateStr(): string;
+function TCommBase.GetStateStr(): string;
 begin
-  result := TConnBase.GetConnectState(e_state);
+  result := TCommBase.GetConnectState(e_state);
 end;
 
 // =============================================================================
@@ -229,20 +226,22 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.WaitForReceiving(const tend: cardinal): boolean;
-var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_read: boolean;
+function TCommBase.WaitForReceiving(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count, c_secs: cardinal; b_wait, b_read: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
   b_read := IsReadReady(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
   b_wait := ((not b_read) and (c_tcur < tend));
   if b_wait then begin
-    s_lastmsg := 'Waiting for reading: %ds';
+    s_lastmsg := format('Waiting for reading: %d', [Round((tend - c_tcur) / 1000)]) + ' ... %ds';
     t_msgrimpl.AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing in gui
-        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        if (tend > c_tcur) then c_secs := Round((tend - c_tcur) / 1000)
+        else c_secs := 0;
+        t_msgrimpl.UpdateMessage(format(s_lastmsg, [c_secs]));
         c_count := c_tcur;
       end;
       b_read := IsReadReady();
@@ -261,20 +260,22 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.WaitForSending(const tend: cardinal): boolean;
-var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait, b_write: boolean;
+function TCommBase.WaitForSending(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count, c_secs: cardinal; b_wait, b_write: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
   b_write := IsWriteComplete(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
   b_wait := ((not b_write) and (c_tcur < tend));
   if b_wait then begin
-    s_lastmsg := 'Waiting for completing write: %ds';
+    s_lastmsg := format('Waiting for completing write: %d', [Round((tend - c_tcur) / 1000)]) + ' ... %ds';
     t_msgrimpl.AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+        if (tend > c_tcur) then c_secs := Round((tend - c_tcur) / 1000)
+        else c_secs := 0;
+        t_msgrimpl.UpdateMessage(format(s_lastmsg, [c_secs]));
         c_count := c_tcur;
       end;
       b_write := IsWriteComplete();
@@ -294,21 +295,22 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.WaitForConnecting(const tend: cardinal): boolean;
-var s_lastmsg: string; c_tcur, c_count: cardinal; b_wait: boolean;
+function TCommBase.WaitForConnecting(const tend: cardinal): boolean;
+var s_lastmsg: string; c_tcur, c_count, c_secs: cardinal; b_wait: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
   b_wait := ((not Connected) and (c_tcur < tend));
   if b_wait then begin
-    s_lastmsg := 'Waiting for connecting: %ds';
+    s_lastmsg := format('Waiting for connecting: %d', [Round((tend - c_tcur) / 1000)]) + ' ... %ds';
     t_msgrimpl.AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000.0)]));
     repeat
       Application.ProcessMessages();
       TryConnect();
       c_tcur := GetTickCount();
       if (c_tcur - c_count) > 500  then begin //update the message per 0.5 second to avoid flashing
-        if (c_tcur > tend) then t_msgrimpl.UpdateMessage(format(s_lastmsg, [0]))
-        else t_msgrimpl.UpdateMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000.0)]));
+        if (tend > c_tcur) then c_secs := Round((tend - c_tcur) / 1000)
+        else c_secs := 0;
+        t_msgrimpl.UpdateMessage(format(s_lastmsg, [c_secs]));
         c_count := c_tcur;
       end;
       b_wait := ((not IsConnected()) and (c_tcur < tend));
@@ -326,27 +328,10 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.IsConnected(): boolean;
+function TCommBase.IsConnected(): boolean;
 begin
   result := (e_state = CS_CONNECTED);
 end;
-
-{function TConnBase.SendStrInternal(const txstr: string): boolean;
-var w_len: word;s_ansi: AnsiString;
-begin
-  s_ansi := AnsiString(txstr);
-  w_len := Length(s_ansi) ;
-  result := SendData(@s_ansi[1], w_len);
-end;
-
-function TConnBase.RecvPacketInternal(var pbuf: PByteArray; var wlen: word): boolean;
-begin
-  result := (RecvData() > 0);
-  if result then begin
-    pbuf := p_rxbuf;
-    wlen := w_rxlen;
-  end;
-end; }
 
 // =============================================================================
 // Description  : constuctor
@@ -355,7 +340,7 @@ end; }
 // First author : 2016-06-15 /bsu/
 // History      :
 // =============================================================================
-constructor TConnBase.Create(owner: TComponent);
+constructor TCommBase.Create(owner: TComponent);
 begin
   inherited Create(owner);
   e_type := CT_UNKNOWN;
@@ -374,11 +359,12 @@ end;
 // First author : 2016-06-15 /bsu/
 // History      :
 // =============================================================================
-destructor TConnBase.Destroy;
+destructor TCommBase.Destroy;
 begin
   t_msgrimpl.Free();
-  FreeAndNil(t_rxwait);
   FreeAndNil(t_txwait);
+  FreeAndNil(t_rxwait);
+  DeinitBuffer();
   inherited Destroy();
 end;
 
@@ -391,7 +377,7 @@ end;
 //    First author : 2016-06-17 /bsu/
 //    History      :
 // =============================================================================
-function TConnBase.Config(const sconf: string): boolean;
+function TCommBase.Config(const sconf: string): boolean;
 var t_confs: TStrings; s_conf: string;
 begin
   result := false;
@@ -414,7 +400,7 @@ end;
 // First author : 2016-07-12 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.Connect(): boolean;
+function TCommBase.Connect(): boolean;
 begin
   result := false;
   if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then begin
@@ -438,7 +424,7 @@ end;
 // First author : 2016-11-28 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.Disconnect(): boolean;
+function TCommBase.Disconnect(): boolean;
 begin
   if Connected then begin
     result := TryDisconnect();
@@ -461,7 +447,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.SendPacket(const pbuf: PByteArray; const wlen: word): boolean;
+function TCommBase.SendPacket(const pbuf: PByteArray; const wlen: word): boolean;
 var c_tend: cardinal; s_packet: string;
 begin
   result := false;
@@ -492,7 +478,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.SendStr(const str: string): boolean;
+function TCommBase.SendStr(const str: string): boolean;
 var w_len: word; c_tend: cardinal;
 begin
   result := false;
@@ -525,7 +511,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvPacket(var pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
+function TCommBase.RecvPacket(var pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
 var c_tend: cardinal; s_packet: string;
 begin
   result := false;
@@ -556,7 +542,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
+function TCommBase.RecvStr(var str: string; const bwait: boolean): integer;
 var c_tend: cardinal;
 begin
   result := 0;
@@ -576,7 +562,7 @@ begin
     t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
-function TConnBase.ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
+function TCommBase.ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
 begin
   result := RecvStrExpected(str, swait, c_timeout, bcase);
 end;
@@ -591,7 +577,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvStrTimeout(var str: string; const timeout: cardinal): integer;
+function TCommBase.RecvStrTimeout(var str: string; const timeout: cardinal): integer;
 var tend: cardinal;
 begin
   result := 0; str := '';
@@ -622,7 +608,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal): integer;
+function TCommBase.RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal): integer;
 var c_time: cardinal; b_break: boolean; tend: cardinal;
 begin
   result := 0; str := '';
@@ -656,7 +642,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean): boolean;
+function TCommBase.RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean): boolean;
 var tend: cardinal; w_len: word;
 begin
   result := false; str := '';
@@ -686,7 +672,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-procedure TConnBase.SetEventRx();
+procedure TCommBase.SetEventRx();
 begin
   t_rxwait.SetEvent();
 end;
@@ -699,7 +685,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-procedure TConnBase.ResetEventRx();
+procedure TCommBase.ResetEventRx();
 begin
   t_rxwait.ResetEvent();
 end;
@@ -712,7 +698,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-procedure TConnBase.SetEventTx();
+procedure TCommBase.SetEventTx();
 begin
   t_txwait.SetEvent();
 end;
@@ -725,7 +711,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-procedure TConnBase.ResetEventTx();
+procedure TCommBase.ResetEventTx();
 begin
   t_txwait.ResetEvent();
 end;

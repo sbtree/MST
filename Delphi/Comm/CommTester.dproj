@@ -138,7 +138,7 @@
                 <Platform value="Win64">False</Platform>
             </Platforms>
             <Deployment>
-                <DeployFile LocalName="ModelSupport_CommTester\CommTester\default.txvpck" Configuration="Debug" Class="ProjectFile">
+                <DeployFile LocalName="ModelSupport_CommTester\DataBuffer\default.txaPackage" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
@@ -150,13 +150,13 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="ModelSupport_CommTester\USBIO\default.txvpck" Configuration="Debug" Class="ProjectFile">
+                <DeployFile LocalName="ModelSupport_CommTester\UsbIoBuf\default.txvpck" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="ModelSupport_CommTester\UsbIoBuf\default.txvpck" Configuration="Debug" Class="ProjectFile">
+                <DeployFile LocalName="ModelSupport_CommTester\USBIO\default.txvpck" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
@@ -324,7 +324,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="ModelSupport_CommTester\DataBuffer\default.txaPackage" Configuration="Debug" Class="ProjectFile">
+                <DeployFile LocalName="ModelSupport_CommTester\CommTester\default.txvpck" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
@@ -410,7 +410,7 @@
                 </DeployClass>
                 <DeployClass Name="ProjectOSXEntitlements">
                     <Platform Name="OSX32">
-                        <RemoteDir>Contents</RemoteDir>
+                        <RemoteDir>../</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
@@ -496,6 +496,7 @@
                 </DeployClass>
                 <DeployClass Name="ProjectiOSEntitlements">
                     <Platform Name="iOSDevice">
+                        <RemoteDir>../</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
@@ -676,13 +677,11 @@
         <DCCReference Include="..\General\GenUtils.pas"/>
         <DCCReference Include="..\General\TextMessage.pas"/>
         <DCCReference Include="ConnBase.pas"/>
-        <DCCReference Include="PCAN.pas"/>
-        <DCCReference Include="MtxUSB.pas"/>
         <DCCReference Include="..\Externals\USBIO\USBIOCOMLib_TLB.pas"/>
         <DCCReference Include="..\Externals\USBIO\Usbspec.pas"/>
-        <DCCReference Include="TekUSB.pas"/>
         <DCCReference Include="..\General\DllLoader.pas"/>
         <DCCReference Include="..\Externals\Serial3.pas"/>
+        <DCCReference Include="MtxUSB.pas"/>
         <None Include="ModelSupport_CommTester\CAN\default.txvpck"/>
         <None Include="ModelSupport_CommTester\CommTester\default.txvpck"/>
         <None Include="ModelSupport_CommTester\ConnBase\default.txaPackage"/>
