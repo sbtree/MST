@@ -19,11 +19,12 @@ type
   //enumeration for all connection type
   EConnectType = (CT_UNKNOWN, //unknown connection
                   CT_RS232,   //rs232
-                  CT_USB,     //usb
+                  CT_MTXUSB,  //metronix usb (usbiocom)
+                  CT_TEKUSB,  //usb interface to oscilloscope (Tektronix)
                   CT_GPIB,    //GPIB (IEEE 488)
                   CT_ETHERNET,//ethernet
                   CT_JTAG,    //jtag
-                  CT_CAN,     //can-bus
+                  CT_PCAN,    //can-bus over pcan-adapter
                   CT_PROFI    //profi-bus
                   );
   //enumeration of connection states
@@ -123,11 +124,12 @@ const
   CSTR_CONN_KEYS : array[EConnectType] of string = (
                     'UNKNOWN',
                     'RS232',
-                    'USB',
+                    'MTXUSB',
+                    'TEKUSB',
                     'GPIB',
                     'ETHERNET',
                     'JTAG',
-                    'CAN',
+                    'PCAN',
                     'PROFI'
                     );
   //define connection state

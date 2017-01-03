@@ -47,8 +47,6 @@ type
     function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    //function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
-    //function RecvData(var pbytes: PByteArray; var wlen: Word): integer; override;
     function TryConnect(): boolean; override;
     function TryDisconnect(): boolean; override;
 
@@ -344,22 +342,6 @@ begin
   result := (t_ser.TxWaiting <= 0);
 end;
 
-{function TMtxRS232.SendData(const pbuf: PByteArray; const wlen: word): boolean;
-var s_ansi: AnsiString;
-begin
-  SetString(s_ansi, PAnsiChar(pbuf), wlen);
-  t_ser.WriteString(s_ansi);
-  result := (wlen > 0);
-end;
-
-function TMtxRS232.RecvData(var pbytes: PByteArray; var wlen: Word): integer;
-begin
-  result := RecvToBuffer();
-  s_ansirecv := t_rbuffer.ReadAnsiStr();
-  pbytes := PByteArray(@s_ansirecv[1]);
-  wlen := length(s_ansirecv);
-end;}
-
 function TMtxRS232.TryConnect(): boolean;
 begin
   t_ser.Active := true;
@@ -439,14 +421,14 @@ begin
 end;
 
 function TMtxRS232.ClearBuffer(): integer;
-var s_ansi: AnsiString;
+var s_text: string;
 begin
   RecvToBuffer();
   result := t_rbuffer.CountUsed ;
   if (result > 0) then begin
-    s_ansi := t_rbuffer.ReadAnsiStr();
-    if length(s_ansi) > 32 then s_ansi := LeftStr(s_ansi, 16) + ' ... ' + RightStr(s_ansi, 16);
-    t_msgrimpl.AddMessage(format('Rx-Buffer is cleared: %s (%d bytes)', [s_ansi, result]), ML_WARNING);
+    s_text := string(t_rbuffer.ReadAnsiStr());
+    if length(s_text) > 32 then s_text := LeftStr(s_text, 16) + ' ... ' + RightStr(s_text, 16);
+    t_msgrimpl.AddMessage(format('Rx-Buffer is cleared: %s (%d bytes)', [s_text, result]), ML_WARNING);
   end;
 end;
 

@@ -15,47 +15,13 @@ object frmCommTester: TfrmCommTester
   OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
-  object lblCount: TLabel
-    Left = 247
-    Top = 303
-    Width = 60
-    Height = 13
-    Caption = 'Tx(0); Rx(0)'
-  end
-  object btnRS232: TButton
-    Left = 4
-    Top = 296
-    Width = 75
-    Height = 25
-    Caption = '&RS232'
-    TabOrder = 0
-    OnClick = btnRS232Click
-  end
-  object btnCan: TButton
-    Left = 85
-    Top = 296
-    Width = 75
-    Height = 25
-    Caption = '&CAN'
-    TabOrder = 1
-    OnClick = btnCanClick
-  end
   object memLog: TMemo
     Left = 4
     Top = 8
     Width = 580
     Height = 254
     ScrollBars = ssBoth
-    TabOrder = 2
-  end
-  object btnUSB: TButton
-    Left = 166
-    Top = 296
-    Width = 75
-    Height = 25
-    Caption = '&USB'
-    TabOrder = 3
-    OnClick = btnUSBClick
+    TabOrder = 0
   end
   object btnSend: TButton
     Left = 428
@@ -63,7 +29,7 @@ object frmCommTester: TfrmCommTester
     Width = 75
     Height = 25
     Caption = '&Send'
-    TabOrder = 4
+    TabOrder = 1
     OnClick = btnSendClick
   end
   object btnRecv: TButton
@@ -72,7 +38,7 @@ object frmCommTester: TfrmCommTester
     Width = 75
     Height = 25
     Caption = '&Receive'
-    TabOrder = 5
+    TabOrder = 2
     OnClick = btnRecvClick
   end
   object cmbConf: TComboBox
@@ -80,9 +46,9 @@ object frmCommTester: TfrmCommTester
     Top = 269
     Width = 317
     Height = 21
-    TabOrder = 6
+    TabOrder = 3
     Text = 
-      'Port:1|Baudrate:9600|PARITY:None|DATABITS:8|STOPBITS:1|FLOWCONTR' +
+      'Port:6|Baudrate:9600|PARITY:None|DATABITS:8|STOPBITS:1|FLOWCONTR' +
       'OL:NONE'
     Items.Strings = (
       
@@ -96,7 +62,7 @@ object frmCommTester: TfrmCommTester
     Top = 269
     Width = 121
     Height = 21
-    TabOrder = 7
+    TabOrder = 4
     Text = 'OR:1:0008'
     Items.Strings = (
       'OR:1:0008'
@@ -110,7 +76,7 @@ object frmCommTester: TfrmCommTester
     Caption = '+CR'
     Checked = True
     State = cbChecked
-    TabOrder = 8
+    TabOrder = 5
   end
   object chkLF: TCheckBox
     Left = 546
@@ -118,11 +84,19 @@ object frmCommTester: TfrmCommTester
     Width = 38
     Height = 17
     Caption = '+LF'
-    TabOrder = 9
+    TabOrder = 6
+  end
+  object btnConnect: TButton
+    Left = 4
+    Top = 296
+    Width = 75
+    Height = 25
+    Caption = '&Connect'
+    TabOrder = 7
+    OnClick = btnConnectClick
   end
   object tmrUpdate: TTimer
     Interval = 500
-    OnTimer = tmrUpdateTimer
     Left = 16
     Top = 24
   end

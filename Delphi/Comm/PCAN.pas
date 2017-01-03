@@ -335,7 +335,8 @@ type
     lw_ioport:  longword;
     w_irq:      word;
     t_sendmsg:  TPCANMsg;
-    t_buffer:   TPCanMsgBuffer;
+    t_recvmsg:  TPCANMsg;
+    t_rbuffer:  TPCanMsgBuffer;
     a_pcanfnt:  array[EPCanFunction] of Pointer;
     t_dllldr:   TDllLoader;
     t_thread:   TPCanReadThread;
@@ -358,13 +359,20 @@ type
     function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
-    function SendData(const pbuf: PByteArray; const wlen: word): boolean; override;
-    function RecvData(var pbytes: PByteArray; var wlen: Word): integer; override;
-    function RecvToBuffer(): integer;
     function GetAdapterInfo(): string;
     function TryConnect(): boolean; override;
     function TryDisconnect(): boolean; override;
-    procedure ClearBuffer(); override;
+
+    function InitBuffer(): boolean; override;
+    function WriteStrToBuffer(const txstr: string): boolean; override;
+    function WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean; override;
+    function SendFromBuffer(): boolean; override;
+    function ReadStrFromBuffer(): string; override;
+    function ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer; override;
+    function RecvToBuffer(): integer; override;
+    function ClearBuffer(): integer; override;
+    procedure DeinitBuffer(); override;
+
     procedure ClearFunctions();
     procedure SetMsgVersion(ecanver: EPCanVersion);
     procedure SetDeviceNr(devnr: longword);
@@ -409,8 +417,6 @@ type
     property AdapterInfo: string read GetAdapterInfo;
 
     function Config(const sconfs: TStrings): boolean; overload; override;
-    //function SendBuf(const pbuf: PByteArray; const wlen: word): boolean; override;
-    function SendStr(const str: string): boolean; override;
   end;
   PPCanLight = ^TPCanLight;
 
@@ -855,15 +861,13 @@ begin
 end;
 
 function TPCanLight.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;
-var t_pcanmsg: TPCANMsg; s_pcanmsg: string;
+var p_pcanmsg: PPCANMsg; s_pcanmsg: string;
 begin
   result := '';
-  if t_buffer.ReadElement(t_pcanmsg) then PCanMsgToStr(t_pcanmsg, result);
-  while (not t_buffer.IsEmpty()) do
-    if t_buffer.ReadElement(t_pcanmsg) then begin
-      PCanMsgToStr(t_pcanmsg, s_pcanmsg);
-      result := result + Char(13) + Char(10) + s_pcanmsg;
-    end;
+  if (assigned(pbytes) and (wlen >= SizeOf(TPCANMsg))) then begin
+    p_pcanmsg := PPCANMsg(pbytes);
+    if PCanMsgToStr(p_pcanmsg^, s_pcanmsg) then result := s_pcanmsg
+  end;
 end;
 
 function TPCanLight.IsReadReady(): boolean;
@@ -876,44 +880,6 @@ function TPCanLight.IsWriteComplete(): boolean;
 begin
   result := (CanStatus() = CAN_ERR_OK);
   if result then result := (t_txwait.WaitFor(0) = wrSignaled);
-end;
-
-function TPCanLight.SendData(const pbuf: PByteArray; const wlen: word): boolean;
-var lw_ret: longword; p_pcanmsg: PPCANMsg;
-begin
-  result := IsPCanMsg(pbuf);
-  if result then begin
-    p_pcanmsg := PPCANMsg(pbuf);
-    lw_ret := CanWrite(p_pcanmsg^);
-    result := (lw_ret = CAN_ERR_OK);
-  end else
-    t_msgrimpl.AddMessage(format('Found invalid PCAN-message by sending data (% bytes).', [wlen]), ML_ERROR);
-end;
-
-function TPCanLight.RecvData(var pbytes: PByteArray; var wlen: Word): integer;
-var t_pcanmsg: TPCANMsg;
-begin
-  RecvToBuffer();
-  if t_buffer.ReadElement(t_pcanmsg) then result := wlen
-  else result := 0;
-end;
-
-function TPCanLight.RecvToBuffer(): integer;
-var lw_ret: longword; t_pcanmsg: TPCANMsg;
-begin
-  lw_ret := CAN_ERR_QRCVEMPTY;
-  result := 0;
-  repeat
-    Application.ProcessMessages();
-    if not t_buffer.IsFull() then begin
-      lw_ret := CanRead(t_pcanmsg);
-      if (lw_ret = CAN_ERR_OK) then begin
-        t_buffer.WriteElement(t_pcanmsg);
-        inc(result);
-      end;
-    end else
-      t_msgrimpl.AddMessage(format('The buffer of PCAN-Message is full (buffer size = %d).', [t_buffer.BufferSize]), ML_WARNING);
-  until (((lw_ret AND (CAN_ERR_QRCVEMPTY or CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) or t_buffer.IsFull);
 end;
 
 function TPCanLight.GetAdapterInfo(): string;
@@ -965,17 +931,88 @@ begin
   end;
 end;
 
-procedure TPCanLight.ClearBuffer();
-var c_tend: cardinal; i_len: integer;
+function TPCanLight.InitBuffer(): boolean;
 begin
-  c_tend := GetTickCount() + c_timeout;
-  repeat i_len := RecvToBuffer();
-  until ((i_len <= 0) or (GetTickCount() >= c_tend));
-  i_len := t_buffer.CountUsed ;
-  if (i_len > 0) then begin
-    t_msgrimpl.AddMessage(format('Rx-Buffer (%d pcan-Messages) is cleared', [i_len]), ML_WARNING);
-    t_buffer.Clear();
+  if not assigned(t_rbuffer) then t_rbuffer := TPCanMsgBuffer.Create();
+  result := t_rbuffer.Resize(C_PCAN_BUFFER_SIZE);
+  ZeroMemory(@t_sendmsg, SizeOf(t_sendmsg));
+  ZeroMemory(@t_recvmsg, SizeOf(t_recvmsg));
+end;
+
+function TPCanLight.WriteStrToBuffer(const txstr: string): boolean;
+begin
+  result := StrToPCanMsg(txstr, t_sendmsg);
+end;
+
+function TPCanLight.WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean;
+begin
+  result := false;
+  if wlen <= SizeOf(t_sendmsg) then begin
+    ZeroMemory(@t_sendmsg, SizeOf(t_sendmsg));
+    Move(pbytes, t_sendmsg, wlen);
+    result := true;
   end;
+end;
+
+function TPCanLight.SendFromBuffer(): boolean;
+var lw_ret: longword;
+begin
+  lw_ret := CanWrite(t_sendmsg);
+  result := (lw_ret = CAN_ERR_OK);
+end;
+
+function TPCanLight.ReadStrFromBuffer(): string;
+var b_msg: boolean;
+begin
+  if t_rbuffer.IsEmpty() then result := ''
+  else begin
+    repeat b_msg := t_rbuffer.ReadElement(t_recvmsg);
+    until (not b_msg);
+    PCanMsgToStr(t_recvmsg, result);
+  end;
+end;
+
+function TPCanLight.ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer;
+var b_msg: boolean;
+begin
+  result := 0;
+  if ((not t_rbuffer.IsEmpty()) and (wlen >= SizeOf(t_recvmsg))) then begin
+    repeat b_msg := t_rbuffer.ReadElement(t_recvmsg);
+    until (not b_msg);
+    wlen := SizeOf(t_recvmsg);
+    Move(t_recvmsg, pbytes, wlen);
+    result := wlen;
+  end;
+end;
+
+function TPCanLight.RecvToBuffer(): integer;
+var lw_ret: longword; t_pcanmsg: TPCANMsg;
+begin
+  lw_ret := CAN_ERR_QRCVEMPTY;
+  repeat
+    Application.ProcessMessages();
+    if not t_rbuffer.IsFull() then begin
+      lw_ret := CanRead(t_pcanmsg);
+      if (lw_ret = CAN_ERR_OK) then t_rbuffer.WriteElement(t_pcanmsg);
+    end else
+      t_msgrimpl.AddMessage(format('The rx-buffer is full (buffer size = %d).', [t_rbuffer.BufferSize]), ML_WARNING);
+  until (((lw_ret AND (CAN_ERR_QRCVEMPTY or CAN_ERR_BUSLIGHT or CAN_ERR_BUSHEAVY)) <> 0) or t_rbuffer.IsFull);
+  result := t_rbuffer.CountUsed;
+end;
+
+function TPCanLight.ClearBuffer(): integer;
+begin
+  RecvToBuffer();
+  result := t_rbuffer.CountUsed ;
+  if (result > 0) then begin
+    t_rbuffer.Clear();
+    t_msgrimpl.AddMessage(format('The rx-buffer (%d pcan-Messages) is cleared', [result]), ML_WARNING);
+  end;
+end;
+
+procedure TPCanLight.DeinitBuffer();
+begin
+  if assigned(t_rbuffer) then FreeAndNil(t_rbuffer);
 end;
 
 procedure TPCanLight.ClearFunctions();
@@ -1122,14 +1159,12 @@ end;
 constructor TPCanLight.Create(owner: TComponent);
 begin
   inherited Create(owner);
-  e_type := CT_CAN;
+  e_type := CT_PCAN;
   e_hwt := PCH_NONE;
   e_baud := PCB_1M;
   e_canver := PCV_STD;
   lw_sendcnt := 0;
   lw_recvcnt := 0;
-  t_buffer := TPCanMsgBuffer.Create();
-  t_buffer.Resize(C_PCAN_BUFFER_SIZE);
   t_dllldr := TDllLoader.Create();
   SetNPnP(HW_ISA, 0, 0);
   ClearFunctions();
@@ -1138,7 +1173,6 @@ end;
 destructor TPCanLight.Destroy();
 begin
   Disconnect();
-  t_buffer.Free();
   t_dllldr.Free();
   inherited Destroy();
 end;
@@ -1158,46 +1192,9 @@ begin
   end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for configuration.', [GetStateStr()]), ML_WARNING);
 end;
 
-{function TPCanLight.SendBuf(const pbuf: PByteArray; const wlen: word): boolean;
-var c_tend: cardinal; s_msg: string; p_pcanmsg: PPCANMsg;
-begin
-  result := false;
-  if IsConnected() then begin
-    c_tend := GetTickCount() + c_timeout;
-    result := SendData(pbuf, wlen);
-    if result then result := WaitForWriting(c_tend);
-    p_pcanmsg := PPCANMsg(pbuf);
-    PCanMsgToStr(p_pcanmsg^, s_msg);
-    if result then t_msgrimpl.AddMessage(format('Successful to send data (%d bytes): %s ', [wlen, s_msg]))
-    else t_msgrimpl.AddMessage(format('Failed to send data (%d bytes): %s', [wlen, s_msg]), ML_ERROR);
-  end else
-    t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
-end; }
-
-function TPCanLight.SendStr(const str: string): boolean;
-var c_tend: cardinal; t_pcanmsg: TPCANMsg;
-begin
-  result := false;
-  if IsConnected() then begin
-    c_tend := GetTickCount() + c_timeout;
-    result := StrToPCanMsg(str, t_pcanmsg);
-    if result then begin
-      result := (CanWrite(t_pcanmsg) = CAN_ERR_OK);
-      if result then result := WaitForSending(c_tend);
-      if result then t_msgrimpl.AddMessage(format('Successful to send string: %s (data length: %d bytes)', [str, t_pcanmsg.LEN]))
-      else t_msgrimpl.AddMessage(format('Failed to send string: %s', [str]), ML_ERROR)
-    end else
-      t_msgrimpl.AddMessage(format('Failed to build PCAN-message by sending string: %s', [str]), ML_ERROR);
-  end else
-    t_msgrimpl.AddMessage(format('No data can be sent because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
-end;
-
 procedure TPCanReadThread.ReadCanMessage();
 begin
-  if assigned(t_pcan) then begin
-    t_pcan.ClearBuffer();
-    t_pcan.RecvToBuffer();
-  end;
+  if assigned(t_pcan) then t_pcan.RecvToBuffer();
 end;
 
 procedure TPCanReadThread.Execute;

@@ -58,9 +58,12 @@ type
     r_devconf:  RMtxUsbDeviceConfig;    //record of usb device configuration
     t_deviceids:TStrings;         //to save all ids (in format 'vid_pid_sn', hexadecimal vid and pid, decimal sn) of current usb devices
     s_curdevice:string;           //save string 'vid_pid_sn' of current usb-device, in order to connect it again if the connection is broken
+  private
+    procedure InitUsbIoCom();
+    procedure DeinitUsbIoCom();
   protected
     function GetDeviceInfo(const devidx: integer; var vid, pid: integer; var snr: string): boolean;
-    function SetDeviceInfo(const devidx: integer): boolean;
+    function UpdateDeviceInfo(const devidx: integer): boolean;
     function GetDeviceConfig(): boolean;
     function GetProductSN(): integer;
     function Init(const psn: integer): boolean;
@@ -159,6 +162,50 @@ begin
   end;
 end;
 
+procedure TMtxUsb.InitUsbIoCom();
+begin
+  //create and set instances of usbiointerface for EP0, pipe in and out
+  if not assigned(t_usbio) then t_usbio := TUSBIOInterface3.Create(self);
+  t_usbio.OnPnPAddNotification := OnAddDevice;
+  t_usbio.OnPnPRemoveNotification := OnRemoveDevice;
+  t_usbio.EnablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
+
+  if not assigned(t_usbrx) then t_usbrx := TUSBIOInterface3.Create(self);
+  t_usbrx.OnReadComplete := OnReadComplete;
+
+  if not assigned(t_usbtx) then t_usbtx := TUSBIOInterface3.Create(self);
+  t_usbtx.OnReadComplete := OnReadComplete;
+  t_usbtx.OnWriteComplete := OnWriteComplete;
+  t_usbtx.OnWriteStatusAvailable := OnWriteStatusAvailable;
+
+  //connect all instances of TUSBIOInterface3 to COM server (USBIO-Driver)
+  t_usbio.Connect();
+  t_usbrx.Connect();
+  t_usbtx.Connect();
+end;
+
+procedure TMtxUsb.DeinitUsbIoCom();
+begin
+  if assigned(t_usbrx) then begin
+    t_usbrx.Disconnect();
+    t_usbrx.OnReadComplete := Nil;
+    FreeAndNil(t_usbrx);
+  end;
+
+  if assigned(t_usbtx) then begin
+    t_usbtx.Disconnect();
+    t_usbtx.OnWriteStatusAvailable := Nil;
+    t_usbtx.OnWriteComplete := Nil;
+    FreeAndNil(t_usbtx);
+  end;
+
+  if assigned(t_usbio) then begin
+    t_usbio.Disconnect();
+    t_usbio.DisablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
+    FreeAndNil(t_usbio);
+  end;
+end;
+
 function TMtxUsb.GetDeviceInfo(const devidx: integer; var vid, pid: integer; var snr: string): boolean;
 var i_size: integer; pa_descr1, pa_descr2: PSafeArray;
     r_strdesc: USB_STRING_DESCRIPTOR; t_usbinterf: TUSBIOInterface3;
@@ -192,7 +239,7 @@ begin
   FreeAndNil(t_usbinterf);
 end;
 
-function TMtxUsb.SetDeviceInfo(const devidx: integer): boolean;
+function TMtxUsb.UpdateDeviceInfo(const devidx: integer): boolean;
 var i_vid, i_pid, i_size: integer; s_snr : string; i_snr: integer;
     pa_descr: PSafeArray; r_strdesc: USB_STRING_DESCRIPTOR;
 begin
@@ -478,14 +525,13 @@ begin
   result := false;
   i_len := t_wbuffer.CountUsed;
   if (i_len > 0) then begin
-    pa_send := SafeArrayCreateVector(VT_UI1, 0, C_BUFFER_SIZE_WRITE);
+    pa_send := SafeArrayCreateVector(VT_UI1, 0, i_len);
     for i := 0 to i_len - 1 do
       if (t_wbuffer.ReadElement(cur_byte)) then SafeArrayPutElement(pa_send, i, cur_byte);
 
     t_usbtx.WriteData(pa_send, 0, i_status);
     result := (i_status = USBIO_ERR_SUCCESS);
-    if (not result) then
-      t_usbtx.ResetPipe(i_status);
+    if (not result) then t_usbtx.ResetPipe(i_status);
     SafeArrayDestroy(pa_send);
   end;
 end;
@@ -531,14 +577,14 @@ begin
 end;
 
 function TMtxUsb.ClearBuffer(): integer;
-var s_ansi: AnsiString;
+var s_text: string;
 begin
   RecvToBuffer();
   result := t_rbuffer.CountUsed ;
   if (result > 0) then begin
-    s_ansi := t_rbuffer.ReadAnsiStr();
-    if length(s_ansi) > 32 then s_ansi := LeftStr(s_ansi, 16) + ' ... ' + RightStr(s_ansi, 16);
-    t_msgrimpl.AddMessage(format('Rx-Buffer is cleared: %s (%d bytes)', [s_ansi, result]), ML_WARNING);
+    s_text := string(t_rbuffer.ReadAnsiStr());
+    if length(s_text) > 32 then s_text := LeftStr(s_text, 16) + ' ... ' + RightStr(s_text, 16);
+    t_msgrimpl.AddMessage(format('Rx-Buffer is cleared: %s (%d bytes)', [s_text, result]), ML_WARNING);
   end;
 end;
 
@@ -605,45 +651,24 @@ end;
 constructor TMtxUsb.Create(owner: TComponent);
 begin
 	inherited Create(owner);
-  e_type := CT_USB;
+  e_type := CT_MTXUSB;
   e_state := CS_UNKNOWN;
   t_deviceids := TStringList.Create();
   w_vid := 0; // $1B97; //default vendor id of MTX
   w_pid := 0; // $2;     //default product id of MTX-ARS2000 usb device
   i_psn := -1;  //default serial number of usb device, which means the first device with the given vid and pid
   i_actpsn := -1;   //initialize acture serial number with -1, which means that no serial number is not yet found.
-  //create and set instances of usbiointerface for EP0, pipe in and out
-  t_usbio := TUSBIOInterface3.Create(self);
-  t_usbio.OnPnPAddNotification := OnAddDevice;
-  t_usbio.OnPnPRemoveNotification := OnRemoveDevice;
-  t_usbio.EnablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
-  t_usbrx := TUSBIOInterface3.Create(self);
-  t_usbrx.OnReadComplete := OnReadComplete;
-  t_usbtx := TUSBIOInterface3.Create(self);
-  t_usbtx.OnReadComplete := OnReadComplete;
-  t_usbtx.OnWriteComplete := OnWriteComplete;
-  t_usbtx.OnWriteStatusAvailable := OnWriteStatusAvailable;
+  InitUsbIoCom();
   //clear device info
   ClearDeviceInfo();
-  //connect all instances of TUSBIOInterface3 to COM server (USBIO-Driver)
-  t_usbio.Connect();
-  t_usbrx.Connect();
-  t_usbtx.Connect();
   UpdateDeviceIds(t_deviceids);
 end;
 
 destructor TMtxUsb.Destroy;
 begin
-  if Connected then Disconnect();
-  t_usbtx.Disconnect();
-  t_usbrx.Disconnect();
-  t_usbio.Disconnect();
-  t_usbtx.OnWriteStatusAvailable := Nil;
-  t_usbtx.OnWriteComplete := Nil;
-  t_usbrx.OnReadComplete := Nil;
-  t_usbio.DisablePnPNotification(CSTR_MTXUSB_ARS2000_GUID, i_status);
+  Disconnect();
+  DeinitUsbIoCom();
   FreeAndNil(t_deviceids);
-  FreeAndNil(t_usbio);
 	inherited Destroy;
 end;
 
@@ -675,7 +700,7 @@ begin
       s_confdev := format('%.4x_%.4x_%d', [w_vid, w_pid, i_psn]);
       i_devidx := t_idslist.IndexOf(s_confdev);
     end;
-    if (i_devidx >= 0) then result := SetDeviceInfo(i_devidx);
+    if (i_devidx >= 0) then result := UpdateDeviceInfo(i_devidx);
   until (result or (GetTickCount() >= c_time));
   t_idslist.Free();
 end;

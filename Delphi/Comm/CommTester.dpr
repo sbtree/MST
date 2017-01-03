@@ -12,7 +12,9 @@ uses
   Usbspec in '..\Externals\USBIO\Usbspec.pas',
   DllLoader in '..\General\DllLoader.pas',
   Serial3 in '..\Externals\Serial3.pas',
-  MtxUSB in 'MtxUSB.pas';
+  MtxUSB in 'MtxUSB.pas',
+  PCAN in 'PCAN.pas',
+  ConnManager in 'ConnManager.pas';
 
 {$R *.res}
 
