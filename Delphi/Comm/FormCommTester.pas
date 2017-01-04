@@ -104,8 +104,8 @@ end;
 
 procedure TfrmCommTester.FormDestroy(Sender: TObject);
 begin
-  FreeAndNil(t_messenger);
   FreeAndNil(t_conmgr);
+  FreeAndNil(t_messenger);
 end;
 
 end.

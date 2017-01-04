@@ -345,13 +345,13 @@ end;
 constructor TCommBase.Create(owner: TComponent);
 begin
   inherited Create(owner);
+  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
   e_type := CT_UNKNOWN;
   e_state := CS_UNKNOWN;
   c_timeout := CINT_TIMEOUT_DEFAULT;
   InitBuffer();
   t_rxwait := TEvent.Create(nil, false, false, 'TMtxConn.Rx');
   t_txwait := TEvent.Create(nil, false, false, 'TMtxConn.Tx');
-  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 end;
 
 // =============================================================================
@@ -363,10 +363,10 @@ end;
 // =============================================================================
 destructor TCommBase.Destroy;
 begin
-  t_msgrimpl.Free();
   FreeAndNil(t_txwait);
   FreeAndNil(t_rxwait);
   DeinitBuffer();
+  t_msgrimpl.Free();
   inherited Destroy();
 end;
 

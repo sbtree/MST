@@ -962,12 +962,14 @@ begin
 end;
 
 function TPCanLight.ReadStrFromBuffer(): string;
-var b_msg: boolean;
+var i_count: integer;
 begin
   if t_rbuffer.IsEmpty() then result := ''
   else begin
-    repeat b_msg := t_rbuffer.ReadElement(t_recvmsg);
-    until (not b_msg);
+    i_count := t_rbuffer.GoToLastElement();
+    if (i_count > 0) then
+      t_msgrimpl.AddMessage(format('Some old CAN-messages are be discarded from the rx-buffer(count: %d).', [i_count]), ML_WARNING);
+    t_rbuffer.ReadElement(t_recvmsg);
     PCanMsgToStr(t_recvmsg, result);
   end;
 end;
@@ -1199,7 +1201,7 @@ end;
 
 procedure TPCanReadThread.Execute;
 begin
-  while Not Terminated do begin
+  while (Not Terminated) do begin
     if (t_pcan.RecvEvent <> 0) then begin
       Application.ProcessMessages();
       if (WaitForSingleObject(t_pcan.RecvEvent, 0) = WAIT_OBJECT_0) then begin

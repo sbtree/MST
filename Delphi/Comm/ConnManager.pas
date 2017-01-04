@@ -82,8 +82,9 @@ function TConnManager.RemoveConnect(const cname: string): boolean;
 var i_idx: integer;
 begin
   result := false;
-  i_idx := t_conns.IndexOfName(trim(cname));
+  i_idx := t_conns.IndexOf(trim(cname));
   if (i_idx >= 0) then begin
+    t_conns.Objects[i_idx].Free();
     t_conns.Delete(i_idx);
     if i_idx = i_curidx then i_curidx := -1;
     result := true;
@@ -98,7 +99,7 @@ end;
 
 function TConnManager.ActiveConnect(const cname: string): TCommBase;
 begin
-  i_curidx := t_conns.IndexOfName(trim(cname));
+  i_curidx := t_conns.IndexOf(trim(cname));
   result := CurrentConnect();
 end;
 

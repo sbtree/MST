@@ -34,6 +34,7 @@ type
     procedure Clear(); virtual;
     function IsEmpty: Boolean;
     function IsFull: Boolean;
+    function GoToLastElement(): integer;
     function ReadElement(var elem: T): boolean;
     function WriteElement(const elem: T): boolean;
 
@@ -131,6 +132,16 @@ end;
 function TRingBuffer<T>.IsFull: Boolean;
 begin
   result := b_overlap or (BufferSize = 0);
+end;
+
+function TRingBuffer<T>.GoToLastElement(): integer;
+begin
+  result := -1;
+  if CountUsed > 0 then begin
+    result := CountUsed - 1;
+    b_overlap := false;
+    p_read := ((p_read + result) mod BufferSize);
+  end;
 end;
 
 function TRingBuffer<T>.ReadElement(var elem: T): boolean;

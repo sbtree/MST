@@ -55,7 +55,7 @@ object frmCommTester: TfrmCommTester
         'Port:1|Baudrate:9600|PARITY:None|DATABITS:8|STOPBITS:1|FLOWCONTR' +
         'OL:NONE'
       'HWT:USB1CH|PCANDLL:PCAN_USB.dll|baudrate:1M|CANVER:STD'
-      'VID:$1B97|PID:$2|PSN:1234')
+      'VID:$1B97|PID:$2|PSN:-1')
   end
   object cmbSending: TComboBox
     Left = 368
