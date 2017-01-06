@@ -10,6 +10,7 @@ type
     i_curidx:   integer;            //index of current active connection in t_conns
     t_msgrimpl: TTextMessengerImpl; //for transfering messages
   protected
+    function ConnectByIndex(const idx: integer): TCommBase;
     procedure ClearConns();
   public
     //constructor and destructor
@@ -28,6 +29,12 @@ type
 
 implementation
 uses SysUtils, RS232, MtxUSB, PCAN;
+
+function TConnManager.ConnectByIndex(const idx: integer): TCommBase;
+begin
+  if ((idx >= 0) and (idx < t_conns.Count)) then result := TCommBase(t_conns.Objects[idx])
+  else result := nil;
+end;
 
 procedure TConnManager.ClearConns();
 var i: integer;
@@ -75,6 +82,7 @@ begin
   if assigned(result) then begin
     ITextMessengerImpl(result).Messenger := t_msgrimpl.Messenger;
     t_conns.AddObject(s_conname, result);
+    if ((t_conns.Count = 1) and (i_curidx < 0)) then i_curidx := 0;
   end;
 end;
 
@@ -86,15 +94,17 @@ begin
   if (i_idx >= 0) then begin
     t_conns.Objects[i_idx].Free();
     t_conns.Delete(i_idx);
-    if i_idx = i_curidx then i_curidx := -1;
+    if (i_idx = i_curidx) then begin
+      if ((t_conns.Count = 1) and (i_curidx < 0)) then i_curidx := 0
+      else i_curidx := -1;
+    end;
     result := true;
   end;
 end;
 
 function TConnManager.CurrentConnect(): TCommBase;
 begin
-  if ((i_curidx >= 0) and (i_curidx < t_conns.Count)) then result := TCommBase(t_conns.Objects[i_curidx])
-  else result := nil;
+  result := ConnectByIndex(i_curidx);
 end;
 
 function TConnManager.ActiveConnect(const cname: string): TCommBase;
@@ -107,8 +117,7 @@ function TConnManager.GetConnect(const cname: string): TCommBase;
 var i_idx: integer;
 begin
   i_idx := t_conns.IndexOf(trim(cname));
-  if (i_idx >= 0) then result := TCommBase(t_conns.Objects[i_idx])
-  else result := nil;
+  result := ConnectByIndex(i_idx);
 end;
 
 end.
