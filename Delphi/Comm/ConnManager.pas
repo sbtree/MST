@@ -1,3 +1,12 @@
+// =============================================================================
+// Module name  : $RCSfile: ConnManager.pas,v $
+// description  : This unit defines a class to manager connections. It works as
+//                a factory and a container of connections, which are supported
+//                in this program
+// Compiler     : Delphi XE7
+// Author       : 2015-09-08 /bsu/
+// History      :
+//==============================================================================
 unit ConnManager;
 
 interface
