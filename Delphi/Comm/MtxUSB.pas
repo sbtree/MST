@@ -716,7 +716,7 @@ begin
       if not result then break;
     end;
     if result then e_state := CS_CONFIGURED
-    else t_msgrimpl.AddMessage(format('Failed to configurate the configuration (%s).', [GetTypeName()]), ML_ERROR);
+    else t_msgrimpl.AddMessage(format('Failed to configurate the connection (%s).', [GetTypeName()]), ML_ERROR);
   end else t_msgrimpl.AddMessage(format('The current state is not suitable to config (state=%d).', [Ord(e_state)]), ML_ERROR);
 end;
 

@@ -55,6 +55,7 @@ object frmCommTester: TfrmCommTester
         'Port:1|Baudrate:9600|PARITY:None|DATABITS:8|STOPBITS:1|FLOWCONTR' +
         'OL:NONE'
       'HWT:USB1CH|PCANDLL:PCAN_USB.dll|baudrate:1M|CANVER:STD'
+      'HWT:USB2CH|PCANDLL:PCAN_2USB.dll|baudrate:1M|CANVER:STD'
       'VID:$1B97|PID:$2|PSN:-1')
   end
   object cmbSending: TComboBox
@@ -94,6 +95,15 @@ object frmCommTester: TfrmCommTester
     Caption = '&Connect'
     TabOrder = 7
     OnClick = btnConnectClick
+  end
+  object btnDisconnect: TButton
+    Left = 85
+    Top = 296
+    Width = 75
+    Height = 25
+    Caption = '&Disconnect'
+    TabOrder = 8
+    OnClick = btnDisconnectClick
   end
   object tmrUpdate: TTimer
     Interval = 500

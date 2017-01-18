@@ -17,16 +17,20 @@ type
     chkCr: TCheckBox;
     chkLF: TCheckBox;
     btnConnect: TButton;
+    btnDisconnect: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnSendClick(Sender: TObject);
     procedure btnRecvClick(Sender: TObject);
     procedure btnConnectClick(Sender: TObject);
+    procedure btnDisconnectClick(Sender: TObject);
   private
     { Private-Deklarationen }
     t_messenger: TTextMessenger;
     t_conmgr: TConnManager;
     t_conn: TCommBase;
+  protected
+    procedure CreateNameType(const idx: integer; var sname: string; var etype: EConnectType);
   public
     { Public-Deklarationen }
   end;
@@ -39,27 +43,36 @@ implementation
 {$R *.dfm}
 uses RS232, MtxUSB, PCAN;
 
+procedure TfrmCommTester.CreateNameType(const idx: integer; var sname: string; var etype: EConnectType);
+begin
+  case idx of
+    0: begin
+      sname := 'RS232_01';
+      etype := CT_RS232;
+    end;
+    1: begin
+      sname := 'PCAN_01';
+      etype := CT_PCAN;
+    end;
+    2: begin
+      sname := 'PCAN_02';
+      etype := CT_PCAN;
+    end;
+    3: begin
+      sname := 'MTXUSB_01';
+      etype := CT_MTXUSB;
+    end;
+    else begin
+      sname := 'UNKNOWN';
+      etype := CT_UNKNOWN;
+    end;
+  end;
+end;
+
 procedure TfrmCommTester.btnConnectClick(Sender: TObject);
 var e_ctype: EConnectType; s_cname, s_conf: string;
 begin
-  case cmbConf.ItemIndex of
-    0: begin
-      s_cname := 'RS232_01';
-      e_ctype := CT_RS232;
-    end;
-    1: begin
-      s_cname := 'PCAN_01';
-      e_ctype := CT_PCAN;
-    end;
-    2: begin
-      s_cname := 'MTXUSB_01';
-      e_ctype := CT_MTXUSB;
-    end;
-    else begin
-      s_cname := 'UNKNOWN';
-      e_ctype := CT_UNKNOWN;
-    end;
-  end;
+  CreateNameType(cmbConf.ItemIndex, s_cname, e_ctype);
   t_conn := t_conmgr.CreateConnect(s_cname, e_ctype);
   if assigned(t_conn) then begin
     t_conn.Timeout := 10000;
@@ -67,6 +80,14 @@ begin
     t_conn.Config(s_conf);
     t_conn.Connect();
   end;
+end;
+
+procedure TfrmCommTester.btnDisconnectClick(Sender: TObject);
+var e_ctype: EConnectType; s_cname: string;
+begin
+  CreateNameType(cmbConf.ItemIndex, s_cname, e_ctype);
+  t_conn := t_conmgr.GetConnect(s_cname);
+  if assigned(t_conn) then t_conn.Disconnect();
 end;
 
 procedure TfrmCommTester.btnRecvClick(Sender: TObject);
