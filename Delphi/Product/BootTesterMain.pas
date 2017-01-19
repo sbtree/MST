@@ -541,7 +541,7 @@ begin
 end;
 
 function TFrmBootTester.ExpectStr(const str: AnsiString; var sRecv: AnsiString; const msecs: cardinal): boolean;
-var cTimeout: cardinal; ch: char; sTemp, sIn: AnsiString;
+var cTimeout: cardinal; ch: AnsiChar; sTemp, sIn: AnsiString;
 begin
   result := false;
   if t_ser.Active then begin
@@ -550,7 +550,7 @@ begin
     while ((t_ser.RxWaiting <= 0) and (GetTickCount() < cTimeout)) do TGenUtils.Delay(C_DELAY_MSEC);
     repeat
       ch := chr(0);
-      if (t_ser.ReadChar(ch) = 1) then if (not (ch = char(0))) then sRecv := sRecv + ch;
+      if (t_ser.ReadChar(ch) = 1) then if (not (ch = AnsiChar(0))) then sRecv := sRecv + ch;
       sTemp := UpperCase(sRecv);
       if (t_ser.RxWaiting <= 0) then TGenUtils.Delay(C_DELAY_MSEC);
     until ((Pos(sIn, sTemp) > 0) or (GetTickCount() >= cTimeout));

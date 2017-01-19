@@ -62,7 +62,7 @@ type
   TMtxComDownloader = class(TMtxDownloader)
   protected
     t_ser: TSerial;
-    t_conn: TConnBase;
+    //t_conn: TCommBase;
     s_blmessage: AnsiString; //save switch-on message of boot loader
     s_fwmessage: AnsiString; //save switch-on message of firmware
   protected
@@ -269,7 +269,7 @@ function  TMtxComDownloader.StartWithMTL(): boolean;
 var i: integer;
 begin
   for i := 0 to t_srecords.Count - 1 do begin
-    t_conn.SendStr(t_srecords[i] + CCHR_RETURN);
+    //t_conn.SendStr(t_srecords[i] + CCHR_RETURN);
     t_ser.WriteString(t_srecords[i] + CCHR_RETURN);
     while t_ser.TxWaiting > 0 do TGenUtils.Delay(C_DELAY_ONCE);
     Application.ProcessMessages();

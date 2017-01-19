@@ -9,7 +9,8 @@ uses
   NewProgressbar in '..\General\NewProgressbar.pas',
   ConnBase in '..\Comm\ConnBase.pas',
   RS232 in '..\Comm\RS232.pas',
-  TextMessage in '..\General\TextMessage.pas';
+  TextMessage in '..\General\TextMessage.pas',
+  DataBuffer in '..\General\DataBuffer.pas';
 
 {$R *.res}
 
