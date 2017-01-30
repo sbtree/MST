@@ -23,7 +23,7 @@ type
   PSerial = ^TSerial;
 
   //sub class of TConnBase for communication over serial port
-  TMtxRS232 = class(TCommBase)
+  TRS232 = class(TCommBase)
   class function EnumSerialPort(var sports: TStringList): integer;
   class function SetPortByStr(pser: PSerial; const sval: string): boolean;
   class function SetBaudrateByStr(pser: PSerial; const sval: string): boolean;
@@ -65,7 +65,7 @@ type
 
     function Config(const sconfs: TStrings): boolean; override;
   end;
-  PConnRS232 = ^TMtxRS232;
+  PRS232 = ^TRS232;
 
 implementation
 uses StrUtils,Windows, Registry, Forms, TextMessage;
@@ -84,7 +84,7 @@ const CSTR_RS232_PROPERTIES: array[ESerialProperty] of string =
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-class function TMtxRS232.EnumSerialPort(var sports: TStringList): integer;
+class function TRS232.EnumSerialPort(var sports: TStringList): integer;
 var t_registry: TRegistry; s_names: TStringList; s_value: string; i: integer;
 begin
   sports.Clear;
@@ -120,7 +120,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-class function TMtxRS232.SetPortByStr(pser: PSerial; const sval: string): boolean;
+class function TRS232.SetPortByStr(pser: PSerial; const sval: string): boolean;
 var t_ports: TStringList; s_in,s_portname: string; i_port: integer;
 begin
   result := false;
@@ -128,7 +128,7 @@ begin
   if TryStrToInt(s_in, i_port) then begin
     s_portname := 'COM' + sval;
     t_ports := TStringList.Create;
-    TMtxRS232.EnumSerialPort(t_ports);
+    TRS232.EnumSerialPort(t_ports);
     result := (t_ports.IndexOf(s_portname) >= 0 );
     if result then pser^.Port := i_port;
     t_ports.Clear;
@@ -148,7 +148,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-class function TMtxRS232.SetBaudrateByStr(pser: PSerial; const sval: string): boolean;
+class function TRS232.SetBaudrateByStr(pser: PSerial; const sval: string): boolean;
 const  CSTR_BAUD_VALUES: array[Low(aBaudrates)..High(aBaudrates)] of string = (
                           '110','300','600','1200','2400','4800','9600','14400',
                           '19200','38400','56000','57600','115200','128000','256000');
@@ -175,7 +175,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-class function TMtxRS232.SetParityByStr(pser: PSerial; const sval: string): boolean;
+class function TRS232.SetParityByStr(pser: PSerial; const sval: string): boolean;
 const
   CSTR_PA_VALUES: array[eParity] of string = ('NONE', 'ODD', 'EVEN', 'MARK', 'SPACE');
 var i_idx: integer; s_in: string;
@@ -201,7 +201,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-class function TMtxRS232.SetDataBitsByStr(pser: PSerial; const sval: string): boolean;
+class function TRS232.SetDataBitsByStr(pser: PSerial; const sval: string): boolean;
 const
   CSTR_DB_VALUES: array[eDataBits] of string = ('7', '8');
 var i_idx: integer; s_in: string;
@@ -227,7 +227,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-class function TMtxRS232.SetStopBitsByStr(pser: PSerial; const sval: string): boolean;
+class function TRS232.SetStopBitsByStr(pser: PSerial; const sval: string): boolean;
 const
   CSTR_SB_VALUES: array[eStopBits] of string = ('1', '2');
 var i_idx: integer; s_in: string;
@@ -254,7 +254,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-class function TMtxRS232.SetFlowControlByStr(pser: PSerial; const sval: string): boolean;
+class function TRS232.SetFlowControlByStr(pser: PSerial; const sval: string): boolean;
 const
   CSTR_FC_VALUES: array[eFlowControl] of string = ('NONE', 'RTS_CTS', 'DTR_DSR', 'XON_XOF');
 var i_idx: integer; s_in: string;
@@ -268,7 +268,7 @@ begin
   end;
 end;
 
-function TMtxRS232.SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
+function TRS232.SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
 begin
   result := false;
   case eprop of
@@ -281,38 +281,38 @@ begin
   end;
 end;
 
-function TMtxRS232.SetPort(const sval: string): boolean;
+function TRS232.SetPort(const sval: string): boolean;
 begin
-  result := TMtxRS232.SetPortByStr(@t_ser, sval);
+  result := TRS232.SetPortByStr(@t_ser, sval);
 end;
 
-function TMtxRS232.SetBaudrate(const sval: string): boolean;
+function TRS232.SetBaudrate(const sval: string): boolean;
 begin
-  result := TMtxRS232.SetBaudrateByStr(@t_ser, sval);
+  result := TRS232.SetBaudrateByStr(@t_ser, sval);
 end;
 
-function TMtxRS232.SetParity(const sval: string): boolean;
+function TRS232.SetParity(const sval: string): boolean;
 begin
   if (sval = '') then result := true
-  else result := TMtxRS232.SetParityByStr(@t_ser, sval);
+  else result := TRS232.SetParityByStr(@t_ser, sval);
 end;
 
-function TMtxRS232.SetDatabits(const sval: string): boolean;
+function TRS232.SetDatabits(const sval: string): boolean;
 begin
   if (sval = '') then result := true
-  else result := TMtxRS232.SetDataBitsByStr(@t_ser, sval);
+  else result := TRS232.SetDataBitsByStr(@t_ser, sval);
 end;
 
-function TMtxRS232.SetStopbits(const sval: string): boolean;
+function TRS232.SetStopbits(const sval: string): boolean;
 begin
   if (sval = '') then result := true
-  else result := TMtxRS232.SetStopBitsByStr(@t_ser, sval);
+  else result := TRS232.SetStopBitsByStr(@t_ser, sval);
 end;
 
-function TMtxRS232.SetFlowControl(const sval: string): boolean;
+function TRS232.SetFlowControl(const sval: string): boolean;
 begin
   if (sval = '') then result := true
-  else result := TMtxRS232.SetFlowControlByStr(@t_ser, sval);
+  else result := TRS232.SetFlowControlByStr(@t_ser, sval);
 end;
 
 // =============================================================================
@@ -324,7 +324,7 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TMtxRS232.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;
+function TRS232.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;
 begin
   if (bhex) then
     result := string(t_rbuffer.ReadHex())
@@ -332,17 +332,17 @@ begin
     result := string(AnsiString(pbytes));
 end;
 
-function TMtxRS232.IsReadReady(): boolean;
+function TRS232.IsReadReady(): boolean;
 begin
   result := (t_ser.RxWaiting > 0);
 end;
 
-function TMtxRS232.IsWriteComplete(): boolean;
+function TRS232.IsWriteComplete(): boolean;
 begin
   result := (t_ser.TxWaiting <= 0);
 end;
 
-function TMtxRS232.TryConnect(): boolean;
+function TRS232.TryConnect(): boolean;
 begin
   t_ser.Active := true;
   if t_ser.Active then e_state := CS_CONNECTED;
@@ -360,13 +360,13 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function TMtxRS232.TryDisconnect(): boolean;
+function TRS232.TryDisconnect(): boolean;
 begin
   t_ser.Active := false;
   result := (not t_ser.Active);
 end;
 
-function TMtxRS232.InitBuffer(): boolean;
+function TRS232.InitBuffer(): boolean;
 begin
   if not assigned(t_wbuffer) then t_wbuffer := TByteBuffer.Create();
   if not assigned(t_rbuffer) then t_rbuffer := TByteBuffer.Create();
@@ -374,19 +374,19 @@ begin
               t_rbuffer.Resize(C_BUFFER_SIZE_READ)  );
 end;
 
-function TMtxRS232.WriteStrToBuffer(const txstr: string): boolean;
+function TRS232.WriteStrToBuffer(const txstr: string): boolean;
 var s_ansi: AnsiString;
 begin
   s_ansi := AnsiString(txstr);
   result := (t_wbuffer.WriteAnsiStr(s_ansi) > 0);
 end;
 
-function TMtxRS232.WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean;
+function TRS232.WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean;
 begin
   result := (t_wbuffer.WriteBytes(pbytes, wlen) > 0);
 end;
 
-function TMtxRS232.SendFromBuffer(): boolean;
+function TRS232.SendFromBuffer(): boolean;
 var s_ansi: AnsiString;
 begin
   s_ansi := t_wbuffer.ReadAnsiStr();
@@ -394,20 +394,20 @@ begin
   result := (length(s_ansi) > 0);
 end;
 
-function TMtxRS232.ReadStrFromBuffer(): string;
+function TRS232.ReadStrFromBuffer(): string;
 begin
   RecvToBuffer();
   result := string(t_rbuffer.ReadAnsiStr());
 end;
 
-function TMtxRS232.ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer;
+function TRS232.ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer;
 begin
   RecvToBuffer();
   t_rbuffer.ReadBytes(pbytes, wlen);
   result := wlen;
 end;
 
-function TMtxRS232.RecvToBuffer(): integer;
+function TRS232.RecvToBuffer(): integer;
 var ch: AnsiChar;
 begin
   result := 0;
@@ -420,7 +420,7 @@ begin
   end;
 end;
 
-function TMtxRS232.ClearBuffer(): integer;
+function TRS232.ClearBuffer(): integer;
 var s_text: string;
 begin
   RecvToBuffer();
@@ -432,7 +432,7 @@ begin
   end;
 end;
 
-procedure TMtxRS232.DeinitBuffer();
+procedure TRS232.DeinitBuffer();
 begin
   if assigned(t_wbuffer) then t_wbuffer.Free();
   if assigned(t_rbuffer) then t_rbuffer.Free();
@@ -447,7 +447,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-constructor TMtxRS232.Create(owner: TComponent);
+constructor TRS232.Create(owner: TComponent);
 begin
   inherited Create(owner);
   e_type := CT_RS232;
@@ -469,7 +469,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-destructor TMtxRS232.Destroy;
+destructor TRS232.Destroy;
 begin
   t_ser.Free();
   inherited Destroy();
@@ -489,7 +489,7 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function TMtxRS232.Config(const sconfs: TStrings): boolean;
+function TRS232.Config(const sconfs: TStrings): boolean;
 var i: ESerialProperty; s_conf: string;
 begin
   result := false;

@@ -335,7 +335,7 @@ object FrmBootTester: TFrmBootTester
   end
   object btnTest: TButton
     Left = 432
-    Top = 440
+    Top = 438
     Width = 75
     Height = 25
     Caption = '&Test'
