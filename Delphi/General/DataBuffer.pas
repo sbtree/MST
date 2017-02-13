@@ -1,6 +1,7 @@
 //==============================================================================
 // Module name  : $RCSfile: DataBuffer.pas,v $
-// Description  : This unit defines a class of ring buffer and some of its subclasses
+// Description  : This unit defines and implements a template class of ring buffer
+//                and some of its specifical classes
 // Copyright    : (c) Metronix 2014
 // Reversion    : $Revision 1.0$
 // Compiler     : Delphi XE7
@@ -10,7 +11,7 @@
 unit DataBuffer;
 
 interface
-uses Windows, SysUtils;
+uses Windows, SysUtils, Classes;
 type
 
   TRingBuffer<T> = class
@@ -57,6 +58,13 @@ type
   public
     function ReadStr(): string;
     function WriteStr(const str: string): integer;
+  end;
+
+  TStringsBuffer = class(TRingBuffer<string>)
+  public
+    function ReadStrings(var strs: TStrings): boolean;
+    function WriteStrings(const strs: TStrings): integer;
+    function DelimitedStr(const sepa: char = ';'): string;
   end;
 
 const
@@ -238,6 +246,41 @@ begin
   for i := 1 to iLen do begin
     if (WriteElement(str[i])) then inc(result)
     else break;
+  end;
+end;
+
+function TStringsBuffer.ReadStrings(var strs: TStrings): boolean;
+var s_val: string;
+begin
+  result := false;
+  if assigned(strs) then begin
+    strs.Clear();
+    while (ReadElement(s_val)) do
+      strs.Add(s_val);
+    result := (strs.Count > 0);
+  end
+end;
+
+function TStringsBuffer.WriteStrings(const strs: TStrings): integer;
+var i: integer;
+begin
+  result := 0;
+  if assigned(strs) then begin
+    for i := 0 to strs.Count - 1 do begin
+      if WriteElement(strs[i]) then inc(result)
+      else break;
+    end;
+  end
+end;
+
+function TStringsBuffer.DelimitedStr(const sepa: char): string;
+var s_val: string; b_read: boolean;
+begin
+  result := '';
+  b_read := ReadElement(result);
+  while b_read do begin
+    b_read := ReadElement(s_val);
+    if b_read then result := result + sepa + s_val;
   end;
 end;
 
