@@ -1,7 +1,7 @@
 unit MtxDownloader;
 
 interface
-uses Serial3, Classes, Controls, ConnBase;
+uses Serial3, Classes, Controls, RS232, ConnBase;
 type
   EBootState = (
                 BS_UNKNOWN,
@@ -61,8 +61,8 @@ type
 
   TMtxComDownloader = class(TMtxDownloader)
   protected
-    t_ser: TSerial;
-    //t_conn: TCommBase;
+    //t_ser: TSerial;
+    t_conn: TRS232;
     s_blmessage: AnsiString; //save switch-on message of boot loader
     s_fwmessage: AnsiString; //save switch-on message of firmware
   protected
@@ -84,7 +84,7 @@ type
   public
     constructor Create();
 
-    property ComObj: TSerial read t_ser write t_ser;
+    //property ComObj: TSerial read t_ser write t_ser;
 
     function TestApp(): boolean; override;
     function GetBootState(const cmd: AnsiString): EBootState; override;

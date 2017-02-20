@@ -37,6 +37,8 @@ unit RegExpr;
                                     http://anso.da.ru/
 }
 
+//{$INCLUDE MtxCompilers.inc}
+
 interface
 
 // ======== Determine compiler
@@ -103,9 +105,16 @@ uses
 
 type
  {$IFDEF UniCode}
- PRegExprChar = PWideChar;
- RegExprString = WideString;
- REChar = WideChar;
+   // 2016-09-08 /gsv/: Anpassung an Delphi XE7 (string ist UnicodeString)
+   {$IFDEF DELPHI_XE_UP}
+     PRegExprChar = PChar;
+     RegExprString = string;
+     REChar = Char;
+   {$ELSE}
+     PRegExprChar = PWideChar;
+     RegExprString = WideString;
+     REChar = WideChar;
+   {$ENDIF}
  {$ELSE}
  PRegExprChar = PChar;
  RegExprString = AnsiString; //###0.952 was string
@@ -222,7 +231,7 @@ type
     // work variables for compiler's routines
     regparse : PRegExprChar;  // Input-scan pointer.
     regnpar : integer; // count.
-    regdummy : char;
+    regdummy : REChar;
     regcode : PRegExprChar;   // Code-emit pointer; @regdummy = don't.
     regsize : integer; // Code size.
 
@@ -633,7 +642,7 @@ function RegExprSubExpressions (const ARegExpr : string;
 implementation
 
 uses
- Windows; // CharUpper/Lower
+ Windows{, MtxUtils}; // CharUpper/Lower
 
 const
  TRegExprVersionMajor : integer = 0;
@@ -713,7 +722,7 @@ function StrLComp (Str1, Str2: PRegExprChar; MaxLen: Cardinal): Integer;
  end; { function StrLComp
 --------------------------------------------------------------}
 
-function StrScan (Str: PRegExprChar; Chr: WideChar): PRegExprChar;
+function StrScan (Str: PRegExprChar; Chr: REChar): PRegExprChar;
  begin
   Result := nil;
   while (Str^ <> #0) and (Str^ <> Chr)
@@ -2297,8 +2306,8 @@ function TRegExpr.ParseAtom (var flagp : integer) : PRegExprChar;
              if RangeEnd = EscChar then begin
                {$IFDEF UniCode} //###0.935
                if (ord ((regparse + 1)^) < 256)
-                  and (char ((regparse + 1)^)
-                        in ['d', 'D', 's', 'S', 'w', 'W']) then begin
+                  and ( CharInSet( char ((regparse + 1)^),
+                                   ['d', 'D', 's', 'S', 'w', 'W'] )) then begin
                {$ELSE}
                if (regparse + 1)^ in ['d', 'D', 's', 'S', 'w', 'W'] then begin
                {$ENDIF}
@@ -3680,7 +3689,7 @@ function TRegExpr.Substitute (const ATemplate : RegExprString) : RegExprString;
     else
      while (p < TemplateEnd) and
       {$IFDEF UniCode} //###0.935
-      (ord (p^) < 256) and (char (p^) in Digits)
+      (ord (p^) < 256) and CharInSet ( char (p^), Digits )
       {$ELSE}
       (p^ in Digits)
       {$ENDIF}

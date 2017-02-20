@@ -25,6 +25,20 @@ type
   //sub class of TConnBase for communication over serial port
   TRS232 = class(TCommBase)
   class function EnumSerialPort(var sports: TStringList): integer;
+//  class function CheckOutPort(const sval: string; var ival: integer): boolean;
+//  class function CheckOutBaudrate(const sval: string; var ival: integer): boolean;
+//  class function CheckOutParity(const sval: string; var ival: integer): boolean;
+//  class function CheckOutDataBits(const sval: string; var ival: integer): boolean;
+//  class function CheckOutStopBits(const sval: string; var ival: integer): boolean;
+//  class function CheckOutFlowControl(const sval: string; var ival: integer): boolean;
+//
+//  class function CheckPort(const ival: integer): boolean;
+//  class function CheckBaudrate(const ival: integer): boolean;
+//  class function CheckParity(const ival: integer): boolean;
+//  class function CheckDataBits(const ival: integer): boolean;
+//  class function CheckStopBits(const ival: integer): boolean;
+//  class function CheckFlowControl(const ival: integer): boolean;
+
   class function SetPortByStr(pser: PSerial; const sval: string): boolean;
   class function SetBaudrateByStr(pser: PSerial; const sval: string): boolean;
   class function SetParityByStr(pser: PSerial; const sval: string): boolean;
@@ -37,7 +51,7 @@ type
     t_rbuffer:  TByteBuffer;      //buffer for receiving data
     t_ser :     TSerial;
   protected
-    function SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
+    function SetProperty(const eprop: ESerialProperty; const sval: string): boolean; overload;
     function SetPort(const sval: string): boolean;
     function SetBaudrate(const sval: string): boolean;
     function SetParity(const sval: string): boolean;
@@ -64,6 +78,8 @@ type
     destructor Destroy; override;
 
     function Config(const sconfs: TStrings): boolean; override;
+    function SetProperties(const sconfs: TStrings): integer;
+    function SetProperty(const propname, sval: string): boolean; overload;
   end;
   PRS232 = ^TRS232;
 
@@ -126,11 +142,11 @@ begin
   result := false;
   s_in := trim(sval);
   if TryStrToInt(s_in, i_port) then begin
-    s_portname := 'COM' + sval;
+    s_portname := 'COM' + s_in;
     t_ports := TStringList.Create;
     TRS232.EnumSerialPort(t_ports);
     result := (t_ports.IndexOf(s_portname) >= 0 );
-    if result then pser^.Port := i_port;
+    if result and (i_port <= high(sPorts)) then pser^.Port := i_port;
     t_ports.Clear;
     FreeAndNil(t_ports);
   end;
@@ -182,7 +198,7 @@ var i_idx: integer; s_in: string;
 begin
   result := false;
   s_in := UpperCase(sval);
-  i_idx := IndexText(s_in, CSTR_PA_VALUES);
+  if not TryStrToInt(sval, i_idx) then i_idx := IndexText(s_in, CSTR_PA_VALUES);
   if ((i_idx >= Ord(paNone)) and (i_idx <= Ord(paSpace))) then begin
     pser^.Parity := eParity(i_idx);
     result := true;
@@ -272,12 +288,12 @@ function TRS232.SetProperty(const eprop: ESerialProperty; const sval: string): b
 begin
   result := false;
   case eprop of
-    SP_PORT: result := SetPort(sval);
-    SP_BAUDRATE: result := SetBaudrate(sval);
-    SP_PARITY: result := SetParity(sval);
-    SP_DATABITS: result := SetDatabits(sval);
-    SP_STOPBITS: result := SetStopbits(sval);
-    SP_FLOWCONTROL: result := SetFlowControl(sval);
+    SP_PORT: result := TRS232.SetPortByStr(@t_ser, sval);
+    SP_BAUDRATE: result := TRS232.SetBaudrateByStr(@t_ser, sval);
+    SP_PARITY: result := TRS232.SetParityByStr(@t_ser, sval);
+    SP_DATABITS: result := TRS232.SetDatabitsByStr(@t_ser, sval);
+    SP_STOPBITS: result := TRS232.SetStopbitsByStr(@t_ser, sval);
+    SP_FLOWCONTROL: result := TRS232.SetFlowControlByStr(@t_ser, sval);
   end;
 end;
 
@@ -452,7 +468,6 @@ begin
   inherited Create(owner);
   e_type := CT_RS232;
   t_ser := TSerial.Create(self);
-  //t_connobj := t_ser;
 
   //default settings
   t_ser.CheckParity := false;
@@ -502,6 +517,58 @@ begin
     if result then e_state := CS_CONFIGURED
     else t_msgrimpl.AddMessage(format('Failed to configurate the connection (%s).', [GetTypeName()]), ML_ERROR);
   end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for configuration.', [GetStateStr()]), ML_WARNING);
+end;
+
+// =============================================================================
+// Class        : TConnRS232
+// Function     : SetProperties
+//                set properties of rs232 object
+// Parameter    : sconfs, a list of name=value pairs for the properties
+// Return       : count of the properties, which are set successfully
+// Exceptions   : --
+// First author : 2017-02-20 /bsu/
+// History      :
+// =============================================================================
+function TRS232.SetProperties(const sconfs: TStrings): integer;
+var i: integer; s_prop, s_val: string; b_connected: boolean;
+begin
+  result := 0;
+  if (sconfs.Count > 0) then begin
+    b_connected := Connected;
+    if b_connected then TryDisconnect();
+    for i := 0 to sconfs.Count - 1 do begin
+      s_prop := sconfs.Names[i];
+      s_val := sconfs.ValueFromIndex[i];
+      if SetProperty(s_prop, s_val) then inc(result)
+      else break;
+    end;
+    if b_connected then TryConnect();
+  end;
+end;
+
+// =============================================================================
+// Class        : TConnRS232
+// Function     : SetProperty
+//                set a property of rs232 object
+// Parameter    : propname, name of the property in string
+//                sval, value of the property in string
+// Return       : true, if the setting is done successfully
+//                false, otherwise
+// Exceptions   : --
+// First author : 2017-02-20 /bsu/
+// History      :
+// =============================================================================
+function TRS232.SetProperty(const propname, sval: string): boolean;
+var i_idx: integer; b_connected: boolean;
+begin
+  result := false;
+  i_idx := IndexText(propname, CSTR_RS232_PROPERTIES);
+  if ( (i_idx >= ord(Low(ESerialProperty))) and (i_idx <= ord(High(ESerialProperty)))) then begin
+    b_connected := Connected;
+    if b_connected then TryDisconnect();
+    result := SetProperty(ESerialProperty(i_idx), sval);
+    if b_connected then result := TryConnect();
+  end;
 end;
 
 end.

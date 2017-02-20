@@ -4,8 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Serial3,ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls, MtxDownloader,
-  NewProgressbar;
+  Dialogs, StdCtrls, {Serial3,}ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls, MtxDownloader,
+  NewProgressbar, ConnBase;
 
 type
 {
@@ -102,7 +102,7 @@ type
 
   private
     { Private-Deklarationen }
-    t_ser, t_ctrl: TSerial;
+    t_ser, t_ctrl: TCommBase; // TSerial;
     c_timeout: cardinal;
     e_bootstate: EBootState;
     e_dlprotocol: EDownloadProtocol;
@@ -143,24 +143,6 @@ const
   C_REBOOT_TIME: cardinal = 10000;  //10 seconds for reboot
   C_MANUAL_RESTART: cardinal = 30000;  
 
-{procedure Delay(const msec: cardinal);
-var i_timeout: cardinal;
-begin
-  i_timeout := GetTickCount() + msec;
-  repeat Application.ProcessMessages();
-  until (GetTickCount() >= i_timeout);
-end;
-
-procedure TForm1.ComPortRxChar(Sender: TObject; Count: Integer);
-var
-  Str: String;
-begin
-  t_comport.ReadStr(Str, Count);
-  i_timeout := GetTickCount() - i_timeout;
-  memRecv.Lines.Add(format('prog[%0.3f]:<%s',[i_timeout/1000, Str]));
-  i_timeout := GetTickCount();
-end;}
-
 procedure TFrmBootTester.btnClearClick(Sender: TObject);
 begin
   memRecv.Lines.Clear();
@@ -168,12 +150,12 @@ end;
 
 procedure TFrmBootTester.btnCloseProdClick(Sender: TObject);
 begin
-  t_ctrl.Active := false;
+  t_ctrl.Disconnect(); //.Active := false;
 end;
 
 procedure TFrmBootTester.btnCloseTestClick(Sender: TObject);
 begin
-  t_ser.Active := false;
+  t_ser.Connect(); //.Active := false;
 end;
 
 procedure TFrmBootTester.btnDownloadClick(Sender: TObject);
@@ -691,7 +673,7 @@ end;
 
 procedure TFrmBootTester.FormCreate(Sender: TObject);
 begin
-  t_ser :=TSerial.Create(self);
+  t_ser := TSerial.Create(self);
   t_ser.CheckParity := false;
   t_ser.DataBits := d8Bit;
   t_ser.NotifyErrors := neNone;
