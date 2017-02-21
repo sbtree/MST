@@ -52,7 +52,7 @@ object frmCommTester: TfrmCommTester
       'OL:NONE'
     Items.Strings = (
       
-        'Port:1|Baudrate:9600|PARITY:None|DATABITS:8|STOPBITS:1|FLOWCONTR' +
+        'Port:7|Baudrate:9600|PARITY:None|DATABITS:8|STOPBITS:1|FLOWCONTR' +
         'OL:NONE'
       'HWT:USB1CH|PCANDLL:PCAN_USB.dll|baudrate:1M|CANVER:STD'
       'HWT:USB2CH|PCANDLL:PCAN_2USB.dll|baudrate:1M|CANVER:STD'

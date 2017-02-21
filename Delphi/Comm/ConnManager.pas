@@ -77,7 +77,7 @@ begin
   s_conname := trim(cname);
   RemoveConnect(s_conname); //remove it if a connection exists with this name
   case ctype of
-    CT_RS232: result := TRS232.Create(self);
+    CT_RS232: result := TSerialAdapter.Create(self);
     CT_MTXUSB: result := TMtxUSB.Create(self);
     CT_TEKUSB: result := nil; //todo:
     CT_GPIB: result := nil; //todo:

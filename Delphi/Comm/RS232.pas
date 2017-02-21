@@ -23,41 +23,39 @@ type
   PSerial = ^TSerial;
 
   //sub class of TConnBase for communication over serial port
-  TRS232 = class(TCommBase)
-  class function EnumSerialPort(var sports: TStringList): integer;
-//  class function CheckOutPort(const sval: string; var ival: integer): boolean;
-//  class function CheckOutBaudrate(const sval: string; var ival: integer): boolean;
-//  class function CheckOutParity(const sval: string; var ival: integer): boolean;
-//  class function CheckOutDataBits(const sval: string; var ival: integer): boolean;
-//  class function CheckOutStopBits(const sval: string; var ival: integer): boolean;
-//  class function CheckOutFlowControl(const sval: string; var ival: integer): boolean;
-//
-//  class function CheckPort(const ival: integer): boolean;
-//  class function CheckBaudrate(const ival: integer): boolean;
-//  class function CheckParity(const ival: integer): boolean;
-//  class function CheckDataBits(const ival: integer): boolean;
-//  class function CheckStopBits(const ival: integer): boolean;
-//  class function CheckFlowControl(const ival: integer): boolean;
-
-  class function SetPortByStr(pser: PSerial; const sval: string): boolean;
-  class function SetBaudrateByStr(pser: PSerial; const sval: string): boolean;
-  class function SetParityByStr(pser: PSerial; const sval: string): boolean;
-  class function SetDataBitsByStr(pser: PSerial; const sval: string): boolean;
-  class function SetStopBitsByStr(pser: PSerial; const sval: string): boolean;
-  class function SetFlowControlByStr(pser: PSerial; const sval: string): boolean;
-  private
+  TSerialAdapter = class(TCommBase)
+    class function EnumSerialPort(var sports: TStringList): integer;
+    class function CheckOutPort(const sval: string; var ival: integer): boolean;
+    class function CheckOutBaudrate(const sval: string; var ival: integer): boolean;
+    class function CheckOutParity(const sval: string; var ival: integer): boolean;
+    class function CheckOutDataBits(const sval: string; var ival: integer): boolean;
+    class function CheckOutStopBits(const sval: string; var ival: integer): boolean;
+    class function CheckOutFlowControl(const sval: string; var ival: integer): boolean;
+    class function CheckPort(const ival: integer): boolean;
+    class function CheckBaudrateSTD(const ival: integer): boolean;
+    class function CheckParity(const ival: integer): boolean;
+    class function CheckDataBits(const ival: integer): boolean;
+    class function CheckStopBits(const ival: integer): boolean;
+    class function CheckFlowControl(const ival: integer): boolean;
   protected
     t_wbuffer:  TByteBuffer;      //buffer for sending data
     t_rbuffer:  TByteBuffer;      //buffer for receiving data
-    t_ser :     TSerial;
+    t_ser :     TSerial;          //object to communicate with serial interface
+    b_ownser:   boolean;          //indicate if t_ser is created by the adapter
+  private
+    procedure SetSerialObj(comobj: TSerial);
+
   protected
     function SetProperty(const eprop: ESerialProperty; const sval: string): boolean; overload;
-    function SetPort(const sval: string): boolean;
-    function SetBaudrate(const sval: string): boolean;
-    function SetParity(const sval: string): boolean;
-    function SetDatabits(const sval: string): boolean;
-    function SetStopbits(const sval: string): boolean;
-    function SetFlowControl(const sval: string): boolean;
+    function SetProperty(const propname, sval: string): boolean; overload;
+    function SetPortByStr(const sval: string): boolean;
+    function SetBaudrateByStr(const sval: string): boolean;
+    function SetParityByStr(const sval: string): boolean;
+    function SetDatabitsByStr(const sval: string): boolean;
+    function SetStopbitsByStr(const sval: string): boolean;
+    function SetFlowControlByStr(const sval: string): boolean;
+    procedure SetDefault();
+
     function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
@@ -78,10 +76,11 @@ type
     destructor Destroy; override;
 
     function Config(const sconfs: TStrings): boolean; override;
-    function SetProperties(const sconfs: TStrings): integer;
-    function SetProperty(const propname, sval: string): boolean; overload;
+    function ChangeProperties(const sconfs: TStrings): integer;
+
+    property SerialObj: TSerial read t_ser write SetSerialObj;
   end;
-  PRS232 = ^TRS232;
+  PRS232 = ^TSerialAdapter;
 
 implementation
 uses StrUtils,Windows, Registry, Forms, TextMessage;
@@ -100,7 +99,7 @@ const CSTR_RS232_PROPERTIES: array[ESerialProperty] of string =
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-class function TRS232.EnumSerialPort(var sports: TStringList): integer;
+class function TSerialAdapter.EnumSerialPort(var sports: TStringList): integer;
 var t_registry: TRegistry; s_names: TStringList; s_value: string; i: integer;
 begin
   sports.Clear;
@@ -124,211 +123,260 @@ begin
   result := sports.Count;
 end;
 
+class function TSerialAdapter.CheckOutPort(const sval: string; var ival: integer): boolean;
+begin
+  result := false; ival := 0;
+  if TryStrToInt(trim(sval), ival) then result := CheckPort(ival);
+end;
+
+class function TSerialAdapter.CheckOutBaudrate(const sval: string; var ival: integer): boolean;
+begin
+  result := false; ival := 0;
+  if TryStrToInt(trim(sval), ival) then result := (ival > 0);
+end;
+
+class function TSerialAdapter.CheckOutParity(const sval: string; var ival: integer): boolean;
+const CSTR_PA_VALUES: array[eParity] of string = ('NONE', 'ODD', 'EVEN', 'MARK', 'SPACE');
+var s_in: string;
+begin
+  ival := -1;
+  s_in := trim(sval);
+  if not TryStrToInt(s_in, ival) then ival := IndexText(s_in, CSTR_PA_VALUES);
+  result := TSerialAdapter.CheckParity(ival);
+end;
+
+class function TSerialAdapter.CheckOutDataBits(const sval: string; var ival: integer): boolean;
+begin
+  result := false; ival := -1;
+  if TryStrToInt(trim(sval), ival) then result := TSerialAdapter.CheckDataBits(ival);
+end;
+
+class function TSerialAdapter.CheckOutStopBits(const sval: string; var ival: integer): boolean;
+begin
+  result := false; ival := -1;
+  if TryStrToInt(trim(sval), ival) then result := TSerialAdapter.CheckStopBits(ival);
+end;
+
+class function TSerialAdapter.CheckOutFlowControl(const sval: string; var ival: integer): boolean;
+const CSTR_FC_VALUES: array[eFlowControl] of string = ('NONE', 'RTS_CTS', 'DTR_DSR', 'XON_XOF');
+var s_in: string;
+begin
+  ival := -1;
+  s_in := trim(sval);
+  if not TryStrToInt(s_in, ival) then ival := IndexText(s_in, CSTR_FC_VALUES);
+  result := TSerialAdapter.CheckFlowControl(ival)
+end;
+
+class function TSerialAdapter.CheckPort(const ival: integer): boolean;
+var t_ports: TStringList; s_portname: string;
+begin
+  t_ports := TStringList.Create;
+  TSerialAdapter.EnumSerialPort(t_ports);
+  s_portname := 'COM' + IntToStr(ival);
+  result := (t_ports.IndexOf(s_portname) >= 0);
+  t_ports.Clear;
+  FreeAndNil(t_ports);
+end;
+
+class function TSerialAdapter.CheckBaudrateSTD(const ival: integer): boolean;
+var i: integer;
+begin
+  result := false;
+  for i := Low(aBaudrates) to High(aBaudrates) do begin
+    if ival = aBaudrates[i] then begin
+      result := true;
+      break;
+    end;
+  end;
+end;
+
+class function TSerialAdapter.CheckParity(const ival: integer): boolean;
+begin
+  result := ((ival >= Ord(Low(eParity))) and (ival <= Ord(High(eParity))))
+end;
+
+class function TSerialAdapter.CheckDataBits(const ival: integer): boolean;
+begin
+  result := ((ival = 7) or (ival = 8));
+end;
+
+class function TSerialAdapter.CheckStopBits(const ival: integer): boolean;
+begin
+  result := ((ival = 1) or (ival = 2))
+end;
+
+class function TSerialAdapter.CheckFlowControl(const ival: integer): boolean;
+begin
+  result := ((ival >= Ord(Low(eFlowControl))) and (ival <= Ord(High(eFlowControl))))
+end;
+
+procedure TSerialAdapter.SetSerialObj(comobj: TSerial);
+begin
+  if comobj <> t_ser then begin
+    if b_ownser then FreeAndNil(t_ser);
+    t_ser := comobj;
+    b_ownser := false;
+  end;
+end;
+
+function TSerialAdapter.SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
+begin
+  result := false;
+  case eprop of
+    SP_PORT: result := SetPortByStr(sval);
+    SP_BAUDRATE: result := SetBaudrateByStr(sval);
+    SP_PARITY: result := SetParityByStr(sval);
+    SP_DATABITS: result := SetDatabitsByStr(sval);
+    SP_STOPBITS: result := SetStopbitsByStr(sval);
+    SP_FLOWCONTROL: result := SetFlowControlByStr(sval);
+  end;
+end;
+
 // =============================================================================
-// Class        : --
-// Function     : checks the given string and sets the port of pser with this string
+// Description  : set a property of rs232 object
+// Parameter    : propname, name of the property in string
+//                sval, value of the property in string
+// Return       : true, if the setting is done successfully
+//                false, otherwise
+// Exceptions   : --
+// First author : 2017-02-20 /bsu/
+// History      :
+// =============================================================================
+function TSerialAdapter.SetProperty(const propname, sval: string): boolean;
+var i_idx: integer;
+begin
+  result := false;
+  i_idx := IndexText(propname, CSTR_RS232_PROPERTIES);
+  if ( (i_idx >= ord(Low(ESerialProperty))) and (i_idx <= ord(High(ESerialProperty)))) then
+    result := SetProperty(ESerialProperty(i_idx), sval);
+end;
+
+// =============================================================================
+// Description  : checks the given string and sets the port of pser with this string
 //                if it is valid. This function is only used inside of this unit.
-// Parameter    : pser, pointer of a TSerial to be set
-//                sval, string for port to be set
+// Parameter    : sval, string to set port
 // Return       : true, if the string is a valid number of the port on this comuputer
 //                false, otherwise
 // Exceptions   : --
 // First author : 2015-09-11 /bsu/
-// History      :
+// History      : 2017-02-21 /bsu/ improved after changing of the class function
 // =============================================================================
-class function TRS232.SetPortByStr(pser: PSerial; const sval: string): boolean;
-var t_ports: TStringList; s_in,s_portname: string; i_port: integer;
+function TSerialAdapter.SetPortByStr(const sval: string): boolean;
+var i_port: integer;
 begin
-  result := false;
-  s_in := trim(sval);
-  if TryStrToInt(s_in, i_port) then begin
-    s_portname := 'COM' + s_in;
-    t_ports := TStringList.Create;
-    TRS232.EnumSerialPort(t_ports);
-    result := (t_ports.IndexOf(s_portname) >= 0 );
-    if result and (i_port <= high(sPorts)) then pser^.Port := i_port;
-    t_ports.Clear;
-    FreeAndNil(t_ports);
-  end;
+  result := TSerialAdapter.CheckOutPort(sval, i_port);
+  if result then t_ser.Port := i_port
+  else t_msgrimpl.AddMessage(format('Failed to set port number (invalid value: %s).',[sval]), ML_ERROR);
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : checks the given string and sets the baudrate of pser with this string
-//                if it is valid. This function is only used inside of this unit.
-// Parameter    : pser, pointer of a TSerial to be set
-//                sval, string for baudrate to be set
+// Description  : checks the given string and sets the baudrate of pser with this string
+//                if it is valid.
+// Parameter    : sval, string to set baudrate
 // Return       : true, if the string is a number of the valid baudrate (C_VALID_BAUD)
 //                false, otherwise
 // Exceptions   : --
 // First author : 2015-09-11 /bsu/
-// History      :
+// History      : 2017-02-21 /bsu/ improved after changing of the class function
 // =============================================================================
-class function TRS232.SetBaudrateByStr(pser: PSerial; const sval: string): boolean;
-const  CSTR_BAUD_VALUES: array[Low(aBaudrates)..High(aBaudrates)] of string = (
-                          '110','300','600','1200','2400','4800','9600','14400',
-                          '19200','38400','56000','57600','115200','128000','256000');
-var i_baud: integer; s_in: string; i_idx: integer;
+function TSerialAdapter.SetBaudrateByStr(const sval: string): boolean;
+var i_baud: integer;
 begin
-  result := false;
-  s_in := trim(sval);
-  i_idx := IndexText(sval, CSTR_BAUD_VALUES);
-  if ((i_idx >= Low(aBaudrates)) and (i_idx <= High(aBaudrates))) then begin
-    result := TryStrToInt(sval, i_baud);
-    if result then pser^.Baudrate := i_baud;
-  end;
+  result := TSerialAdapter.CheckOutBaudrate(sval, i_baud);
+  if result then t_ser.Baudrate := i_baud
+  else t_msgrimpl.AddMessage(format('Failed to set baudrate (invalid value: %s).',[sval]), ML_ERROR);
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : checks the given string and sets the parity of pser with this string
-//                if it is valid. This function is only used inside of this unit.
-// Parameter    : pser, pointer of a TSerial to be set
-//                sval, string for parity to be set
+// Description  : checks the given string and sets the parity of pser with this string
+//                if it is valid.
+// Parameter    : sval, string to set parity
 // Return       : true, if the string is a valid value for parity of TSerial
 //                false, otherwise
 // Exceptions   : --
 // First author : 2015-09-11 /bsu/
-// History      :
+// History      : 2017-02-21 /bsu/ improved after changing of the class function
 // =============================================================================
-class function TRS232.SetParityByStr(pser: PSerial; const sval: string): boolean;
-const
-  CSTR_PA_VALUES: array[eParity] of string = ('NONE', 'ODD', 'EVEN', 'MARK', 'SPACE');
-var i_idx: integer; s_in: string;
+function TSerialAdapter.SetParityByStr(const sval: string): boolean;
+var i_val: integer;
 begin
-  result := false;
-  s_in := UpperCase(sval);
-  if not TryStrToInt(sval, i_idx) then i_idx := IndexText(s_in, CSTR_PA_VALUES);
-  if ((i_idx >= Ord(paNone)) and (i_idx <= Ord(paSpace))) then begin
-    pser^.Parity := eParity(i_idx);
-    result := true;
-  end;
+  result := TSerialAdapter.CheckOutParity(sval, i_val);
+  if result then t_ser.Parity := eParity(i_val)
+  else t_msgrimpl.AddMessage(format('Failed to set parity (invalid value: %s).',[sval]), ML_ERROR);
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : checks the given string and sets the data bits of pser with this string
-//                if it is valid. This function is only used inside of this unit.
-// Parameter    : pser, pointer of a TSerial to be set
-//                sval, string for data bits to be set
+// Description  : checks the given string and sets the data bits of t_ser with this string
+//                if it is valid.
+// Parameter    : sval, string to set data bits
 // Return       : true, if the string is a valid value for data bits of TSerial
 //                false, otherwise
 // Exceptions   : --
 // First author : 2015-09-11 /bsu/
-// History      :
+// History      : 2017-02-21 /bsu/ improved after changing of the class function
 // =============================================================================
-class function TRS232.SetDataBitsByStr(pser: PSerial; const sval: string): boolean;
-const
-  CSTR_DB_VALUES: array[eDataBits] of string = ('7', '8');
-var i_idx: integer; s_in: string;
+function TSerialAdapter.SetDatabitsByStr(const sval: string): boolean;
+var i_val: integer;
 begin
-  result := false;
-  s_in := UpperCase(sval);
-  i_idx := IndexText(s_in, CSTR_DB_VALUES);
-  if ((i_idx >= Ord(d7bit)) and (i_idx <= Ord(d8bit))) then begin
-    pser^.DataBits := eDataBits(i_idx);
-    result := true;
-  end;
+  result := TSerialAdapter.CheckOutDataBits(sval, i_val);
+  if result then t_ser.DataBits := eDataBits(i_val)
+  else t_msgrimpl.AddMessage(format('Failed to set data bits (invalid value: %s).',[sval]), ML_ERROR);
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : checks the given string and sets the stop bits of pser with this string
-//                if it is valid. This function is only used inside of this unit.
-// Parameter    : pser, pointer of a TSerial to be set
-//                sval, string for stop bits to be set
+// Description  : checks the given string and sets the stop bits of t_ser with this string
+//                if it is valid.
+// Parameter    : sval, string to set stop bits
 // Return       : true, if the string is a valid value for stop bits of TSerial
 //                false, otherwise
 // Exceptions   : --
 // First author : 2015-09-11 /bsu/
-// History      :
+// History      : 2017-02-21 /bsu/ improved after changing of the class function
 // =============================================================================
-class function TRS232.SetStopBitsByStr(pser: PSerial; const sval: string): boolean;
-const
-  CSTR_SB_VALUES: array[eStopBits] of string = ('1', '2');
-var i_idx: integer; s_in: string;
+function TSerialAdapter.SetStopbitsByStr(const sval: string): boolean;
+var i_val: integer;
 begin
-  result := false;
-  s_in := UpperCase(sval);
-  i_idx := IndexText(s_in, CSTR_SB_VALUES);
-  if ((i_idx >= Ord(st1bit)) and (i_idx <= Ord(st2bit))) then begin
-    pser^.StopBits := eStopBits(i_idx);
-    result := true;
-  end;
+  result := TSerialAdapter.CheckOutStopBits(sval, i_val);
+  if result then t_ser.StopBits := eStopBits(i_val)
+  else t_msgrimpl.AddMessage(format('Failed to set stop bits (invalid value: %s).',[sval]), ML_ERROR);
 end;
 
 // =============================================================================
-// Class        : --
-// Function     : checks the given string and sets the flow control of pser with
-//                this string if it is valid. This function is only used inside
-//                of this unit.
-// Parameter    : pser, pointer of a TSerial to be set
-//                sval, string for hardware flow control to be set
+// Description  : checks the given string and sets the flow control of t_ser with
+//                this string if it is valid.
+// Parameter    : sval, string to set hardware flow control
 // Return       : true, if the string is a valid value for hardware flow control of TSerial
 //                false, otherwise
 // Exceptions   : --
 // First author : 2015-09-11 /bsu/
+// History      : 2017-02-21 /bsu/ improved after changing of the class function
+// =============================================================================
+function TSerialAdapter.SetFlowControlByStr(const sval: string): boolean;
+var i_val: integer;
+begin
+  result := TSerialAdapter.CheckOutFlowControl(sval, i_val);
+  if result then t_ser.FlowMode := eFlowControl(i_val)
+  else t_msgrimpl.AddMessage(format('Failed to set flow control (invalid value: %s).',[sval]), ML_ERROR);
+end;
+
+// =============================================================================
+// Description  : set properties with default values.
+// Parameter    : --
+// Return       : --
+// Exceptions   : --
+// First author : 2017-02-21 /bsu/
 // History      :
 // =============================================================================
-class function TRS232.SetFlowControlByStr(pser: PSerial; const sval: string): boolean;
-const
-  CSTR_FC_VALUES: array[eFlowControl] of string = ('NONE', 'RTS_CTS', 'DTR_DSR', 'XON_XOF');
-var i_idx: integer; s_in: string;
+procedure TSerialAdapter.SetDefault();
 begin
-  result := false;
-  s_in := UpperCase(sval);
-  i_idx := IndexText(s_in, CSTR_FC_VALUES);
-  if ((i_idx >= Ord(fcNone)) and (i_idx <= Ord(fcXON_XOF))) then begin
-    pser^.FlowMode := eFlowControl(i_idx);
-    result := true;
+  if assigned(t_ser) then begin
+    t_ser.Port := 1;
+    t_ser.Baudrate := 9600;
+    t_ser.CheckParity := false;
+    t_ser.DataBits := d8Bit;
+    t_ser.NotifyErrors := neNone;
+    t_ser.FlowMode := fcNone;
   end;
-end;
-
-function TRS232.SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
-begin
-  result := false;
-  case eprop of
-    SP_PORT: result := TRS232.SetPortByStr(@t_ser, sval);
-    SP_BAUDRATE: result := TRS232.SetBaudrateByStr(@t_ser, sval);
-    SP_PARITY: result := TRS232.SetParityByStr(@t_ser, sval);
-    SP_DATABITS: result := TRS232.SetDatabitsByStr(@t_ser, sval);
-    SP_STOPBITS: result := TRS232.SetStopbitsByStr(@t_ser, sval);
-    SP_FLOWCONTROL: result := TRS232.SetFlowControlByStr(@t_ser, sval);
-  end;
-end;
-
-function TRS232.SetPort(const sval: string): boolean;
-begin
-  result := TRS232.SetPortByStr(@t_ser, sval);
-end;
-
-function TRS232.SetBaudrate(const sval: string): boolean;
-begin
-  result := TRS232.SetBaudrateByStr(@t_ser, sval);
-end;
-
-function TRS232.SetParity(const sval: string): boolean;
-begin
-  if (sval = '') then result := true
-  else result := TRS232.SetParityByStr(@t_ser, sval);
-end;
-
-function TRS232.SetDatabits(const sval: string): boolean;
-begin
-  if (sval = '') then result := true
-  else result := TRS232.SetDataBitsByStr(@t_ser, sval);
-end;
-
-function TRS232.SetStopbits(const sval: string): boolean;
-begin
-  if (sval = '') then result := true
-  else result := TRS232.SetStopBitsByStr(@t_ser, sval);
-end;
-
-function TRS232.SetFlowControl(const sval: string): boolean;
-begin
-  if (sval = '') then result := true
-  else result := TRS232.SetFlowControlByStr(@t_ser, sval);
 end;
 
 // =============================================================================
@@ -340,7 +388,7 @@ end;
 // First author : 2016-11-25 /bsu/
 // History      :
 // =============================================================================
-function TRS232.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;
+function TSerialAdapter.PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string;
 begin
   if (bhex) then
     result := string(t_rbuffer.ReadHex())
@@ -348,20 +396,24 @@ begin
     result := string(AnsiString(pbytes));
 end;
 
-function TRS232.IsReadReady(): boolean;
+function TSerialAdapter.IsReadReady(): boolean;
 begin
-  result := (t_ser.RxWaiting > 0);
+  if assigned(t_ser) then result := (t_ser.RxWaiting > 0)
+  else result := false
 end;
 
-function TRS232.IsWriteComplete(): boolean;
+function TSerialAdapter.IsWriteComplete(): boolean;
 begin
-  result := (t_ser.TxWaiting <= 0);
+  if assigned(t_ser) then result := (t_ser.TxWaiting <= 0)
+  else result := false;
 end;
 
-function TRS232.TryConnect(): boolean;
+function TSerialAdapter.TryConnect(): boolean;
 begin
-  t_ser.Active := true;
-  if t_ser.Active then e_state := CS_CONNECTED;
+  if assigned(t_ser) then begin
+    t_ser.Active := true;
+    if t_ser.Active then e_state := CS_CONNECTED;
+  end;
   result := IsConnected();
 end;
 
@@ -376,13 +428,15 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function TRS232.TryDisconnect(): boolean;
+function TSerialAdapter.TryDisconnect(): boolean;
 begin
-  t_ser.Active := false;
-  result := (not t_ser.Active);
+  if assigned(t_ser) then begin
+    t_ser.Active := false;
+    result := (not t_ser.Active);
+  end else result := true;
 end;
 
-function TRS232.InitBuffer(): boolean;
+function TSerialAdapter.InitBuffer(): boolean;
 begin
   if not assigned(t_wbuffer) then t_wbuffer := TByteBuffer.Create();
   if not assigned(t_rbuffer) then t_rbuffer := TByteBuffer.Create();
@@ -390,53 +444,55 @@ begin
               t_rbuffer.Resize(C_BUFFER_SIZE_READ)  );
 end;
 
-function TRS232.WriteStrToBuffer(const txstr: string): boolean;
+function TSerialAdapter.WriteStrToBuffer(const txstr: string): boolean;
 var s_ansi: AnsiString;
 begin
   s_ansi := AnsiString(txstr);
   result := (t_wbuffer.WriteAnsiStr(s_ansi) > 0);
 end;
 
-function TRS232.WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean;
+function TSerialAdapter.WritePacketToBuffer(const pbytes: PByteArray; const wlen: word): boolean;
 begin
   result := (t_wbuffer.WriteBytes(pbytes, wlen) > 0);
 end;
 
-function TRS232.SendFromBuffer(): boolean;
+function TSerialAdapter.SendFromBuffer(): boolean;
 var s_ansi: AnsiString;
 begin
   s_ansi := t_wbuffer.ReadAnsiStr();
-  t_ser.WriteString(s_ansi);
-  result := (length(s_ansi) > 0);
+  if assigned(t_ser) then t_ser.WriteString(s_ansi);
+  result := assigned(t_ser) and (length(s_ansi) > 0);
 end;
 
-function TRS232.ReadStrFromBuffer(): string;
+function TSerialAdapter.ReadStrFromBuffer(): string;
 begin
   RecvToBuffer();
   result := string(t_rbuffer.ReadAnsiStr());
 end;
 
-function TRS232.ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer;
+function TSerialAdapter.ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer;
 begin
   RecvToBuffer();
   t_rbuffer.ReadBytes(pbytes, wlen);
   result := wlen;
 end;
 
-function TRS232.RecvToBuffer(): integer;
+function TSerialAdapter.RecvToBuffer(): integer;
 var ch: AnsiChar;
 begin
   result := 0;
-  while ((t_ser.RxWaiting > 0) and (not t_rbuffer.IsFull())) do begin
-    if t_ser.ReadChar(ch) = 1 then begin
-      t_rbuffer.WriteElement(byte(ch));
-      inc(result);
+  if assigned(t_ser) then begin
+    while ((t_ser.RxWaiting > 0) and (not t_rbuffer.IsFull())) do begin
+      if t_ser.ReadChar(ch) = 1 then begin
+        t_rbuffer.WriteElement(byte(ch));
+        inc(result);
+      end;
+      Application.ProcessMessages();
     end;
-    Application.ProcessMessages();
   end;
 end;
 
-function TRS232.ClearBuffer(): integer;
+function TSerialAdapter.ClearBuffer(): integer;
 var s_text: string;
 begin
   RecvToBuffer();
@@ -448,7 +504,7 @@ begin
   end;
 end;
 
-procedure TRS232.DeinitBuffer();
+procedure TSerialAdapter.DeinitBuffer();
 begin
   if assigned(t_wbuffer) then t_wbuffer.Free();
   if assigned(t_rbuffer) then t_rbuffer.Free();
@@ -463,16 +519,11 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-constructor TRS232.Create(owner: TComponent);
+constructor TSerialAdapter.Create(owner: TComponent);
 begin
   inherited Create(owner);
   e_type := CT_RS232;
-  t_ser := TSerial.Create(self);
-
-  //default settings
-  t_ser.CheckParity := false;
-  t_ser.DataBits := d8Bit;
-  t_ser.NotifyErrors := neNone;
+  t_ser := nil;
 end;
 
 // =============================================================================
@@ -484,9 +535,9 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-destructor TRS232.Destroy;
+destructor TSerialAdapter.Destroy;
 begin
-  t_ser.Free();
+  if (b_ownser and assigned(t_ser)) then FreeAndNil(t_ser);
   inherited Destroy();
 end;
 
@@ -504,10 +555,16 @@ end;
 // First author : 2015-09-11 /bsu/
 // History      :
 // =============================================================================
-function TRS232.Config(const sconfs: TStrings): boolean;
+function TSerialAdapter.Config(const sconfs: TStrings): boolean;
 var i: ESerialProperty; s_conf: string;
 begin
   result := false;
+  if not assigned(t_ser) then begin
+    t_ser := TSerial.Create(self);
+    b_ownser := true;
+    SetDefault();
+  end;
+
   if (e_state in [CS_UNKNOWN, CS_CONFIGURED]) then begin
     for i := LOW(ESerialProperty) to HIGH(ESerialProperty) do begin
       s_conf := sconfs.Values[CSTR_RS232_PROPERTIES[i]];
@@ -529,7 +586,7 @@ end;
 // First author : 2017-02-20 /bsu/
 // History      :
 // =============================================================================
-function TRS232.SetProperties(const sconfs: TStrings): integer;
+function TSerialAdapter.ChangeProperties(const sconfs: TStrings): integer;
 var i: integer; s_prop, s_val: string; b_connected: boolean;
 begin
   result := 0;
@@ -543,31 +600,6 @@ begin
       else break;
     end;
     if b_connected then TryConnect();
-  end;
-end;
-
-// =============================================================================
-// Class        : TConnRS232
-// Function     : SetProperty
-//                set a property of rs232 object
-// Parameter    : propname, name of the property in string
-//                sval, value of the property in string
-// Return       : true, if the setting is done successfully
-//                false, otherwise
-// Exceptions   : --
-// First author : 2017-02-20 /bsu/
-// History      :
-// =============================================================================
-function TRS232.SetProperty(const propname, sval: string): boolean;
-var i_idx: integer; b_connected: boolean;
-begin
-  result := false;
-  i_idx := IndexText(propname, CSTR_RS232_PROPERTIES);
-  if ( (i_idx >= ord(Low(ESerialProperty))) and (i_idx <= ord(High(ESerialProperty)))) then begin
-    b_connected := Connected;
-    if b_connected then TryDisconnect();
-    result := SetProperty(ESerialProperty(i_idx), sval);
-    if b_connected then result := TryConnect();
   end;
 end;
 

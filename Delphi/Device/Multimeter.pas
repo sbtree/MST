@@ -314,7 +314,7 @@ end;
 function TMultimeterKeithley.InitDevice(): boolean;
 begin
   if (not assigned(t_curconn)) then begin
-    t_curconn := TRS232.Create(self); //test
+    t_curconn := TSerialAdapter.Create(self); //test
     ITextMessengerImpl(t_curconn).Messenger := t_msgrimpl.Messenger;
     t_curconn.Config('Port:5|baudrate:9600'); //test
   end;

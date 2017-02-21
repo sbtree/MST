@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, {Serial3,}ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls, MtxDownloader,
+  Dialogs, StdCtrls, Serial3, ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls, MtxDownloader,
   NewProgressbar, ConnBase;
 
 type
@@ -102,7 +102,7 @@ type
 
   private
     { Private-Deklarationen }
-    t_ser, t_ctrl: TCommBase; // TSerial;
+    t_ser, t_ctrl: TSerial; // TCommBase; //
     c_timeout: cardinal;
     e_bootstate: EBootState;
     e_dlprotocol: EDownloadProtocol;
@@ -150,12 +150,12 @@ end;
 
 procedure TFrmBootTester.btnCloseProdClick(Sender: TObject);
 begin
-  t_ctrl.Disconnect(); //.Active := false;
+  t_ctrl.Active := false;
 end;
 
 procedure TFrmBootTester.btnCloseTestClick(Sender: TObject);
 begin
-  t_ser.Connect(); //.Active := false;
+  t_ser.Active := false;
 end;
 
 procedure TFrmBootTester.btnDownloadClick(Sender: TObject);
