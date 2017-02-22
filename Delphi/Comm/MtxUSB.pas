@@ -42,7 +42,7 @@ type
     Configuration     : string;
   end;
 
-  TMtxUsb=class(TCommBase)
+  TMtxUsb=class(TConnBase)
   protected
     t_usbio:    TUSBIOInterface3; //intance for general setting of usb (EP0)
     t_usbrx:    TUSBIOInterface3; //endpoint for reading from usb-device (Pipe In)

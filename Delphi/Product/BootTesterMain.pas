@@ -691,7 +691,7 @@ begin
   c_timeout := 3000;
   e_bootstate := BS_UNKNOWN;
   e_dlprotocol := DP_MOTOROLA;
-  t_comdownloader.ComObj := t_ctrl;//t_ser;
+  t_comdownloader.SerialObj := t_ctrl;//t_ser;
   t_downloader := t_comdownloader;
   t_downloader.ProgressBar := pgbSendFile;
   t_downloader.Messager := memRecv.Lines;

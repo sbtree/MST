@@ -28,7 +28,7 @@ type
     { Private-Deklarationen }
     t_messenger: TTextMessenger;
     t_conmgr: TConnManager;
-    t_conn: TCommBase;
+    t_conn: TConnBase;
   protected
     procedure CreateNameType(const idx: integer; var sname: string; var etype: EConnectType);
   public

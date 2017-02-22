@@ -19,7 +19,7 @@ type
     i_curidx:   integer;            //index of current active connection in t_conns
     t_msgrimpl: TTextMessengerImpl; //for transfering messages
   protected
-    function ConnectByIndex(const idx: integer): TCommBase;
+    function ConnectByIndex(const idx: integer): TConnBase;
     procedure ClearConns();
   public
     //constructor and destructor
@@ -29,19 +29,19 @@ type
     //delegate interface ITextMessengerImpl
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
 
-    function CreateConnect(const cname: string; const ctype: EConnectType): TCommBase;
+    function CreateConnect(const cname: string; const ctype: EConnectType): TConnBase;
     function RemoveConnect(const cname: string): boolean;
-    function CurrentConnect(): TCommBase;
-    function ActiveConnect(const cname: string): TCommBase;
-    function GetConnect(const cname: string): TCommBase;
+    function CurrentConnect(): TConnBase;
+    function ActiveConnect(const cname: string): TConnBase;
+    function GetConnect(const cname: string): TConnBase;
   end;
 
 implementation
 uses SysUtils, RS232, MtxUSB, PCAN;
 
-function TConnManager.ConnectByIndex(const idx: integer): TCommBase;
+function TConnManager.ConnectByIndex(const idx: integer): TConnBase;
 begin
-  if ((idx >= 0) and (idx < t_conns.Count)) then result := TCommBase(t_conns.Objects[idx])
+  if ((idx >= 0) and (idx < t_conns.Count)) then result := TConnBase(t_conns.Objects[idx])
   else result := nil;
 end;
 
@@ -71,7 +71,7 @@ begin
   inherited Destroy();
 end;
 
-function TConnManager.CreateConnect(const cname: string; const ctype: EConnectType): TCommBase;
+function TConnManager.CreateConnect(const cname: string; const ctype: EConnectType): TConnBase;
 var s_conname: string;
 begin
   s_conname := trim(cname);
@@ -111,18 +111,18 @@ begin
   end;
 end;
 
-function TConnManager.CurrentConnect(): TCommBase;
+function TConnManager.CurrentConnect(): TConnBase;
 begin
   result := ConnectByIndex(i_curidx);
 end;
 
-function TConnManager.ActiveConnect(const cname: string): TCommBase;
+function TConnManager.ActiveConnect(const cname: string): TConnBase;
 begin
   i_curidx := t_conns.IndexOf(trim(cname));
   result := CurrentConnect();
 end;
 
-function TConnManager.GetConnect(const cname: string): TCommBase;
+function TConnManager.GetConnect(const cname: string): TConnBase;
 var i_idx: integer;
 begin
   i_idx := t_conns.IndexOf(trim(cname));

@@ -1,7 +1,7 @@
 unit MtxDownloader;
 
 interface
-uses Serial3, Classes, Controls, RS232, ConnBase;
+uses Serial3, Classes, Controls, RS232, ConnBase, TextMessage;
 type
   EBootState = (
                 BS_UNKNOWN,
@@ -29,7 +29,7 @@ type
                 DC_FCW       //Freescale CodeWarrior flash, a software tool for flashing (adapter: usb->jtag)
                 );
 
-  TMtxDownloader = class
+  TMtxDownloader = class(TInterfacedObject, ITextMessengerImpl)
   protected
     e_dlprotocol: EDownloadProtocol;//to save protocol
     s_lastmsg:    string;           //to save information in the last action
@@ -40,16 +40,19 @@ type
     t_messager:   TStrings;         //to output messages
     b_dlcancel:   boolean;          //to cancel downloading manually
     r_baudfactor: single;           //factor of baudrate, useful if the oscilator frequence of the target device and its boot loader don't match
+    t_msgrimpl:   TTextMessengerImpl; //for transfering messages
   protected
     procedure UpdateStartMessage(); virtual; abstract;
     function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
     function  EnterService(const cmd: string): boolean; virtual; abstract;
     procedure InitProgressBar(); virtual;
     procedure UpdateProgressBar(const val: integer); virtual;
+    procedure SetMessenger();
   public
     constructor Create();
     destructor Destroy; override;
 
+    property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
     property BaudrateFactor: single read r_baudfactor write r_baudfactor;
     property Cancel : boolean read b_dlcancel write b_dlcancel;
     property Messager: TStrings write t_messager;
@@ -61,11 +64,13 @@ type
 
   TMtxComDownloader = class(TMtxDownloader)
   protected
-    t_ser: TSerial;
-    t_conn: TRS232;
+    //t_ser: TSerial;
+    t_conn: TSerialAdapter;
     s_blmessage: string; //save switch-on message of boot loader
     s_fwmessage: string; //save switch-on message of firmware
   protected
+    function GetSerialObj(): TSerial;
+    procedure SetSerialObj(tser: TSerial);
     procedure SwitchBaudrate(const ibaud: Integer; const bxonoff: Boolean = false);
     //function  SendStr(const str: string; const bprint: boolean = true): boolean;
     //function  RecvStr(var str: string; const bwait: boolean = true): integer;
@@ -83,8 +88,9 @@ type
     function  StartDownload(): boolean; virtual;
   public
     constructor Create();
+    destructor Destroy(); override;
 
-    property ComObj: TSerial read t_ser write t_ser;
+    property SerialObj: TSerial read GetSerialObj write SetSerialObj;
 
     function TestApp(): boolean; override;
     function GetBootState(const cmd: string): EBootState; override;
@@ -164,6 +170,7 @@ begin
   b_dlcancel := false;
   //i_cbaud := CINT_B115200;
   r_baudfactor := 1.0;
+  t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 end;
 
 destructor TMtxDownloader.Destroy;
@@ -173,15 +180,25 @@ begin
 	inherited Destroy;
 end;
 
-procedure TMtxComDownloader.SwitchBaudrate(const ibaud: Integer; const bxonoff: Boolean);
-var b_actived: boolean; i_baud: integer;
+function TMtxComDownloader.GetSerialObj(): TSerial;
 begin
-  i_baud := Round(ibaud * r_baudfactor);
-  b_actived := t_conn.Connected;
-  if b_actived then t_conn.Disconnect();
-  t_conn.SetBaudrate(ibaud);
-  t_conn.SetXonXoff(bxonoff);
-  if b_actived then t_conn.Connect();
+  result := t_conn.SerialObj;
+end;
+
+procedure TMtxComDownloader.SetSerialObj(tser: TSerial);
+begin
+  t_conn.SerialObj := tser;
+end;
+
+procedure TMtxComDownloader.SwitchBaudrate(const ibaud: Integer; const bxonoff: Boolean);
+var i_baud: integer;
+begin
+  if assigned(t_conn.SerialObj) then begin
+    i_baud := Round(ibaud * r_baudfactor);
+    t_conn.SerialObj.Baudrate := ibaud;
+    if bxonoff then t_conn.SerialObj.FlowMode := fcXON_XOF
+    else t_conn.SerialObj.FlowMode := fcNone;
+  end;
 end;
 
 //function  TMtxComDownloader.SendStr(const str: string; const bprint: boolean = true): boolean;
@@ -323,7 +340,7 @@ const CSTR_TEST_CMD: string= 'abcdefg';
       C_RESTART_INTERVAL: cardinal = 2000;
 var i_baud: integer; c_endtime: cardinal;
 begin
-  i_baud := t_conn.Baudrate;
+  i_baud := t_conn.SerialObj.Baudrate;
   SwitchBaudrate(CINT_B115200, true);
   t_conn.SendStr(CSTR_TEST_CMD + CCHR_RETURN);
   c_endtime := GetTickCount() + C_WAITING_INTERVAL; //C_ANSWER_WAIT;
@@ -474,8 +491,15 @@ end;
 constructor TMtxComDownloader.Create();
 begin
   inherited Create();
+  t_conn := TSerialAdapter.Create(nil);
   s_blmessage := '';
   s_fwmessage := '';
+end;
+
+destructor TMtxComDownloader.Destroy();
+begin
+  t_conn.Free();
+  inherited Destroy();
 end;
 
 function TMtxComDownloader.TestApp(): boolean;

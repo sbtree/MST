@@ -47,7 +47,7 @@ type
   end;
 
   //base class of connection
-  TCommBase = class(TComponent, ICommInterf, ITextMessengerImpl)
+  TConnBase = class(TComponent, ICommInterf, ITextMessengerImpl)
   class function GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
   class function GetConnectTypeName(const etype: EConnectType): string;
   class function GetConnectState(const estate: EConnectState): string;
@@ -117,7 +117,7 @@ type
     procedure SetEventTx();
     procedure ResetEventTx();
   end;
-  PConnBase = ^TCommBase;
+  PConnBase = ^TConnBase;
 
 const
   //define names of connection types
@@ -156,7 +156,7 @@ uses Forms, StrUtils, Windows, Registry;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-class function TCommBase.GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
+class function TConnBase.GetConnectTypeEnum(const conkey: string; var val: EConnectType): boolean;
 var i_idx: integer;
 begin
   i_idx := IndexText(conkey, CSTR_CONN_KEYS);
@@ -174,7 +174,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-class function TCommBase.GetConnectTypeName(const etype: EConnectType): string;
+class function TConnBase.GetConnectTypeName(const etype: EConnectType): string;
 begin
   result := CSTR_CONN_KEYS[etype];
 end;
@@ -188,7 +188,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-class function TCommBase.GetConnectState(const estate: EConnectState): string;
+class function TConnBase.GetConnectState(const estate: EConnectState): string;
 begin
   result := CSTR_CONN_STATES[estate];
 end;
@@ -201,9 +201,9 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function  TCommBase.GetTypeName(): string;
+function  TConnBase.GetTypeName(): string;
 begin
-  result := TCommBase.GetConnectTypeName(e_type);
+  result := TConnBase.GetConnectTypeName(e_type);
 end;
 
 // =============================================================================
@@ -214,9 +214,9 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.GetStateStr(): string;
+function TConnBase.GetStateStr(): string;
 begin
-  result := TCommBase.GetConnectState(e_state);
+  result := TConnBase.GetConnectState(e_state);
 end;
 
 // =============================================================================
@@ -228,7 +228,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.WaitForReceiving(const tend: cardinal): boolean;
+function TConnBase.WaitForReceiving(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_count, c_secs: cardinal; b_wait, b_read: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
@@ -262,7 +262,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.WaitForSending(const tend: cardinal): boolean;
+function TConnBase.WaitForSending(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_count, c_secs: cardinal; b_wait, b_write: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
@@ -297,7 +297,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.WaitForConnecting(const tend: cardinal): boolean;
+function TConnBase.WaitForConnecting(const tend: cardinal): boolean;
 var s_lastmsg: string; c_tcur, c_count, c_secs: cardinal; b_wait: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
@@ -330,7 +330,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.IsConnected(): boolean;
+function TConnBase.IsConnected(): boolean;
 begin
   result := (e_state = CS_CONNECTED);
 end;
@@ -342,7 +342,7 @@ end;
 // First author : 2016-06-15 /bsu/
 // History      :
 // =============================================================================
-constructor TCommBase.Create(owner: TComponent);
+constructor TConnBase.Create(owner: TComponent);
 begin
   inherited Create(owner);
   t_msgrimpl := TTextMessengerImpl.Create(ClassName());
@@ -361,7 +361,7 @@ end;
 // First author : 2016-06-15 /bsu/
 // History      :
 // =============================================================================
-destructor TCommBase.Destroy;
+destructor TConnBase.Destroy;
 begin
   FreeAndNil(t_txwait);
   FreeAndNil(t_rxwait);
@@ -379,7 +379,7 @@ end;
 //    First author : 2016-06-17 /bsu/
 //    History      :
 // =============================================================================
-function TCommBase.Config(const sconf: string): boolean;
+function TConnBase.Config(const sconf: string): boolean;
 var t_confs: TStrings; s_conf: string;
 begin
   result := false;
@@ -402,7 +402,7 @@ end;
 // First author : 2016-07-12 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.Connect(): boolean;
+function TConnBase.Connect(): boolean;
 begin
   result := false;
   if (e_state in [CS_CONFIGURED, CS_CONNECTED]) then begin
@@ -426,7 +426,7 @@ end;
 // First author : 2016-11-28 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.Disconnect(): boolean;
+function TConnBase.Disconnect(): boolean;
 begin
   if Connected then begin
     result := TryDisconnect();
@@ -449,7 +449,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.SendPacket(const pbuf: PByteArray; const wlen: word): boolean;
+function TConnBase.SendPacket(const pbuf: PByteArray; const wlen: word): boolean;
 var c_tend: cardinal; s_packet: string;
 begin
   result := false;
@@ -480,7 +480,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.SendStr(const str: string): boolean;
+function TConnBase.SendStr(const str: string): boolean;
 var w_len: word; c_tend: cardinal;
 begin
   result := false;
@@ -513,7 +513,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.RecvPacket(var pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
+function TConnBase.RecvPacket(var pbuf: PByteArray; var wlen: word; const bwait: boolean): boolean;
 var c_tend: cardinal; s_packet: string;
 begin
   result := false;
@@ -544,7 +544,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.RecvStr(var str: string; const bwait: boolean): integer;
+function TConnBase.RecvStr(var str: string; const bwait: boolean): integer;
 var c_tend: cardinal;
 begin
   result := 0;
@@ -564,7 +564,7 @@ begin
     t_msgrimpl.AddMessage(format('No data can be received because the connection (%s) is not yet established.', [GetTypeName()]), ML_ERROR);
 end;
 
-function TCommBase.ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
+function TConnBase.ExpectStr(var str: string; const swait: string; const bcase: boolean): boolean;
 begin
   result := RecvStrExpected(str, swait, c_timeout, bcase);
 end;
@@ -579,7 +579,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.RecvStrTimeout(var str: string; const timeout: cardinal): integer;
+function TConnBase.RecvStrTimeout(var str: string; const timeout: cardinal): integer;
 var tend: cardinal;
 begin
   result := 0; str := '';
@@ -610,7 +610,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal): integer;
+function TConnBase.RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal): integer;
 var c_time: cardinal; b_break: boolean; tend: cardinal;
 begin
   result := 0; str := '';
@@ -644,7 +644,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TCommBase.RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean): boolean;
+function TConnBase.RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean): boolean;
 var tend: cardinal; w_len: word;
 begin
   result := false; str := '';
@@ -674,7 +674,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-procedure TCommBase.SetEventRx();
+procedure TConnBase.SetEventRx();
 begin
   t_rxwait.SetEvent();
 end;
@@ -687,7 +687,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-procedure TCommBase.ResetEventRx();
+procedure TConnBase.ResetEventRx();
 begin
   t_rxwait.ResetEvent();
 end;
@@ -700,7 +700,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-procedure TCommBase.SetEventTx();
+procedure TConnBase.SetEventTx();
 begin
   t_txwait.SetEvent();
 end;
@@ -713,7 +713,7 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-procedure TCommBase.ResetEventTx();
+procedure TConnBase.ResetEventTx();
 begin
   t_txwait.ResetEvent();
 end;

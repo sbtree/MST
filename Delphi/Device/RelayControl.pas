@@ -15,10 +15,10 @@ type
 
   TRelayControl = class(TInterfacedObject, IRelayControl, ITextMessengerImpl)
   protected
-    t_curconn: TCommBase;
+    t_curconn: TConnBase;
     t_msgrimpl:TTextMessengerImpl;
   protected
-    procedure SetConnection(const conn: TCommBase); virtual;
+    procedure SetConnection(const conn: TConnBase); virtual;
 
   public
     constructor Create();
@@ -32,7 +32,7 @@ type
     function QueryRelays(var relnrs: string): boolean; virtual;
     function VerifyClosedRelays(const refrelnrs: string): boolean; virtual;
 
-    property CurConnect: TCommBase read t_curconn write SetConnection;
+    property CurConnect: TConnBase read t_curconn write SetConnection;
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
   end;
 
@@ -41,7 +41,7 @@ type
     //constructor Create();
     //destructor Destroy; override;
 
-    property CurConnect: TCommBase read t_curconn;
+    property CurConnect: TConnBase read t_curconn;
   end;
 
   //Every Keithley Pseudocard 7705 has 40 channels and they are nummerized :
@@ -62,7 +62,7 @@ type
     t_cards:  TStrings;
   protected
     procedure UpdateCardInfo();
-    procedure SetConnection(const conn: TCommBase); override;
+    procedure SetConnection(const conn: TConnBase); override;
     function GetCardCount(): integer;
     function GetCardName(idx: integer): string;
     function ChannelIndexSet(const chnr: string): TKeithleyChannelSet;
@@ -95,7 +95,7 @@ const
   C_PCARD_CHANNEL_MAX     = 40; //maximal channels of Pseudocard 7705
   C_PCARD_SLOT_MAX        = 5;  //maximal slots for Pseudocard 7705
 
-procedure TRelayControl.SetConnection(const conn: TCommBase);
+procedure TRelayControl.SetConnection(const conn: TConnBase);
 begin
   t_curconn := conn;
 end;
@@ -177,7 +177,7 @@ begin
   end;
 end;
 
-procedure TRelayKeithley.SetConnection(const conn: TCommBase);
+procedure TRelayKeithley.SetConnection(const conn: TConnBase);
 begin
   inherited SetConnection(conn);
   UpdateCardInfo();

@@ -23,7 +23,7 @@ type
   PSerial = ^TSerial;
 
   //sub class of TConnBase for communication over serial port
-  TSerialAdapter = class(TCommBase)
+  TSerialAdapter = class(TConnBase)
     class function EnumSerialPort(var sports: TStringList): integer;
     class function CheckOutPort(const sval: string; var ival: integer): boolean;
     class function CheckOutBaudrate(const sval: string; var ival: integer): boolean;
@@ -73,7 +73,7 @@ type
     procedure DeinitBuffer(); override;
   public
     constructor Create(owner: TComponent); override;
-    destructor Destroy; override;
+    destructor Destroy(); override;
 
     function Config(const sconfs: TStrings): boolean; override;
     function ChangeProperties(const sconfs: TStrings): integer;
@@ -212,8 +212,8 @@ end;
 
 procedure TSerialAdapter.SetSerialObj(comobj: TSerial);
 begin
-  if comobj <> t_ser then begin
-    if b_ownser then FreeAndNil(t_ser);
+  if assigned(comobj) then begin
+    if (b_ownser and assigned(t_ser)) then FreeAndNil(t_ser);
     t_ser := comobj;
     b_ownser := false;
   end;
@@ -283,8 +283,10 @@ function TSerialAdapter.SetBaudrateByStr(const sval: string): boolean;
 var i_baud: integer;
 begin
   result := TSerialAdapter.CheckOutBaudrate(sval, i_baud);
-  if result then t_ser.Baudrate := i_baud
-  else t_msgrimpl.AddMessage(format('Failed to set baudrate (invalid value: %s).',[sval]), ML_ERROR);
+  if result then begin
+    t_ser.Baudrate := i_baud;
+    if not TSerialAdapter.CheckBaudrateSTD(i_baud) then t_msgrimpl.AddMessage(format('A nonstandard baud rate is set (baud rate: %i).',[i_baud]), ML_WARNING);
+  end else t_msgrimpl.AddMessage(format('Failed to set baud rate (invalid value: %s).',[sval]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -316,11 +318,14 @@ end;
 // History      : 2017-02-21 /bsu/ improved after changing of the class function
 // =============================================================================
 function TSerialAdapter.SetDatabitsByStr(const sval: string): boolean;
-var i_val: integer;
+var i_val: integer; e_dbits: eDataBits;
 begin
   result := TSerialAdapter.CheckOutDataBits(sval, i_val);
-  if result then t_ser.DataBits := eDataBits(i_val)
-  else t_msgrimpl.AddMessage(format('Failed to set data bits (invalid value: %s).',[sval]), ML_ERROR);
+  if result then begin
+    if (i_val = 7) then e_dbits := d7bit
+    else e_dbits := d8bit;
+    t_ser.DataBits := e_dbits;
+  end else t_msgrimpl.AddMessage(format('Failed to set data bits (invalid value: %s).',[sval]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -334,11 +339,14 @@ end;
 // History      : 2017-02-21 /bsu/ improved after changing of the class function
 // =============================================================================
 function TSerialAdapter.SetStopbitsByStr(const sval: string): boolean;
-var i_val: integer;
+var i_val: integer; e_sbits: eStopBits;
 begin
   result := TSerialAdapter.CheckOutStopBits(sval, i_val);
-  if result then t_ser.StopBits := eStopBits(i_val)
-  else t_msgrimpl.AddMessage(format('Failed to set stop bits (invalid value: %s).',[sval]), ML_ERROR);
+  if result then begin
+    if (i_val = 2) then e_sbits := st2bit
+    else e_sbits := st1bit;
+    t_ser.StopBits := e_sbits;
+  end else t_msgrimpl.AddMessage(format('Failed to set stop bits (invalid value: %s).',[sval]), ML_ERROR);
 end;
 
 // =============================================================================
@@ -524,6 +532,7 @@ begin
   inherited Create(owner);
   e_type := CT_RS232;
   t_ser := nil;
+  b_ownser := false;
 end;
 
 // =============================================================================

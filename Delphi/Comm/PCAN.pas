@@ -321,7 +321,7 @@ type
   TPCanMsgBuffer = class(TRingBuffer<TPCANMsg>)
   end;
 
-  TPCanLight = class(TCommBase, IDllLoader)
+  TPCanLight = class(TConnBase, IDllLoader)
   class function FindHardwareType(const shwt: string; var ehwt: EPCanHardwareType): boolean;
   protected
     e_hwt:      EPCanHardwareType;  //indicate hardware type of the can adapter, see EPCanHardwareType

@@ -13,7 +13,7 @@ interface
 uses Classes, ConnBase, DllLoader;
 
 type
-  TTekUsb = class(TCommBase, IDllLoader)
+  TTekUsb = class(TConnBase, IDllLoader)
   protected
     t_dllldr:   TDllLoader;
   public
