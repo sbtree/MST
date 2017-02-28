@@ -212,11 +212,13 @@ end;
 
 procedure TSerialAdapter.SetSerialObj(comobj: TSerial);
 begin
+  if (b_ownser and assigned(t_ser)) then FreeAndNil(t_ser);
+  t_ser := comobj;
+  b_ownser := false;
   if assigned(comobj) then begin
-    if (b_ownser and assigned(t_ser)) then FreeAndNil(t_ser);
-    t_ser := comobj;
-    b_ownser := false;
-  end;
+    e_state := CS_CONFIGURED;
+    TryConnect();
+  end else e_state := CS_UNKNOWN;
 end;
 
 function TSerialAdapter.SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
@@ -419,7 +421,7 @@ end;
 function TSerialAdapter.TryConnect(): boolean;
 begin
   if assigned(t_ser) then begin
-    t_ser.Active := true;
+    if not t_ser.Active then t_ser.Active:= true;
     if t_ser.Active then e_state := CS_CONNECTED;
   end;
   result := IsConnected();

@@ -63,7 +63,7 @@ type
     function GetStateStr(): string; virtual;
     function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; virtual; abstract;
 
-    function WaitForReceiving(const tend: cardinal): boolean; virtual;
+    function WaitForReceiving(const tend: cardinal; const bfirst: boolean = true): boolean; virtual;
     function WaitForSending(const tend: cardinal): boolean; virtual;
     function WaitForConnecting(const tend: cardinal): boolean; virtual;
     function IsConnected(): boolean; virtual;
@@ -228,15 +228,17 @@ end;
 // First author : 2016-07-15 /bsu/
 // History      :
 // =============================================================================
-function TConnBase.WaitForReceiving(const tend: cardinal): boolean;
+function TConnBase.WaitForReceiving(const tend: cardinal; const bfirst: boolean): boolean;
 var s_lastmsg: string; c_tcur, c_count, c_secs: cardinal; b_wait, b_read: boolean;
 begin
   c_tcur := GetTickCount(); c_count := c_tcur;
   b_read := IsReadReady(); //save its return value in a local variable, because it can be other value for next calling, e.g. an event automatically signaled
   b_wait := ((not b_read) and (c_tcur < tend));
   if b_wait then begin
-    s_lastmsg := format('Waiting for reading: %d', [Round((tend - c_tcur) / 1000)]) + ' ... %ds';
-    t_msgrimpl.AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    if bfirst then begin
+      s_lastmsg := format('Waiting for reading: %d', [Round((tend - c_tcur) / 1000)]) + ' ... %ds';
+      t_msgrimpl.AddMessage(format(s_lastmsg, [Round((tend - c_tcur) / 1000)]));
+    end;
     repeat
       Application.ProcessMessages();
       c_tcur := GetTickCount();
@@ -611,18 +613,20 @@ end;
 // History      :
 // =============================================================================
 function TConnBase.RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal): integer;
-var c_time: cardinal; b_break: boolean; tend: cardinal;
+var c_time: cardinal; b_break, b_first: boolean; tend: cardinal;
 begin
   result := 0; str := '';
   tend := GetTickCount() + timeout;
   if Connected then begin
+    b_first := true;
     repeat
       result := RecvToBuffer();
       if (result > 0) then str := str + ReadStrFromBuffer();
       c_time := GetTickCount() + interv;
       if (c_time > tend) then c_time := tend;
       Application.ProcessMessages();
-      b_break := (not WaitForReceiving(c_time));
+      b_break := (not WaitForReceiving(c_time, b_first));
+      b_first := false;
     until (b_break or (GetTickCount() >= tend));
     result := length(str);
     if (result > 0) then

@@ -1,9 +1,10 @@
 object Form3: TForm3
   Left = 0
   Top = 0
+  BorderStyle = bsDialog
   Caption = 'Com Identifier'
-  ClientHeight = 441
-  ClientWidth = 720
+  ClientHeight = 321
+  ClientWidth = 665
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -11,14 +12,16 @@ object Form3: TForm3
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  Position = poScreenCenter
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
   object ltvCom: TListView
     Left = 8
     Top = 8
-    Width = 704
-    Height = 425
+    Width = 201
+    Height = 274
     Columns = <
       item
         AutoSize = True
@@ -33,15 +36,79 @@ object Form3: TForm3
     HideSelection = False
     ReadOnly = True
     RowSelect = True
+    ParentShowHint = False
+    ShowHint = True
     SmallImages = lstImages
     TabOrder = 0
     ViewStyle = vsReport
+    OnDblClick = ltvComDblClick
+  end
+  object btnUpdate: TButton
+    Left = 8
+    Top = 288
+    Width = 75
+    Height = 25
+    Caption = '&Update'
+    TabOrder = 1
+    OnClick = btnUpdateClick
+  end
+  object txtSend: TEdit
+    Left = 319
+    Top = 8
+    Width = 191
+    Height = 21
+    TabOrder = 2
+    OnKeyDown = txtSendKeyDown
+  end
+  object btnSend: TButton
+    Left = 599
+    Top = 8
+    Width = 58
+    Height = 21
+    Caption = '&Send'
+    TabOrder = 3
+    OnClick = btnSendClick
+  end
+  object memoLog: TMemo
+    Left = 228
+    Top = 35
+    Width = 429
+    Height = 278
+    TabOrder = 4
+  end
+  object chkCR: TCheckBox
+    Left = 521
+    Top = 10
+    Width = 40
+    Height = 17
+    Caption = '+CR'
+    Checked = True
+    State = cbChecked
+    TabOrder = 5
+  end
+  object chkLN: TCheckBox
+    Left = 561
+    Top = 10
+    Width = 39
+    Height = 17
+    Caption = '+LF'
+    TabOrder = 6
+  end
+  object cmbCom: TComboBox
+    Left = 228
+    Top = 8
+    Width = 85
+    Height = 21
+    TabOrder = 7
+    Text = 'Select a port'
+    OnEnter = cmbComEnter
+    OnSelect = cmbComSelect
   end
   object lstImages: TImageList
-    Left = 592
-    Top = 392
+    Left = 16
+    Top = 240
     Bitmap = {
-      494C010105002400600010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010105000900040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       000000000000000000000000000000000000FFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00EEEEEE00EBEBEB00EDEDED00EDEDED00EBEBEB00EFEFEF00FFFF
@@ -315,7 +382,7 @@ object Form3: TForm3
   object tmrUpdate: TTimer
     Interval = 2000
     OnTimer = tmrUpdateTimer
-    Left = 640
-    Top = 392
+    Left = 56
+    Top = 240
   end
 end
