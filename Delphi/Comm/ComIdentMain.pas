@@ -11,24 +11,24 @@ type
   TForm3 = class(TForm)
     ltvCom: TListView;
     lstImages: TImageList;
-    tmrUpdate: TTimer;
-    btnUpdate: TButton;
     txtSend: TEdit;
     btnSend: TButton;
     memoLog: TMemo;
     chkCR: TCheckBox;
     chkLN: TCheckBox;
     cmbCom: TComboBox;
+    btnStart: TButton;
+    btnStop: TButton;
     procedure FormCreate(Sender: TObject);
-    procedure tmrUpdateTimer(Sender: TObject);
     procedure ltvComDblClick(Sender: TObject);
     procedure btnSendClick(Sender: TObject);
     procedure txtSendKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure btnUpdateClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure UpdateComs();
     procedure cmbComSelect(Sender: TObject);
     procedure cmbComEnter(Sender: TObject);
+   procedure btnStartClick(Sender: TObject);
+    procedure btnStopClick(Sender: TObject);
   private
     function FindItemByName(const sname: string): TListItem;
     procedure OnSignalChange(Sender : TObject ; Signal : eModemInSignal ; SignalState : Boolean);
@@ -40,6 +40,7 @@ type
     procedure SetComsActive(const bact: boolean);
   private
     t_comlist: TStrings;
+    b_active: boolean;
     t_seradapter: TSerialAdapter;
     t_txtmessenger: TTextMessenger;
   public
@@ -50,13 +51,14 @@ var
   Form3: TForm3;
 
 implementation
-uses GenUtils, StrUtils;
+uses RS232Dlg, GenUtils, StrUtils;
 
 {$R *.dfm}
 
 procedure TForm3.FormCreate(Sender: TObject);
 begin
   t_comlist := TStringList.Create();
+  b_active := false;
 
   t_txtmessenger := TTextMessenger.Create();
   t_txtmessenger.Messages := memoLog.Lines;
@@ -65,7 +67,7 @@ begin
   ITextMessengerImpl(t_seradapter).Messenger := t_txtmessenger;
 
   UpdateComs();
-  SetComsActive(true);
+  btnStartClick(self);
 end;
 
 procedure TForm3.FormDestroy(Sender: TObject);
@@ -108,12 +110,11 @@ begin
     if (i_index >= 0) then begin
       t_ser := TSerial(t_comlist.Objects[i_index]);
       if assigned(t_ser) then begin
-        //todo: setting of serial port
-
+        SerialDialog.SerialObj := t_ser;
+        SerialDialog.ShowModal();
       end;
     end;
   end;
-  ShowMessage('Sorry, the function of setting serial port will be done in a short time.');
 end;
 
 function TForm3.FindItemByName(const sname: string): TListItem;
@@ -134,15 +135,6 @@ begin
         t_litem.SubItemImages[0] := 1;
     end;
   end;
-end;
-
-procedure TForm3.tmrUpdateTimer(Sender: TObject);
-begin
-  tmrUpdate.Enabled := false;
-  SetComsActive(true);
-  TGenUtils.Delay(100);
-  SetComsActive(false);
-  tmrUpdate.Enabled := true;
 end;
 
 procedure TForm3.txtSendKeyDown(Sender: TObject; var Key: Word;
@@ -217,10 +209,17 @@ begin
   if t_seradapter.SendStr(s_sending) then t_seradapter.RecvStrInterval(s_recv, t_seradapter.Timeout, 300);
 end;
 
-procedure TForm3.btnUpdateClick(Sender: TObject);
+procedure TForm3.btnStartClick(Sender: TObject);
 begin
+  btnStart.Enabled := false;
   UpdateComs();
-  tmrUpdateTimer(Sender);
+  SetComsActive(true);
+end;
+
+procedure TForm3.btnStopClick(Sender: TObject);
+begin
+  btnStart.Enabled := true;
+  SetComsActive(false);
 end;
 
 procedure TForm3.ClearComList();
@@ -252,12 +251,13 @@ begin
     for i := 0 to t_comlist.Count - 1 do begin
       t_ser := TSerial(t_comlist.Objects[i]);
       if assigned(t_ser) then begin
-        if (not t_ser.Equals(t_seradapter.SerialObj)) then begin
-          t_ser.Active := bact;
-          if ((not t_ser.Active) and bact) then begin
-            t_item := FindItemByName(t_comlist.Strings[i]);
-            if assigned(t_item) then t_item.SubItemImages[0] := 4;
-          end;
+        t_ser.Active := bact;
+        t_item := FindItemByName(t_comlist.Strings[i]);
+        if assigned(t_item) then begin
+          if (bact) then begin
+            if not t_ser.Active then t_item.SubItemImages[0] := 4;
+          end else
+            t_item.SubItemImages[0] := 1;
         end;
       end;
       Application.ProcessMessages();

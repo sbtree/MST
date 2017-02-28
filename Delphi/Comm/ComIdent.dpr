@@ -8,7 +8,8 @@ uses
   DataBuffer in '..\General\DataBuffer.pas',
   TextMessage in '..\General\TextMessage.pas',
   GenUtils in '..\General\GenUtils.pas',
-  ConnBase in 'ConnBase.pas';
+  ConnBase in 'ConnBase.pas',
+  RS232Dlg in 'RS232Dlg.pas' {SerialDialog};
 
 {$R *.res}
 
@@ -16,5 +17,6 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TForm3, Form3);
+  Application.CreateForm(TSerialDialog, SerialDialog);
   Application.Run;
 end.
