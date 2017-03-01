@@ -48,7 +48,7 @@ object Form3: TForm3
     Top = 8
     Width = 191
     Height = 21
-    TabOrder = 1
+    TabOrder = 5
     OnKeyDown = txtSendKeyDown
   end
   object btnSend: TButton
@@ -57,7 +57,7 @@ object Form3: TForm3
     Width = 58
     Height = 21
     Caption = '&Send'
-    TabOrder = 2
+    TabOrder = 8
     OnClick = btnSendClick
   end
   object memoLog: TMemo
@@ -65,7 +65,8 @@ object Form3: TForm3
     Top = 35
     Width = 429
     Height = 278
-    TabOrder = 3
+    ReadOnly = True
+    TabOrder = 9
   end
   object chkCR: TCheckBox
     Left = 521
@@ -75,7 +76,7 @@ object Form3: TForm3
     Caption = '+CR'
     Checked = True
     State = cbChecked
-    TabOrder = 4
+    TabOrder = 6
   end
   object chkLN: TCheckBox
     Left = 561
@@ -83,14 +84,14 @@ object Form3: TForm3
     Width = 39
     Height = 17
     Caption = '+LF'
-    TabOrder = 5
+    TabOrder = 7
   end
   object cmbCom: TComboBox
     Left = 228
     Top = 8
     Width = 85
     Height = 21
-    TabOrder = 6
+    TabOrder = 4
     Text = 'Select a port'
     OnEnter = cmbComEnter
     OnSelect = cmbComSelect
@@ -98,26 +99,36 @@ object Form3: TForm3
   object btnStart: TButton
     Left = 8
     Top = 288
-    Width = 75
+    Width = 50
     Height = 25
-    Caption = '&Start'
-    TabOrder = 7
+    Caption = 'St&art'
+    Enabled = False
+    TabOrder = 1
     OnClick = btnStartClick
   end
   object btnStop: TButton
-    Left = 134
+    Left = 64
     Top = 288
-    Width = 75
+    Width = 50
     Height = 25
     Caption = 'Sto&p'
-    TabOrder = 8
+    TabOrder = 2
     OnClick = btnStopClick
+  end
+  object btnHelp: TButton
+    Left = 159
+    Top = 288
+    Width = 50
+    Height = 25
+    Caption = '&Help'
+    TabOrder = 3
+    OnClick = btnHelpClick
   end
   object lstImages: TImageList
     Left = 16
     Top = 240
     Bitmap = {
-      494C0101050009000C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010105000900040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       000000000000000000000000000000000000FFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00EEEEEE00EBEBEB00EDEDED00EDEDED00EBEBEB00EFEFEF00FFFF
@@ -387,5 +398,11 @@ object Form3: TForm3
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000}
+  end
+  object tmrActive: TTimer
+    Interval = 3000
+    OnTimer = tmrActiveTimer
+    Left = 56
+    Top = 240
   end
 end

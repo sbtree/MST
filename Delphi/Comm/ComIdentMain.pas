@@ -19,20 +19,25 @@ type
     cmbCom: TComboBox;
     btnStart: TButton;
     btnStop: TButton;
+    btnHelp: TButton;
+    tmrActive: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure ltvComDblClick(Sender: TObject);
     procedure btnSendClick(Sender: TObject);
     procedure txtSendKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormDestroy(Sender: TObject);
-    procedure UpdateComs();
+    procedure UpdateListView();
     procedure cmbComSelect(Sender: TObject);
     procedure cmbComEnter(Sender: TObject);
    procedure btnStartClick(Sender: TObject);
     procedure btnStopClick(Sender: TObject);
+    procedure btnHelpClick(Sender: TObject);
+    procedure tmrActiveTimer(Sender: TObject);
   private
     function FindItemByName(const sname: string): TListItem;
+    function IsAllComsActive(): boolean;
     procedure OnSignalChange(Sender : TObject ; Signal : eModemInSignal ; SignalState : Boolean);
-    procedure CreateComList();
+    procedure UpdateComList();
     procedure AddOneCom(const sname: string);
     procedure RemoveCom(const sname: string); overload;
     procedure RemoveCom(const idx: integer); overload;
@@ -51,7 +56,7 @@ var
   Form3: TForm3;
 
 implementation
-uses RS232Dlg, GenUtils, StrUtils;
+uses RS232Dlg, ComIdentHelp, GenUtils, StrUtils;
 
 {$R *.dfm}
 
@@ -66,8 +71,7 @@ begin
   t_seradapter := TSerialAdapter.Create(self);
   ITextMessengerImpl(t_seradapter).Messenger := t_txtmessenger;
 
-  UpdateComs();
-  btnStartClick(self);
+  UpdateListView();
 end;
 
 procedure TForm3.FormDestroy(Sender: TObject);
@@ -78,10 +82,10 @@ begin
   t_txtmessenger.Free();
 end;
 
-procedure TForm3.UpdateComs();
+procedure TForm3.UpdateListView();
 var i: integer; t_item: TListItem; s_comname: string;
 begin
-  CreateComList();
+  UpdateComList();
   //remove all items from the list view which don't exist any more
   for i := ltvCom.Items.Count - 1 downto 0 do begin
     s_comname := ltvCom.Items[i].Caption;
@@ -122,6 +126,19 @@ begin
   result := ltvCom.FindCaption(0, sname, false, true, false);
 end;
 
+function TForm3.IsAllComsActive(): boolean;
+var i: integer; t_ser: TSerial;
+begin
+  result := true;
+  for i := 0 to t_comlist.Count -1 do begin
+    t_ser := TSerial(t_comlist.Objects[i]);
+    if (not t_ser.Active) then begin
+      result := false;
+      break;
+    end;
+  end;
+end;
+
 procedure TForm3.OnSignalChange(Sender : TObject ; Signal : eModemInSignal ; SignalState : Boolean);
 var t_ser: TSerial; t_litem: TListItem;
 begin
@@ -137,13 +154,21 @@ begin
   end;
 end;
 
+procedure TForm3.tmrActiveTimer(Sender: TObject);
+begin
+  tmrActive.Enabled := false;
+  UpdateListView();
+  SetComsActive(true);
+  tmrActive.Enabled := (not IsAllComsActive());
+end;
+
 procedure TForm3.txtSendKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
   if (Key = 13) then btnSendClick(btnSend);
 end;
 
-procedure TForm3.CreateComList();
+procedure TForm3.UpdateComList();
 var i: integer; t_comnames: TStringList;
 begin
   t_comnames := TStringList.Create();
@@ -199,6 +224,11 @@ begin
   end;
 end;
 
+procedure TForm3.btnHelpClick(Sender: TObject);
+begin
+  LoopbackDlg.ShowModal();
+end;
+
 procedure TForm3.btnSendClick(Sender: TObject);
 var s_sending, s_recv: string;
 begin
@@ -212,14 +242,14 @@ end;
 procedure TForm3.btnStartClick(Sender: TObject);
 begin
   btnStart.Enabled := false;
-  UpdateComs();
-  SetComsActive(true);
+  tmrActiveTimer(Sender);
 end;
 
 procedure TForm3.btnStopClick(Sender: TObject);
 begin
   btnStart.Enabled := true;
   SetComsActive(false);
+  tmrActive.Enabled := false;
 end;
 
 procedure TForm3.ClearComList();
@@ -251,11 +281,12 @@ begin
     for i := 0 to t_comlist.Count - 1 do begin
       t_ser := TSerial(t_comlist.Objects[i]);
       if assigned(t_ser) then begin
-        t_ser.Active := bact;
+        if (t_ser.Active <> bact) then t_ser.Active := bact;
         t_item := FindItemByName(t_comlist.Strings[i]);
         if assigned(t_item) then begin
           if (bact) then begin
-            if not t_ser.Active then t_item.SubItemImages[0] := 4;
+            if t_ser.Active then t_item.SubItemImages[0] := 1
+            else t_item.SubItemImages[0] := 4;
           end else
             t_item.SubItemImages[0] := 1;
         end;

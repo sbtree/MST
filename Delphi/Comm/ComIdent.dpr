@@ -9,7 +9,8 @@ uses
   TextMessage in '..\General\TextMessage.pas',
   GenUtils in '..\General\GenUtils.pas',
   ConnBase in 'ConnBase.pas',
-  RS232Dlg in 'RS232Dlg.pas' {SerialDialog};
+  RS232Dlg in 'RS232Dlg.pas' {SerialDialog},
+  ComIdentHelp in 'ComIdentHelp.pas' {LoopbackDlg};
 
 {$R *.res}
 
@@ -18,5 +19,6 @@ begin
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TForm3, Form3);
   Application.CreateForm(TSerialDialog, SerialDialog);
+  Application.CreateForm(TLoopbackDlg, LoopbackDlg);
   Application.Run;
 end.
