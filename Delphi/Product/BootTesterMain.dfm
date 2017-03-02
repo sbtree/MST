@@ -22,7 +22,9 @@ object FrmBootTester: TFrmBootTester
     Top = 8
     Width = 345
     Height = 414
-    ScrollBars = ssVertical
+    HideSelection = False
+    ReadOnly = True
+    ScrollBars = ssBoth
     TabOrder = 0
   end
   object btnClear: TButton
@@ -261,9 +263,9 @@ object FrmBootTester: TFrmBootTester
       Top = 25
       Width = 48
       Height = 21
-      ItemIndex = 6
+      ItemIndex = 5
       TabOrder = 5
-      Text = '7'
+      Text = '6'
       OnChange = cmbPortProdChange
       Items.Strings = (
         '1'

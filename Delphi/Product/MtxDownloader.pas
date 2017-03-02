@@ -37,17 +37,17 @@ type
     t_srecords:   TStringList;      //to save s-records, which is loaded last time;
     i_curline:    integer;          //to save the current index of t_srecords which is downloaded, internal variable
     t_progress:   TControl;         //TProgressBar; //to illustrate the progress of the download
-    t_messager:   TStrings;         //to output messages
     b_dlcancel:   boolean;          //to cancel downloading manually
     r_baudfactor: single;           //factor of baudrate, useful if the oscilator frequence of the target device and its boot loader don't match
     t_msgrimpl:   TTextMessengerImpl; //for transfering messages
   protected
-    procedure UpdateStartMessage(); virtual; abstract;
+    procedure UpdateStartMessage(const smsg: string); virtual; abstract;
     function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
     function  EnterService(const cmd: string): boolean; virtual; abstract;
     procedure InitProgressBar(); virtual;
     procedure UpdateProgressBar(const val: integer); virtual;
-    procedure SetMessenger();
+    function GetMessenger(): TTextMessenger;
+    procedure SetMessenger(const msgr: TTextMessenger); virtual;
   public
     constructor Create();
     destructor Destroy; override;
@@ -55,7 +55,8 @@ type
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
     property BaudrateFactor: single read r_baudfactor write r_baudfactor;
     property Cancel : boolean read b_dlcancel write b_dlcancel;
-    property Messager: TStrings write t_messager;
+    //property Messager: TStrings write t_messager;
+    property Messenger: TTextMessenger read GetMessenger write SetMessenger;
     property ProgressBar: TControl write t_progress;
     function TestApp(): boolean; virtual; abstract;
     function GetBootState(const cmd: string): EBootState; virtual; abstract;
@@ -71,6 +72,7 @@ type
   protected
     function GetSerialObj(): TSerial;
     procedure SetSerialObj(tser: TSerial);
+    procedure SetMessenger(const msgr: TTextMessenger); override;
     procedure SwitchBaudrate(const ibaud: Integer; const bxonoff: Boolean = false);
     //function  SendStr(const str: string; const bprint: boolean = true): boolean;
     //function  RecvStr(var str: string; const bwait: boolean = true): integer;
@@ -81,9 +83,9 @@ type
     function  StartWithMTX1(): boolean;
     function  StartWithMTX2(): boolean;
 
-    procedure UpdateStartMessage(); override;
+    procedure UpdateStartMessage(const smsg: string); override;
     function  TryBootMessageMTL(var msg: string): integer;
-    function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; override;
+    function  ResetDevice(const cmd: string; const timeout: cardinal; const bmsg: boolean = true): boolean; override;
     function  EnterService(const cmd: string): boolean; override;
     function  StartDownload(): boolean; virtual;
   public
@@ -97,7 +99,7 @@ type
     function Download(const cmd, fname: string): boolean; override;
   end;
 
-  var t_comdownloader: TMtxComDownloader;
+//  var t_comdownloader: TMtxComDownloader;
 implementation
 uses Windows, SysUtils, StrUtils, GenUtils, Forms, TypInfo, ComCtrls, NewProgressBar;
 
@@ -160,6 +162,16 @@ begin
   end;
 end;
 
+function TMtxDownloader.GetMessenger(): TTextMessenger;
+begin
+  result := t_msgrimpl.Messenger;
+end;
+
+procedure TMtxDownloader.SetMessenger(const msgr: TTextMessenger);
+begin
+  t_msgrimpl.Messenger := msgr;
+end;
+
 constructor TMtxDownloader.Create;
 begin
 	inherited Create;
@@ -188,6 +200,12 @@ end;
 procedure TMtxComDownloader.SetSerialObj(tser: TSerial);
 begin
   t_conn.SerialObj := tser;
+end;
+
+procedure TMtxComDownloader.SetMessenger(const msgr: TTextMessenger);
+begin
+  inherited SetMessenger(msgr);
+  ITextMessengerImpl(t_conn).Messenger := msgr;
 end;
 
 procedure TMtxComDownloader.SwitchBaudrate(const ibaud: Integer; const bxonoff: Boolean);
@@ -313,7 +331,7 @@ begin
           else if ContainsText(s_recv, CSTR_START_ADDR) then b_ok := true
           else begin //'@' or other char
             b_break := true;
-            if assigned(t_messager) then t_messager.Add(format('[%s]:<%s', [DateTimeToStr(Now()), s_recv]))
+            //if assigned(t_messager) then t_messager.Add(format('[%s]:<%s', [DateTimeToStr(Now()), s_recv]))
           end;
         end else b_ok := true; //b_break := true;  //received no data as ok
         Application.ProcessMessages();
@@ -330,7 +348,7 @@ function  TMtxComDownloader.StartWithMTX2(): boolean;
 var s_recv: string;
 begin
   t_conn.SendStr(CSTR_EPR + CCHR_RETURN);
-  result := t_conn.RecvStrExpected(s_recv, CSTR_SERVICE, GetTickCount() + C_ANSWER_WAIT);
+  result := t_conn.RecvStrExpected(s_recv, CSTR_OK + #$A + #$D + CSTR_PROMPT{CSTR_SERVICE}, GetTickCount() + C_ANSWER_WAIT);
   if result then result := StartWithMTX1();
 end;
 
@@ -348,43 +366,33 @@ begin
   SwitchBaudrate(i_baud, false);
 end;
 
-procedure TMtxComDownloader.UpdateStartMessage();
+procedure TMtxComDownloader.UpdateStartMessage(const smsg: string);
 const C_BL_FW_INTERVAL: cardinal = 6000; C_FW_OUTPUT_INTERVAL: cardinal = 1500;
 var c_time: cardinal; s_temp: string; i_pos: integer;
 begin
   s_blmessage := ''; s_fwmessage := '';
-  c_time := GetTickCount() + C_REBOOT_TIME;
-  t_conn.RecvStr(s_blmessage, false);
-  if (length(s_blmessage) <= 1) then begin //only one char is handled as noise
-    s_blmessage := '';
-    //WaitForReading(c_time);
-  end;
-
-  t_conn.RecvStrInterval(s_temp, c_time, C_RECV_INTERVAL);
-  s_blmessage := s_blmessage + s_temp;
-  if (not TGenUtils.IsAsciiValid(s_blmessage)) then begin
-    s_blmessage := '';
-    TryBootMessageMTL(s_blmessage);
-  end else begin
-    if ContainsText(s_blmessage, CSTR_UNKNOWNCMD) then begin
-      if assigned(t_messager) then t_messager.Add(format('[%s]: device received an unknown command', [DateTimeToStr(Now())]))
-    end else begin
-      c_time := GetTickCount() + C_BL_FW_INTERVAL;
-      t_conn.RecvStrInterval(s_fwmessage, c_time, C_FW_OUTPUT_INTERVAL);
-    end;
-    s_temp := UpperCase(s_blmessage);
-    i_pos := Pos(CSTR_START_APP, s_temp);
-    if (i_pos > 0) then begin
-      s_temp := MidStr(s_blmessage, i_pos, length(s_blmessage));
-      s_blmessage := LeftStr(s_blmessage, i_pos - 1);
-      s_fwmessage := s_temp + s_fwmessage;
+  if (length(smsg) <= 1) then s_blmessage := ''//only one char is handled as noise
+  else begin
+    if (not TGenUtils.IsAsciiValid(smsg)) then
+      TryBootMessageMTL(s_blmessage)
+    else begin
+      if ContainsText(smsg, CSTR_UNKNOWNCMD) then
+        t_msgrimpl.AddMessage('The device received an unknown command.', ML_ERROR)
+      else begin
+      end;
+      s_temp := UpperCase(smsg);
+      i_pos := Pos(CSTR_START_APP, s_temp);
+      if (i_pos > 0) then begin
+        s_blmessage := LeftStr(smsg, i_pos - 1);
+        s_fwmessage := MidStr(smsg,i_pos, length(smsg));
+      end;
     end;
   end;
 end;
 
-function  TMtxComDownloader.ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean): boolean;
+function  TMtxComDownloader.ResetDevice(const cmd: string; const timeout: cardinal; const bmsg: boolean): boolean;
 const C_MANUAL_RESET: cardinal = 30000;
-var c_time: cardinal; i_relay: integer;
+var c_time, c_timeout: cardinal; i_relay: integer;
     s_recv, s_cmd, s_last: string;
 begin
   //clear buffers of the serial interface
@@ -392,25 +400,30 @@ begin
   SwitchBaudrate(CINT_B9600, false);
   s_cmd := trim(cmd);
   if ((s_cmd = '-1') or (s_cmd = '')) then begin //manually reset
-    c_time := GetTickCount() + C_MANUAL_RESET; //set timeout
-    //wait for the anwser from the device
-    if assigned(t_messager) then begin
-      s_last := format('[%s]:%s', [DateTimeToStr(Now()), CSTR_POWER_ONOFF]);
-      t_messager.Add(s_last);
-    end;
+    c_timeout := C_MANUAL_RESET;
+    t_msgrimpl.AddMessage(CSTR_POWER_ONOFF);
   end else begin
-    c_time := tend;
-    if TryStrToInt(s_cmd, i_relay) then //DMM.Control_Relais(s_cmd, 500) //reset by relay (automatically hard reset)
-    else t_conn.SendStr(s_cmd + Char(VK_RETURN)); //reset through command (soft rest)
-    if assigned(t_messager) then t_messager.Add(format('[%s]: device is resetting...', [DateTimeToStr(Now())]));
+    c_timeout := timeout;
+    if TryStrToInt(s_cmd, i_relay) then
+      //DMM.Control_Relais(s_cmd, 500) //reset by relay (automatically hard reset)
+    else
+      t_conn.SendStr(s_cmd + Char(VK_RETURN)); //reset through command (soft rest)
+
+    t_msgrimpl.AddMessage('The device is resetting...');
   end;
+  c_time := GetTickCount() + c_timeout; //set timeout
+
   // wait for that the first char arrives in the time of timeout after resetting
-  result := (t_conn.RecvStr(s_recv, true) > 0);
-  if (not result) then
-    if assigned(t_messager) then t_messager.Add(format('[%s]: failed to reset the device.', [DateTimeToStr(Now())]));
-    
-  //receive the message
-  if (bmsg and result) then UpdateStartMessage();
+  repeat
+    Application.ProcessMessages();
+    result := (t_conn.SerialObj.RxWaiting > 0);
+  until (result or (GetTickCount() >= c_time));
+
+  if not result then t_msgrimpl.AddMessage('Failed to reset the device.', ML_ERROR)
+  else if bmsg then begin
+    t_conn.RecvStrInterval(s_recv, c_time);
+    if bmsg then UpdateStartMessage(s_recv);
+  end;
 end;
 
 function TMtxComDownloader.EnterService(const cmd: string): boolean;
@@ -446,7 +459,7 @@ begin
         else e_dlprotocol := DP_MTXDIS2;
         break;
       end else if ContainsText(s_recv, CSTR_UNKNOWNCMD) then begin
-        if assigned(t_messager) then t_messager.Add(format('[%s]: ''%s'' is not supported.', [DateTimeToStr(Now()), cmd]));
+        t_msgrimpl.AddMessage(format('''%s'' is not supported.', [cmd]), ML_ERROR);
         break;
       end else if (not TGenUtils.IsAsciiValid(s_recv)) then begin //messy code, assume that the Motorola S-Record Loader exists on the device
         if (length(s_recv) = 1) then begin //start char of ARS iS Variant 
@@ -470,22 +483,26 @@ begin
 end;
 
 function  TMtxComDownloader.StartDownload(): boolean;
+var e_msglevel: EMessageLevel;
 begin
   i_curline := 0;
-  if assigned(t_messager) then t_messager.Add(format('[%s]: download started with protocol %s', [DateTimeToStr(Now()), GetEnumName(TypeInfo(EDownloadProtocol), Ord(e_dlprotocol))]));
+  t_msgrimpl.AddMessage(format('Download started with protocol %s', [GetEnumName(TypeInfo(EDownloadProtocol), Ord(e_dlprotocol))]));
+  //ITextMessengerImpl(t_conn).SetWaitingMode(true, 'Downloading...');
+  e_msglevel := t_msgrimpl.Messenger.MessageThreshold;
+  t_msgrimpl.Messenger.MessageThreshold := ML_ERROR;
   case e_dlprotocol of
   DP_MTXARS: result := StartWithMTX2();
   DP_MTXDIS2: result := StartWithMTX1();
   DP_MOTOROLA : result := StartWithMTL();
   else result := false;
   end;
-  
-  if assigned(t_messager) then begin
-    if (e_dlprotocol = DP_UNDEFINED) then
-      t_messager.Add(format('[%s]: download protocol is not defined', [DateTimeToStr(Now()), GetEnumName(TypeInfo(EDownloadProtocol), Ord(e_dlprotocol))]))
-    else
-      t_messager.Add(format('[%s]: download is finished with %d/%d lines', [DateTimeToStr(Now()), i_curline, t_srecords.Count]));
-  end;
+  //ITextMessengerImpl(t_conn).SetWaitingMode(false);
+  t_msgrimpl.Messenger.MessageThreshold := e_msglevel;
+
+  if (e_dlprotocol = DP_UNDEFINED) then
+    t_msgrimpl.AddMessage(format('Download protocol (%s) is not defined', [GetEnumName(TypeInfo(EDownloadProtocol), Ord(e_dlprotocol))]))
+  else
+    t_msgrimpl.AddMessage(format('Download is finished with %d/%d lines', [i_curline, t_srecords.Count]));
 end;
 
 constructor TMtxComDownloader.Create();
@@ -543,14 +560,12 @@ begin
   if assigned(t_conn) then begin
     if (not t_conn.Connected) then t_conn.Connect();
     if t_conn.Connected  then begin
-      if ResetDevice(cmd, c_time) then begin
-        //s_inblmsg := UpperCase(trim(s_blmessage));
-        //s_infwmsg := UpperCase(trim(s_fwmessage));
+      if ResetDevice(cmd, c_time, true) then begin
         if ContainsText(s_blmessage, CSTR_MOTOROLA) then lw_blfw := (lw_blfw or C_MTLBL);
         if (ContainsText(s_blmessage, CSTR_WAITING) or ContainsText(s_blmessage, CSTR_BOOTCODE) or ContainsText(s_blmessage, CSTR_METRONIX))  then lw_blfw := (lw_blfw or C_MTXBL);
 
         if (s_fwmessage <> '') then begin
-          if ContainsText(s_fwmessage, CSTR_BLUPDATER)  then lw_blfw := (lw_blfw or C_MTXUPD);
+          if ContainsText(s_fwmessage, CSTR_BLUPDATER) then lw_blfw := (lw_blfw or C_MTXUPD);
           t_lines := TStringList.Create;
           ExtractStrings([Char(10)], [Char(13)], PChar(s_fwmessage), t_lines);
           if ContainsText(t_lines[t_lines.Count - 1], CSTR_DONE) then lw_blfw := C_MTXUPD
@@ -588,7 +603,7 @@ begin
     $00000001: result := BS_XBL_UPD;
     $00020002: result := BS_MTXBL_APP;
   end;
-  if assigned(t_messager) then t_messager.Add(format('[%s]: boot state is %s', [DateTimeToStr(Now()), GetEnumName(TypeInfo(EBootState), Ord(result))]));
+  t_msgrimpl.AddMessage(format('The boot state is %s', [GetEnumName(TypeInfo(EBootState), Ord(result))]));
 end;
 
 function TMtxComDownloader.Download(const cmd, fname: string): boolean;
@@ -600,7 +615,7 @@ begin
     if t_conn.Connected then begin
       s_file := trim(fname);
       if ((s_file <> s_lastfile) and FileExists(s_file)) then begin
-        if assigned(t_messager) then t_messager.Add(format('[%s]: loading file ''%s''', [DateTimeToStr(Now()), s_file]));
+        t_msgrimpl.AddMessage(format('Loading file ''%s''', [s_file]));
         s_lastfile := s_file;
         t_srecords.Clear;
         t_srecords.LoadFromFile(s_lastfile);
@@ -613,11 +628,11 @@ begin
     end;
   end;
 end;
+//
+//initialization
+//  t_comdownloader := TMtxComDownloader.Create();
+//
+//finalization
+//  t_comdownloader.Free();
 
-initialization
-  t_comdownloader := TMtxComDownloader.Create();
-
-finalization
-  t_comdownloader.Free();
-  
 end.

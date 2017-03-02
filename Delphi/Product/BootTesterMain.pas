@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Serial3, ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls, MtxDownloader,
-  NewProgressbar, ConnBase;
+  NewProgressbar, ConnBase, TextMessage;
 
 type
 {
@@ -101,12 +101,12 @@ type
     function ExpectStr(const str: AnsiString; var sRecv: AnsiString; const msecs: cardinal): boolean;
 
   private
-    { Private-Deklarationen }
     t_ser, t_ctrl: TSerial; // TCommBase; //
     c_timeout: cardinal;
     e_bootstate: EBootState;
     e_dlprotocol: EDownloadProtocol;
     t_downloader: TMtxComDownloader;
+    t_messenger:  TTextMessenger;
   public
     { Public-Deklarationen }
   end;
@@ -673,6 +673,9 @@ end;
 
 procedure TFrmBootTester.FormCreate(Sender: TObject);
 begin
+  t_messenger := TTextMessenger.Create();
+  t_messenger.Messages := memRecv.Lines;
+
   t_ser := TSerial.Create(self);
   t_ser.CheckParity := false;
   t_ser.DataBits := d8Bit;
@@ -691,17 +694,19 @@ begin
   c_timeout := 3000;
   e_bootstate := BS_UNKNOWN;
   e_dlprotocol := DP_MOTOROLA;
-  t_comdownloader.SerialObj := t_ctrl;//t_ser;
-  t_downloader := t_comdownloader;
+
+  t_downloader := TMtxComDownloader.Create();
+  t_downloader.SerialObj := t_ctrl;//t_ser;
   t_downloader.ProgressBar := pgbSendFile;
-  t_downloader.Messager := memRecv.Lines;
+  t_downloader.Messenger := t_messenger;
 end;
 
 procedure TFrmBootTester.FormDestroy(Sender: TObject);
 begin
-  FreeAndNil(t_ser);
-  FreeAndNil(t_ctrl);
-  t_downloader := nil;
+  t_downloader.Free();
+  t_ctrl.Free();
+  t_ser.Free();
+  t_messenger.Free();
 end;
 
 procedure TFrmBootTester.lstSendingDblClick(Sender: TObject);

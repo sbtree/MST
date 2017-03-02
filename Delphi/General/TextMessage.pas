@@ -48,6 +48,7 @@ type
 
   ITextMessengerImpl = interface
     function GetMessenger(): TTextMessenger;
+    procedure SetWaitingMode(const bwmode: boolean; const sprompt: string = '');
     procedure SetMessenger(tmessenger: TTextMessenger);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure AddEmptyLine();
@@ -60,10 +61,14 @@ type
   protected
     t_messenger:  TTextMessenger;
     s_ownername:  string;
+    b_wmode:  boolean;
+    s_wprompt: string;
+    i_wcount: integer;
   public
     constructor Create(const oname: string); overload;
 
     function GetMessenger(): TTextMessenger;
+    procedure SetWaitingMode(const bwmode: boolean; const sprompt: string = '');
     procedure SetMessenger(tmessenger: TTextMessenger);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure AddEmptyLine();
@@ -172,11 +177,24 @@ constructor TTextMessengerImpl.Create(const oname: string);
 begin
   inherited Create();
   s_ownername := oname;
+  b_wmode := false;
+  s_wprompt := '';
 end;
 
 function TTextMessengerImpl.GetMessenger(): TTextMessenger;
 begin
   result := t_messenger;
+end;
+
+procedure TTextMessengerImpl.SetWaitingMode(const bwmode: boolean; const sprompt: string);
+begin
+  b_wmode := bwmode;
+  if b_wmode then begin
+    s_wprompt := sprompt;
+    i_wcount := 0;
+    t_messenger.AddMessage(format('%s (count = %d)', [s_wprompt, i_wcount]), s_ownername);
+  end else
+    t_messenger.UpdateMessage(format('%s (count = %d)', [s_wprompt, i_wcount]), s_ownername);
 end;
 
 procedure TTextMessengerImpl.SetMessenger(tmessenger: TTextMessenger);
@@ -195,7 +213,11 @@ end;
 procedure TTextMessengerImpl.AddMessage(const text: string; const level: EMessageLevel);
 begin
   if assigned(t_messenger) then begin
-    t_messenger.AddMessage(format('%s', [text]), s_ownername, level);
+    if b_wmode then begin
+      inc(i_wcount);
+      UpdateMessage(format('%s (count = %d)', [s_wprompt, i_wcount]), level);
+    end else
+      t_messenger.AddMessage(format('%s', [text]), s_ownername, level);
   end;
 end;
 

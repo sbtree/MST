@@ -215,10 +215,10 @@ begin
   if (b_ownser and assigned(t_ser)) then FreeAndNil(t_ser);
   t_ser := comobj;
   b_ownser := false;
-  if assigned(comobj) then begin
-    e_state := CS_CONFIGURED;
-    TryConnect();
-  end else e_state := CS_UNKNOWN;
+  if assigned(comobj) then
+    e_state := CS_CONFIGURED
+  else
+    e_state := CS_UNKNOWN;
 end;
 
 function TSerialAdapter.SetProperty(const eprop: ESerialProperty; const sval: string): boolean;
