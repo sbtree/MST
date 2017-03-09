@@ -42,7 +42,6 @@ type
     t_msgrimpl:   TTextMessengerImpl; //for transfering messages
   protected
     procedure UpdateStartMessage(const smsg: string); virtual; abstract;
-    function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
     function  EnterService(const cmd: string): boolean; virtual; abstract;
     procedure InitProgressBar(); virtual;
     procedure UpdateProgressBar(const val: integer); virtual;
@@ -58,6 +57,7 @@ type
     //property Messager: TStrings write t_messager;
     property Messenger: TTextMessenger read GetMessenger write SetMessenger;
     property ProgressBar: TControl write t_progress;
+    function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
     function TestApp(): boolean; virtual; abstract;
     function GetBootState(const cmd: string): EBootState; virtual; abstract;
     function Download(const cmd, fname: string): boolean; virtual; abstract;
@@ -86,7 +86,6 @@ type
     procedure UpdateStartMessage(const smsg: string); override;
     function  TryBootMessageMTL(var msg: string): integer;
     function  ResetDevice(const cmd: string; const timeout: cardinal; const bmsg: boolean = true): boolean; override;
-    function  EnterService(const cmd: string): boolean; override;
     function  StartDownload(): boolean; virtual;
   public
     constructor Create();
@@ -94,6 +93,7 @@ type
 
     property SerialObj: TSerial read GetSerialObj write SetSerialObj;
 
+    function  EnterService(const cmd: string): boolean; override;
     function TestApp(): boolean; override;
     function GetBootState(const cmd: string): EBootState; override;
     function Download(const cmd, fname: string): boolean; override;
@@ -430,17 +430,16 @@ function TMtxComDownloader.EnterService(const cmd: string): boolean;
 var s_recv, s_temp: string; c_endtime: cardinal; i_trials: integer;
 begin
   result := false;
-  c_endtime := GetTickCount() + C_REBOOT_TIME;
   s_recv := ''; i_trials := 0; e_dlprotocol := DP_UNDEFINED;
-  if ResetDevice(cmd, c_endtime, false) then begin
+  if ResetDevice(cmd, C_REBOOT_TIME, false) then begin
     c_endtime := GetTickCount() + C_REBOOT_TIME;
     while (GetTickCount() < c_endtime) do begin
-      s_temp := ''; t_conn.RecvStrInterval(s_temp, c_endtime, C_RECV_INTERVAL);
+      s_temp := ''; t_conn.RecvStrInterval(s_temp, C_REBOOT_TIME, C_RECV_INTERVAL);
       s_recv := s_recv + s_temp;
 
       if (ContainsText(s_recv, CSTR_WAITING) or ContainsText(s_recv, CSTR_SERVICE_MENU)) then begin
         t_conn.SendStr(CSTR_SERVICE + CCHR_RETURN);
-        if t_conn.RecvStrExpected(s_temp, CSTR_PROMPT, c_endtime) then begin //wait till the service mode is reached
+        if t_conn.RecvStrExpected(s_temp, CSTR_PROMPT, C_REBOOT_TIME) then begin //wait till the service mode is reached
           s_recv := s_recv + s_temp;
           i_trials := 1;
           repeat
@@ -469,7 +468,7 @@ begin
           SwitchBaudrate(CINT_B115200, true);
           repeat
             t_conn.SendStr(CSTR_BOOTQUE + CCHR_RETURN);
-            t_conn.RecvStrInterval(s_temp, c_endtime, C_RECV_INTERVAL);
+            t_conn.RecvStrInterval(s_temp, C_REBOOT_TIME, C_RECV_INTERVAL);
             result := ContainsText(s_temp, CSTR_MOTOROLA);  //ensure, that the Motorola S-Record Loader is found on the device
             if result then  e_dlprotocol := DP_MOTOROLA
             else SwitchBaudrate(CINT_B9600);;
@@ -556,7 +555,7 @@ const
 var s_recv: string; c_time: cardinal; b_repeat: boolean; lw_blfw: longword; t_lines: TStringList;
 begin
   result := BS_UNKNOWN; lw_blfw := 0;
-  c_time := GetTickCount() + C_REBOOT_TIME;
+  c_time := {GetTickCount() + }C_REBOOT_TIME;
   if assigned(t_conn) then begin
     if (not t_conn.Connected) then t_conn.Connect();
     if t_conn.Connected  then begin

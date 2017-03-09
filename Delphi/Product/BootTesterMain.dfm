@@ -233,7 +233,7 @@ object FrmBootTester: TFrmBootTester
       OnClick = btnFileClick
     end
     object btnStateQue: TButton
-      Left = 246
+      Left = 177
       Top = 131
       Width = 56
       Height = 28
@@ -242,7 +242,7 @@ object FrmBootTester: TFrmBootTester
       OnClick = btnStateQueClick
     end
     object btnDownload: TButton
-      Left = 328
+      Left = 239
       Top = 131
       Width = 57
       Height = 28
@@ -333,6 +333,15 @@ object FrmBootTester: TFrmBootTester
       Width = 366
       Height = 13
       TabOrder = 11
+    end
+    object btnToService: TButton
+      Left = 302
+      Top = 131
+      Width = 83
+      Height = 28
+      Caption = 'To Service'
+      TabOrder = 12
+      OnClick = btnToServiceClick
     end
   end
   object btnTest: TButton

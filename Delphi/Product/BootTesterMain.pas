@@ -61,6 +61,7 @@ type
     txtBaudFactor: TEdit;
     btnTest: TButton;
     pgbSendFile: TProgressBar;
+    btnToService: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     //procedure ComPortRxChar(Sender: TObject; Count: Integer);
@@ -84,6 +85,7 @@ type
     procedure btnCloseProdClick(Sender: TObject);
     procedure chkBaudFactorClick(Sender: TObject);
     procedure btnTestClick(Sender: TObject);
+    procedure btnToServiceClick(Sender: TObject);
   protected
     procedure Transmit();
     function SendStr(const str: AnsiString; const bprint: boolean = true): boolean;
@@ -596,6 +598,11 @@ begin
     RecvStr(s_recv);
   end;
 
+end;
+
+procedure TFrmBootTester.btnToServiceClick(Sender: TObject);
+begin
+  t_downloader.EnterService(trim(txtBootCmd.Text));
 end;
 
 procedure TFrmBootTester.chbRecvClick(Sender: TObject);

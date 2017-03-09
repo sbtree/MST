@@ -30,6 +30,8 @@ type
     class function ClearQuotationMarks(const str: string): string;
     class function ShowStrHex(const str: string): string;
     class function ReplaceDecimalSeparator(const str: string): string;
+    class function EncEscapedChar(const ascii: byte): string;
+    class function DecEscapedChar(const str: string; var byteval: byte): boolean;
 
     //process, thread, windows message and so on
     class procedure Delay(const msec: Cardinal = 10);
@@ -42,7 +44,12 @@ const
 
 
 implementation
-uses Forms, SysUtils, StrUtils, Math,Windows, Registry;
+uses System.Generics.Collections, Forms, SysUtils, StrUtils, Math,Windows, Registry;
+
+const
+  CBYTE_ESCAPED:  array[0..10] of byte    = (0,    7,    8,    9,    10,   11,   12,   13,   34,   39,   92);
+  CSTRS_ESCAPED:  array[0..10] of string  = ('\0', '\a', '\b', '\t', 'n', '\v', '\f', '\r', '\"', '\''', '\\');
+
 
 // =============================================================================
 // Class        : TGenUtils
@@ -271,6 +278,31 @@ begin
 {$ELSE}
   result := ReplaceStr(str, '.', DecimalSeparator);
 {$ENDIF}
+end;
+
+class function TGenUtils.EncEscapedChar(const ascii: byte): string;
+var i_index: integer;
+begin
+  if TArray.BinarySearch<byte>(CBYTE_ESCAPED, ascii, i_index) then result := CSTRS_ESCAPED[i_index]
+  else result := char(ascii);
+end;
+
+class function TGenUtils.DecEscapedChar(const str: string; var byteval: byte): boolean;
+var i_num, i_index: integer;  s_num: string;
+begin
+  i_index := IndexText(str, CSTRS_ESCAPED);
+  result := (i_index >= 0);
+  byteval := 0;
+  if (i_index >= 0) then byteval := CBYTE_ESCAPED[i_index]
+  else begin
+    if StartsStr('\', str) then begin
+      s_num := RightStr(str, length(str) - 1);
+      if TryStrToInt(s_num, i_num) then begin
+        byteval := byte(i_num);
+        result := true;
+      end;
+    end;
+  end;
 end;
 
 // =============================================================================
