@@ -198,9 +198,7 @@ function TByteBuffer.ReadAnsiStr(): AnsiString;
 var byte_cur: byte;
 begin
   result := '';
-  while (ReadElement(byte_cur)) do
-    if byte_cur <> 0 then
-      result := result + AnsiString(TGenUtils.EncEscapedChar(byte_cur));// AnsiChar(byte_cur);
+  while (ReadElement(byte_cur)) do result := result + AnsiChar(byte_cur);
 end;
 
 function TByteBuffer.ReadBytes(var pbuf: PByteArray; var wlen: word): boolean;

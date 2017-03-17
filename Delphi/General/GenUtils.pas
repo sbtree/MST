@@ -30,6 +30,8 @@ type
     class function ClearQuotationMarks(const str: string): string;
     class function ShowStrHex(const str: string): string;
     class function ReplaceDecimalSeparator(const str: string): string;
+    class function EscapedStr(const str: string): string;
+    class function RevEscapedStr(const str: string): string;
     class function EncEscapedChar(const ascii: byte): string;
     class function DecEscapedChar(const str: string; var byteval: byte): boolean;
 
@@ -47,9 +49,8 @@ implementation
 uses System.Generics.Collections, Forms, SysUtils, StrUtils, Math,Windows, Registry;
 
 const
-  CBYTE_ESCAPED:  array[0..10] of byte    = (0,    7,    8,    9,    10,   11,   12,   13,   34,   39,   92);
-  CSTRS_ESCAPED:  array[0..10] of string  = ('\0', '\a', '\b', '\t', 'n', '\v', '\f', '\r', '\"', '\''', '\\');
-
+  CBYTE_ESCAPED:array[0..11] of byte    = (0,    3,     7,    8,    9,    10,   11,   12,   13,   34,   39,   92);
+  CSTRS_ESCAPED:array[0..11] of string  = ('\0', '\c', '\a', '\b', '\t', '\n', '\v', '\f', '\r', '\"', '\''', '\\');
 
 // =============================================================================
 // Class        : TGenUtils
@@ -278,6 +279,39 @@ begin
 {$ELSE}
   result := ReplaceStr(str, '.', DecimalSeparator);
 {$ENDIF}
+end;
+
+class function TGenUtils.EscapedStr(const str: string): string;
+var byte_val: byte; i: integer; s_cur: string; i_index: integer;
+begin
+  result := '';
+  for i := 1 to length(str) do begin
+    byte_val := byte(str[i]);
+    if TArray.BinarySearch<byte>(CBYTE_ESCAPED, byte_val, i_index) then s_cur := CSTRS_ESCAPED[i_index]
+    else s_cur := str[i];
+    result := result + s_cur;
+  end;
+end;
+
+class function TGenUtils.RevEscapedStr(const str: string): string;
+var i_index, i_pos: integer; s_key: string;
+begin
+  result := escapedstr;
+  i_pos := 1;
+  repeat
+    i_pos := pos('\', result, i_pos);
+    if (i_pos > 0) then begin
+      if (i_pos < length(result)) then s_key := '\' + result[i_pos + 1]
+      else s_key := '\';
+      i_index := IndexText(s_key, CSTRS_ESCAPED);
+      if (i_index >= 0) then begin
+        result := LeftStr(result, i_pos - 1) + Char(CBYTE_ESCAPED[i_index]) + MidStr(result, i_pos + length(s_key), length(result));
+      end else begin
+        result := LeftStr(result, i_pos - 1) + MidStr(result, i_pos, length(result));
+      end;
+      inc(i_pos);
+    end;
+  until (i_pos < 1);
 end;
 
 class function TGenUtils.EncEscapedChar(const ascii: byte): string;

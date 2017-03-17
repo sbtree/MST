@@ -348,7 +348,7 @@ function  TMtxComDownloader.StartWithMTX2(): boolean;
 var s_recv: string;
 begin
   t_conn.SendStr(CSTR_EPR + CCHR_RETURN);
-  result := t_conn.RecvStrExpected(s_recv, CSTR_OK + #$A + #$D + CSTR_PROMPT{CSTR_SERVICE}, GetTickCount() + C_ANSWER_WAIT);
+  result := t_conn.RecvStrExpected(s_recv, CSTR_OK + #$A + #$D + CSTR_PROMPT{CSTR_SERVICE}, C_ANSWER_WAIT);
   if result then result := StartWithMTX1();
 end;
 
@@ -356,13 +356,12 @@ function  TMtxComDownloader.TryBootMessageMTL(var msg: string): integer;
 const CSTR_TEST_CMD: string= 'abcdefg';
       C_WAITING_INTERVAL: cardinal = 3000;
       C_RESTART_INTERVAL: cardinal = 2000;
-var i_baud: integer; c_endtime: cardinal;
+var i_baud: integer;
 begin
   i_baud := t_conn.SerialObj.Baudrate;
   SwitchBaudrate(CINT_B115200, true);
   t_conn.SendStr(CSTR_TEST_CMD + CCHR_RETURN);
-  c_endtime := GetTickCount() + C_WAITING_INTERVAL; //C_ANSWER_WAIT;
-  result := t_conn.RecvStrInterval(msg, c_endtime, C_RESTART_INTERVAL);
+  result := t_conn.RecvStrInterval(msg, C_WAITING_INTERVAL, C_RESTART_INTERVAL);
   SwitchBaudrate(i_baud, false);
 end;
 
@@ -431,50 +430,53 @@ var s_recv, s_temp: string; c_endtime: cardinal; i_trials: integer;
 begin
   result := false;
   s_recv := ''; i_trials := 0; e_dlprotocol := DP_UNDEFINED;
-  if ResetDevice(cmd, C_REBOOT_TIME, false) then begin
-    c_endtime := GetTickCount() + C_REBOOT_TIME;
-    while (GetTickCount() < c_endtime) do begin
-      s_temp := ''; t_conn.RecvStrInterval(s_temp, C_REBOOT_TIME, C_RECV_INTERVAL);
-      s_recv := s_recv + s_temp;
+  if assigned(t_conn) then begin
+    if (not t_conn.Connected) then t_conn.Connect();
+    if ResetDevice(cmd, C_REBOOT_TIME, false) then begin
+      c_endtime := GetTickCount() + C_REBOOT_TIME;
+      while (GetTickCount() < c_endtime) do begin
+        s_temp := ''; t_conn.RecvStrInterval(s_temp, C_REBOOT_TIME, C_RECV_INTERVAL);
+        s_recv := s_recv + s_temp;
 
-      if (ContainsText(s_recv, CSTR_WAITING) or ContainsText(s_recv, CSTR_SERVICE_MENU)) then begin
-        t_conn.SendStr(CSTR_SERVICE + CCHR_RETURN);
-        if t_conn.RecvStrExpected(s_temp, CSTR_PROMPT, C_REBOOT_TIME) then begin //wait till the service mode is reached
-          s_recv := s_recv + s_temp;
-          i_trials := 1;
-          repeat
-            t_conn.SendStr(CSTR_BOOTQUE + CCHR_RETURN);
-            result := t_conn.RecvStrExpected(s_temp, CSTR_SERVICE, GetTickCount() + C_ANSWER_WAIT);
-            if result then begin
-              s_recv := s_recv + s_temp;
-              t_conn.SendStr(CSTR_B115200 + CCHR_RETURN);
-              t_conn.Timeout := C_ANSWER_WAIT;
-              if (t_conn.RecvStr(s_temp, true) > 0) then SwitchBaudrate(CINT_B115200);
-            end else TGenUtils.Delay(C_DELAY_ONCE);
-            Inc(i_trials);
-          until (result or (i_trials > CINT_TRIALS_MAX));
-        end;
-        if ContainsText(s_recv, CSTR_SERVICE_MENU) then e_dlprotocol := DP_MTXARS
-        else e_dlprotocol := DP_MTXDIS2;
-        break;
-      end else if ContainsText(s_recv, CSTR_UNKNOWNCMD) then begin
-        t_msgrimpl.AddMessage(format('''%s'' is not supported.', [cmd]), ML_ERROR);
-        break;
-      end else if (not TGenUtils.IsAsciiValid(s_recv)) then begin //messy code, assume that the Motorola S-Record Loader exists on the device
-        if (length(s_recv) = 1) then begin //start char of ARS iS Variant 
-          s_recv := '';
-          continue;
-        end else begin
-          SwitchBaudrate(CINT_B115200, true);
-          repeat
-            t_conn.SendStr(CSTR_BOOTQUE + CCHR_RETURN);
-            t_conn.RecvStrInterval(s_temp, C_REBOOT_TIME, C_RECV_INTERVAL);
-            result := ContainsText(s_temp, CSTR_MOTOROLA);  //ensure, that the Motorola S-Record Loader is found on the device
-            if result then  e_dlprotocol := DP_MOTOROLA
-            else SwitchBaudrate(CINT_B9600);;
-            Inc(i_trials);
-          until (result or (i_trials > CINT_TRIALS_MAX));
+        if (ContainsText(s_recv, CSTR_WAITING) or ContainsText(s_recv, CSTR_SERVICE_MENU)) then begin
+          t_conn.SendStr(CSTR_SERVICE + CCHR_RETURN);
+          if t_conn.RecvStrExpected(s_temp, CSTR_PROMPT, C_REBOOT_TIME) then begin //wait till the service mode is reached
+            s_recv := s_recv + s_temp;
+            i_trials := 1;
+            repeat
+              t_conn.SendStr(CSTR_BOOTQUE + CCHR_RETURN);
+              result := t_conn.RecvStrExpected(s_temp, CSTR_SERVICE, C_ANSWER_WAIT);
+              if result then begin
+                s_recv := s_recv + s_temp;
+                t_conn.SendStr(CSTR_B115200 + CCHR_RETURN);
+                t_conn.Timeout := C_ANSWER_WAIT;
+                if (t_conn.RecvStr(s_temp, true) > 0) then SwitchBaudrate(CINT_B115200);
+              end else TGenUtils.Delay(C_DELAY_ONCE);
+              Inc(i_trials);
+            until (result or (i_trials > CINT_TRIALS_MAX));
+          end;
+          if ContainsText(s_recv, CSTR_SERVICE_MENU) then e_dlprotocol := DP_MTXARS
+          else e_dlprotocol := DP_MTXDIS2;
           break;
+        end else if ContainsText(s_recv, CSTR_UNKNOWNCMD) then begin
+          t_msgrimpl.AddMessage(format('''%s'' is not supported.', [cmd]), ML_ERROR);
+          break;
+        end else if (not TGenUtils.IsAsciiValid(s_recv)) then begin //messy code, assume that the Motorola S-Record Loader exists on the device
+          if (length(s_recv) = 1) then begin //start char of ARS iS Variant
+            s_recv := '';
+            continue;
+          end else begin
+            SwitchBaudrate(CINT_B115200, true);
+            repeat
+              t_conn.SendStr(CSTR_BOOTQUE + CCHR_RETURN);
+              t_conn.RecvStrInterval(s_temp, C_REBOOT_TIME, C_RECV_INTERVAL);
+              result := ContainsText(s_temp, CSTR_MOTOROLA);  //ensure, that the Motorola S-Record Loader is found on the device
+              if result then  e_dlprotocol := DP_MOTOROLA
+              else SwitchBaudrate(CINT_B9600);;
+              Inc(i_trials);
+            until (result or (i_trials > CINT_TRIALS_MAX));
+            break;
+          end;
         end;
       end;
     end;
@@ -519,7 +521,7 @@ begin
 end;
 
 function TMtxComDownloader.TestApp(): boolean;
-var c_time: cardinal; s_recv: string; b_repeat: boolean; i_trials: integer;
+var s_recv: string; b_repeat: boolean; i_trials: integer;
 begin
   result := false;
   if assigned(t_conn) then begin
@@ -527,16 +529,14 @@ begin
     if t_conn.Connected  then begin
       i_trials := 0;
       repeat
-        c_time := GetTickCount() + C_ANSWER_WAIT;
         t_conn.RecvStr(s_recv, false); //clear buffer
         t_conn.SendStr(CSTR_BOOTQUE + CCHR_RETURN); //test query with 'BOOT?'
-        s_recv := ''; t_conn.RecvStrInterval(s_recv, c_time, C_RECV_INTERVAL);
+        s_recv := ''; t_conn.RecvStrInterval(s_recv, C_ANSWER_WAIT, C_RECV_INTERVAL);
         b_repeat := false;
         if ContainsText(s_recv, CSTR_APPLICATION) then result := true
         else if (ContainsText(s_recv, CSTR_ERROR) or ContainsText(s_recv, CSTR_ERR) or ContainsText(s_recv, CSTR_UNKNOWNCMD)) then begin
-          c_time := GetTickCount() + C_ANSWER_WAIT;
           t_conn.SendStr(CSTR_TYPQUE + CCHR_RETURN); //test query with 'TYP?'
-          s_recv := ''; t_conn.RecvStrInterval(s_recv, c_time, C_RECV_INTERVAL);
+          s_recv := ''; t_conn.RecvStrInterval(s_recv, C_ANSWER_WAIT, C_RECV_INTERVAL);
           result := ContainsText(s_recv, CSTR_TYPANS);
           if (not result) then b_repeat := true;
         end;
@@ -574,14 +574,14 @@ begin
               c_time := GetTickCount() + C_ANSWER_WAIT;
               s_recv := ''; t_conn.RecvStr(s_recv, false); //clear buffer
               t_conn.SendStr(CSTR_BOOTQUE + CCHR_RETURN); //test query with 'BOOT?'
-              s_recv := ''; t_conn.RecvStrInterval(s_recv, c_time, C_RECV_INTERVAL);
+              s_recv := ''; t_conn.RecvStrInterval(s_recv, C_ANSWER_WAIT, C_RECV_INTERVAL);
               b_repeat := false;
               if ContainsText(s_recv,CSTR_APPLICATION) then lw_blfw := (lw_blfw or C_MTXAPP)
               else if ContainsText(s_recv, CSTR_SERVICE) then lw_blfw := (lw_blfw or C_MTXBL)
               else if (ContainsText(s_recv, CSTR_ERROR) or ContainsText(s_recv, CSTR_ERR) or ContainsText(s_recv, CSTR_UNKNOWNCMD)) then begin
                 c_time := GetTickCount() + C_ANSWER_WAIT;
                 t_conn.SendStr(CSTR_TYPQUE + CCHR_RETURN); //test query with 'TYP?'
-                s_recv := ''; t_conn.RecvStrInterval(s_recv, c_time, C_RECV_INTERVAL);
+                s_recv := ''; t_conn.RecvStrInterval(s_recv, C_ANSWER_WAIT, C_RECV_INTERVAL);
                 if (not ContainsText(s_recv, CSTR_TYPANS)) then b_repeat := true
                 else lw_blfw := (lw_blfw or C_MTXAPP);
               end;

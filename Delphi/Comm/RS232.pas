@@ -57,6 +57,7 @@ type
     procedure SetDefault();
 
     function PacketToStr(const pbytes: PByteArray; const wlen: Word; const bhex: Boolean = True): string; override;
+    function IsConnected(): boolean; override;
     function IsReadReady(): boolean; override;
     function IsWriteComplete(): boolean; override;
     function TryConnect(): boolean; override;
@@ -406,6 +407,12 @@ begin
     result := string(AnsiString(pbytes));
 end;
 
+function TSerialAdapter.IsConnected(): boolean;
+begin
+  result := false;
+  if assigned(t_ser) then result := t_ser.Active;
+end;
+
 function TSerialAdapter.IsReadReady(): boolean;
 begin
   if assigned(t_ser) then result := (t_ser.RxWaiting > 0)
@@ -469,9 +476,16 @@ end;
 function TSerialAdapter.SendFromBuffer(): boolean;
 var s_ansi: AnsiString;
 begin
-  s_ansi := t_wbuffer.ReadAnsiStr();
-  if assigned(t_ser) then t_ser.WriteString(s_ansi);
-  result := assigned(t_ser) and (length(s_ansi) > 0);
+  result := false;
+  if assigned(t_ser) then begin
+    if t_ser.Active then begin
+      s_ansi := t_wbuffer.ReadAnsiStr();
+      if (length(s_ansi) > 0) then begin
+        t_ser.WriteString(s_ansi);
+        result := true;
+      end;
+   end;
+  end;
 end;
 
 function TSerialAdapter.ReadStrFromBuffer(): string;
