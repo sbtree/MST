@@ -296,7 +296,7 @@ end;
 class function TGenUtils.RevEscapedStr(const str: string): string;
 var i_index, i_pos: integer; s_key: string;
 begin
-  result := escapedstr;
+  result := str;
   i_pos := 1;
   repeat
     i_pos := pos('\', result, i_pos);

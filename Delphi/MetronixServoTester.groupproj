@@ -39,6 +39,9 @@
         <Projects Include="Comm\ComIdent.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="Product\MtxFlash.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -155,14 +158,23 @@
     <Target Name="ComIdent:Make">
         <MSBuild Projects="Comm\ComIdent.dproj" Targets="Make"/>
     </Target>
+    <Target Name="MtxFlash">
+        <MSBuild Projects="Product\MtxFlash.dproj"/>
+    </Target>
+    <Target Name="MtxFlash:Clean">
+        <MSBuild Projects="Product\MtxFlash.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="MtxFlash:Make">
+        <MSBuild Projects="Product\MtxFlash.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="DeviceManagerTester;GeneralTester;FunctionTester;ToolTester;ScriptTester;CommTester;ProductTester;BootTester;ServoTester;RunnerTester;TestStarter;ComIdent"/>
+        <CallTarget Targets="DeviceManagerTester;GeneralTester;FunctionTester;ToolTester;ScriptTester;CommTester;ProductTester;BootTester;ServoTester;RunnerTester;TestStarter;ComIdent;MtxFlash"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="DeviceManagerTester:Clean;GeneralTester:Clean;FunctionTester:Clean;ToolTester:Clean;ScriptTester:Clean;CommTester:Clean;ProductTester:Clean;BootTester:Clean;ServoTester:Clean;RunnerTester:Clean;TestStarter:Clean;ComIdent:Clean"/>
+        <CallTarget Targets="DeviceManagerTester:Clean;GeneralTester:Clean;FunctionTester:Clean;ToolTester:Clean;ScriptTester:Clean;CommTester:Clean;ProductTester:Clean;BootTester:Clean;ServoTester:Clean;RunnerTester:Clean;TestStarter:Clean;ComIdent:Clean;MtxFlash:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="DeviceManagerTester:Make;GeneralTester:Make;FunctionTester:Make;ToolTester:Make;ScriptTester:Make;CommTester:Make;ProductTester:Make;BootTester:Make;ServoTester:Make;RunnerTester:Make;TestStarter:Make;ComIdent:Make"/>
+        <CallTarget Targets="DeviceManagerTester:Make;GeneralTester:Make;FunctionTester:Make;ToolTester:Make;ScriptTester:Make;CommTester:Make;ProductTester:Make;BootTester:Make;ServoTester:Make;RunnerTester:Make;TestStarter:Make;ComIdent:Make;MtxFlash:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
