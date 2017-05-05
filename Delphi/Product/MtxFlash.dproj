@@ -90,11 +90,12 @@
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
-        <VerInfo_Release>1</VerInfo_Release>
-        <VerInfo_Build>1</VerInfo_Build>
         <VerInfo_PreRelease>true</VerInfo_PreRelease>
+        <VerInfo_Special>false</VerInfo_Special>
+        <VerInfo_Release>1</VerInfo_Release>
+        <VerInfo_Build>2</VerInfo_Build>
         <Manifest_File>None</Manifest_File>
-        <VerInfo_Keys>CompanyName=Metronix Messgeraete und Elektronik GmbH;FileDescription=;FileVersion=1.0.1.1;InternalName=MtxFlash;LegalCopyright=BSU @ Metronix® 2017;LegalTrademarks=Metronix Software - Servo Flash Tool;OriginalFilename=MtxFlash.exe;ProductName=Metronix Flash Tool;ProductVersion=1.0.0.0;Comments=;SpecialBuild=0</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=Metronix Messgeraete und Elektronik GmbH;FileDescription=;FileVersion=1.0.1.2;InternalName=MtxFlash;LegalCopyright=BSU @ Metronix® 2017;LegalTrademarks=Metronix Software;OriginalFilename=MtxFlash.exe;ProductName=Servo Flash Tool;ProductVersion=1.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1031</VerInfo_Locale>
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
     </PropertyGroup>

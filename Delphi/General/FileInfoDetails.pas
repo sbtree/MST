@@ -25,9 +25,9 @@ type
     function GetTrademark(): string;
     function GetProductName(): string;
     function GetProductVersion(): string;
-    function GetComments(): string;
-    function GetPrivateBuild(): string;
-    function GetSpecialBuild(): string;
+//    function GetComments(): string;
+//    function GetPrivateBuild(): string;
+//    function GetSpecialBuild(): string;
     function GetMetronixVer(): string;
   public
     //constructor and destructor
@@ -44,9 +44,9 @@ type
     property Trademark: string read GetTrademark;
     property ProductName: string read GetProductName;
     property ProductVersion: string read GetProductVersion;
-    property Comments: string read GetComments;
-    property PrivateBuild: string read GetPrivateBuild;
-    property SpecialBuild: string read GetSpecialBuild;
+//    property Comments: string read GetComments;
+//    property PrivateBuild: string read GetPrivateBuild;
+//    property SpecialBuild: string read GetSpecialBuild;
     property MetronixVersion: string read GetMetronixVer;
   end;
 
@@ -122,44 +122,40 @@ begin
   result := FileInfoString('ProductVersion');
 end;
 
-function TFileInfoDetails.GetComments(): string;
-begin
-  result := FileInfoString('Comments');
-end;
+//function TFileInfoDetails.GetComments(): string;
+//begin
+//  result := FileInfoString('Comments');
+//end;
 
-function TFileInfoDetails.GetPrivateBuild(): string;
-begin
-  result := FileInfoString('PrivateBuild');
-end;
+//function TFileInfoDetails.GetPrivateBuild(): string;
+//begin
+//  result := FileInfoString('PrivateBuild');
+//end;
 
-function TFileInfoDetails.GetSpecialBuild(): string;
-begin
-  result := FileInfoString('SpecialBuild');
-end;
+//function TFileInfoDetails.GetSpecialBuild(): string;
+//begin
+//  result := FileInfoString('SpecialBuild');
+//end;
 
 function TFileInfoDetails.GetMetronixVer(): string;
+var s_mainver, s_appver, s_cmver: string;
 begin
-  result := '';
+  s_mainver := '?.?'; s_appver := '?'; s_cmver := '?.?';
   if (b_valid and assigned(p_fi)) then begin
-    If p_fi^.dwFileFlags and VS_FF_PRERELEASE <> 0 Then //test version
-      Result := IntToStr(p_fi^.dwFileVersionMS shr 16)
-      + '.' + IntToStr(p_fi^.dwFileVersionMS and $FFFF)
-      + '.100012'
-      + '.' + IntToStr(p_fi^.dwFileVersionLS shr 16)
-      + '.' + IntToStr(p_fi^.dwFileVersionLS and $FFFF)
-    else If p_fi^.dwFileFlags and VS_FF_SPECIALBUILD <> 0 Then //user special version
-      Result := IntToStr(p_fi^.dwFileVersionMS shr 16)
-      + '.' + IntToStr(p_fi^.dwFileVersionMS and $FFFF)
-      + '.' + GetSpecialBuild()
-      + '.' + IntToStr(p_fi^.dwFileVersionLS shr 16)
-      + '.' + IntToStr(p_fi^.dwFileVersionLS and $FFFF)
+    s_mainver := IntToStr(p_fi^.dwFileVersionMS shr 16)
+      + '.' + IntToStr(p_fi^.dwFileVersionMS and $FFFF);
+    s_cmver := IntToStr(p_fi^.dwFileVersionLS shr 16)
+      + '.' + IntToStr(p_fi^.dwFileVersionLS and $FFFF);
+
+    If ((p_fi^.dwFileFlags and VS_FF_PRERELEASE <> 0) or
+        (p_fi^.dwFileFlags and VS_FF_DEBUG = VS_FF_DEBUG)) Then //test or debug version
+      s_appver := '100012'
+    //else If p_fi^.dwFileFlags and VS_FF_SPECIALBUILD <> 0 Then //user special version
+    //  s_appver := GetSpecialBuild()
     else
-      Result := IntToStr(p_fi^.dwFileVersionMS shr 16)
-      + '.' + IntToStr(p_fi^.dwFileVersionMS and $FFFF)
-      + '.0'
-      + '.' + IntToStr(p_fi^.dwFileVersionLS shr 16)
-      + '.' + IntToStr(p_fi^.dwFileVersionLS and $FFFF)
+      s_appver := '0';
   end;
+  result := s_mainver + '.' + s_appver + '.' + s_cmver;
 end;
 
 constructor TFileInfoDetails.Create();
