@@ -45,22 +45,22 @@ type
     function  EnterService(const cmd: string): boolean; virtual; abstract;
     procedure InitProgressBar(); virtual;
     procedure UpdateProgressBar(const val: integer); virtual;
-    function GetMessenger(): TTextMessenger;
+    function  GetMessenger(): TTextMessenger;
     procedure SetMessenger(const msgr: TTextMessenger); virtual;
+    function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
   public
     constructor Create();
     destructor Destroy; override;
 
-    property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
-    property BaudrateFactor: single read r_baudfactor write r_baudfactor;
-    property Cancel : boolean read b_dlcancel write b_dlcancel;
+    property  MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
+    property  BaudrateFactor: single read r_baudfactor write r_baudfactor;
+    property  Cancel : boolean read b_dlcancel write b_dlcancel;
     //property Messager: TStrings write t_messager;
-    property Messenger: TTextMessenger read GetMessenger write SetMessenger;
-    property ProgressBar: TControl write t_progress;
-    function  ResetDevice(const cmd: string; const tend: cardinal; const bmsg: boolean = true): boolean; virtual; abstract;
-    function TestApp(): boolean; virtual; abstract;
-    function GetBootState(const cmd: string): EBootState; virtual; abstract;
-    function Download(const cmd, fname: string): boolean; virtual; abstract;
+    property  Messenger: TTextMessenger read GetMessenger write SetMessenger;
+    property  ProgressBar: TControl write t_progress;
+    function  TestApp(): boolean; virtual; abstract;
+    function  GetBootState(const cmd: string): EBootState; virtual; abstract;
+    function  Download(const cmd, fname: string): boolean; virtual; abstract;
   end;
 
   TMtxComDownloader = class(TMtxDownloader)
@@ -70,7 +70,7 @@ type
     s_blmessage: string; //save switch-on message of boot loader
     s_fwmessage: string; //save switch-on message of firmware
   protected
-    function GetSerialObj(): TSerial;
+    function  GetSerialObj(): TSerial;
     procedure SetSerialObj(tser: TSerial);
     procedure SetMessenger(const msgr: TTextMessenger); override;
     procedure SwitchBaudrate(const ibaud: Integer; const bxonoff: Boolean = false);
@@ -91,12 +91,12 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    property SerialObj: TSerial read GetSerialObj write SetSerialObj;
+    property  SerialObj: TSerial read GetSerialObj write SetSerialObj;
 
     function  EnterService(const cmd: string): boolean; override;
-    function TestApp(): boolean; override;
-    function GetBootState(const cmd: string): EBootState; override;
-    function Download(const cmd, fname: string): boolean; override;
+    function  TestApp(): boolean; override;
+    function  GetBootState(const cmd: string): EBootState; override;
+    function  Download(const cmd, fname: string): boolean; override;
   end;
 
 //  var t_comdownloader: TMtxComDownloader;
@@ -400,7 +400,8 @@ begin
   s_cmd := trim(cmd);
   if ((s_cmd = '-1') or (s_cmd = '')) then begin //manually reset
     c_timeout := C_MANUAL_RESET;
-    t_msgrimpl.AddMessage(CSTR_POWER_ONOFF);
+    //t_msgrimpl.AddMessage(CSTR_POWER_ONOFF);
+    s_last := CSTR_POWER_ONOFF;
   end else begin
     c_timeout := timeout;
     if TryStrToInt(s_cmd, i_relay) then
@@ -408,21 +409,22 @@ begin
     else
       t_conn.SendStr(s_cmd + Char(VK_RETURN)); //reset through command (soft rest)
 
-    t_msgrimpl.AddMessage('The device is resetting...');
+    //t_msgrimpl.AddMessage('The device is resetting...');
+    s_last := 'The device is resetting...';
   end;
-  c_time := GetTickCount() + c_timeout; //set timeout
-
+  t_conn.Timeout := c_timeout; //set timeout
+  t_msgrimpl.AddMessage(format('%s%d', [s_last, Round(c_timeout/1000.0)]));
+  t_conn.RecvStr(s_recv);
   // wait for that the first char arrives in the time of timeout after resetting
-  repeat
-    Application.ProcessMessages();
-    result := (t_conn.SerialObj.RxWaiting > 0);
-  until (result or (GetTickCount() >= c_time));
+  //repeat
+  //  Application.ProcessMessages();
+  //  result := (t_conn.SerialObj.RxWaiting > 0);
+  //until (result or (GetTickCount() >= c_time));
 
-  if not result then t_msgrimpl.AddMessage('Failed to reset the device.', ML_ERROR)
-  else if bmsg then begin
-    t_conn.RecvStrInterval(s_recv, c_time);
-    if bmsg then UpdateStartMessage(s_recv);
-  end;
+  if (t_conn.RecvStr(s_recv) > 0) then begin
+    t_conn.RecvStrInterval(s_last, c_time);
+    if bmsg then UpdateStartMessage(s_recv + s_last);
+  end else t_msgrimpl.AddMessage('Failed to reset the device.', ML_ERROR);
 end;
 
 function TMtxComDownloader.EnterService(const cmd: string): boolean;

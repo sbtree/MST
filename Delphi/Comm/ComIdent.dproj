@@ -95,12 +95,12 @@
         <DCCReference Include="..\General\TextMessage.pas"/>
         <DCCReference Include="..\General\GenUtils.pas"/>
         <DCCReference Include="ConnBase.pas"/>
-        <DCCReference Include="RS232Dlg.pas">
-            <Form>SerialDialog</Form>
-            <FormType>dfm</FormType>
-        </DCCReference>
         <DCCReference Include="ComIdentHelp.pas">
             <Form>LoopbackDlg</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="RS232Dlg.pas">
+            <Form>SerialDialog</Form>
             <FormType>dfm</FormType>
         </DCCReference>
         <BuildConfiguration Include="Release">

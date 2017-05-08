@@ -6,7 +6,8 @@ program MtxFlash;
 
 uses
   System.SysUtils,
-  FileInfoDetails in '..\General\FileInfoDetails.pas';
+  FileInfoDetails in '..\General\FileInfoDetails.pas',
+  FlashWriter in 'FlashWriter.pas';
 
 Function GetFileVersion: String;
 var t_fileinfo: TFileInfoDetails;

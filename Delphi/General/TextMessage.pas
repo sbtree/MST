@@ -26,9 +26,9 @@ type
     b_tstamp:     boolean; //indicats, whether the time stamp should be prepended, default true
   protected
     procedure SetMessages(const msgs: TStrings);
-    function GetLines(): integer;
-    function GetLineText(idx: integer): string;
-    function FormatMsg(const text: string; const sender: string; const level: EMessageLevel; var msg: string): boolean;
+    function  GetLines(): integer;
+    function  GetLineText(idx: integer): string;
+    function  FormatMsg(const text: string; const sender: string; const level: EMessageLevel; var msg: string): boolean;
   public
     constructor Create();
     destructor  Destroy(); override;
@@ -47,14 +47,14 @@ type
   end;
 
   ITextMessengerImpl = interface
-    function GetMessenger(): TTextMessenger;
+    function  GetMessenger(): TTextMessenger;
     procedure SetWaitingMode(const bwmode: boolean; const sprompt: string = '');
     procedure SetMessenger(tmessenger: TTextMessenger);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure AddEmptyLine();
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure SetMessageThreshold(const msglevel: EMessageLevel);
-    property Messenger: TTextMessenger read GetMessenger write SetMessenger;
+    property  Messenger: TTextMessenger read GetMessenger write SetMessenger;
   end;
 
   TTextMessengerImpl = class(TInterfacedObject, ITextMessengerImpl)
@@ -67,15 +67,15 @@ type
   public
     constructor Create(const oname: string); overload;
 
-    function GetMessenger(): TTextMessenger;
+    function  GetMessenger(): TTextMessenger;
     procedure SetWaitingMode(const bwmode: boolean; const sprompt: string = '');
     procedure SetMessenger(tmessenger: TTextMessenger);
     procedure AddMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure AddEmptyLine();
     procedure UpdateMessage(const text: string; const level: EMessageLevel = ML_INFO);
     procedure SetMessageThreshold(const msglevel: EMessageLevel);
-    property Messenger: TTextMessenger read GetMessenger write SetMessenger;
-    property OwnerName: string read s_ownername write s_ownername;
+    property  Messenger: TTextMessenger read GetMessenger write SetMessenger;
+    property  OwnerName: string read s_ownername write s_ownername;
   end;
 
 implementation

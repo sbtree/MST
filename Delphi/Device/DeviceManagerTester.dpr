@@ -23,7 +23,8 @@ uses
   DeviceConfig in '..\Config\DeviceConfig.pas',
   Serial3 in '..\Externals\Serial3.pas',
   DeviceManager in 'DeviceManager.pas',
-  ConfigBase in '..\Config\ConfigBase.pas';
+  ConfigBase in '..\Config\ConfigBase.pas',
+  RS232DlgDyn in '..\Comm\RS232DlgDyn.pas' {SerialDialog};
 
 {$R *.res}
 
@@ -31,5 +32,6 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TfrmDeviceManager, frmDeviceManager);
+  Application.CreateForm(TSerialDialog, SerialDialog);
   Application.Run;
 end.

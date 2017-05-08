@@ -581,7 +581,7 @@ end;
 // History      :
 // =============================================================================
 function TSerialAdapter.Config(const sconfs: TStrings): boolean;
-var i: ESerialProperty; s_conf: string;
+var i, i_idx: integer; s_conf: string;
 begin
   result := false;
   if not assigned(t_ser) then begin
@@ -591,11 +591,20 @@ begin
   end;
 
   if (e_state in [CS_UNKNOWN, CS_CONFIGURED]) then begin
-    for i := LOW(ESerialProperty) to HIGH(ESerialProperty) do begin
+    for i := 0 to sconfs.Count - 1 do begin
+      i_idx := IndexText(sconfs.Names[i], CSTR_RS232_PROPERTIES);
+      if i_idx >= 0 then begin
+        s_conf := sconfs.Values[sconfs.Names[i]];
+        result := SetProperty(ESerialProperty(i_idx), s_conf);
+      end else
+        t_msgrimpl.AddMessage(format('Found invalid property (%s).', [sconfs.Names[i]]), ML_ERROR);
+    end;
+
+    {for i := LOW(ESerialProperty) to HIGH(ESerialProperty) do begin
       s_conf := sconfs.Values[CSTR_RS232_PROPERTIES[i]];
       result := SetProperty(i, s_conf);
       if not result then break;
-    end;
+    end;}
     if result then e_state := CS_CONFIGURED
     else t_msgrimpl.AddMessage(format('Failed to configurate the connection (%s).', [GetTypeName()]), ML_ERROR);
   end else t_msgrimpl.AddMessage(format('The current state (%s) is not suitable for configuration.', [GetStateStr()]), ML_WARNING);

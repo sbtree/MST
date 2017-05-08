@@ -96,10 +96,11 @@ type
     //function RecvPacket(packet: array of byte): boolean; virtual;
     function ReleaseDevice(): Boolean; virtual;
     function GetDevConnect(): TConnBase;
+    procedure SetDevConnect(devconn: TConnBase);
     procedure SetDevConfig(const conf: TConfigBase); virtual;
 
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
-    property DevConnect: TConnBase read GetDevConnect;
+    property DevConnect: TConnBase read GetDevConnect write SetDevConnect;
     property DevState: EDeviceState read GetDevState;
     property DevConfig: TConfigBase read GetDevConfig write SetDevConfig;
     property StateText : string read GetStateText;
@@ -283,6 +284,11 @@ end;
 function TDeviceBase.GetDevConnect(): TConnBase;
 begin
   result := t_curconn;
+end;
+
+procedure TDeviceBase.SetDevConnect(devconn: TConnBase);
+begin
+  t_curconn := devconn;
 end;
 
 procedure TDeviceBase.SetDevConfig(const conf: TConfigBase);

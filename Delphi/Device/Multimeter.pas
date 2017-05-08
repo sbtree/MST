@@ -70,6 +70,7 @@ type
     function SwitchMeasurement(const meas: EMeasureAction): boolean; override;
     function ReadingValue(const elem: string): string;
     function ReadData(var val: double): boolean; override;
+    function GetRelayCards(): integer;
     //procedure TriggerMesssure(); virtual;
   public
     constructor Create(owner: TComponent); override;
@@ -77,6 +78,7 @@ type
 
     property RelayControl: TRelayKeithley read t_relay implements IRelayControl;
     property ContinueMode : EContinueMode read e_cont write e_cont;
+    property RelayCards: integer read GetRelayCards;
 
     function InitDevice(): boolean; override;
     function ReleaseDevice(): boolean; override;
@@ -149,7 +151,7 @@ end;
 
 function TMultimeter.SwitchMeasurement(const meas: EMeasureAction): boolean;
 begin
-  result := (Ord(meas) > Ord(MA_ANY)) and (Ord(meas) <= Ord(MA_TEMP));
+  result := (meas <> MA_ANY);
   //t_msgrimpl.AddMessage(format('"%s.SwitchMeasurement" must be reimplemented in its subclass.', [ClassName()]), ML_ERROR);
 end;
 
@@ -299,6 +301,11 @@ begin
   end;
 end;
 
+function TMultimeterKeithley.GetRelayCards(): integer;
+begin
+  result := t_relay.CardCount;
+end;
+
 constructor TMultimeterKeithley.Create(owner: TComponent);
 begin
   inherited Create(owner);
@@ -313,16 +320,12 @@ end;
 
 function TMultimeterKeithley.InitDevice(): boolean;
 begin
-  if (not assigned(t_curconn)) then begin
-    t_curconn := TSerialAdapter.Create(self); //test
-    ITextMessengerImpl(t_curconn).Messenger := t_msgrimpl.Messenger;
-    t_curconn.Config('Port:5|baudrate:9600'); //test
-  end;
-
-  e_curma := MA_ANY;
-  s_idn := '';
-  result := t_curconn.Connect;
-  t_relay.CurConnect := t_curconn;
+  e_curma := MA_ANY; s_idn := '';
+  if assigned(t_curconn) then begin
+    result := t_curconn.Connect();
+    t_relay.CurConnect := t_curconn;
+  end else
+    result := false;
 
   if result then begin //get identifer string from the device
     result := t_curconn.SendStr(C_KEITHLEY_ID_QUERY + Char(13));
@@ -343,9 +346,9 @@ begin
   end;
 
   if result then
-    t_msgrimpl.AddMessage('Successful to initialize deviec.')
+    t_msgrimpl.AddMessage('Successful to initialize device.')
   else
-    t_msgrimpl.AddMessage('Failed to initialize deviec.', ML_ERROR);
+    t_msgrimpl.AddMessage('Failed to initialize device.', ML_ERROR);
 end;
 
 function TMultimeterKeithley.ReleaseDevice(): boolean;
