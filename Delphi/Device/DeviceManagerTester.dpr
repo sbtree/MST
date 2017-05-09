@@ -24,7 +24,9 @@ uses
   Serial3 in '..\Externals\Serial3.pas',
   DeviceManager in 'DeviceManager.pas',
   ConfigBase in '..\Config\ConfigBase.pas',
-  RS232DlgDyn in '..\Comm\RS232DlgDyn.pas' {SerialDialog};
+  RS232DlgDyn in '..\Comm\RS232DlgDyn.pas' {SerialDialog},
+  Vcl.Themes,
+  Vcl.Styles;
 
 {$R *.res}
 

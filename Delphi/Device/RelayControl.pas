@@ -10,6 +10,8 @@ type
     function SwitchRelaysOnOff(const relays: string; const tdelay: cardinal = 50): boolean;
     function SwitchRelaysOffOn(const relays: string; const tdelay: cardinal = 50): boolean;
     function QueryRelays(var relnrs: string): boolean;
+    function GetClosedRelays(): string;
+    function GetOpenedRelays(): string;
     function VerifyClosedRelays(const refrelnrs: string): boolean;
   end;
 
@@ -30,6 +32,8 @@ type
     function SwitchRelaysOnOff(const relays: string; const tdelay: cardinal): boolean; virtual;
     function SwitchRelaysOffOn(const relays: string; const tdelay: cardinal): boolean; virtual;
     function QueryRelays(var relnrs: string): boolean; virtual;
+    function GetClosedRelays(): string; virtual;
+    function GetOpenedRelays(): string; virtual;
     function VerifyClosedRelays(const refrelnrs: string): boolean; virtual;
 
     property CurConnect: TConnBase read t_curconn write SetConnection;
@@ -77,6 +81,8 @@ type
     function OpenRelays(const relays: string): boolean; override;
     function OpenAllRelays(): boolean; override;
     function QueryRelays(var relnrs: string): boolean; override;
+    function GetClosedRelays(): string; override;
+    function GetOpenedRelays(): string; override;
     function VerifyClosedRelays(const refrelnrs: string): boolean; override;
 
     property CardCount: integer read GetCardCount;
@@ -156,6 +162,16 @@ begin
   result := false;
 end;
 
+function TRelayControl.GetClosedRelays(): string;
+begin
+  result := '';
+end;
+
+function TRelayControl.GetOpenedRelays(): string;
+begin
+  result := '';
+end;
+
 function TRelayControl.VerifyClosedRelays(const refrelnrs: string): boolean;
 begin
   result := false;
@@ -224,7 +240,7 @@ end;
 function TRelayKeithley.ChannelIndexToNumber(const idx: integer): string;
 var i_nr: integer;
 begin
-  if ((idx <= Low(TKeithleyChannelIndex)) and (idx >= High(TKeithleyChannelIndex))) then begin
+  if ((idx >= Low(TKeithleyChannelIndex)) and (idx <= High(TKeithleyChannelIndex))) then begin
     i_nr := (Trunc((idx + 1) / C_PCARD_CHANNEL_MAX) + 1) * 100 + (idx mod C_PCARD_CHANNEL_MAX) + 1;
     result := IntToStr(i_nr);
   end else result := '';
@@ -304,6 +320,26 @@ begin
   end;
 end;
 
+function TRelayKeithley.GetClosedRelays(): string;
+begin
+  if not QueryRelays(result) then result := '';
+end;
+
+function TRelayKeithley.GetOpenedRelays(): string;
+var set_closed, set_opened, set_all: TKeithleyChannelSet; i_idx: integer;
+    s_closed: string;
+begin
+  result := '';
+  if (CardCount > 0) then begin
+    i_idx := C_PCARD_CHANNEL_MAX * CardCount - 1;
+    set_all := [0..i_idx];
+    s_closed := GetClosedRelays();
+    set_closed := ChannelIndexSet(s_closed);
+    set_opened := (set_all - set_closed);
+    result := ChannelNumbers(set_opened);
+  end;
+end;
+
 function TRelayKeithley.VerifyClosedRelays(const refrelnrs: string): boolean;
 var set_refrel, set_isrel: TKeithleyChannelSet; s_isrel: string;
 begin
@@ -311,7 +347,7 @@ begin
   if result then begin
     set_refrel := ChannelIndexSet(refrelnrs);
     set_isrel := ChannelIndexSet(s_isrel);
-    result := (set_refrel = set_isrel);
+    result := (set_refrel <= set_isrel);
   end;
 end;
 
