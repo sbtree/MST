@@ -1,10 +1,11 @@
 object frmDeviceManager: TfrmDeviceManager
   Left = 0
-  Top = 0
+  Top = 66
+  BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Keithley Tester'
-  ClientHeight = 497
-  ClientWidth = 667
+  ClientHeight = 514
+  ClientWidth = 924
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -12,29 +13,30 @@ object frmDeviceManager: TfrmDeviceManager
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  Position = poDesigned
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
-  object Label1: TLabel
+  object lblRelaysDesc: TLabel
     Left = 8
-    Top = 472
+    Top = 489
     Width = 92
     Height = 13
     Caption = 'Relays Description:'
   end
-  object btnInit: TButton
+  object btnDisconnect: TButton
     Left = 59
-    Top = 437
+    Top = 453
     Width = 60
     Height = 25
-    Caption = '&Initialize'
+    Caption = '&Disconnect'
     TabOrder = 0
-    OnClick = btnInitClick
+    OnClick = btnDisconnectClick
   end
   object btnMeasure: TButton
-    Left = 506
-    Top = 437
+    Left = 756
+    Top = 453
     Width = 75
     Height = 25
     Caption = '&Measure'
@@ -42,9 +44,9 @@ object frmDeviceManager: TfrmDeviceManager
     OnClick = btnMeasureClick
   end
   object cmbMeasure: TComboBox
-    Left = 424
-    Top = 439
-    Width = 76
+    Left = 672
+    Top = 455
+    Width = 84
     Height = 21
     ItemIndex = 1
     TabOrder = 2
@@ -60,8 +62,8 @@ object frmDeviceManager: TfrmDeviceManager
       'TEMP')
   end
   object btnClose: TButton
-    Left = 257
-    Top = 437
+    Left = 418
+    Top = 453
     Width = 42
     Height = 25
     Caption = '&Close'
@@ -70,8 +72,8 @@ object frmDeviceManager: TfrmDeviceManager
     OnClick = btnCloseClick
   end
   object btnOpen: TButton
-    Left = 305
-    Top = 437
+    Left = 466
+    Top = 453
     Width = 42
     Height = 25
     Caption = '&Open'
@@ -80,88 +82,95 @@ object frmDeviceManager: TfrmDeviceManager
     OnClick = btnOpenClick
   end
   object btnOpenAll: TButton
-    Left = 353
-    Top = 437
+    Left = 514
+    Top = 453
     Width = 65
     Height = 25
     Caption = 'Open &All'
     TabOrder = 5
     OnClick = btnOpenAllClick
   end
-  object pgcMain: TPageControl
-    Left = 8
-    Top = 4
-    Width = 652
-    Height = 431
-    ActivePage = tabRelays
-    TabOrder = 6
-    object tabRelays: TTabSheet
-      Caption = 'Relays'
-      ImageIndex = 1
-      ExplicitWidth = 645
-    end
-    object pgInfo: TTabSheet
-      Caption = 'Info'
-      ImageIndex = 5
-      ExplicitHeight = 272
-      object memInfo: TMemo
-        Left = -4
-        Top = -2
-        Width = 652
-        Height = 409
-        ScrollBars = ssBoth
-        TabOrder = 0
-      end
-    end
-  end
   object btnConnect: TButton
     Left = 8
-    Top = 437
+    Top = 453
     Width = 50
     Height = 25
     Caption = 'Co&nnet'
-    TabOrder = 7
+    TabOrder = 6
     OnClick = btnConnectClick
   end
   object chkSelection: TCheckBox
-    Left = 184
-    Top = 441
+    Left = 345
+    Top = 457
     Width = 67
     Height = 17
     Caption = '&Selection'
-    TabOrder = 8
+    TabOrder = 7
     OnClick = chkSelectionClick
   end
   object txtMeasure: TEdit
-    Left = 582
-    Top = 439
+    Left = 834
+    Top = 455
     Width = 78
     Height = 21
     ReadOnly = True
-    TabOrder = 9
+    TabOrder = 8
   end
   object btnUpdate: TButton
-    Left = 582
-    Top = 467
+    Left = 501
+    Top = 484
     Width = 78
     Height = 25
     Caption = '&Update'
-    TabOrder = 10
+    TabOrder = 9
+    OnClick = btnUpdateClick
   end
   object txtFile: TEdit
     Left = 106
-    Top = 469
-    Width = 447
+    Top = 486
+    Width = 367
     Height = 21
     ReadOnly = True
-    TabOrder = 11
+    TabOrder = 10
   end
   object btnFile: TButton
-    Left = 554
-    Top = 467
+    Left = 473
+    Top = 484
     Width = 25
     Height = 25
     Caption = '...'
+    TabOrder = 11
+    OnClick = btnFileClick
+  end
+  object btnView: TButton
+    Left = 837
+    Top = 484
+    Width = 75
+    Height = 25
+    Caption = '&View >>'
     TabOrder = 12
+    OnClick = btnViewClick
+  end
+  object memInfo: TMemo
+    Left = 8
+    Top = 515
+    Width = 908
+    Height = 186
+    ReadOnly = True
+    ScrollBars = ssBoth
+    TabOrder = 13
+    Visible = False
+  end
+  object pgcMain: TPageControl
+    Left = 8
+    Top = 4
+    Width = 904
+    Height = 431
+    ActivePage = tabRelays
+    TabOrder = 14
+    object tabRelays: TTabSheet
+      Caption = 'Relays'
+      ImageIndex = 1
+    end
   end
 end

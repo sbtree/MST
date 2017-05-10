@@ -12,11 +12,13 @@ type
     function QueryRelays(var relnrs: string): boolean;
     function GetClosedRelays(): string;
     function GetOpenedRelays(): string;
+    function GetAvailableRelays(): string;
     function VerifyClosedRelays(const refrelnrs: string): boolean;
   end;
 
   TRelayControl = class(TInterfacedObject, IRelayControl, ITextMessengerImpl)
   protected
+    i_rcount: integer;
     t_curconn: TConnBase;
     t_msgrimpl:TTextMessengerImpl;
   protected
@@ -34,10 +36,12 @@ type
     function QueryRelays(var relnrs: string): boolean; virtual;
     function GetClosedRelays(): string; virtual;
     function GetOpenedRelays(): string; virtual;
+    function GetAvailableRelays(): string; virtual;
     function VerifyClosedRelays(const refrelnrs: string): boolean; virtual;
 
     property CurConnect: TConnBase read t_curconn write SetConnection;
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
+    property RelayCount: integer read i_rcount;
   end;
 
   TRelayHygrosenUsb = class(TRelayControl)
@@ -63,12 +67,14 @@ type
   //a class to control Keithley Pseudocard 7705
   TRelayKeithley = class(TRelayControl)
   protected
-    t_cards:  TStrings;
+    t_slots:  TStrings;
+    set_all:  TKeithleyChannelSet;
   protected
     procedure UpdateCardInfo();
     procedure SetConnection(const conn: TConnBase); override;
-    function GetCardCount(): integer;
+    function GetCardSlots(): integer;
     function GetCardName(idx: integer): string;
+    function GetCardNumber(idx: integer): integer;
     function ChannelIndexSet(const chnr: string): TKeithleyChannelSet;
     function ChannelNumbers(const chset: TKeithleyChannelSet): string;
     function ChannelIndexToNumber(const idx: integer): string;
@@ -83,9 +89,10 @@ type
     function QueryRelays(var relnrs: string): boolean; override;
     function GetClosedRelays(): string; override;
     function GetOpenedRelays(): string; override;
+    function GetAvailableRelays(): string; override;
     function VerifyClosedRelays(const refrelnrs: string): boolean; override;
 
-    property CardCount: integer read GetCardCount;
+    property CardSlots: integer read GetCardSlots;
     property CardName[idx: integer]: string read GetCardName;
   end;
 
@@ -109,6 +116,7 @@ end;
 constructor TRelayControl.Create();
 begin
   inherited Create();
+  i_rcount := 0;
   t_msgrimpl := TTextMessengerImpl.Create(ClassName());
 end;
 
@@ -172,23 +180,40 @@ begin
   result := '';
 end;
 
+function TRelayControl.GetAvailableRelays(): string;
+begin
+  result := '';
+end;
+
 function TRelayControl.VerifyClosedRelays(const refrelnrs: string): boolean;
 begin
   result := false;
 end;
 
 procedure TRelayKeithley.UpdateCardInfo();
-var s_recv: string;
+var i, i_start, i_end, i_cards: integer; s_recv: string;
 begin
-  t_cards.Clear();
+  t_slots.Clear();
+  i_cards := 0;
+  set_all := [];
   if assigned(t_curconn) then begin
     if t_curconn.SendStr(C_MULTIMETER_OPT + Char(13)) then begin
       t_curconn.ExpectStr(s_recv, AnsiChar(13), false);
       s_recv := trim(s_recv);
-      if (ExtractStrings([','], [' '], PChar(s_recv), t_cards) > 0) then
-        t_msgrimpl.AddMessage(format('%d relay cards(%s) are found.', [t_cards.Count, t_cards.DelimitedText]))
+      if (ExtractStrings([','], [' '], PChar(s_recv), t_slots) > 0) then begin
+        for i := 0 to t_slots.Count - 1 do
+          if SameText(t_slots[i], '7705') then begin
+            inc(i_cards);
+            i_start := C_PCARD_CHANNEL_MAX * i;
+            i_end := C_PCARD_CHANNEL_MAX * i + 39;
+            set_all := set_all + [i_start..i_end];
+          end;
+        i_rcount := i_cards * C_PCARD_CHANNEL_MAX;
+      end;
+      if (i_cards > 0) then
+        t_msgrimpl.AddMessage(format('%d available relay cards(%s) are found.', [i_cards, s_recv]))
       else
-        t_msgrimpl.AddMessage('No relay card is found.', ML_WARNING);
+        t_msgrimpl.AddMessage('No available relay card is found.', ML_WARNING);
     end;
   end;
 end;
@@ -199,15 +224,26 @@ begin
   UpdateCardInfo();
 end;
 
-function TRelayKeithley.GetCardCount(): integer;
+function TRelayKeithley.GetCardSlots(): integer;
 begin
-  result := t_cards.Count;
+  result := t_slots.Count;
 end;
 
 function TRelayKeithley.GetCardName(idx: integer): string;
 begin
-  if ((idx >= 0) and (idx < t_cards.Count)) then result := t_cards[idx]
+  if ((idx >= 0) and (idx < t_slots.Count)) then result := t_slots[idx]
   else result := '';
+end;
+
+function TRelayKeithley.GetCardNumber(idx: integer): integer;
+begin
+  result := 0;
+  if ((idx >= 0) and (idx < t_slots.Count)) then begin
+    if SameText(t_slots[idx], '7705') then
+      result := (idx + 1 ) * 100
+    else
+      result := 0;
+  end;
 end;
 
 function TRelayKeithley.ChannelIndexSet(const chnr: string): TKeithleyChannelSet;
@@ -241,7 +277,7 @@ function TRelayKeithley.ChannelIndexToNumber(const idx: integer): string;
 var i_nr: integer;
 begin
   if ((idx >= Low(TKeithleyChannelIndex)) and (idx <= High(TKeithleyChannelIndex))) then begin
-    i_nr := (Trunc((idx + 1) / C_PCARD_CHANNEL_MAX) + 1) * 100 + (idx mod C_PCARD_CHANNEL_MAX) + 1;
+    i_nr := ((idx  div C_PCARD_CHANNEL_MAX) + 1) * 100 + (idx mod C_PCARD_CHANNEL_MAX) + 1;
     result := IntToStr(i_nr);
   end else result := '';
 end;
@@ -253,7 +289,7 @@ begin
   if TryStrToInt(chnr, i_chnr) then begin
     i_cardnr := trunc(i_chnr / 100);
     i_chnr := (i_chnr mod 100);
-    if ((i_cardnr > 0) and (i_cardnr <= t_cards.Count) and (i_chnr <= C_PCARD_CHANNEL_MAX)) then
+    if ((i_cardnr > 0) and (i_cardnr <= t_slots.Count) and (i_chnr <= C_PCARD_CHANNEL_MAX)) then
       result := (i_cardnr - 1) * C_PCARD_CHANNEL_MAX + i_chnr - 1;
   end;
 end;
@@ -261,12 +297,12 @@ end;
 constructor TRelayKeithley.Create();
 begin
   inherited Create();
-  t_cards := TStringList.Create();
+  t_slots := TStringList.Create();
 end;
 
 destructor TRelayKeithley.Destroy;
 begin
-  t_cards.Free();
+  t_slots.Free();
   inherited Destroy();
 end;
 
@@ -326,18 +362,21 @@ begin
 end;
 
 function TRelayKeithley.GetOpenedRelays(): string;
-var set_closed, set_opened, set_all: TKeithleyChannelSet; i_idx: integer;
+var set_closed, set_opened: TKeithleyChannelSet;
     s_closed: string;
 begin
   result := '';
-  if (CardCount > 0) then begin
-    i_idx := C_PCARD_CHANNEL_MAX * CardCount - 1;
-    set_all := [0..i_idx];
+  if (CardSlots > 0) then begin
     s_closed := GetClosedRelays();
     set_closed := ChannelIndexSet(s_closed);
     set_opened := (set_all - set_closed);
     result := ChannelNumbers(set_opened);
   end;
+end;
+
+function TRelayKeithley.GetAvailableRelays(): string;
+begin
+  result := ChannelNumbers(set_all);
 end;
 
 function TRelayKeithley.VerifyClosedRelays(const refrelnrs: string): boolean;
@@ -347,7 +386,7 @@ begin
   if result then begin
     set_refrel := ChannelIndexSet(refrelnrs);
     set_isrel := ChannelIndexSet(s_isrel);
-    result := (set_refrel <= set_isrel);
+    result := (set_refrel <= set_isrel) and (set_refrel <> []);
   end;
 end;
 

@@ -303,7 +303,7 @@ end;
 
 function TMultimeterKeithley.GetRelayCards(): integer;
 begin
-  result := t_relay.CardCount;
+  result := t_relay.CardSlots;
 end;
 
 constructor TMultimeterKeithley.Create(owner: TComponent);
