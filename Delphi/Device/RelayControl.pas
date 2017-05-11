@@ -9,10 +9,10 @@ type
     function OpenAllRelays(): boolean;
     function SwitchRelaysOnOff(const relays: string; const tdelay: cardinal = 50): boolean;
     function SwitchRelaysOffOn(const relays: string; const tdelay: cardinal = 50): boolean;
-    function QueryRelays(var relnrs: string): boolean;
+    function QueryRelays(var closednrs, openednrs: string): boolean;
     function GetClosedRelays(): string;
     function GetOpenedRelays(): string;
-    function GetAvailableRelays(): string;
+    function GetAllRelays(): string;
     function VerifyClosedRelays(const refrelnrs: string): boolean;
   end;
 
@@ -33,10 +33,10 @@ type
     function OpenAllRelays(): boolean; virtual;
     function SwitchRelaysOnOff(const relays: string; const tdelay: cardinal): boolean; virtual;
     function SwitchRelaysOffOn(const relays: string; const tdelay: cardinal): boolean; virtual;
-    function QueryRelays(var relnrs: string): boolean; virtual;
+    function QueryRelays(var closednrs, openednrs: string): boolean; virtual;
     function GetClosedRelays(): string; virtual;
     function GetOpenedRelays(): string; virtual;
-    function GetAvailableRelays(): string; virtual;
+    function GetAllRelays(): string; virtual;
     function VerifyClosedRelays(const refrelnrs: string): boolean; virtual;
 
     property CurConnect: TConnBase read t_curconn write SetConnection;
@@ -74,7 +74,7 @@ type
     procedure SetConnection(const conn: TConnBase); override;
     function GetCardSlots(): integer;
     function GetCardName(idx: integer): string;
-    function GetCardNumber(idx: integer): integer;
+    function GetClosedRelayNrs(var closednrs: string): boolean;
     function ChannelIndexSet(const chnr: string): TKeithleyChannelSet;
     function ChannelNumbers(const chset: TKeithleyChannelSet): string;
     function ChannelIndexToNumber(const idx: integer): string;
@@ -86,10 +86,10 @@ type
     function CloseRelays(const relays: string): boolean; override;
     function OpenRelays(const relays: string): boolean; override;
     function OpenAllRelays(): boolean; override;
-    function QueryRelays(var relnrs: string): boolean; override;
+    function QueryRelays(var closednrs, openednrs: string): boolean; override;
     function GetClosedRelays(): string; override;
     function GetOpenedRelays(): string; override;
-    function GetAvailableRelays(): string; override;
+    function GetAllRelays(): string; override;
     function VerifyClosedRelays(const refrelnrs: string): boolean; override;
 
     property CardSlots: integer read GetCardSlots;
@@ -105,7 +105,7 @@ const
   C_MULTIMETER_OPEN       = 'ROUT:MULT:OPEN (@%s)'; //n relays to open. %s: relay numbers with separator ','
   C_MULTIMETER_CLOSE      = 'ROUT:MULT:CLOS (@%s)'; //n relays to clase. %s: relay numbers with separator ','
   C_MULTIMETER_CLOSE_ASK  = 'ROUT:CLOS?';           // geschlossene Relais abfragen
-  C_PCARD_CHANNEL_MAX     = 40; //maximal channels of Pseudocard 7705
+  C_PCARD_CHANNEL_MAX     = 40; //channels of one Pseudocard 7705
   C_PCARD_SLOT_MAX        = 5;  //maximal slots for Pseudocard 7705
 
 procedure TRelayControl.SetConnection(const conn: TConnBase);
@@ -165,8 +165,10 @@ begin
   end;
 end;
 
-function TRelayControl.QueryRelays(var relnrs: string): boolean;
+function TRelayControl.QueryRelays(var closednrs, openednrs: string): boolean;
 begin
+  closednrs := '';
+  openednrs := '';
   result := false;
 end;
 
@@ -180,7 +182,7 @@ begin
   result := '';
 end;
 
-function TRelayControl.GetAvailableRelays(): string;
+function TRelayControl.GetAllRelays(): string;
 begin
   result := '';
 end;
@@ -235,14 +237,19 @@ begin
   else result := '';
 end;
 
-function TRelayKeithley.GetCardNumber(idx: integer): integer;
+function TRelayKeithley.GetClosedRelayNrs(var closednrs: string): boolean;
+var s_recv: string;
 begin
-  result := 0;
-  if ((idx >= 0) and (idx < t_slots.Count)) then begin
-    if SameText(t_slots[idx], '7705') then
-      result := (idx + 1 ) * 100
-    else
-      result := 0;
+  result := false; closednrs := '';
+  if assigned(t_curconn) then begin
+    if t_curconn.SendStr(C_MULTIMETER_CLOSE_ASK + Char(13)) then begin
+      if t_curconn.ExpectStr(s_recv, ')', false) then begin
+        result := true;
+        s_recv := trim(s_recv);
+        if (StartsText('(@', s_recv) and EndsText(')', s_recv)) then
+          closednrs := MidStr(s_recv, 3, length(s_recv) - 3)
+      end;
+    end;
   end;
 end;
 
@@ -322,8 +329,8 @@ begin
   if assigned(t_curconn) then begin
     result := t_curconn.SendStr(format(C_MULTIMETER_OPEN + AnsiChar(13), [relays]));
     if result then begin
-      result := QueryRelays(s_relclose);
-      if result then begin
+      s_relclose := GetClosedRelays();
+      if (s_relclose <> '') then begin
         set_relclose := ChannelIndexSet(s_relclose);
         set_relopen := ChannelIndexSet(relays);
         result := ((set_relopen * set_relclose) = []);
@@ -341,40 +348,30 @@ begin
   end;
 end;
 
-function TRelayKeithley.QueryRelays(var relnrs: string): boolean;
-var s_recv: string;
+function TRelayKeithley.QueryRelays(var closednrs, openednrs: string): boolean;
+var set_closed, set_opened: TKeithleyChannelSet;
 begin
   result := false;
-  if assigned(t_curconn) then begin
-    result := t_curconn.SendStr(C_MULTIMETER_CLOSE_ASK + Char(13));
-    if result then begin
-      if t_curconn.ExpectStr(s_recv, ')', false) then
-        s_recv := trim(s_recv);
-        if (AnsiStartsText('(@', s_recv) and EndsText(')', s_recv)) then relnrs := AnsiMidStr(s_recv, 3, length(s_recv) - 3)
-        else relnrs := s_recv;
-    end;
+  closednrs := ''; openednrs := '';
+  if GetClosedRelayNrs(closednrs) then begin
+    set_closed := ChannelIndexSet(closednrs);
+    set_opened := (set_all - set_closed);
+    openednrs := ChannelNumbers(set_opened);
   end;
 end;
 
 function TRelayKeithley.GetClosedRelays(): string;
 begin
-  if not QueryRelays(result) then result := '';
+  GetClosedRelayNrs(result);
 end;
 
 function TRelayKeithley.GetOpenedRelays(): string;
-var set_closed, set_opened: TKeithleyChannelSet;
-    s_closed: string;
+var s_closed: string;
 begin
-  result := '';
-  if (CardSlots > 0) then begin
-    s_closed := GetClosedRelays();
-    set_closed := ChannelIndexSet(s_closed);
-    set_opened := (set_all - set_closed);
-    result := ChannelNumbers(set_opened);
-  end;
+  QueryRelays(s_closed, result);
 end;
 
-function TRelayKeithley.GetAvailableRelays(): string;
+function TRelayKeithley.GetAllRelays(): string;
 begin
   result := ChannelNumbers(set_all);
 end;
@@ -382,7 +379,7 @@ end;
 function TRelayKeithley.VerifyClosedRelays(const refrelnrs: string): boolean;
 var set_refrel, set_isrel: TKeithleyChannelSet; s_isrel: string;
 begin
-  result := QueryRelays(s_isrel);
+  result := GetClosedRelayNrs(s_isrel);
   if result then begin
     set_refrel := ChannelIndexSet(refrelnrs);
     set_isrel := ChannelIndexSet(s_isrel);

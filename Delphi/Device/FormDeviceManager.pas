@@ -45,13 +45,15 @@ type
     t_relay: TRelayControl;
     t_ser: TSerialAdapter;
     i_extend: integer;
+  private
+    procedure ClearCheckBoxes();
   protected
     function  SelectedRelays(): string;
     function  GetCheckBox(const relaynr: string): TCheckBox;
-    procedure CreateCheckBoxes();
+    procedure UpdateCheckBoxes();
     procedure ColorCheckBoxes(const relays: string);
     procedure UncolorCheckBoxes(const relays: string);
-    procedure UpdateCheckBoxes(const fname: string);
+    procedure UpdateCheckBoxCaptions(const fname: string);
   public
     { Public-Deklarationen }
   end;
@@ -68,7 +70,7 @@ var s_rnum: string; t_chk: TCheckBox;
 begin
   t_chk := (Sender as TCheckBox);
   if assigned(t_chk) then begin
-    s_rnum := RightStr(t_chk.name, length(t_chk.name) - 4); //'chkR' + number
+    s_rnum := RightStr(t_chk.name, length(t_chk.name) - 4); //'chkR'+number, see UpdateCheckBoxes
     if (not chkSelection.Checked) then begin
       if t_chk.Checked then
         t_relay.CloseRelays(s_rnum)
@@ -93,7 +95,7 @@ begin
   SerialDialog.SerialObj := t_ser.SerialObj;
   if SerialDialog.ShowModal() = mrOK then begin
     t_multimeter.InitDevice();
-    CreateCheckBoxes();
+    UpdateCheckBoxes();
     s_relays := t_relay.GetOpenedRelays();
     UncolorCheckBoxes(s_relays);
   end;
@@ -116,6 +118,7 @@ end;
 procedure TfrmDeviceManager.btnMeasureClick(Sender: TObject);
 var f_val: double; b_ok: boolean;
 begin
+  txtMeasure.Text := '';
   case cmbMeasure.ItemIndex of
   0: b_ok := t_multimeter.MeasureR(f_val);
   1: b_ok := t_multimeter.MeasureDCV(f_val);
@@ -149,7 +152,7 @@ end;
 
 procedure TfrmDeviceManager.btnUpdateClick(Sender: TObject);
 begin
-  UpdateCheckBoxes(txtFile.Text);
+  UpdateCheckBoxCaptions(txtFile.Text);
 end;
 
 procedure TfrmDeviceManager.btnViewClick(Sender: TObject);
@@ -203,6 +206,18 @@ begin
   t_messenger.Free();
 end;
 
+procedure TfrmDeviceManager.ClearCheckBoxes();
+var i: integer; t_chkR: TControl;
+begin
+  for i := tabRelays.ControlCount - 1 downto 0 do begin
+    t_chkR := tabRelays.Controls[i];
+    if (t_chkR is TCheckBox) then begin
+      tabRelays.RemoveControl(t_chkR);
+      t_chkR.Free();
+    end;
+  end;
+end;
+
 function  TfrmDeviceManager.SelectedRelays(): string;
 var i, i_len: integer; s_rnum: string; t_chk: TCheckBox;
 begin
@@ -210,7 +225,7 @@ begin
   for i := 0 to tabRelays.ControlCount - 1 do begin
     t_chk := (tabRelays.Controls[i] as TCheckBox);
     if assigned(t_chk) and chkSelection.Checked then begin
-      s_rnum := RightStr(t_chk.Name, length(t_chk.Name) - 4); // name looks like 'chkR101', prefix + number
+      s_rnum := RightStr(t_chk.Name, length(t_chk.Name) - 4); // name looks like 'chkR101', prefix + number, see UpdateCheckBoxes
       if t_chk.Checked then result := result + s_rnum + ',';
     end;
   end;
@@ -220,29 +235,31 @@ end;
 
 function  TfrmDeviceManager.GetCheckBox(const relaynr: string): TCheckBox;
 begin
-  result := (tabRelays.FindChildControl('chkR' + trim(relaynr)) as TCheckBox);
+  result := (tabRelays.FindChildControl('chkR' + trim(relaynr)) as TCheckBox); //'chkR'+number, see UpdateCheckBoxes
 end;
 
-procedure TfrmDeviceManager.CreateCheckBoxes();
-var i, i_colwidth, i_cards: integer; t_chkR: TCheckBox; s_rnum, s_relays: string; t_relays: TStringList;
-const CINT_COLDIST: integer = 10; CINT_ROWDIST: integer = 2;
+procedure TfrmDeviceManager.UpdateCheckBoxes();
+var i, i_colwidth, i_cols: integer; t_chkR: TCheckBox; s_relays: string; t_relays: TStringList;
+const CINT_COLDIST: integer = 10; CINT_ROWDIST: integer = 2; CINT_ROWS: integer = 20;
 begin
-  s_relays := t_relay.GetAvailableRelays();
+  s_relays := t_relay.GetAllRelays();
   t_relays := TStringList.Create();
-  if (ExtractStrings([','], [' '], PChar(s_relays), t_relays) > 0) and (tabRelays.ControlCount <= 0) then begin
-    i_cards := (t_relays.Count div 40);
-    i_colwidth := (tabRelays.Width - CINT_COLDIST * (i_cards * 2 - 1)) div (2 * i_cards);
-    for i := 0 to t_relays.Count - 1 do begin
-      t_chkR := TCheckBox.Create(tabRelays);
-      tabRelays.InsertControl(t_chkR);
-      s_rnum := t_relays[i];
-      t_chkR.Name := 'chkR' + s_rnum;
-      t_chkR.Caption := 'R' + s_rnum;
-      t_chkR.Width := i_colwidth;
-      t_chkR.Height := 17;
-      t_chkR.Left := (i div 20) * (t_chkR.Width + CINT_COLDIST);
-      t_chkR.Top := (i mod 20) * (t_chkR.Height + CINT_ROWDIST);
-      t_chkR.OnClick := RelayCheck;
+  if (ExtractStrings([','], [' '], PChar(s_relays), t_relays) > 0)then begin
+    if (tabRelays.ControlCount <> t_relays.Count) then begin
+      ClearCheckBoxes();
+      i_cols := (t_relays.Count div CINT_ROWS);
+      i_colwidth := (tabRelays.Width - CINT_COLDIST * (i_cols - 1)) div i_cols;
+      for i := 0 to t_relays.Count - 1 do begin
+        t_chkR := TCheckBox.Create(tabRelays);
+        tabRelays.InsertControl(t_chkR);
+        t_chkR.Name := 'chkR' + t_relays[i];
+        t_chkR.Caption := 'R' + t_relays[i];
+        t_chkR.Width := i_colwidth;
+        t_chkR.Height := 17;
+        t_chkR.Left := (i div CINT_ROWS) * (t_chkR.Width + CINT_COLDIST);
+        t_chkR.Top := (i mod CINT_ROWS) * (t_chkR.Height + CINT_ROWDIST);
+        t_chkR.OnClick := RelayCheck;
+      end;
     end;
   end;
   t_relays.Free();
@@ -282,9 +299,9 @@ begin
   t_rnames.Free();
 end;
 
-procedure TfrmDeviceManager.UpdateCheckBoxes(const fname: string);
+procedure TfrmDeviceManager.UpdateCheckBoxCaptions(const fname: string);
 const CSTR_PREFIX: string = 'Relais_0'; CSTR_INISEC: string = 'Relais_names';
-var i: integer; s_rnum, s_rkey, s_rdesc: string;
+var i, i_pos: integer; s_rnum, s_rkey, s_rdesc: string;
     f_ini: TIniFile; t_chk: TCheckBox;
 begin
   f_ini := TIniFile.Create(fname);
@@ -292,12 +309,14 @@ begin
     for i := 0 to tabRelays.ControlCount - 1 do begin
       t_chk := (tabRelays.Controls[i] as TCheckBox);
       if assigned(t_chk) then begin
-        s_rnum := RightStr(t_chk.Name, length(t_chk.Name) - 4); //'chkR'+number
+        s_rnum := RightStr(t_chk.Name, length(t_chk.Name) - 4); //'chkR'+number, see UpdateCheckBoxes
         s_rkey := CSTR_PREFIX + s_rnum;
         if f_ini.ValueExists(CSTR_INISEC, s_rkey) then begin
           s_rdesc := trim(f_ini.ReadString(CSTR_INISEC, s_rkey, ''));
+          i_pos := pos('|', s_rdesc);
+          if i_pos > 0 then s_rdesc := LeftStr(s_rdesc, i_pos - 1);
           if StartsText('...', s_rdesc) then s_rdesc := RightStr(s_rdesc, length(s_rdesc) - 3);
-          s_rdesc := s_rnum + ': ' + s_rdesc;
+          s_rdesc := s_rnum + ': ' + trim(s_rdesc);
           if (s_rdesc <> '') then begin
             t_chk.Caption := s_rdesc;
             t_chk.Hint := s_rdesc;

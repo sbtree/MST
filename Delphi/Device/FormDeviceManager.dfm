@@ -117,7 +117,7 @@ object frmDeviceManager: TfrmDeviceManager
     TabOrder = 8
   end
   object btnUpdate: TButton
-    Left = 501
+    Left = 678
     Top = 484
     Width = 78
     Height = 25
@@ -128,13 +128,13 @@ object frmDeviceManager: TfrmDeviceManager
   object txtFile: TEdit
     Left = 106
     Top = 486
-    Width = 367
+    Width = 543
     Height = 21
     ReadOnly = True
     TabOrder = 10
   end
   object btnFile: TButton
-    Left = 473
+    Left = 650
     Top = 484
     Width = 25
     Height = 25

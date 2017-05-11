@@ -427,7 +427,9 @@ var t: cardinal; n:integer; tPairs: TStringPairs;
     mybuffer: TByteBuffer; //TCharBuffer;
     elem: byte;//char;
 begin
-  mybuffer := TByteBuffer.Create();//TCharBuffer.Create();
+  n := smallInt(StrToInt( '$0013')) xor $FFFF;
+  ShowMessage(format('n = %d', [n]));
+{  mybuffer := TByteBuffer.Create();//TCharBuffer.Create();
   bok := mybuffer.IsEmpty();
   bok := mybuffer.IsFull();
   n := mybuffer.CountUsed;
@@ -531,7 +533,7 @@ begin
   tPairs.GetPairValues(sValues);
   ShowMessage(format('all names: %s; all values: %s', [sNames.DelimitedText, sValues.DelimitedText]));
 
- {
+
   //TGenUtils.EnumComPorts(tComPorts);
   //ShowMessage(tComPorts.DelimitedText);
   tComPorts.Add('Test1=');
@@ -578,11 +580,11 @@ begin
   ShowMessage(format('HistoryStr=%s',[mybuffer.HistoryStr()]));
   ShowMessage(format('HistoryHex=%s',[mybuffer.HistoryHex()]));
 
-  FreeAndNil(mybuffer); }
+  FreeAndNil(mybuffer);
   FreeAndNil(tPairs);
   FreeAndNil(sValues);
   FreeAndNil(sNames);
-  FreeAndNil(tComPorts);
+  FreeAndNil(tComPorts); }
 end;
 
 procedure TfrmGeneralTester.FormCreate(Sender: TObject);
