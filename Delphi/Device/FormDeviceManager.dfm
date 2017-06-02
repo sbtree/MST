@@ -25,14 +25,14 @@ object frmDeviceManager: TfrmDeviceManager
     Height = 13
     Caption = 'Relays Description:'
   end
-  object btnDisconnect: TButton
-    Left = 59
+  object btnInit: TButton
+    Left = 79
     Top = 453
     Width = 60
     Height = 25
-    Caption = '&Disconnect'
+    Caption = '&Initialize'
     TabOrder = 0
-    OnClick = btnDisconnectClick
+    OnClick = btnInitClick
   end
   object btnMeasure: TButton
     Left = 756
@@ -93,7 +93,7 @@ object frmDeviceManager: TfrmDeviceManager
   object btnConnect: TButton
     Left = 8
     Top = 453
-    Width = 50
+    Width = 65
     Height = 25
     Caption = 'Co&nnet'
     TabOrder = 6

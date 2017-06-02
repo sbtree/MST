@@ -335,7 +335,7 @@ begin
       
       if result then begin
         s_idn := trim(s_idn);
-        t_curconn.SendStr(C_KEITHLEY_RESET + Char(13));
+        //t_curconn.SendStr(C_KEITHLEY_RESET + Char(13));
         t_curconn.SendStr(C_KEITHLEY_CLEAR_ERROR + Char(13));
         t_curconn.SendStr(C_KEITHLEY_BEEP_OFF + Char(13));
         t_curconn.SendStr(C_KEITHLEY_FORMAT_ELEMENT + Char(13));

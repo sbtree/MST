@@ -21,8 +21,6 @@ type
     //destructor Destroy(); override;
 
     property DLLService: TDllLoader read t_dllldr implements IDllLoader;
-
-  
   end;
 
 implementation

@@ -12,12 +12,12 @@ interface
 uses Windows, Classes;
 type
   IDLLLoader = interface
-    function LoadDLL(const dllfile: string): boolean;
-    function GetCurDllFile(): string;
-    function GetFunction(const funcname: string): pointer;
+    function GetDllPathFile(): string;
     procedure SetDllSearchPath(const spath: string);
-    procedure UnloadDLL();
-    property CurDllName: string read GetCurDllFile;
+    function LoadDLL(const dllfile: string): boolean;
+    function GetFunction(const funcname: string): pointer;
+    function FreeDLL(): boolean;
+    property CurDllName: string read GetDllPathFile;
     property DllSearchPath: string write SetDllSearchPath;
   end;
 
@@ -26,17 +26,19 @@ type
     h_dll:      THandle;
     s_dllfile:  string;
     s_path:     string;
+  protected
+    function GetDllPathFile(): string;
+    procedure SetDllSearchPath(const spath: string);
+
   public
     constructor Create();
     destructor Destroy(); override;
 
     function LoadDLL(const dllfile: string): boolean;
-    function GetCurDllFile(): string;
     function GetFunction(const funcname: string): pointer;
-    procedure SetDllSearchPath(const spath: string);
-    procedure UnloadDLL();
+    function FreeDLL(): boolean;
 
-    property CurDllName: string read GetCurDllFile;
+    property DllPathFile: string read GetDllPathFile;
     property DllSearchPath: string write SetDllSearchPath;
   end;
 
@@ -53,13 +55,13 @@ end;
 
 destructor TDLLLoader.Destroy();
 begin
-  UnloadDll();
+  FreeDLL();
   inherited Destroy();
 end;
 
 function TDLLLoader.LoadDLL(const dllfile: string): boolean;
 begin
-  UnloadDLL();
+  FreeDLL();
   if (s_path <> '') then SetDllDirectory(PChar(s_path)); //set high priority for this path by searching dll
   h_dll := loadLibrary(PChar(dllfile));
   SetDllDirectory(nil); //reset the algorithmus of dll searching (Default)
@@ -68,7 +70,7 @@ begin
   if result then s_dllfile := dllfile;
 end;
 
-function TDLLLoader.GetCurDllFile(): string;
+function TDLLLoader.GetDllPathFile(): string;
 begin
   result := s_dllfile;
 end;
@@ -86,7 +88,7 @@ begin
   if DirectoryExists(spath) then s_path := spath;
 end;
 
-procedure TDLLLoader.UnloadDLL();
+function TDLLLoader.FreeDLL(): boolean;
 begin
   if (h_dll <> 0) then begin
     if FreeLibrary(h_dll) then begin
@@ -94,6 +96,7 @@ begin
       s_dllfile := '';
     end;
   end;
+  result := (h_dll = 0);
 end;
 
 end.

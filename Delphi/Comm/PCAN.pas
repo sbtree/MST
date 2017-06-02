@@ -669,7 +669,7 @@ begin
                 assigned(a_pcanfnt[PCF_CLOSE]);
 
       if not result then begin
-        t_dllldr.UnloadDll();
+        t_dllldr.FreeDll();
         t_msgrimpl.AddMessage(format('No expected function is found in the dll "%s"', [sdll]), ML_ERROR);
       end;
     end else t_msgrimpl.AddMessage(format('Failed to load dll: %s', [sdll]), ML_ERROR);
@@ -713,7 +713,7 @@ begin
   CAN_ERR_ILLPARAMVAL:  result := 'Invalid parameter value';
   CAN_ERR_UNKNOWN:      result := 'Unknown error';
   ERR_HARDWARE_TYPE:    result := 'The type of hardware is unknown';
-  ERR_PCAN_FNT:         result := 'Function ''%s'' is not found in the dll' + '"' + t_dllldr.CurDllName + '"';
+  ERR_PCAN_FNT:         result := 'Function ''%s'' is not found in the dll' + '"' + t_dllldr.DllPathFile + '"';
   ERR_NO_DLL:           result := 'No dll is loaded';
   else                  result := format('Error number (%d) is unknown', [errnr]);
   end;

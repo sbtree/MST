@@ -9,7 +9,7 @@ uses
 
 type
   TfrmDeviceManager = class(TForm)
-    btnDisconnect: TButton;
+    btnInit: TButton;
     btnMeasure: TButton;
     cmbMeasure: TComboBox;
     btnClose: TButton;
@@ -26,7 +26,6 @@ type
     memInfo: TMemo;
     pgcMain: TPageControl;
     tabRelays: TTabSheet;
-    procedure btnDisconnectClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnMeasureClick(Sender: TObject);
@@ -39,6 +38,7 @@ type
     procedure btnFileClick(Sender: TObject);
     procedure btnUpdateClick(Sender: TObject);
     procedure btnViewClick(Sender: TObject);
+    procedure btnInitClick(Sender: TObject);
   private
     t_messenger : TTextMessenger;
     t_multimeter: TMultimeterKeithley;
@@ -92,12 +92,24 @@ end;
 procedure TfrmDeviceManager.btnConnectClick(Sender: TObject);
 var s_relays: string;
 begin
-  SerialDialog.SerialObj := t_ser.SerialObj;
-  if SerialDialog.ShowModal() = mrOK then begin
-    t_multimeter.InitDevice();
-    UpdateCheckBoxes();
-    s_relays := t_relay.GetOpenedRelays();
-    UncolorCheckBoxes(s_relays);
+  if t_ser.Connected then begin
+    if t_ser.Disconnect() then begin
+      s_relays := t_relay.GetAllRelays();
+      UncolorCheckBoxes(s_relays);
+      btnConnect.Caption := 'Co&nnect';
+    end;
+  end else begin
+    SerialDialog.SerialObj := t_ser.SerialObj;
+    if SerialDialog.ShowModal() = mrOK then begin
+      if t_multimeter.InitDevice() then begin
+        UpdateCheckBoxes();
+        s_relays := t_relay.GetOpenedRelays();
+        UncolorCheckBoxes(s_relays);
+        s_relays := t_relay.GetClosedRelays();
+        ColorCheckBoxes(s_relays);
+        btnConnect.Caption := '&Disconnect';
+      end;
+    end;
   end;
 end;
 
@@ -110,9 +122,9 @@ begin
   FreeAndNil(t_fopen);
 end;
 
-procedure TfrmDeviceManager.btnDisconnectClick(Sender: TObject);
+procedure TfrmDeviceManager.btnInitClick(Sender: TObject);
 begin
-  t_ser.Disconnect();
+  t_multimeter.InitDevice();
 end;
 
 procedure TfrmDeviceManager.btnMeasureClick(Sender: TObject);

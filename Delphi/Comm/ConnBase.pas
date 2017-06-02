@@ -33,6 +33,14 @@ type
                     CS_CONNECTED  //connection is connected and in use
                    );
 
+  IConnAdapter = interface
+    function Config(const sconfs: TStrings): boolean;
+    function Connect(const timeout: cardinal = 1000): boolean;
+    function Disconnect: boolean;
+    function Send(const str: string; const encoder: integer; const timeout: cardinal = 1000): boolean;
+    function Recv(var str: string; const decoder: integer; const timeout: cardinal = 1000): boolean;
+  end;
+
   //definition of a interface for communication
   ICommInterf = interface
     function Config(const sconf: string): boolean; overload;
