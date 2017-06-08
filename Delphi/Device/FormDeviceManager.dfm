@@ -95,7 +95,7 @@ object frmDeviceManager: TfrmDeviceManager
     Top = 453
     Width = 65
     Height = 25
-    Caption = 'Co&nnet'
+    Caption = 'Co&nnect'
     TabOrder = 6
     OnClick = btnConnectClick
   end
