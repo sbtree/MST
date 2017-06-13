@@ -564,6 +564,7 @@
         <DCCReference Include="GenType.pas"/>
         <DCCReference Include="StringPairs.pas"/>
         <DCCReference Include="DllLoader.pas"/>
+        <DCCReference Include="DataCoder.pas"/>
         <None Include="ModelSupport_GeneralTester\DataBuffer\default.txvpck"/>
         <None Include="ModelSupport_GeneralTester\default.txaPackage"/>
         <None Include="ModelSupport_GeneralTester\default.txvpck"/>

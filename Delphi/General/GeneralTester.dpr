@@ -8,7 +8,8 @@ uses
   TextMessage in 'TextMessage.pas',
   GenType in 'GenType.pas',
   StringPairs in 'StringPairs.pas',
-  DllLoader in 'DllLoader.pas';
+  DllLoader in 'DllLoader.pas',
+  DataCoder in 'DataCoder.pas';
 
 {$R *.res}
 

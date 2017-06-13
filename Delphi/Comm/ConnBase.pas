@@ -35,10 +35,10 @@ type
 
   IConnAdapter = interface
     function Config(const sconfs: TStrings): boolean;
-    function Connect(const timeout: cardinal = 1000): boolean;
+    function Connect(): boolean;
     function Disconnect: boolean;
-    function Send(const str: string; const encoder: integer; const timeout: cardinal = 1000): boolean;
-    function Recv(var str: string; const decoder: integer; const timeout: cardinal = 1000): boolean;
+    function Send(const str: string; const encoder: integer): boolean;
+    function Recv(var str: string; const decoder: integer): boolean;
   end;
 
   //definition of a interface for communication
