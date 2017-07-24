@@ -370,7 +370,6 @@ type
     function ReadStrFromBuffer(): string; override;
     function ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer; override;
     function RecvToBuffer(): integer; override;
-    function ClearBuffer(): integer; override;
     procedure DeinitBuffer(); override;
 
     procedure ClearFunctions();
@@ -417,6 +416,7 @@ type
     property AdapterInfo: string read GetAdapterInfo;
 
     function Config(const sconfs: TStrings): boolean; overload; override;
+    function ClearBuffer(): integer; override;
   end;
   PPCanLight = ^TPCanLight;
 

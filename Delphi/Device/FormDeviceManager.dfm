@@ -4,8 +4,8 @@ object frmDeviceManager: TfrmDeviceManager
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Keithley Tester'
-  ClientHeight = 514
-  ClientWidth = 924
+  ClientHeight = 513
+  ClientWidth = 989
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -35,7 +35,7 @@ object frmDeviceManager: TfrmDeviceManager
     OnClick = btnInitClick
   end
   object btnMeasure: TButton
-    Left = 756
+    Left = 681
     Top = 453
     Width = 75
     Height = 25
@@ -44,7 +44,7 @@ object frmDeviceManager: TfrmDeviceManager
     OnClick = btnMeasureClick
   end
   object cmbMeasure: TComboBox
-    Left = 672
+    Left = 597
     Top = 455
     Width = 84
     Height = 21
@@ -62,7 +62,7 @@ object frmDeviceManager: TfrmDeviceManager
       'TEMP')
   end
   object btnClose: TButton
-    Left = 418
+    Left = 365
     Top = 453
     Width = 42
     Height = 25
@@ -72,7 +72,7 @@ object frmDeviceManager: TfrmDeviceManager
     OnClick = btnCloseClick
   end
   object btnOpen: TButton
-    Left = 466
+    Left = 413
     Top = 453
     Width = 42
     Height = 25
@@ -82,7 +82,7 @@ object frmDeviceManager: TfrmDeviceManager
     OnClick = btnOpenClick
   end
   object btnOpenAll: TButton
-    Left = 514
+    Left = 461
     Top = 453
     Width = 65
     Height = 25
@@ -100,7 +100,7 @@ object frmDeviceManager: TfrmDeviceManager
     OnClick = btnConnectClick
   end
   object chkSelection: TCheckBox
-    Left = 345
+    Left = 292
     Top = 457
     Width = 67
     Height = 17
@@ -109,7 +109,7 @@ object frmDeviceManager: TfrmDeviceManager
     OnClick = chkSelectionClick
   end
   object txtMeasure: TEdit
-    Left = 834
+    Left = 759
     Top = 455
     Width = 78
     Height = 21
@@ -143,7 +143,7 @@ object frmDeviceManager: TfrmDeviceManager
     OnClick = btnFileClick
   end
   object btnView: TButton
-    Left = 837
+    Left = 906
     Top = 484
     Width = 75
     Height = 25
@@ -154,7 +154,7 @@ object frmDeviceManager: TfrmDeviceManager
   object memInfo: TMemo
     Left = 8
     Top = 515
-    Width = 908
+    Width = 973
     Height = 186
     ReadOnly = True
     ScrollBars = ssBoth
@@ -164,7 +164,7 @@ object frmDeviceManager: TfrmDeviceManager
   object pgcMain: TPageControl
     Left = 8
     Top = 4
-    Width = 904
+    Width = 973
     Height = 431
     ActivePage = tabRelays
     TabOrder = 14
@@ -172,5 +172,13 @@ object frmDeviceManager: TfrmDeviceManager
       Caption = 'Relays'
       ImageIndex = 1
     end
+  end
+  object chkAutoMeasure: TCheckBox
+    Left = 840
+    Top = 457
+    Width = 141
+    Height = 17
+    Caption = 'Auto after relay changing'
+    TabOrder = 15
   end
 end

@@ -70,7 +70,6 @@ type
     function ReadStrFromBuffer(): string; override;
     function ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer; override;
     function RecvToBuffer(): integer; override;
-    function ClearBuffer(): integer; override;
     procedure DeinitBuffer(); override;
   public
     constructor Create(owner: TComponent); override;
@@ -78,6 +77,7 @@ type
 
     function Config(const sconfs: TStrings): boolean; override;
     function ChangeProperties(const sconfs: TStrings): integer;
+    function ClearBuffer(): integer; override;
 
     property SerialObj: TSerial read t_ser write SetSerialObj;
   end;

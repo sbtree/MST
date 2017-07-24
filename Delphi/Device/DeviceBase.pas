@@ -113,7 +113,8 @@ type
 const
   C_TIMEOUT_MSEC: Cardinal = 30000; //default timeout 30000 milli seconds to wait for response
   C_TIMEOUT_ONCE = 2000; //
-  C_RESET_MSEC: Cardinal = 600000; //default timeout 600000 milli seconds (10 minutes) to wait for resetting
+  C_RESET_MSEC: Cardinal = 600000;  //default timeout 600000 milli seconds (10 minutes) to wait for resetting
+  C_MEAS_RETRIAL: Cardinal = 3;     //maximal trials of measurement
 
   C_ERR_NOERROR = $0000; // no error
   C_ERR_UNKNOWN = $8000; // base error number as unknown

@@ -421,14 +421,20 @@ begin
 end;
 
 procedure TfrmGeneralTester.btnTestClick(Sender: TObject);
-var t: cardinal; n:integer; tPairs: TStringPairs;
+var t: cardinal; n_int:integer; tPairs: TStringPairs;
     sNames, sValues, tComPorts: TStrings; v: variant; iInt64: int64; r: double; bok: boolean;
-    s_temp: string; s_ansi: AnsiString;
+    s_temp: string; s_ansi: AnsiString; w_val: word; n_smallint: smallint;
     mybuffer: TByteBuffer; //TCharBuffer;
     elem: byte;//char;
 begin
-  n := smallInt(StrToInt( '$0013')) xor $FFFF;
-  ShowMessage(format('n = %d', [n]));
+  //n := smallInt(StrToInt( '$0013')) xor $FFFF;
+  w_val := word($9ABD);
+  n_smallint := smallint($9ABD);
+  n_int := n_smallint;
+  ShowMessage(format('word($9ABD) = %d', [w_val]));
+  ShowMessage(format('smallint($9ABD) = %d', [smallint($9ABD)]));
+  ShowMessage(format('result1 = %d', [word(round(n_int * 1.02))]));
+  ShowMessage(format('result2 = %d', [word(round(w_val * 1.02))]));
 {  mybuffer := TByteBuffer.Create();//TCharBuffer.Create();
   bok := mybuffer.IsEmpty();
   bok := mybuffer.IsFull();

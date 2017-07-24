@@ -86,7 +86,6 @@ type
     function ReadStrFromBuffer(): string; override;
     function ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer; override;
     function RecvToBuffer(): integer; override;
-    function ClearBuffer(): integer; override;
     procedure DeinitBuffer(); override;
 
     procedure SafeArrayToArray(const psarr: PSafeArray; const parr: PByteArray; const size: Integer);
@@ -108,6 +107,7 @@ type
 
     function FindDevice(const psn: integer = -1; const tout: integer = -1): boolean;
     function Config(const sconfs: TStrings): boolean; override;
+    function ClearBuffer(): integer; override;
   end;
 
 implementation

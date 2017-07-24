@@ -239,35 +239,40 @@ begin
 end;
 
 function TMultimeterKeithley.SwitchMeasurement(const meas: EMeasureAction): boolean;
-var s_sending, s_recv: string;
+var s_sending, s_recv, s_temp: string;
 begin
   result := inherited SwitchMeasurement(meas);
   if result then begin
-    if (e_curma <> meas) then begin
-      s_sending := format(C_KEITHLEY_SET_FUNC, [C_KEITHLEY_FUNC[meas]]) + Char(13);
-      result := t_curconn.SendStr(s_sending);
-    end;
+    e_curma := MA_ANY;
+    //ask HW for current measurement
+    result := t_curconn.SendStr(C_KEITHLEY_FUNC_ASK + Char(13));
     if result then begin
-      result := t_curconn.SendStr(C_KEITHLEY_FUNC_ASK + Char(13));
-      if result then begin
-        result := t_curconn.ExpectStr(s_recv, Char(13), false);
-        s_recv := TGenUtils.ClearQuotationMarks(trim(s_recv));
-        if result then
-          result := SameText(s_recv, C_KEITHLEY_FUNC[meas]);
+      t_curconn.ExpectStr(s_recv, '"' + Char(13), false); //wait for string like '..."..."#D'
+      if ContainsText(s_recv, C_KEITHLEY_FUNC[meas]) then
+        e_curma := meas
+      else begin //switch measurement if current measurement is different from the needed measurement
+        s_sending := format(C_KEITHLEY_SET_FUNC, [C_KEITHLEY_FUNC[meas]]) + Char(13);
+        result := t_curconn.SendStr(s_sending);
+        if result then begin
+          TGenUtils.Delay(100); //wait for switching
+          if t_curconn.SendStr(C_KEITHLEY_FUNC_ASK + Char(13)) then begin
+            if t_curconn.ExpectStr(s_recv, '"' + C_KEITHLEY_FUNC[meas] + '"' + Char(13), false) then begin
+              e_curma := meas;
+              t_msgrimpl.AddMessage(format('Successful to switch to the measurement(%s).', [C_KEITHLEY_FUNC[meas]]));
+            end else
+              t_msgrimpl.AddMessage(format('Failed to switch to the measurement(%s).', [C_KEITHLEY_FUNC[meas]]), ML_ERROR);
+          end;
+        end;
       end;
-      if result then e_curma := meas
-      else e_curma := MA_ANY;
-    end else result := false;
+    end;
   end;
-  if result then
-    t_msgrimpl.AddMessage(format('Successful to switch to the measurement(%s).', [C_KEITHLEY_FUNC[meas]]))
-  else
-    t_msgrimpl.AddMessage(format('Failed to switch to the measurement(%s).', [C_KEITHLEY_FUNC[meas]]), ML_ERROR);
+  result := (e_curma = meas);
 end;
 
 //return the value string of keithley reading element
 //NOTE: the measurement data is composed of several elements, e.g.
 //+4.69781780E+00OHM,+8179.250SECS,+46802RDNG#,000,0000LIMITS
+//READingUnit,TSTampSECS,RNUMberRDNG#,CHANnel,LIMitsLIMITS
 //this function gives back the first value string without unit
 function TMultimeterKeithley.ReadingValue(const elem: string): string;
 var i_pos: integer;
@@ -283,22 +288,28 @@ begin
 end;
 
 function TMultimeterKeithley.ReadData(var val: double): boolean;
-var s_recv: string;
+var s_recv: string; c_retrial: cardinal;
 begin
-  result := t_curconn.SendStr(C_KEITHLEY_MEAS_READ + Char(13));
-  if result then begin
-    result := t_curconn.ExpectStr(s_recv, Char(13), false);
+  c_retrial := 0;
+  repeat
+    result := t_curconn.SendStr(C_KEITHLEY_MEAS_READ + Char(13));
     if result then begin
-      if StartsText(C_KEITHLEY_OVERFLOW, s_recv) then
-        t_msgrimpl.AddMessage(format('The measurement data(%s) is overflowed.', [C_KEITHLEY_OVERFLOW]), ML_ERROR)
-      else begin
-        s_recv := ReadingValue(s_recv); //trim(s_recv);
-        result := TryStrToFloat(s_recv, val);
-        if result then t_msgrimpl.AddMessage(format('Successful to convert data %0.5f %s.', [val, C_KEITHLEY_UNITS[e_curma]]))
-        else t_msgrimpl.AddMessage(format('Failed to convert data %s', [s_recv]));
+      result := t_curconn.ExpectStr(s_recv, Char(13), false);
+      if result then begin
+        if StartsText(C_KEITHLEY_OVERFLOW, s_recv) then begin
+          TGenUtils.Delay();
+          result := false;
+          t_msgrimpl.AddMessage(format('The measurement data(%s) is overflowed.', [C_KEITHLEY_OVERFLOW]), ML_ERROR);
+        end else begin
+          s_recv := ReadingValue(s_recv); //trim(s_recv);
+          result := TryStrToFloat(s_recv, val);
+          if result then t_msgrimpl.AddMessage(format('Successful to convert data %0.5f %s.', [val, C_KEITHLEY_UNITS[e_curma]]))
+          else t_msgrimpl.AddMessage(format('Failed to convert data %s', [s_recv]), ML_ERROR);
+        end;
       end;
     end;
-  end;
+    inc(c_retrial);
+  until (result or (c_retrial >= C_MEAS_RETRIAL));
 end;
 
 function TMultimeterKeithley.GetRelayCards(): integer;

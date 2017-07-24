@@ -87,7 +87,6 @@ type
     function ReadStrFromBuffer(): string; virtual; abstract;
     function ReadPacketFromBuffer(var pbytes: PByteArray; var wlen: word): integer; virtual; abstract;
     function RecvToBuffer(): integer; virtual; abstract;
-    function ClearBuffer(): integer; virtual; abstract;
     procedure DeinitBuffer(); virtual; abstract;
   public
     //constructor and destructor
@@ -119,6 +118,7 @@ type
     function RecvStrInterval(var str: string; const timeout: cardinal; const interv: cardinal = 3000): integer; virtual;
     function RecvStrExpected(var str: string; const exstr: string; timeout: cardinal; const bcase: boolean = false): boolean; virtual;
 
+    function ClearBuffer(): integer; virtual; abstract;
     //sync methods
     procedure SetEventRx();
     procedure ResetEventRx();

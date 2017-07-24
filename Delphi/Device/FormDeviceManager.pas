@@ -26,6 +26,7 @@ type
     memInfo: TMemo;
     pgcMain: TPageControl;
     tabRelays: TTabSheet;
+    chkAutoMeasure: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure btnMeasureClick(Sender: TObject);
@@ -75,7 +76,7 @@ begin
       if t_chk.Checked then
         t_relay.CloseRelays(s_rnum)
       else
-        t_relay.OpenRelays(s_rnum)
+        t_relay.OpenRelays(s_rnum);
     end;
 
     if t_relay.VerifyClosedRelays(s_rnum) then
@@ -86,6 +87,9 @@ begin
       else
         t_chk.ParentColor := true;
     end;
+
+    if (not chkSelection.Checked) and chkAutoMeasure.Checked then
+      btnMeasureClick(btnMeasure);
   end;
 end;
 
