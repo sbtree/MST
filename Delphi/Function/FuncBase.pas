@@ -50,6 +50,11 @@ type
     property ActorObject[const efa: EFunctionActorType]: TObject read GetActorObject write SetActorObject;
   end;
 
+  IProgress = interface
+    function InitProgress(const min, max: integer): boolean;
+    function UpdateProgress(const val: integer): boolean;
+  end;
+
   TFunctionBase = class(TPersistent, ITextMessengerImpl)
   protected
     t_msgrimpl: TTextMessengerImpl; //for delegation of interface ITextMessengerImpl
