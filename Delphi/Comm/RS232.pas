@@ -9,7 +9,7 @@
 unit RS232;
 
 interface
-uses  Classes, SysUtils, Serial3, ConnBase, DataBuffer;
+uses  Classes, SysUtils, Serial3, CommBase, DataBuffer;
 type
   //enumeration of properties for serial port
   ESerialProperty = (
@@ -75,7 +75,7 @@ type
     constructor Create(owner: TComponent); override;
     destructor Destroy(); override;
 
-    function Config(const sconfs: TStrings): boolean; override;
+    function Config(const sconfs: TStrings): boolean; overload; override;
     function ChangeProperties(const sconfs: TStrings): integer;
     function ClearBuffer(): integer; override;
 

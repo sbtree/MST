@@ -89,7 +89,7 @@ begin
   end;
 
   if assigned(result) then begin
-    ITextMessengerImpl(result).Messenger := t_msgrimpl.Messenger;
+    result.MessengerService.Messenger := t_msgrimpl.Messenger;
     t_conns.AddObject(s_conname, result);
     if ((t_conns.Count = 1) and (i_curidx < 0)) then i_curidx := 0;
   end;

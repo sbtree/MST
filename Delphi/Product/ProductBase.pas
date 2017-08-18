@@ -10,7 +10,7 @@
 unit ProductBase;
 
 interface
-uses Classes, ConnBase, DeviceBase, MtxDownloader;
+uses Classes, CommBase, DeviceBase, MtxDownloader;
 type
   IMtxTestUnit = interface
     //1. Reset

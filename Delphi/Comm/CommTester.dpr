@@ -7,7 +7,7 @@ uses
   RS232 in 'RS232.pas',
   GenUtils in '..\General\GenUtils.pas',
   TextMessage in '..\General\TextMessage.pas',
-  ConnBase in 'ConnBase.pas',
+  CommBase in 'CommBase.pas',
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
   Usbspec in '..\Externals\USBIO\Usbspec.pas',
   DllLoader in '..\General\DllLoader.pas',

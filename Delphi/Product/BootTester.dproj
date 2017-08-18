@@ -130,9 +130,9 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="ModelSupport_BootTester\BootTester\default.txvpck" Configuration="Debug" Class="ProjectFile">
+                <DeployFile LocalName="BootTester.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
-                        <RemoteDir>.\</RemoteDir>
+                        <RemoteName>BootTester.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -172,15 +172,15 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="ModelSupport_BootTester\GenUtils\default.txvpck" Configuration="Debug" Class="ProjectFile">
+                <DeployFile LocalName="ModelSupport_BootTester\BootTester\default.txvpck" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="BootTester.exe" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="ModelSupport_BootTester\GenUtils\default.txvpck" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
-                        <RemoteName>BootTester.exe</RemoteName>
+                        <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -530,7 +530,7 @@
         <DCCReference Include="MtxDownloader.pas"/>
         <DCCReference Include="..\General\GenUtils.pas"/>
         <DCCReference Include="..\General\NewProgressbar.pas"/>
-        <DCCReference Include="..\Comm\ConnBase.pas"/>
+        <DCCReference Include="..\Comm\CommBase.pas"/>
         <DCCReference Include="..\Comm\RS232.pas"/>
         <DCCReference Include="..\General\TextMessage.pas"/>
         <DCCReference Include="..\General\DataBuffer.pas"/>

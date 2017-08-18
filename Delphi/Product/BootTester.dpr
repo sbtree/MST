@@ -7,7 +7,7 @@ uses
   MtxDownloader in 'MtxDownloader.pas',
   GenUtils in '..\General\GenUtils.pas',
   NewProgressbar in '..\General\NewProgressbar.pas',
-  ConnBase in '..\Comm\ConnBase.pas',
+  CommBase in '..\Comm\CommBase.pas',
   RS232 in '..\Comm\RS232.pas',
   TextMessage in '..\General\TextMessage.pas',
   DataBuffer in '..\General\DataBuffer.pas';

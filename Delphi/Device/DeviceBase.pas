@@ -8,7 +8,7 @@
 unit DeviceBase;
 
 interface
-uses Classes, ConnBase, TextMessage, ConfigBase, StringPairs;
+uses Classes, CommBase, TextMessage, ConfigBase, StringPairs;
 
 type
 // =============================================================================

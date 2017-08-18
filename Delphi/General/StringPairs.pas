@@ -9,9 +9,12 @@
 unit StringPairs;
 
 interface
-uses Classes;
+uses Classes, System.Generics.Collections;
 
 Type
+  TNamedValueStrContainer = class(TDictionary<string, string>)
+
+  end;
 
   TStringPairs = class
   protected

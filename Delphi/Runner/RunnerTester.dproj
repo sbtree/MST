@@ -43,7 +43,7 @@
         <VerInfo_Locale>1031</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
-        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+        <DCC_Namespace>Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
@@ -145,7 +145,7 @@
         <DCCReference Include="..\Externals\ExprParser\ParseExpr.pas"/>
         <DCCReference Include="..\General\GenUtils.pas"/>
         <DCCReference Include="..\Device\DeviceBase.pas"/>
-        <DCCReference Include="..\Comm\ConnBase.pas"/>
+        <DCCReference Include="..\Comm\CommBase.pas"/>
         <DCCReference Include="..\Externals\Serial3.pas"/>
         <DCCReference Include="..\Config\ConfigBase.pas"/>
         <DCCReference Include="..\Device\Multimeter.pas"/>

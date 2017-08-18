@@ -17,7 +17,7 @@ uses
   RS232 in '..\Comm\RS232.pas',
   MtxUSB in '..\Comm\MtxUSB.pas',
   PCAN in '..\Comm\PCAN.pas',
-  ConnBase in '..\Comm\ConnBase.pas',
+  CommBase in '..\Comm\CommBase.pas',
   USBIOCOMLib_TLB in '..\Externals\USBIO\USBIOCOMLib_TLB.pas',
   Usbspec in '..\Externals\USBIO\Usbspec.pas',
   StepGroup in '..\CoreData\StepGroup.pas',

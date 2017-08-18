@@ -23,7 +23,7 @@ uses
   ParseExpr in '..\Externals\ExprParser\ParseExpr.pas',
   GenUtils in '..\General\GenUtils.pas',
   DeviceBase in '..\Device\DeviceBase.pas',
-  ConnBase in '..\Comm\ConnBase.pas',
+  CommBase in '..\Comm\CommBase.pas',
   Serial3 in '..\Externals\Serial3.pas',
   ConfigBase in '..\Config\ConfigBase.pas',
   Multimeter in '..\Device\Multimeter.pas',

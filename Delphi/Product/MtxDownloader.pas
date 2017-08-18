@@ -1,7 +1,7 @@
 unit MtxDownloader;
 
 interface
-uses Serial3, Classes, Controls, RS232, ConnBase, TextMessage;
+uses Serial3, Classes, Controls, RS232, CommBase, TextMessage;
 type
   EBootState = (
                 BS_UNKNOWN,

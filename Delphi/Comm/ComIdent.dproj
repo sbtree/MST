@@ -94,7 +94,7 @@
         <DCCReference Include="..\General\DataBuffer.pas"/>
         <DCCReference Include="..\General\TextMessage.pas"/>
         <DCCReference Include="..\General\GenUtils.pas"/>
-        <DCCReference Include="ConnBase.pas"/>
+        <DCCReference Include="CommBase.pas"/>
         <DCCReference Include="ComIdentHelp.pas">
             <Form>LoopbackDlg</Form>
             <FormType>dfm</FormType>

@@ -7,7 +7,7 @@ uses
   Oscilloscope in 'Oscilloscope.pas',
   GenUtils in '..\General\GenUtils.pas',
   FormDeviceManager in 'FormDeviceManager.pas' {frmDeviceManager},
-  ConnBase in '..\Comm\ConnBase.pas',
+  CommBase in '..\Comm\CommBase.pas',
   DataBuffer in '..\General\DataBuffer.pas',
   RS232 in '..\Comm\RS232.pas',
   PowerSupply in 'PowerSupply.pas',

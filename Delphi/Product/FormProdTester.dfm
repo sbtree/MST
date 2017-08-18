@@ -118,7 +118,6 @@ object frmProdTester: TfrmProdTester
     Width = 100
     Height = 21
     Enabled = False
-    ItemHeight = 13
     TabOrder = 9
     Text = 'ID_STRING'
     OnChange = cmbFilterNameChange

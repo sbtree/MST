@@ -8,7 +8,7 @@ uses
   DataBuffer in '..\General\DataBuffer.pas',
   TextMessage in '..\General\TextMessage.pas',
   GenUtils in '..\General\GenUtils.pas',
-  ConnBase in 'ConnBase.pas',
+  CommBase in 'CommBase.pas',
   ComIdentHelp in 'ComIdentHelp.pas' {LoopbackDlg},
   RS232Dlg in 'RS232Dlg.pas' {SerialDialog};
 

@@ -164,13 +164,13 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="ModelSupport_DeviceManagerTester\TextMessage\default.txaPackage" Configuration="Release" Class="ProjectFile">
+                <DeployFile LocalName="ModelSupport_DeviceManagerTester\Oscilloscope\default.txvpck" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="ModelSupport_DeviceManagerTester\Oscilloscope\default.txvpck" Configuration="Debug" Class="ProjectFile">
+                <DeployFile LocalName="ModelSupport_DeviceManagerTester\TextMessage\default.txaPackage" Configuration="Release" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
@@ -846,7 +846,7 @@
         <DCCReference Include="FormDeviceManager.pas">
             <Form>frmDeviceManager</Form>
         </DCCReference>
-        <DCCReference Include="..\Comm\ConnBase.pas"/>
+        <DCCReference Include="..\Comm\CommBase.pas"/>
         <DCCReference Include="..\General\DataBuffer.pas"/>
         <DCCReference Include="..\Comm\RS232.pas"/>
         <DCCReference Include="PowerSupply.pas"/>

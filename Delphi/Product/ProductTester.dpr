@@ -7,16 +7,16 @@ uses
   MtxDownloader in 'MtxDownloader.pas',
   TextMessage in '..\General\TextMessage.pas',
   GenUtils in '..\General\GenUtils.pas',
-  NewProgressbar in '..\General\NewProgressbar.pas',
   ProductBase in 'ProductBase.pas',
   DeviceBase in '..\Device\DeviceBase.pas',
   ProductConfig in '..\Config\ProductConfig.pas',
   ConfigBase in '..\Config\ConfigBase.pas',
   DeviceConfig in '..\Config\DeviceConfig.pas',
   UnitsSystem in 'UnitsSystem.pas',
-  ConnBase in '..\Comm\ConnBase.pas',
+  CommBase in '..\Comm\CommBase.pas',
   RS232 in '..\Comm\RS232.pas',
-  DataBuffer in '..\General\DataBuffer.pas';
+  DataBuffer in '..\General\DataBuffer.pas',
+  NewProgressbar in '..\General\NewProgressbar.pas';
 
 {$R *.res}
 

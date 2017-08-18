@@ -39,14 +39,14 @@ const
               'A', 'rpm/s', 'rpm', 'r', 'Nm/A', 'V', 'r', '', 's', '°C', '', 'Ohm', 'H', 'W');
   CSTR_UNITS_DE: array[ESystemUnit] of string = (
               'A', 'Upm/s', 'Upm', 'U', 'Nm/A', 'Volt', 'U', '', 's', '°C', '', 'Ohm', 'H', 'W');
-  C_UNITS_SCALING: array[ESystemUnit] of double = (
+  C_UNITS_SCALE: array[ESystemUnit] of double = (
               //rciprocal of 2^16, 2^8, 2^12, 2^16, 2^12, 2^16, 2^16, 2^16, 10^7, 2^4, 2^16, 2^8, 2^14, 2^8
               1/65536, 1/256, 1/4096, 1/65536, 1/4096, 1/65536, 1/65536, 1/65536, 10E-7, 1/16, 1/65536, 1/256, 1/16384, 1/256);
 
 function CalcUnitValue(const sval: string; const eunit: ESystemUnit; var dval: double): boolean;
 begin
   result := TryStrToFloat(sval, dval);
-  if result then dval := dval * (C_UNITS_SCALING[eunit]);
+  if result then dval := dval * (C_UNITS_SCALE[eunit]);
 end;
 
 end.

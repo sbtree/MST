@@ -62,7 +62,7 @@ implementation
 uses Windows, SysUtils, GenUtils, RS232;
 
 const
-  CSTR_START_MODE : array[LOW(EStartMode)..HIGH(EStartMode)] of string = (
+  CSTR_START_MODE : array[EStartMode] of string = (
                       'origin',
                       'mtx-bl-updater',
                       'mtx-service',

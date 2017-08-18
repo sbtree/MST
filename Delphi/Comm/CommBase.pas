@@ -1,5 +1,5 @@
 // =============================================================================
-// Module name  : $RCSfile: ConnBase.pas,v $
+// Module name  : $RCSfile: CommBase.pas,v $
 // description  : This unit implements a basis methodes and properties of a class
 //                for connection FlashRunner. The types of connection includes Jtag
 //                RS232, USB, GPIB, CAN-bus and Profil-Bus.
@@ -7,7 +7,7 @@
 // Author       : 2015-09-08 /bsu/
 // History      :
 //==============================================================================
-unit ConnBase;
+unit CommBase;
 
 interface
 uses Classes, TextMessage, IniFiles, Serial3, SyncObjs, SysUtils, DataBuffer;
@@ -27,19 +27,33 @@ type
                   CT_PCAN,    //can-bus over pcan-adapter
                   CT_PROFI    //profi-bus
                   );
+
+  ECommProtocol = ( CP_ORIGINAL,//'ABCDEFGH...'
+                    CP_HEXESTR, //'8F239542'
+                    CP_RIPSIP,  //'RIP:041'
+                    CP_OROW,    //'OR:00A1'
+                    CP_DXOROW,  //'#OR:00A1:0001:01:XX'
+                    CP_CAN,     //'587:00123456'
+                    CP_CANOPEN  //'587:00123456'
+                  );
+
   //enumeration of connection states
   EConnectState = ( CS_UNKNOWN,   //unknown state
                     CS_CONFIGURED,//connection is configurated
                     CS_CONNECTED  //connection is connected and in use
                    );
 
-  IConnAdapter = interface
-    function Config(const sconfs: TStrings): boolean;
-    function Connect(): boolean;
-    function Disconnect: boolean;
-    function Send(const str: string; const encoder: integer): boolean;
-    function Recv(var str: string; const decoder: integer): boolean;
-  end;
+//  ICommHandle = interface
+//    function Config(const sconfs: TStrings): boolean;
+//    function Connect(): boolean;
+//    function Disconnect: boolean;
+//    function Send(const str: string): boolean;
+//    function Recv(var str: string; const coder: ECommProtocol): boolean;
+//  end;
+//
+//  TCommHandle = class(TComponent, ICommHandle, ITextMessengerImpl)
+//
+//  end;
 
   //definition of a interface for communication
   ICommInterf = interface
@@ -91,7 +105,7 @@ type
   public
     //constructor and destructor
     constructor Create(owner: TComponent); override;
-    destructor Destroy; override;
+    destructor Destroy(); override;
 
     //delegate interface ITextMessengerImpl
     property MessengerService: TTextMessengerImpl read t_msgrimpl implements ITextMessengerImpl;
