@@ -9,8 +9,37 @@
 unit ProductConfig;
 
 interface
-uses Classes, IniFiles, ComCtrls, ConfigBase, StringPairs;
+uses Classes, IniFiles, ComCtrls, ConfigBase, StringPairs,
+    System.Generics.Collections, System.Generics.Defaults;
 type
+
+  TProductSetting = class(TDictionary<string, string>)
+  public
+    procedure UpdateBy(const keyvals: TStrings; const bcover: boolean = true); overload;
+    procedure UpdateBy(const config: TProductSetting; const bcover: boolean = true); overload;
+    procedure ReduceOver(const config: TProductSetting);
+  end;
+
+  TProductFamily= class(TObjectDictionary<string, TProductFamily>)
+  protected
+    s_name: string;
+    t_config: TProductSetting;
+    t_parent: TProductFamily;
+  protected
+    procedure SetName(const sname: string);
+    procedure SetParent(branch: TProductFamily);
+    function TryGetParentSetting(var tsetting: TProductSetting): boolean;
+  public
+    constructor Create();
+    destructor Destroy(); override;
+
+    procedure ReduceSetting();
+
+    property FamilyName: string read s_name write SetName;
+    property Config: TProductSetting read t_config;
+    property Parent: TProductFamily read t_parent write SetParent;
+  end;
+
   //a class for section of configuration in tree structure
   TTreeSection = class(TStringPairs)
   protected
@@ -78,6 +107,7 @@ type
   protected
     function AddConfig(const confname: string; const vals: TStrings): TTreeSection;
     function ReadFromIni(const sfile: string): boolean; override;
+    function FindRootSection(const secnames: TStrings; var sroot: string): boolean;
     function BuildTreeFromIni(const ini: TIniFile): boolean;
     function WriteToIni(var slines: TStrings): boolean;
     //function ReadFromXml(const sfile: string): boolean; override;
@@ -137,10 +167,101 @@ const
   CSTR_ARTICLE: string = 'ARTICLE_';
   CSTR_VARIANT: string = 'VARIANTE_';
   CSTR_FAMILY:  string = 'FAMILY_';
-  CSTR_ROOT_NAME:       string = 'DEFAULT_SETTINGS';
+  CSTR_ROOT:    string = 'ROOT_';
   CSTR_VARIANT_PARENT:  string = 'FAMILY';
   CSTR_ARTICLE_PARENT:  string = 'VARIANT';
   CSTR_ID_STRING:       string = 'ID_STRING';
+
+//update from a string list (list of strings with format 'key=value')
+procedure TProductSetting.UpdateBy(const keyvals: TStrings; const bcover: boolean);
+var s_key, s_val, s_keyval: string; i_pos: integer;
+begin
+  for s_keyval in keyvals do begin
+    s_key := ''; s_val := '';
+    i_pos := Pos(keyvals.NameValueSeparator, s_keyval);
+    if (i_pos > 1) then begin //name is not empty
+      s_key := trim(LeftStr(s_keyval, i_pos - 1));
+      s_val := trim(RightStr(s_keyval, length(s_keyval) - i_pos));
+    end else s_key := trim(s_keyval); //separator is not found, only name is given
+    if not SameText(s_key, '') then begin
+      if bcover then
+        AddOrSetValue(s_key, s_val)
+      else if not ContainsKey(s_key) then
+        Add(s_key, s_val);
+    end;
+  end;
+end;
+
+//update from another TProductSetting
+procedure TProductSetting.UpdateBy(const config: TProductSetting; const bcover: boolean);
+var t_pair: TPair<string, string>;
+begin
+  if assigned(config) then begin
+    for t_pair in config do begin
+      if bcover then
+        AddOrSetValue(t_pair.Key, t_pair.Value)
+      else if not ContainsKey(t_pair.Key) then
+        Add(t_pair.Key, t_pair.Value);
+    end
+  end;
+end;
+
+procedure TProductSetting.ReduceOver(const config: TProductSetting);
+var s_val: string; s_pair: TPair<string, string>;
+begin
+  if assigned(config) then begin
+    for s_pair in config do begin
+      if self.TryGetValue(s_pair.Key, s_val) then begin
+        if SameText(s_pair.Value, s_val) then
+          self.Remove(s_pair.Value);
+      end;
+    end;
+  end;
+end;
+
+procedure TProductFamily.SetName(const sname: string);
+begin
+  if not SameStr(s_name, sname) then begin
+    if assigned(t_parent) then begin
+      t_parent.Remove(s_name);
+      t_parent.AddOrSetValue(sname, self);
+    end;
+    s_name := sname;
+  end;
+end;
+
+procedure TProductFamily.SetParent(branch: TProductFamily);
+begin
+  if assigned(t_parent) then
+    t_parent.Remove(s_name);
+
+  t_parent := branch;
+
+  if assigned(t_parent) then
+    t_parent.AddOrSetValue(s_name, self);
+end;
+
+constructor TProductFamily.Create();
+begin
+  inherited Create();
+  t_config := TProductSetting.Create();
+  t_parent := nil;
+end;
+
+destructor TProductFamily.Destroy();
+begin
+  SetParent(nil);
+  t_config.Free();
+end;
+
+procedure TProductFamily.ReduceSetting();
+var t_setting: TProductSetting;
+begin
+  t_setting := TProductSetting.Create();
+
+  t_setting.Free();
+end;
+
 
 //Find config section in the whole branch with Breadth-First Search (BFS)
 function TTreeSection.FindConfig(const sname: string): TTreeSection;
@@ -189,7 +310,7 @@ begin
   slines.Add('[' + s_confname + ']');
   if assigned(t_parent) then begin
     if StartsText(CSTR_ARTICLE, s_confname) then slines.Add(CSTR_ARTICLE_PARENT + '=' + t_parent.ConfigName)
-    else if (not SameText(t_parent.s_confname, CSTR_ROOT_NAME)) then slines.Add(CSTR_VARIANT_PARENT + '=' + t_parent.ConfigName)
+    else if (not StartsText(CSTR_ROOT, t_parent.s_confname)) then slines.Add(CSTR_VARIANT_PARENT + '=' + t_parent.ConfigName)
   end;
   slines.AddStrings(Pairs);
   result := true;
@@ -524,7 +645,8 @@ begin
   end else result := nil;
 end;
 
-//read configs from a ini-file. Only the sections, which have names started with CSTR_FAMILY, CSTR_VARIANT and CSTR_ARTICLE
+//read configs from a ini-file. Only the sections, which have names started
+//with CSTR_ROOT(first one), CSTR_FAMILY, CSTR_VARIANT and CSTR_ARTICLE.
 function TProdConfig.ReadFromIni(const sfile: string): boolean;
 var t_inifile: TIniFile; t_secnames, t_secvals: TStrings; s_name: string; i: integer;
 begin
@@ -534,8 +656,12 @@ begin
   t_secvals := TStringList.Create();
 
   t_inifile.ReadSections(t_secnames);
-  t_inifile.ReadSectionValues(CSTR_ROOT_NAME, t_secvals);
-  t_croot.SetConfigVars(t_secvals);
+  if FindRootSection(t_secnames, s_name) then begin
+    t_inifile.ReadSectionValues(s_name, t_secvals);
+    t_croot.ConfigName := s_name;
+    t_croot.SetConfigVars(t_secvals);
+  end;
+
   for i := 0 to t_secnames.Count - 1 do begin
     s_name := t_secnames[i];
     if (StartsText(CSTR_VARIANT, s_name) or
@@ -555,6 +681,20 @@ begin
   t_secvals.Free();
   t_secnames.Free();
   t_inifile.Free();
+end;
+
+//find the first section whose name starts with CSTR_ROOT
+function TProdConfig.FindRootSection(const secnames: TStrings; var sroot: string): boolean;
+var i: integer;
+begin
+  result := false;
+  for i := 0 to secnames.Count do begin
+    if StartsText(CSTR_ROOT, secnames[i]) then begin
+      result := true;
+      sroot := secnames[i];
+      break;
+    end;
+  end;
 end;
 
 //build tree structure from a file with ini-format
@@ -680,7 +820,7 @@ end;
 
 constructor TProdConfig.Create();
 begin
-  t_croot := TTreeSection.Create(CSTR_ROOT_NAME);
+  t_croot := TTreeSection.Create(CSTR_ROOT);
   t_names := TStringList.Create();
   t_names.CaseSensitive := false;
   t_names.Sorted := true;
