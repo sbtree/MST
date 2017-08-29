@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Serial3, ExtCtrls, {CPort, CPortCtl,} RegExpr, ComCtrls, MtxDownloader,
-  NewProgressbar, ConnBase, TextMessage;
+  NewProgressbar, CommBase, TextMessage;
 
 type
 {

@@ -12,12 +12,19 @@ interface
 uses Classes, IniFiles, ComCtrls, ConfigBase, StringPairs,
     System.Generics.Collections, System.Generics.Defaults;
 type
+  //a text comparer without consideration of capital letters
+  TTextComparer = class(TOrdinalIStringComparer)
+  public
+    function Equals(const Left, Right: string): Boolean; reintroduce; overload; override;
+  end;
 
   TProductSetting = class(TDictionary<string, string>)
+  protected
+    function ExtractKeyValue(const keyval: string; const sepa: char; var skey, sval: string): boolean;
   public
     procedure UpdateBy(const keyvals: TStrings; const bcover: boolean = true); overload;
     procedure UpdateBy(const config: TProductSetting; const bcover: boolean = true); overload;
-    procedure ReduceOver(const config: TProductSetting);
+    procedure ReduceBy(const config: TProductSetting);
   end;
 
   TProductFamily= class(TObjectDictionary<string, TProductFamily>)
@@ -28,15 +35,16 @@ type
   protected
     procedure SetName(const sname: string);
     procedure SetParent(branch: TProductFamily);
-    function TryGetParentSetting(var tsetting: TProductSetting): boolean;
   public
     constructor Create();
     destructor Destroy(); override;
 
+    procedure GetParentsSetting(var tsetting: TProductSetting);
+    procedure GetFullSetting(var tsetting: TProductSetting);
     procedure ReduceSetting();
 
-    property FamilyName: string read s_name write SetName;
-    property Config: TProductSetting read t_config;
+    property Name: string read s_name write SetName;
+    property Setting: TProductSetting read t_config;
     property Parent: TProductFamily read t_parent write SetParent;
   end;
 
@@ -172,22 +180,37 @@ const
   CSTR_ARTICLE_PARENT:  string = 'VARIANT';
   CSTR_ID_STRING:       string = 'ID_STRING';
 
+function TTextComparer.Equals(const Left, Right: string): Boolean;
+begin
+  result := SameText(Left, Right);
+end;
+
+function TProductSetting.ExtractKeyValue(const keyval: string; const sepa: char; var skey, sval: string): boolean;
+var i_pos: integer;
+begin
+  i_pos := Pos(sepa, keyval);
+  if (i_pos > 1) then begin //name is not empty
+    skey := trim(LeftStr(keyval, i_pos - 1));
+    sval := trim(RightStr(keyval, length(keyval) - i_pos));
+  end else begin //separator is not found, only name is given
+    skey := trim(keyval);
+    sval := '';
+  end;
+  result := (length(skey) > 0);
+end;
+
 //update from a string list (list of strings with format 'key=value')
 procedure TProductSetting.UpdateBy(const keyvals: TStrings; const bcover: boolean);
-var s_key, s_val, s_keyval: string; i_pos: integer;
+var s_key, s_val, s_keyval: string;
 begin
-  for s_keyval in keyvals do begin
-    s_key := ''; s_val := '';
-    i_pos := Pos(keyvals.NameValueSeparator, s_keyval);
-    if (i_pos > 1) then begin //name is not empty
-      s_key := trim(LeftStr(s_keyval, i_pos - 1));
-      s_val := trim(RightStr(s_keyval, length(s_keyval) - i_pos));
-    end else s_key := trim(s_keyval); //separator is not found, only name is given
-    if not SameText(s_key, '') then begin
-      if bcover then
-        AddOrSetValue(s_key, s_val)
-      else if not ContainsKey(s_key) then
-        Add(s_key, s_val);
+  if assigned(keyvals) then begin
+    for s_keyval in keyvals do begin
+      if ExtractKeyValue(s_keyval, keyvals.NameValueSeparator, s_key, s_val) then begin
+        if bcover then
+          AddOrSetValue(s_key, s_val)
+        else if not ContainsKey(s_key) then
+          Add(s_key, s_val);
+      end;
     end;
   end;
 end;
@@ -206,7 +229,7 @@ begin
   end;
 end;
 
-procedure TProductSetting.ReduceOver(const config: TProductSetting);
+procedure TProductSetting.ReduceBy(const config: TProductSetting);
 var s_val: string; s_pair: TPair<string, string>;
 begin
   if assigned(config) then begin
@@ -243,8 +266,8 @@ end;
 
 constructor TProductFamily.Create();
 begin
-  inherited Create();
-  t_config := TProductSetting.Create();
+  inherited Create(TTextComparer.Create());
+  t_config := TProductSetting.Create(TTextComparer.Create());
   t_parent := nil;
 end;
 
@@ -254,11 +277,26 @@ begin
   t_config.Free();
 end;
 
+procedure TProductFamily.GetParentsSetting(var tsetting: TProductSetting);
+begin
+  if assigned(t_parent) then begin
+    t_parent.GetParentsSetting(tsetting);
+    tsetting.UpdateBy(t_parent.Setting);
+  end;
+end;
+
+procedure TProductFamily.GetFullSetting(var tsetting: TProductSetting);
+begin
+  GetParentsSetting(tsetting);
+  tsetting.UpdateBy(t_config);
+end;
+
 procedure TProductFamily.ReduceSetting();
 var t_setting: TProductSetting;
 begin
   t_setting := TProductSetting.Create();
-
+  GetParentsSetting(t_setting);
+  t_config.ReduceBy(t_setting);
   t_setting.Free();
 end;
 

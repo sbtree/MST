@@ -358,11 +358,11 @@ const CSTR_TEST_CMD: string= 'abcdefg';
       C_RESTART_INTERVAL: cardinal = 2000;
 var i_baud: integer;
 begin
-  i_baud := t_conn.SerialObj.Baudrate;
+  //i_baud := t_conn.SerialObj.Baudrate;
   SwitchBaudrate(CINT_B115200, true);
   t_conn.SendStr(CSTR_TEST_CMD + CCHR_RETURN);
   result := t_conn.RecvStrInterval(msg, C_WAITING_INTERVAL, C_RESTART_INTERVAL);
-  SwitchBaudrate(i_baud, false);
+  //SwitchBaudrate(i_baud, false);
 end;
 
 procedure TMtxComDownloader.UpdateStartMessage(const smsg: string);
