@@ -30,7 +30,7 @@ type
   TProductFamily= class(TObjectDictionary<string, TProductFamily>)
   protected
     s_name: string;
-    t_config: TProductSetting;
+    t_setting: TProductSetting;
     t_parent: TProductFamily;
   protected
     procedure SetName(const sname: string);
@@ -39,13 +39,31 @@ type
     constructor Create();
     destructor Destroy(); override;
 
+    function FindProduct(const sname: string): TProductFamily;
+
     procedure GetParentsSetting(var tsetting: TProductSetting);
     procedure GetFullSetting(var tsetting: TProductSetting);
     procedure ReduceSetting();
 
     property Name: string read s_name write SetName;
-    property Setting: TProductSetting read t_config;
+    property MySetting: TProductSetting read t_setting;
     property Parent: TProductFamily read t_parent write SetParent;
+  end;
+
+  TTestConfigurator = class
+  protected
+    t_root: TProductFamily;
+    t_curproduct: TProductFamily;
+  protected
+    //function FindProduct(const prodname: string; const prodfamily: TProductFamily): TProductFamily;
+  public
+    //read all settings from a configuration file
+    //write all settings into a configuration file
+    //create a new product/family
+    //update settings for a product/family
+    //remove a a product/family
+    //change parent of a product/family
+    //show tree of the products/families in a GUI-component
   end;
 
   //a class for section of configuration in tree structure
@@ -243,10 +261,11 @@ begin
 end;
 
 procedure TProductFamily.SetName(const sname: string);
+var t_pair: TPair<string, TProductFamily>;
 begin
-  if not SameStr(s_name, sname) then begin
+  if not SameText(s_name, sname) then begin
     if assigned(t_parent) then begin
-      t_parent.Remove(s_name);
+      t_pair := t_parent.ExtractPair(s_name);
       t_parent.AddOrSetValue(sname, self);
     end;
     s_name := sname;
@@ -254,12 +273,11 @@ begin
 end;
 
 procedure TProductFamily.SetParent(branch: TProductFamily);
+var t_pair: TPair<string, TProductFamily>;
 begin
   if assigned(t_parent) then
-    t_parent.Remove(s_name);
-
+      t_pair := t_parent.ExtractPair(s_name);
   t_parent := branch;
-
   if assigned(t_parent) then
     t_parent.AddOrSetValue(s_name, self);
 end;
@@ -267,39 +285,53 @@ end;
 constructor TProductFamily.Create();
 begin
   inherited Create(TTextComparer.Create());
-  t_config := TProductSetting.Create(TTextComparer.Create());
+  t_setting := nil; //TProductSetting.Create(TTextComparer.Create());
   t_parent := nil;
 end;
 
 destructor TProductFamily.Destroy();
 begin
   SetParent(nil);
-  t_config.Free();
+  t_setting.Free();
+end;
+
+function TProductFamily.FindProduct(const sname: string): TProductFamily;
+var t_product: TProductFamily;
+begin
+  if SameText(s_name, sname) then
+    result := self
+  else if ContainsKey(sname) then
+    result := Items[sname]
+  else begin
+    for t_product in Values do begin
+      result := t_product.FindProduct(sname);
+      if assigned(result) then break;
+    end;
+  end;
 end;
 
 procedure TProductFamily.GetParentsSetting(var tsetting: TProductSetting);
 begin
   if assigned(t_parent) then begin
     t_parent.GetParentsSetting(tsetting);
-    tsetting.UpdateBy(t_parent.Setting);
+    tsetting.UpdateBy(t_parent.MySetting);
   end;
 end;
 
 procedure TProductFamily.GetFullSetting(var tsetting: TProductSetting);
 begin
   GetParentsSetting(tsetting);
-  tsetting.UpdateBy(t_config);
+  tsetting.UpdateBy(t_setting);
 end;
 
 procedure TProductFamily.ReduceSetting();
-var t_setting: TProductSetting;
+var t_parentsetting: TProductSetting;
 begin
-  t_setting := TProductSetting.Create();
-  GetParentsSetting(t_setting);
-  t_config.ReduceBy(t_setting);
-  t_setting.Free();
+  t_parentsetting := TProductSetting.Create();
+  GetParentsSetting(t_parentsetting);
+  t_setting.ReduceBy(t_parentsetting);
+  t_parentsetting.Free();
 end;
-
 
 //Find config section in the whole branch with Breadth-First Search (BFS)
 function TTreeSection.FindConfig(const sname: string): TTreeSection;
