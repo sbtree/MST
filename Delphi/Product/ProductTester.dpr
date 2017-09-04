@@ -16,7 +16,8 @@ uses
   CommBase in '..\Comm\CommBase.pas',
   RS232 in '..\Comm\RS232.pas',
   DataBuffer in '..\General\DataBuffer.pas',
-  NewProgressbar in '..\General\NewProgressbar.pas';
+  NewProgressbar in '..\General\NewProgressbar.pas',
+  TestConfig in '..\Config\TestConfig.pas';
 
 {$R *.res}
 

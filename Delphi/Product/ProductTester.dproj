@@ -196,13 +196,13 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="ModelSupport_ProductTester\TextMessage\default.txaPackage" Configuration="Release" Class="ProjectFile">
+                <DeployFile LocalName="ModelSupport_ProductTester\ConnBase\default.txaPackage" Configuration="Release" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="ModelSupport_ProductTester\ConnBase\default.txaPackage" Configuration="Release" Class="ProjectFile">
+                <DeployFile LocalName="ModelSupport_ProductTester\TextMessage\default.txaPackage" Configuration="Release" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
@@ -828,6 +828,7 @@
         <DCCReference Include="..\Comm\RS232.pas"/>
         <DCCReference Include="..\General\DataBuffer.pas"/>
         <DCCReference Include="..\General\NewProgressbar.pas"/>
+        <DCCReference Include="..\Config\TestConfig.pas"/>
         <None Include="ModelSupport_ProductTester\ConfigBase\default.txaPackage"/>
         <None Include="ModelSupport_ProductTester\ConnBase\default.txaPackage"/>
         <None Include="ModelSupport_ProductTester\DataBuffer\default.txaPackage"/>
