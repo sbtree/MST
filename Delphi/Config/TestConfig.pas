@@ -20,9 +20,9 @@ type
     procedure UpdateBy(const keyvals: TStrings; const bcover: boolean = true); overload;
     procedure UpdateBy(const config: TStringDictionary; const bcover: boolean = true); overload;
     procedure ReduceBy(const config: TStringDictionary);
-    function FieldValue(const fldname: string; const fldindex: integer): string;
+    function  FieldValue(const fldname: string; const fldindex: integer): string;
 
-    property FieldSeparator: char read c_fldseparator write c_fldseparator default '|';
+    property  FieldSeparator: char read c_fldseparator write c_fldseparator default '|';
   end;
 
   TProductConfig = class;
@@ -41,21 +41,30 @@ type
     procedure SetProdName(const sname: string);
     procedure SetParent(parent: TProductConfig);
     procedure ReduceOwnSetting();
+    procedure WriteToIni(var slines: TStrings);
+    function  IsVisible(): boolean;
+    function  GetChildrenCount(): integer;
+    function  GetConfigId(): string;
+    procedure SetConfigId(cid: string);
   public
-    constructor Create();
+    constructor Create(); overload;
     destructor Destroy(); override;
 
-    procedure ChangeChildName(const oldname, newname: string);
     procedure GetParentSettings(var tsetting: TStringDictionary);
     procedure GetFullSettings(var tsetting: TStringDictionary);
     procedure GetOwnSettings(var tsetting: TStringDictionary);
 
-    function FindProduct(const sname: string): TProductConfig;
-    function NewChild(const sname: string): TProductConfig;
-    function AddChild(const child: TProductConfig): boolean;
+    function  DepthLevel(): integer;
+    function  FindProduct(const sname: string): TProductConfig;
+    function  HasChild(const sname: string): boolean;
+    function  CreateOrGetChild(const sname: string): TProductConfig;
+    function  TakeChild(const sname: string): TProductConfig;
+    function  ChangeChildName(const oldname, newname: string): boolean;
 
-    property ProductName: string read s_prodname write SetProdName;
-    property ProductParent: TProductConfig read t_parent write SetParent;
+    property  ProductName: string read s_prodname write SetProdName;
+    property  ProductParent: TProductConfig read t_parent write SetParent;
+    property  ChildrenCount: integer read GetChildrenCount;
+    property  Visible: boolean read IsVisible write b_visible;
   end;
 
   TTestConfigurator = class
@@ -76,7 +85,7 @@ type
     //remove a a product/family
     //change parent of a product/family
     //show tree of the products/families in a GUI-component
-    property CurrentProduct: TProductConfig read t_curproduct write SetCurProduct;
+    //property CurrentProduct: TProductConfig read t_curproduct write SetCurProduct;
   end;
 
 var
@@ -175,7 +184,7 @@ begin
   result := '';
   if self.ContainsKey(fldname) then begin
     t_fields := TStringList.Create;
-    if (ExtractStrings([FieldSeparator], [char(9), ' '], self.Items[fldname], t_fields) >= fldindex) then result := t_fields[fldindex];
+    if (ExtractStrings([FieldSeparator], [char(9), ' '], PChar(self.Items[fldname]), t_fields) >= fldindex) then result := t_fields[fldindex];
     t_fields.Free;
   end;
 end;
@@ -191,28 +200,24 @@ end;
 //end;
 
 procedure TProductConfig.SetProdName(const sname: string);
-var t_pair: TPair<string, TProductConfig>;
 begin
   if not SameText(s_prodname, sname) then begin
     if assigned(t_parent) then begin
-      t_pair := t_parent.ExtractPair(s_prodname);
-      t_parent.AddOrSetValue(sname, self);
-    end;
-    s_prodname := sname;
+      if t_parent.HasChild(sname) then //todo: dupplication, error message
+      else s_prodname := sname;
+    end else s_prodname := sname;
   end;
 end;
 
 procedure TProductConfig.SetParent(parent: TProductConfig);
-var t_pair: TPair<string, TProductConfig>;
 begin
   if (parent <> t_parent) then begin
-    if assigned(t_parent) then t_pair := t_parent.ExtractPair(s_prodname);
-
-    t_parent := parent;
-    if assigned(t_parent) then begin
-      if not t_parent.ContainsKey(s_prodname) then t_parent.Add(s_prodname, self)
-      else ;//todo: dupplication?
-    end;
+    if assigned(t_parent) then  t_parent.TakeChild(s_prodname);
+    if assigned(parent) then begin
+      if parent.HasChild(s_prodname) then //todo: dupplication, error message
+      else t_parent := parent;
+    end else
+      t_parent := parent;
   end;
 end;
 
@@ -225,9 +230,54 @@ begin
   t_parentsetting.Free();
 end;
 
+//write current config and its child into a string list with ini-format
+procedure TProductConfig.WriteToIni(var slines: TStrings);
+var i: integer; t_config: TProductConfig; s_key: string;
+begin
+  slines.Add('');
+  slines.Add('[' + s_prodname + ']');
+  if assigned(t_parent) then begin
+    if StartsText(CSTR_ARTICLE, s_prodname) then slines.Add(CSTR_ARTICLE_PARENT + '=' + t_parent.ProductName)
+    else if (not StartsText(CSTR_ROOT, t_parent.ProductName)) then slines.Add(CSTR_VARIANT_PARENT + '=' + t_parent.ProductName)
+  end;
+  for s_key in self.Keys do slines.Add(s_key + '=' + self.Items[s_key]);
+  for t_config in t_children.Values do t_config.WriteToIni(slines);
+end;
+
+//indicate if the config is visible
+function TProductConfig.IsVisible(): boolean;
+var i: integer; t_config: TProductConfig;
+begin
+  result := b_visible;
+  if not b_visible then begin
+    for t_config in t_children.Values do begin
+      result := t_config.Visible;
+      if result then break;
+    end;
+  end;
+end;
+
+function TProductConfig.GetChildrenCount(): integer;
+begin
+  result := t_children.Count;
+end;
+
+//get identifer of current config
+function TProductConfig.GetConfigId(): string;
+begin
+  result := self.Items[CSTR_ID_STRING];
+end;
+
+//set identifer of current config
+procedure TProductConfig.SetConfigId(cid: string);
+begin
+  self.AddOrSetValue(CSTR_ID_STRING, cid);
+end;
+
 constructor TProductConfig.Create();
 begin
   inherited Create(TTextComparer.Create());
+  b_visible := true;
   t_children := TProductDictionary.Create(TTextComparer.Create());
   t_parent := nil;
 end;
@@ -250,15 +300,6 @@ begin
   tsetting.UpdateBy(self);
 end;
 
-procedure TProductConfig.ChangeChildName(const oldname, newname: string);
-var t_pair: TPair<string, TProductConfig>;
-begin
-  if t_children.ContainsKey(oldname) then begin
-    t_pair := t_children.ExtractPair(oldname);
-    t_children.Add(newname, t_pair.Value);
-  end;
-end;
-
 procedure TProductConfig.GetParentSettings(var tsetting: TStringDictionary);
 begin
   if assigned(t_parent) then begin
@@ -267,6 +308,16 @@ begin
   end;
 end;
 
+//return the depth level of this tree object. Root-Object has depth level 0
+//its children have 1, grandchildren 2, and so an
+function TProductConfig.DepthLevel(): integer;
+begin
+  if assigned(t_parent) then result := t_parent.DepthLevel() + 1
+  else result := 0;
+end;
+
+//find product configuration in this whole branch
+//return the product configuration if found, otherwise nil
 function TProductConfig.FindProduct(const sname: string): TProductConfig;
 var t_product: TProductConfig;
 begin
@@ -281,23 +332,41 @@ begin
   end;
 end;
 
-function TProductConfig.NewChild(const sname: string): TProductConfig;
+//return true if the the product configuration is found in children, otherwise false
+function TProductConfig.HasChild(const sname: string): boolean;
+begin
+  result := t_children.ContainsKey(sname);
+end;
+
+//return the product configuration with the given name in children if is found, other create a new one
+function TProductConfig.CreateOrGetChild(const sname: string): TProductConfig;
 begin
   if t_children.ContainsKey(sname) then
     result := t_children.Items[sname]
   else begin
     result := TProductConfig.Create;
+    result.ProductName := sname;
+    result.ProductParent := self;
   end;
 end;
 
-function TProductConfig.AddChild(const child: TProductConfig): boolean;
+//take the child wthi the given name from children
+function TProductConfig.TakeChild(const sname: string): TProductConfig;
+var t_pair: TPair<string, TProductConfig>;
+begin
+  t_pair := t_children.ExtractPair(sname);
+  result := t_pair.Value;
+end;
+
+function TProductConfig.ChangeChildName(const oldname, newname: string): boolean;
+var t_pair: TPair<string, TProductConfig>;
 begin
   result := false;
-  if assigned(child) then begin
-    if (not t_children.ContainsKey(child.ProductName)) then begin
-      t_children.Add(child.ProductName, child);
-      result := true;
-    end;
+  if (t_children.ContainsKey(oldname) and (not t_children.ContainsKey(newname))) then begin
+    t_pair := t_children.ExtractPair(oldname);
+    t_pair.Value.ProductName := newname;
+    t_children.Add(newname, t_pair.Value);
+    result := true;
   end;
 end;
 
