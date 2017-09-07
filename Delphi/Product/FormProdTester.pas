@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ComCtrls, ProductConfig;
+  Dialogs, StdCtrls, ComCtrls, ProductConfig, TestConfig;
 
 type
   TfrmProdTester = class(TForm)
@@ -66,6 +66,7 @@ type
     procedure btnClearRefClick(Sender: TObject);
   private
     { Private-Deklarationen }
+    t_prodconfigurator: TProductConfigurator;
     t_pconfig: TProdConfig;
     procedure UpdateConfig();
     procedure UpdateFilter(const bforce: boolean = false);
@@ -121,6 +122,8 @@ end;
 
 procedure TfrmProdTester.btnLoadClick(Sender: TObject);
 begin
+  t_prodconfigurator.UpdateFromFile(txtConfigFile.Text);
+
   if t_pconfig.UpdateFromFile(txtConfigFile.Text) then begin
     UpdateFilter(true);
     t_pconfig.UpdateListView(lsvConfig, chkShowAll.Checked, chkSorted.Checked);
@@ -232,11 +235,13 @@ end;
 procedure TfrmProdTester.FormCreate(Sender: TObject);
 begin
   t_pconfig := TProdConfig.Create();
+  t_prodconfigurator := TProductConfigurator.Create;
 end;
 
 procedure TfrmProdTester.FormDestroy(Sender: TObject);
 begin
   t_pconfig.Free();
+  t_prodconfigurator.Free;
 end;
 
 procedure TfrmProdTester.lsvConfigCustomDrawItem(Sender: TCustomListView;
