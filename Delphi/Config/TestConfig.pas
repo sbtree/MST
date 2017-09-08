@@ -7,17 +7,11 @@ function ExtractKeyValue(const keyval: string; var skey, sval: string; const sep
 function TestModeByStr(const stest: string; const default: integer = 4): integer;
 
 type
-  //a text comparer without consideration of capital letters
-  TTextComparer = class(TOrdinalIStringComparer)
-  public
-    function Equals(const Left, Right: string): Boolean; reintroduce; overload; override;
-  end;
-
   TStringDictionary = class(TDictionary<string, string>)
   protected
     c_fldseparator: char;
   public
-    constructor Create(); overload;
+    constructor Create();
 
     procedure UpdateBy(const keyvals: TStrings; const bcover: boolean = true); overload;
     procedure UpdateBy(const config: TStringDictionary; const bcover: boolean = true); overload;
@@ -29,8 +23,10 @@ type
 
   TProductConfig = class;
   TProductDictionary = class(TObjectDictionary<string, TProductConfig>)
+  protected
+
   public
-    constructor Create(); overload;
+    constructor Create();
     //procedure ValueNotify(const TValue: TProductConfig; Action: TCollectionNotification); override;
   end;
 
@@ -56,6 +52,7 @@ type
     procedure GetParentSettings(var tsetting: TStringDictionary);
     procedure GetFullSettings(var tsetting: TStringDictionary);
     procedure GetOwnSettings(var tsetting: TStringDictionary);
+    procedure BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode);
 
     function  DepthLevel(): integer;
     function  FindProduct(const sname: string): TProductConfig;
@@ -64,9 +61,8 @@ type
     function  GetChild(const sname: string): TProductConfig;
     function  AddChild(const child: TProductConfig): boolean;
     function  TakeChild(const sname: string): TProductConfig;
-    function  ChangeChildName(const oldname, newname: string): boolean;
+    function  UpdateChildName(const oldname, newname: string): boolean;
     function  GetRootProduct(): TProductConfig;
-    function  BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode): boolean;
 
     property  ProductName: string read s_prodname write SetProdName;
     property  ProductParent: TProductConfig read t_parent write SetParent;
@@ -80,17 +76,19 @@ type
     t_prodroot: TProductConfig;
     t_prodcur:  TProductConfig;
     t_idnamemap:TStringDictionary;
+    t_products: TProductDictionary;
   protected
-    procedure SetProductByName(const sname: string);
-    procedure SetProductByID(const prodid: string);
     function  FindRootSettings(const secnames: TStrings; var sroot: string): boolean;
     function  ReadFromIni(const sfile: string): boolean; override;
-    function  BuildProductFamily(const proddict: TProductDictionary): boolean;
+    function  BuildProductFamily(): boolean;
   public
     constructor Create();
     destructor Destroy(); override;
 
+    procedure SetProductByName(const sname: string);
+    procedure SetProductByID(const prodid: string);
     procedure UpdateTreeView(var trv: TTreeView; const bclear: boolean = true);
+    procedure UpdateListView(var lsv: TListView; const bfull: boolean = false; const bsorted: boolean = false);
     //read all settings from a configuration file
     //write all settings into a configuration file
     //create a new product/family
@@ -137,20 +135,15 @@ end;
 function TestModeByStr(const stest: string; const default: integer): integer;
 begin
   result := default;
-  if not TryStrToInt(stest, result) then begin
-    result := IndexText(stest, CSTR_TEST_MODE);
-    if result < 0 then result := default;
+  if not TryStrToInt(stest, result) then begin //try directly to get the number from stest
+    result := IndexText(stest, CSTR_TEST_MODE);  //map to a number if stest is given by text
+    if result < 0 then result := default; //return default number if stest is unknown
   end;
-end;
-
-function TTextComparer.Equals(const Left, Right: string): Boolean;
-begin
-  result := SameText(Left, Right);
 end;
 
 constructor TStringDictionary.Create();
 begin
-  inherited Create(TTextComparer.Create);
+  inherited Create(TOrdinalIStringComparer.Create);
 end;
 
 //update from a string list (list of strings with format 'key=value')
@@ -177,7 +170,7 @@ begin
     for t_pair in config do begin
       if bcover then
         AddOrSetValue(t_pair.Key, t_pair.Value)
-      else if not ContainsKey(t_pair.Key) then
+      else if (not ContainsKey(t_pair.Key)) then
         Add(t_pair.Key, t_pair.Value);
     end
   end;
@@ -219,19 +212,16 @@ end;
 
 constructor TProductDictionary.Create();
 begin
-  inherited Create(TTextComparer.Create);
+  inherited Create(TOrdinalIStringComparer.Create);
 end;
 
 procedure TProductConfig.SetProdName(const sname: string);
 begin
-  if assigned(t_parent) then begin
-    if t_parent.ChangeChildName(s_prodname, sname) then s_prodname := sname
-    else ;//todo:error message
-  end else s_prodname := sname;
+  if assigned(t_parent) then t_parent.UpdateChildName(s_prodname, sname);
+  s_prodname := sname;
 end;
 
 procedure TProductConfig.SetParent(parent: TProductConfig);
-var t_config: TProductConfig;
 begin
   if assigned(t_parent) then t_parent.TakeChild(s_prodname);
   t_parent := parent;
@@ -316,6 +306,15 @@ begin
   tsetting.UpdateBy(self);
 end;
 
+//build a tree node with its children
+procedure TProductConfig.BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode);
+var t_curnode: TTreeNode; t_config: TProductConfig;
+begin
+  if assigned(trvNode) then t_curnode := trvnodes.AddChild(trvNode, s_prodname)
+  else t_curnode := trvnodes.Add(nil, s_prodname);
+  for t_config in t_children.Values do t_config.BuildTreeNode(trvnodes, t_curnode);
+end;
+
 procedure TProductConfig.GetParentSettings(var tsetting: TStringDictionary);
 begin
   if assigned(t_parent) then begin
@@ -391,15 +390,15 @@ begin
   result := t_pair.Value;
 end;
 
-function TProductConfig.ChangeChildName(const oldname, newname: string): boolean;
+function TProductConfig.UpdateChildName(const oldname, newname: string): boolean;
 var t_config: TProductConfig;
 begin
   result := SameText(oldname, newname);
   if (t_children.ContainsKey(oldname) and (not t_children.ContainsKey(newname))) then begin
-    t_config.TakeChild(oldname);
+    t_config := TakeChild(oldname);
     t_children.Add(newname, t_config);
     result := true;
-  end;
+  end else; //todo: error message
 end;
 
 function TProductConfig.GetRootProduct(): TProductConfig;
@@ -409,25 +408,6 @@ begin
   else
     result := self;
 end;
-
-//build a tree node with its children
-function TProductConfig.BuildTreeNode(trvnodes: TTreeNodes; trvNode: TTreeNode): boolean;
-var i: integer; t_curnode: TTreeNode; t_config: TProductConfig;
-begin
-  result := true;
-  for t_config in t_children.Values do begin
-    if t_config.Visible then begin
-      if assigned(trvNode) then t_curnode := trvnodes.AddChild(trvNode, t_config.ProductName)
-      else t_curnode := trvnodes.Add(nil, t_config.ProductName);
-      result := t_config.BuildTreeNode(trvnodes, t_curnode);
-    end;
-  end;
-end;
-
-//procedure TTestConfigurator.SetCurProduct(const prod: TProductConfig);
-//begin
-//  t_curprod := prod;
-//end;
 
 procedure TProductConfigurator.SetProductByName(const sname: string);
 begin
@@ -441,14 +421,21 @@ end;
 
 //find the first section whose name starts with CSTR_ROOT
 function TProductConfigurator.FindRootSettings(const secnames: TStrings; var sroot: string): boolean;
-var s_name: string;
+var s_name: string; i_idx: integer;
 begin
   result := false;
   for s_name in secnames do begin
-    if StartsText(CSTR_ROOT, s_name) or SameText(CSTR_GENERAL, s_name) then begin
+    if StartsText(CSTR_ROOT, s_name) then begin
       sroot := s_name;
       result := true;
       break;
+    end;
+  end;
+  if not result then begin
+    i_idx := secnames.IndexOf(CSTR_GENERAL);
+    if (i_idx >= 0) then begin
+      result := true;
+      sroot := secnames[i_idx];
     end;
   end;
 end;
@@ -459,7 +446,7 @@ function TProductConfigurator.ReadFromIni(const sfile: string): boolean;
 var t_inifile: TIniFile; t_secnames, t_secvals: TStrings; s_name: string; t_config: TProductConfig;
 begin
   result := false;
-  ProductDictionary.Clear;
+  t_products.Clear;
 
   t_inifile := TIniFile.Create(sfile);
   t_secnames := TStringList.Create();
@@ -483,7 +470,7 @@ begin
       result := assigned(t_config);
       if result then begin
         t_config.UpdateBy(t_secvals);
-        ProductDictionary.AddOrSetValue(t_config.ProductName, t_config);
+        t_products.AddOrSetValue(t_config.ProductName, t_config);
         t_idnamemap.AddOrSetValue(t_config.ProductID, t_config.ProductName);
       end else begin
         //todo: error message
@@ -491,16 +478,36 @@ begin
       end;
     end;
   end;
-  if result then result := BuildProductFamily(ProductDictionary);
+  if result then result := BuildProductFamily();
 
   t_secvals.Free();
   t_secnames.Free();
   t_inifile.Free();
 end;
 
-function  TProductConfigurator.BuildProductFamily(const proddict: TProductDictionary): boolean;
+function  TProductConfigurator.BuildProductFamily(): boolean;
+var t_config, t_parent: TProductConfig; s_parent: string;
 begin
-
+  for t_config in t_products.Values do begin
+    t_parent := nil;
+    if StartsText(CSTR_ARTICLE, t_config.ProductName) then begin
+      if t_config.ContainsKey(CSTR_ARTICLE_PARENT) then begin
+        s_parent := t_config.Items[CSTR_ARTICLE_PARENT];
+        if t_products.ContainsKey(s_parent) then t_parent := t_products.Items[s_parent];
+      end;
+    end else if StartsText(CSTR_VARIANT, t_config.ProductName) then begin
+      if t_config.ContainsKey(CSTR_VARIANT_PARENT) then begin
+        s_parent := t_config.Items[CSTR_VARIANT_PARENT];
+        if t_products.ContainsKey(s_parent) then t_parent := t_products.Items[s_parent];
+      end;
+    end;
+    if assigned(t_parent) then begin
+      if t_parent.AddChild(t_config) then t_config.ProductParent := t_parent;
+    end else begin
+      if t_prodroot.AddChild(t_config) then  t_config.ProductParent := t_prodroot;
+    end;
+  end;
+  result := true;
 end;
 
 constructor TProductConfigurator.Create();
@@ -509,27 +516,52 @@ begin
   t_prodroot := TProductConfig.Create;
   t_prodcur := t_prodroot;
   t_idnamemap := TStringDictionary.Create;
+  t_products := TProductDictionary.Create;
 end;
 
 destructor TProductConfigurator.Destroy();
 begin
   t_prodroot.Free;
   t_idnamemap.Free;
+  t_products.Free;
 end;
 
 //show and update all configs in a tree view
 procedure TProductConfigurator.UpdateTreeView(var trv: TTreeView; const bclear: boolean);
-var t_node: TTreeNode;
 begin
   trv.Enabled := false;
   if bclear then begin
     trv.ClearSelection();
     trv.Items.Clear();
   end;
-  t_node := trv.Items.Add(nil, t_prodroot.ProductName);
-  t_prodroot.BuildTreeNode(trv.Items, t_node);
+  t_prodroot.BuildTreeNode(trv.Items, nil);
   //GotoTreeNode(trv);
   trv.Enabled := true;
+end;
+
+//show and update the settings of current config in a list view
+procedure TProductConfigurator.UpdateListView(var lsv: TListView; const bfull: boolean; const bsorted: boolean);
+var t_litem: TListItem; t_settings: TStringDictionary; t_keys: TStringList; s_key: string;
+begin
+  lsv.Enabled := false;
+  lsv.Items.Clear();
+  t_settings := TStringDictionary.Create;
+  if bfull then t_prodcur.GetFullSettings(t_settings)
+  else t_prodcur.GetOwnSettings(t_settings);
+
+  t_keys := TStringList.Create;
+  t_keys.CaseSensitive := false;
+  t_keys.Sorted := bsorted;
+  for s_key in t_settings.Keys do t_keys.Add(s_key);
+
+  for s_key in t_keys do begin
+    t_litem := lsv.Items.Add();
+    t_litem.Caption := s_key;
+    t_litem.SubItems.Add(t_settings.Items[s_key]);
+  end;
+  t_keys.Free;
+  t_settings.Free;
+  lsv.Enabled := true;
 end;
 
 

@@ -25,6 +25,7 @@ object frmProdDict: TfrmProdDict
     ReadOnly = True
     RowSelect = True
     TabOrder = 0
+    OnChange = trvProductChange
   end
   object lsvConfig: TListView
     Left = 427
