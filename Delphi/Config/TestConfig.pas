@@ -7,20 +7,6 @@ function ExtractKeyValue(const keyval: string; var skey, sval: string; const sep
 function TestModeByStr(const stest: string; const default: integer = 4): integer;
 
 type
-  TStringDictionary = class(TDictionary<string, string>)
-  protected
-    c_fldseparator: char;
-  public
-    constructor Create();
-
-    procedure UpdateBy(const keyvals: TStrings; const bcover: boolean = true); overload;
-    procedure UpdateBy(const config: TStringDictionary; const bcover: boolean = true); overload;
-    procedure ReduceBy(const config: TStringDictionary);
-    function  FieldValue(const fldname: string; const fldindex: integer): string;
-
-    property  FieldSeparator: char read c_fldseparator write c_fldseparator default '|';
-  end;
-
   TProductConfig = class;
   TProductDictionary = class(TObjectDictionary<string, TProductConfig>)
   protected

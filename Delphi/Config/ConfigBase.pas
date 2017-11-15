@@ -9,17 +9,45 @@
 unit ConfigBase;
 
 interface
-uses Classes, StringPairs;
+uses Classes, System.Generics.Collections{,StringPairs};
 
 type
   EConfigFormat = (
                 CF_INI,
                 CF_XML
                 );
+
+  TStringDictionary = class(TDictionary<string, string>)
+  protected
+    c_fldseparator: char;
+  public
+    constructor Create();
+
+    procedure UpdateBy(const keyvals: TStrings; const bcover: boolean = true); overload;
+    procedure UpdateBy(const config: TStringDictionary; const bcover: boolean = true); overload;
+    procedure ReduceBy(const config: TStringDictionary);
+    function  FieldValue(const fldname: string; const fldindex: integer): string;
+
+    property  FieldSeparator: char read c_fldseparator write c_fldseparator default '|';
+  end;
+
+  TConfigDictionary= class;
+  TBranchConfig = class(TStringDictionary)
+  protected
+    s_ownname:  string;
+    s_ownid:    string;
+    t_parent:   TBranchConfig;
+    t_children: TConfigDictionary;
+  end;
+
+  TConfigDictionary= class(TObjectDictionary<string, TBranchConfig>)
+  end;
+
+
   IConfigBase = interface
     function UpdateFromFile(const fname: string; const bforce: boolean): boolean;
     function SaveToFile(const destfile: string; const cf: EConfigFormat): boolean;
-    function GetConfig(const secname: string): TStringPairs;
+    function GetConfig(const secname: string): TStringDictionary;
     procedure Clear();
   end;
 
@@ -37,7 +65,7 @@ type
 
     function UpdateFromFile(const fname: string; const bforce: boolean = false): boolean; virtual;
     function SaveToFile(const destfile: string = ''; const cf: EConfigFormat = CF_INI): boolean; virtual;
-    function GetConfig(const secname: string): TStringPairs; virtual;
+    function GetConfig(const secname: string): TStringDictionary; virtual;
     procedure Clear(); virtual;
   end;
 
@@ -45,13 +73,19 @@ implementation
 uses SysUtils, StrUtils, IniFiles;
 
 function TConfigBase.ReadFromIni(const fname: string): boolean;
-var i: integer; t_ini: TIniFile; t_secnames, t_secvals: TStrings; t_conf: TStringPairs;
+var i: integer; t_ini: TIniFile; t_secnames, t_secvals: TStrings; t_conf: TStringDictionary;
+    s_key: string;
 begin
   t_ini := TIniFile.Create(fname);
   t_secnames := TStringList.Create();
   t_secvals := TStringList.Create();
   t_ini.ReadSections(t_secnames);
   result := (t_secnames.Count > 0);
+  for s_key in t_secnames do begin
+
+
+  end;
+
   for i := 0 to t_secnames.Count - 1 do begin
     t_conf := GetConfig(t_secnames[i]);
     if (not assigned(t_conf)) then t_conf := TStringPairs.Create();
@@ -109,7 +143,7 @@ begin
   //todo:
 end;
 
-function TConfigBase.GetConfig(const secname: string): TStringPairs;
+function TConfigBase.GetConfig(const secname: string): TStringDictionary;
 var i_idx: integer;
 begin
   result := nil;
