@@ -1,7 +1,7 @@
 unit RelayControl;
 
 interface
-uses Classes, ConnBase, TextMessage;
+uses Classes, CommBase, TextMessage;
 type
   IRelayControl = interface
     function CloseRelays(const relays: string): boolean;

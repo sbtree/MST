@@ -239,7 +239,7 @@ begin
 end;
 
 function TMultimeterKeithley.SwitchMeasurement(const meas: EMeasureAction): boolean;
-var s_sending, s_recv, s_temp: string;
+var s_sending, s_recv: string;
 begin
   result := inherited SwitchMeasurement(meas);
   if result then begin

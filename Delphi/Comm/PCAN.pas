@@ -11,7 +11,7 @@
 unit PCAN;
 
 interface
-uses  Classes, SysUtils, ConnBase, DllLoader, DataBuffer;
+uses  Classes, SysUtils, CommBase, DllLoader, DataBuffer;
 
 type
 //======================start of definitions from pcan-light====================

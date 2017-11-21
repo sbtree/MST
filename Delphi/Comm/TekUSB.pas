@@ -10,7 +10,7 @@
 unit TekUSB;
 
 interface
-uses Classes, ConnBase, DllLoader;
+uses Classes, CommBase, DllLoader;
 
 type
   TTekUsb = class(TConnBase, IDllLoader)

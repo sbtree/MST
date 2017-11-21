@@ -10,7 +10,7 @@
 unit ConnManager;
 
 interface
-uses Classes, ConnBase, TextMessage;
+uses Classes, CommBase, TextMessage;
 
 type
   TConnManager = class(TComponent, ITextMessengerImpl)

@@ -33,7 +33,9 @@ uses
   Multimeter in '..\Device\Multimeter.pas',
   ToolBase in '..\Tools\ToolBase.pas',
   ConfigBase in '..\Config\ConfigBase.pas',
-  RelayControl in '..\Device\RelayControl.pas';
+  RelayControl in '..\Device\RelayControl.pas',
+  DataBuffer in '..\General\DataBuffer.pas',
+  DllLoader in '..\General\DllLoader.pas';
 
 {$R *.res}
 

@@ -31,9 +31,9 @@ type
     function AddSRecord(const fname: string): boolean;
   end;
 
-  TFlashWriter = class(TInterfacedObject, IFlashWriter)
-
-  end;
+//  TFlashWriter = class(TInterfacedObject, IFlashWriter)
+//
+//  end;
 
 
 implementation

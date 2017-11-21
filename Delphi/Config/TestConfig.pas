@@ -3,7 +3,6 @@ unit TestConfig;
 interface
 uses Classes,ComCtrls,System.Generics.Collections, System.Generics.Defaults, ConfigBase;
 
-function ExtractKeyValue(const keyval: string; var skey, sval: string; const sepa: char = '='): boolean;
 function TestModeByStr(const stest: string; const default: integer = 4): integer;
 
 type
@@ -104,20 +103,6 @@ const
 //test mode: 0=HV_Test, 1=Rundlauftest, 2=PE_Test, 3=Dauertest, 4=Leistungstest
   CSTR_TEST_MODE: array[0..4] of string = ('HV', 'RLT', 'PE', 'DT','LT');
 
-function ExtractKeyValue(const keyval: string; var skey, sval: string; const sepa: char): boolean;
-var i_pos: integer;
-begin
-  i_pos := Pos(sepa, keyval);
-  if (i_pos > 1) then begin //name is not empty
-    skey := trim(LeftStr(keyval, i_pos - 1));
-    sval := trim(RightStr(keyval, length(keyval) - i_pos));
-  end else begin //separator is not found, only name is given
-    skey := trim(keyval);
-    sval := '';
-  end;
-  result := (length(skey) > 0);
-end;
-
 function TestModeByStr(const stest: string; const default: integer): integer;
 begin
   result := default;
@@ -127,64 +112,6 @@ begin
   end;
 end;
 
-constructor TStringDictionary.Create();
-begin
-  inherited Create(TOrdinalIStringComparer.Create);
-end;
-
-//update from a string list (list of strings with format 'key=value')
-procedure TStringDictionary.UpdateBy(const keyvals: TStrings; const bcover: boolean);
-var s_key, s_val, s_keyval: string;
-begin
-  if assigned(keyvals) then begin
-    for s_keyval in keyvals do begin
-      if ExtractKeyValue(s_keyval, s_key, s_val, keyvals.NameValueSeparator) then begin
-        if bcover then
-          AddOrSetValue(s_key, s_val)
-        else if not ContainsKey(s_key) then
-          Add(s_key, s_val);
-      end;
-    end;
-  end;
-end;
-
-//update from another TProductSetting
-procedure TStringDictionary.UpdateBy(const config: TStringDictionary; const bcover: boolean);
-var t_pair: TPair<string, string>;
-begin
-  if assigned(config) then begin
-    for t_pair in config do begin
-      if bcover then
-        AddOrSetValue(t_pair.Key, t_pair.Value)
-      else if (not ContainsKey(t_pair.Key)) then
-        Add(t_pair.Key, t_pair.Value);
-    end
-  end;
-end;
-
-procedure TStringDictionary.ReduceBy(const config: TStringDictionary);
-var s_val: string; s_pair: TPair<string, string>;
-begin
-  if assigned(config) then begin
-    for s_pair in config do begin
-      if self.TryGetValue(s_pair.Key, s_val) then begin
-        if SameText(s_pair.Value, s_val) then
-          self.Remove(s_pair.Value);
-      end;
-    end;
-  end;
-end;
-
-function TStringDictionary.FieldValue(const fldname: string; const fldindex: integer): string;
-var t_fields: TStringList;
-begin
-  result := '';
-  if self.ContainsKey(fldname) then begin
-    t_fields := TStringList.Create;
-    if (ExtractStrings([FieldSeparator], [char(9), ' '], PChar(self.Items[fldname]), t_fields) >= fldindex) then result := t_fields[fldindex];
-    t_fields.Free;
-  end;
-end;
 
 //procedure TProductFamily.ValueNotify(const TValue: TProductConfig; Action: TCollectionNotification);
 //begin

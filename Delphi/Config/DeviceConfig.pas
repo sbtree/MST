@@ -9,7 +9,7 @@
 unit DeviceConfig;
 
 interface
-uses Classes, SysUtils, ConfigBase, StringPairs;
+uses Classes, SysUtils, ConfigBase{, StringPairs};
 
 type
   EDeviceType = (
@@ -31,7 +31,7 @@ type
 
     function LoadDeviceSettings(const devname, fname: string): boolean;
     function GetDeviceConfig(const devname: string): TConfigBase;
-    function GetDeviceConfigSection(const devname, secname: string): TStringPairs;
+    function GetDeviceConfigSection(const devname, secname: string): TStringDictionary;
     procedure ClearDevices();
   end;
 
@@ -67,7 +67,7 @@ begin
   if (i_idx >= 0) then result := TConfigBase(t_devices.Objects[i_idx]);
 end;
 
-function TDeviceConfigurator.GetDeviceConfigSection(const devname, secname: string): TStringPairs;
+function TDeviceConfigurator.GetDeviceConfigSection(const devname, secname: string): TStringDictionary;
 var t_devconf: TConfigBase;
 begin
   result := nil;

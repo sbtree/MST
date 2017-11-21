@@ -11,7 +11,7 @@ unit MtxUSB;
 
 interface
 uses USBIOCOMLib_TLB, USBSPEC, Classes, SysUtils, StrUtils, Windows, ActiveX,
-    ConnBase, DataBuffer;
+    CommBase, DataBuffer;
 const
   C_USB_BUFFER_SIZE = 1024;
 

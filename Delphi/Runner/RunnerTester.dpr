@@ -29,7 +29,8 @@ uses
   Multimeter in '..\Device\Multimeter.pas',
   RelayControl in '..\Device\RelayControl.pas',
   RS232 in '..\Comm\RS232.pas',
-  FuncDmm in '..\Function\FuncDmm.pas';
+  FuncDmm in '..\Function\FuncDmm.pas',
+  DataBuffer in '..\General\DataBuffer.pas';
 
 {$R *.res}
 

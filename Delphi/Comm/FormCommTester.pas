@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, ConnBase, TextMessage, ExtCtrls, ConnManager;
+  Dialogs, StdCtrls, CommBase, TextMessage, ExtCtrls, ConnManager;
 
 type
   TfrmCommTester = class(TForm)
